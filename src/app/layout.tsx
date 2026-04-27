@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Header from "@/components/Header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Soy Reinaldo",
+  title: "Soy Reinaldo — Fútbol con Reinaldo",
   description:
-    "Web personal de Reinaldo Rodríguez — creador del canal Fútbol con Reinaldo. Quiniela del Mundial, media kit y redes.",
+    "Web personal de Reinaldo Rodríguez (@SoyReinaldoR) — creador de contenido culé. Quiniela del Mundial, media kit, redes y bot de comentarios.",
   metadataBase: new URL("https://soyreinaldo.com"),
 };
 
@@ -29,7 +30,8 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <body className="min-h-full flex flex-col">
+        <Header />
         {children}
       </body>
     </html>
