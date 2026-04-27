@@ -14,11 +14,6 @@ const productos = [
     label: "Media Kit",
     desc: "Audiencia, tarifas y formatos para marcas",
   },
-  {
-    href: "/contacto",
-    label: "Contáctame",
-    desc: "Email y redes para colaboraciones",
-  },
 ];
 
 export default function Header() {
@@ -51,7 +46,7 @@ export default function Header() {
           Soy <span className="text-indigo-300">Reinaldo</span>
         </Link>
 
-        <nav className="hidden md:block">
+        <nav className="hidden items-center gap-1 md:flex">
           <div ref={dropdownRef} className="relative">
             <button
               type="button"
@@ -92,6 +87,12 @@ export default function Header() {
               </div>
             )}
           </div>
+          <Link
+            href="/contacto"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            Contáctame
+          </Link>
         </nav>
 
         <button
@@ -143,6 +144,15 @@ export default function Header() {
                 <div className="mt-0.5 text-xs text-zinc-400">{p.desc}</div>
               </Link>
             ))}
+          </div>
+          <div className="mt-5 border-t border-zinc-900 pt-4">
+            <Link
+              href="/contacto"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              Contáctame
+            </Link>
           </div>
         </div>
       )}
