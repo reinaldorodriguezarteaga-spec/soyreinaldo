@@ -8,6 +8,11 @@ export type ProfileState = {
   message?: string;
 };
 
+export type PasswordState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+};
+
 export async function updateDisplayName(
   _prev: ProfileState,
   formData: FormData,
@@ -45,5 +50,42 @@ export async function updateDisplayName(
   return {
     status: "success",
     message: "Nombre actualizado.",
+  };
+}
+
+export async function updatePassword(
+  _prev: PasswordState,
+  formData: FormData,
+): Promise<PasswordState> {
+  const password = (formData.get("password") as string | null) ?? "";
+  const confirm = (formData.get("confirm") as string | null) ?? "";
+
+  if (password.length < 6) {
+    return {
+      status: "error",
+      message: "La contraseña debe tener al menos 6 caracteres.",
+    };
+  }
+  if (password !== confirm) {
+    return { status: "error", message: "Las contraseñas no coinciden." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { status: "error", message: "Sesión expirada. Vuelve a entrar." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  return {
+    status: "success",
+    message: "Contraseña guardada. La próxima vez puedes entrar con email y contraseña.",
   };
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import PasswordForm from "./password-form";
 import ProfileForm from "./profile-form";
 
 export const metadata = {
@@ -26,6 +27,14 @@ export default async function PerfilPage() {
     (user.user_metadata?.display_name as string | undefined) ??
     user.email?.split("@")[0] ??
     "";
+
+  // Identities array tells us which auth methods the user has set up.
+  // If any email-provider identity exposes a stored password we treat the
+  // user as already having one; otherwise this is a magic-link-only account
+  // and we surface the "Establecer contraseña" copy.
+  const hasPassword = (user.identities ?? []).some(
+    (identity) => identity.identity_data?.["password"] !== undefined,
+  );
 
   return (
     <main className="flex flex-1 flex-col px-6 py-16">
@@ -57,8 +66,12 @@ export default async function PerfilPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+        <section className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
           <ProfileForm defaultName={displayName} />
+        </section>
+
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+          <PasswordForm hasPassword={hasPassword} />
         </section>
 
         {profile?.joined_at && (
