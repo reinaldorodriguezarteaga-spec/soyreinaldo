@@ -29,11 +29,11 @@ function VerifiedBadge({ color = "#3897F0" }: { color?: string }) {
 function Avatar({ ring }: { ring?: string }) {
   return (
     <Image
-      src="/branding/retrato.png"
+      src="/branding/avatar.jpg"
       alt="Reinaldo"
-      width={128}
-      height={128}
-      className={`h-16 w-16 shrink-0 rounded-full bg-zinc-800 object-cover [object-position:50%_15%] ${
+      width={160}
+      height={160}
+      className={`h-16 w-16 shrink-0 rounded-full object-cover ${
         ring ?? "ring-2 ring-zinc-700"
       }`}
     />
@@ -101,11 +101,11 @@ export default function RedesPage() {
           >
             <div className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
               <Image
-                src="/branding/retrato.png"
+                src="/branding/avatar.jpg"
                 alt="Reinaldo"
-                width={128}
-                height={128}
-                className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover [object-position:50%_15%]"
+                width={160}
+                height={160}
+                className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
               />
             </div>
             <div className="min-w-0 flex-1">
