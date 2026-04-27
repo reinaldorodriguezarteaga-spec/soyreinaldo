@@ -28,20 +28,15 @@ function VerifiedBadge({ color = "#3897F0" }: { color?: string }) {
 
 function Avatar({ ring }: { ring?: string }) {
   return (
-    <div
-      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-zinc-800 ${
+    <Image
+      src="/branding/retrato.png"
+      alt="Reinaldo"
+      width={128}
+      height={128}
+      className={`h-16 w-16 shrink-0 rounded-full bg-zinc-800 object-cover [object-position:50%_15%] ${
         ring ?? "ring-2 ring-zinc-700"
       }`}
-    >
-      <Image
-        src="/branding/retrato.png"
-        alt="Reinaldo"
-        fill
-        sizes="64px"
-        className="object-cover"
-        style={{ objectPosition: "center 18%" }}
-      />
-    </div>
+    />
   );
 }
 
@@ -104,17 +99,14 @@ export default function RedesPage() {
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
           >
-            <div className="relative h-16 w-16 shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
-              <div className="relative h-full w-full overflow-hidden rounded-full bg-zinc-950">
-                <Image
-                  src="/branding/retrato.png"
-                  alt="Reinaldo"
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                  style={{ objectPosition: "center 18%" }}
-                />
-              </div>
+            <div className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
+              <Image
+                src="/branding/retrato.png"
+                alt="Reinaldo"
+                width={128}
+                height={128}
+                className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover [object-position:50%_15%]"
+              />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
