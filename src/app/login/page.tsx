@@ -33,8 +33,8 @@ export default async function LoginPage({
             Entrar.
           </h1>
           <p className="mt-4 text-base leading-relaxed text-zinc-400">
-            Sin contraseñas. Te mando un enlace mágico al email y entras con un
-            click.
+            Entra con tu email y contraseña, o si lo prefieres pide un enlace
+            mágico al email y entra con un click.
           </p>
         </header>
 
