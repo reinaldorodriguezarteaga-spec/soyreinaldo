@@ -3,13 +3,13 @@ import Link from "next/link";
 export const metadata = {
   title: "Redes | Soy Reinaldo",
   description:
-    "Todas las redes de @SoyReinaldoR: YouTube, Instagram, TikTok y X. Más de 95.000 personas siguiéndome.",
+    "Todas las redes de @SoyReinaldoR: YouTube, Instagram y TikTok. Más de 95.000 personas siguiéndome.",
 };
 
 const redes = [
   {
     name: "YouTube",
-    handle: "Fútbol con Reinaldo",
+    handle: "@SoyReinaldoR",
     audience: "9K suscriptores · +1,2M visualizaciones/mes",
     href: "https://www.youtube.com/@SoyReinaldoR",
   },
@@ -17,19 +17,13 @@ const redes = [
     name: "Instagram",
     handle: "@SoyReinaldoR",
     audience: "54K seguidores",
-    href: "https://instagram.com/SoyReinaldoR",
+    href: "https://www.instagram.com/soyreinaldor/",
   },
   {
     name: "TikTok",
     handle: "@SoyReinaldoR",
     audience: "32K seguidores · 4,4M espectadores/mes",
-    href: "https://tiktok.com/@SoyReinaldoR",
-  },
-  {
-    name: "X (Twitter)",
-    handle: "@SoyReinaldoR",
-    audience: "Reacciones en directo",
-    href: "https://twitter.com/SoyReinaldoR",
+    href: "https://www.tiktok.com/@soyreinaldor",
   },
 ];
 
