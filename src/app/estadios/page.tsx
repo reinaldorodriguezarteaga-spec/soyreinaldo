@@ -72,33 +72,47 @@ export default function EstadiosPage() {
                 </p>
               </div>
 
-              {s.visitImages.length > 0 && (
+              {(s.heroImage || s.visitImages.length > 0) && (
                 <div className="mt-8">
                   <h3 className="mb-4 text-xs uppercase tracking-[0.2em] text-zinc-500">
                     Mi visita
                   </h3>
-                  <div
-                    className={`grid gap-3 ${
-                      s.visitImages.length > 1
-                        ? "sm:grid-cols-2 lg:grid-cols-3"
-                        : "sm:grid-cols-2"
-                    }`}
-                  >
-                    {s.visitImages.map((img, idx) => (
-                      <div
-                        key={img}
-                        className="relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900"
-                      >
-                        <Image
-                          src={img}
-                          alt={`${s.name} — visita ${idx + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {s.heroImage && (
+                    <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl bg-zinc-900">
+                      <Image
+                        src={s.heroImage}
+                        alt={`${s.name} — vista desde la grada`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 800px"
+                        priority
+                      />
+                    </div>
+                  )}
+                  {s.visitImages.length > 0 && (
+                    <div
+                      className={`grid gap-3 ${
+                        s.visitImages.length > 1
+                          ? "sm:grid-cols-2 lg:grid-cols-3"
+                          : "sm:grid-cols-2"
+                      }`}
+                    >
+                      {s.visitImages.map((img, idx) => (
+                        <div
+                          key={img}
+                          className="relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-900"
+                        >
+                          <Image
+                            src={img}
+                            alt={`${s.name} — visita ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </section>

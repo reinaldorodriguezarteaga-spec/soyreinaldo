@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
@@ -125,17 +126,30 @@ export default function MediaKitPage() {
   return (
     <main className="flex flex-1 flex-col px-6 py-16">
       <div className="mx-auto w-full max-w-4xl">
-        <header className="mb-16">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Media Kit
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">
-            <span className="text-indigo-300">@SoyReinaldoR</span>
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-            Toda la información sobre mis perfiles, métricas y opciones de
-            colaboración. Si crees que hay encaje con tu marca, hablemos.
-          </p>
+        <header className="relative mb-16 overflow-hidden rounded-3xl border border-zinc-800">
+          <div className="relative aspect-[16/9]">
+            <Image
+              src="/branding/stream-cinematica.jpg"
+              alt="Set de SoyReinaldoR con trofeos del Barça, camiseta de Raphinha, balón de oro y copa de Champions"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 1024px"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/20" />
+            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 lg:p-12">
+              <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
+                Media Kit
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight drop-shadow-lg sm:text-5xl lg:text-6xl">
+                <span className="text-indigo-300">@SoyReinaldoR</span>
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-200 drop-shadow sm:text-base lg:text-lg">
+                Toda la información sobre mis perfiles, métricas y opciones de
+                colaboración. Si crees que hay encaje con tu marca, hablemos.
+              </p>
+            </div>
+          </div>
         </header>
 
         <section className="mb-16">

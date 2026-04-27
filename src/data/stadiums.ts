@@ -8,6 +8,7 @@ export type Stadium = {
   capacity: number;
   description: string;
   history: string;
+  heroImage?: string;
   visitImages: string[];
 };
 
@@ -24,6 +25,7 @@ export const stadiums: Stadium[] = [
       'Mi casa. "Més que un club" no es un lema, es lo que se siente al pisarlo.',
     history:
       "Inaugurado el 24 de septiembre de 1957, sustituyendo al antiguo Camp de Les Corts. Es el estadio más grande de Europa y uno de los templos del fútbol mundial. Acogió la final de los JJOO de Barcelona '92 y varias finales de Champions y Eurocopa. Actualmente está en plena remodelación dentro del proyecto Espai Barça.",
+    heroImage: "/estadios/camp-nou-panoramica.jpg",
     visitImages: [
       "/estadios/camp-nou-museo-1.jpg",
       "/estadios/camp-nou-museo-2.jpg",
