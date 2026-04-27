@@ -88,6 +88,12 @@ export default function Header() {
             )}
           </div>
           <Link
+            href="/estadios"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            Estadios
+          </Link>
+          <Link
             href="/contacto"
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
           >
@@ -146,6 +152,13 @@ export default function Header() {
             ))}
           </div>
           <div className="mt-5 border-t border-zinc-900 pt-4">
+            <Link
+              href="/estadios"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              Estadios
+            </Link>
             <Link
               href="/contacto"
               onClick={() => setMobileOpen(false)}

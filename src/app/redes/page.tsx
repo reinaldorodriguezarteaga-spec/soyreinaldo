@@ -16,13 +16,13 @@ const redes = [
   {
     name: "Instagram",
     handle: "@SoyReinaldoR",
-    audience: "54K seguidores",
+    audience: "54K seguidores · +7,7M visualizaciones/mes",
     href: "https://www.instagram.com/soyreinaldor/",
   },
   {
     name: "TikTok",
     handle: "@SoyReinaldoR",
-    audience: "32K seguidores · 4,4M espectadores/mes",
+    audience: "32K seguidores · +7M visualizaciones/mes",
     href: "https://www.tiktok.com/@soyreinaldor",
   },
 ];
