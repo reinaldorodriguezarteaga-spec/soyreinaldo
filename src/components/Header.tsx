@@ -88,6 +88,18 @@ export default function Header() {
             )}
           </div>
           <Link
+            href="/quiniela"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            Quiniela
+          </Link>
+          <Link
+            href="/redes"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            Redes
+          </Link>
+          <Link
             href="/estadios"
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
           >
@@ -152,6 +164,20 @@ export default function Header() {
             ))}
           </div>
           <div className="mt-5 border-t border-zinc-900 pt-4">
+            <Link
+              href="/quiniela"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              Quiniela
+            </Link>
+            <Link
+              href="/redes"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              Redes
+            </Link>
             <Link
               href="/estadios"
               onClick={() => setMobileOpen(false)}
