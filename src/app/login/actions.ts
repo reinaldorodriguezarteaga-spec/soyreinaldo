@@ -2,16 +2,26 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-export type LoginState = {
+export type AuthState = {
   status: "idle" | "success" | "error";
   message?: string;
 };
 
+async function siteOrigin() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  const headerList = await headers();
+  const proto = headerList.get("x-forwarded-proto") ?? "https";
+  const host = headerList.get("host");
+  return `${proto}://${host}`;
+}
+
 export async function signInWithMagicLink(
-  _prev: LoginState,
+  _prev: AuthState,
   formData: FormData,
-): Promise<LoginState> {
+): Promise<AuthState> {
   const email = (formData.get("email") as string | null)?.trim().toLowerCase();
   const redirectTarget =
     (formData.get("redirect") as string | null) ?? "/quiniela";
@@ -21,11 +31,7 @@ export async function signInWithMagicLink(
   }
 
   const supabase = await createClient();
-  const headerList = await headers();
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `${headerList.get("x-forwarded-proto") ?? "https"}://${headerList.get("host")}`;
-
+  const origin = await siteOrigin();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
@@ -43,4 +49,39 @@ export async function signInWithMagicLink(
     status: "success",
     message: `Te hemos enviado un email a ${email} con el enlace para entrar.`,
   };
+}
+
+export async function signInWithPassword(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  const password = (formData.get("password") as string | null) ?? "";
+  const redirectTarget =
+    (formData.get("redirect") as string | null) ?? "/quiniela";
+
+  if (!email || !email.includes("@") || password.length < 6) {
+    return {
+      status: "error",
+      message:
+        "Email o contraseña inválidos. La contraseña debe tener al menos 6 caracteres.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(redirectTarget);
+}
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/");
 }

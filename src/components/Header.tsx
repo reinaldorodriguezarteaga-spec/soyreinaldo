@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import UserMenu from "./UserMenu";
 
 const productos = [
   {
@@ -16,7 +18,11 @@ const productos = [
   },
 ];
 
-export default function Header() {
+export default function Header({
+  initialUser,
+}: {
+  initialUser: User | null;
+}) {
   const [openProductos, setOpenProductos] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -111,38 +117,44 @@ export default function Header() {
           >
             Contáctame
           </Link>
+          <div className="ml-2 border-l border-zinc-800 pl-3">
+            <UserMenu initialUser={initialUser} />
+          </div>
         </nav>
 
-        <button
-          type="button"
-          onClick={() => setMobileOpen((o) => !o)}
-          aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={mobileOpen}
-          className="rounded-lg p-2 text-zinc-300 transition hover:text-white md:hidden"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div className="flex items-center gap-2 md:hidden">
+          <UserMenu initialUser={initialUser} />
+          <button
+            type="button"
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileOpen}
+            className="rounded-lg p-2 text-zinc-300 transition hover:text-white"
           >
-            {mobileOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
-        </button>
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {mobileOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (
