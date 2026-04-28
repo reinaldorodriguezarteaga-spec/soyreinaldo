@@ -178,12 +178,33 @@ function LeaguesList({
         </details>
       )}
 
+      <Link
+        href="/quiniela/partidos"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 p-6 transition hover:border-indigo-300"
+      >
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
+            Pronósticos
+          </p>
+          <p className="mt-1.5 text-base font-semibold sm:text-lg">
+            Predecir los 104 partidos del Mundial
+          </p>
+          <p className="mt-1 text-sm text-zinc-400">
+            Por fase: Fecha 1 · 2 · 3 · Dieciseisavos · Octavos · Cuartos ·
+            Semis · Final
+          </p>
+        </div>
+        <span className="shrink-0 text-2xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
+          →
+        </span>
+      </Link>
+
       <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-6 text-sm text-zinc-400">
         <p className="text-xs uppercase tracking-widest text-indigo-300">
           Próximamente
         </p>
         <p className="mt-2">
-          Pronósticos, picks de campeón/pichichi y ranking en vivo. En cuanto
+          Picks de campeón, subcampeón, pichichi y ranking en vivo. En cuanto
           estén listos, los verás aquí.
         </p>
       </div>
