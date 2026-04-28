@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
+import OAuthButton from "@/components/OAuthButton";
 import { signUp, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
@@ -12,7 +12,18 @@ export default function SignupForm() {
 
   return (
     <div className="space-y-5">
-      <GoogleSignInButton redirect="/quiniela" label="Registrarme con Google" />
+      <div className="space-y-3">
+        <OAuthButton
+          provider="google"
+          redirect="/quiniela"
+          label="Registrarme con Google"
+        />
+        <OAuthButton
+          provider="facebook"
+          redirect="/quiniela"
+          label="Registrarme con Facebook"
+        />
+      </div>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-zinc-800" />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
+import OAuthButton from "@/components/OAuthButton";
 import {
   signInWithMagicLink,
   signInWithPassword,
@@ -26,7 +26,10 @@ export default function LoginForm({ redirect }: { redirect: string }) {
 
   return (
     <div className="space-y-5">
-      <GoogleSignInButton redirect={redirect} />
+      <div className="space-y-3">
+        <OAuthButton provider="google" redirect={redirect} />
+        <OAuthButton provider="facebook" redirect={redirect} />
+      </div>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-zinc-800" />

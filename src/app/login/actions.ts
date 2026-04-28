@@ -79,35 +79,46 @@ export async function signInWithPassword(
   redirect(redirectTarget);
 }
 
-export async function signInWithGoogle(formData: FormData) {
+type OAuthProvider = "google" | "facebook";
+
+const PROVIDER_LABELS: Record<OAuthProvider, string> = {
+  google: "Google",
+  facebook: "Facebook",
+};
+
+export async function signInWithOAuthProvider(formData: FormData) {
+  const provider = (formData.get("provider") as OAuthProvider | null) ?? "google";
   const redirectTarget =
     (formData.get("redirect") as string | null) ?? "/quiniela";
 
   const supabase = await createClient();
   const origin = await siteOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+    provider,
     options: {
       redirectTo: `${origin}/auth/callback?redirect=${encodeURIComponent(
         redirectTarget,
       )}`,
-      queryParams: {
-        access_type: "offline",
-        prompt: "consent",
-      },
+      ...(provider === "google" && {
+        queryParams: { access_type: "offline", prompt: "consent" },
+      }),
     },
   });
 
   if (error || !data?.url) {
     redirect(
       `/auth/error?reason=${encodeURIComponent(
-        error?.message ?? "No se pudo iniciar sesión con Google.",
+        error?.message ??
+          `No se pudo iniciar sesión con ${PROVIDER_LABELS[provider]}.`,
       )}`,
     );
   }
 
   redirect(data.url);
 }
+
+// Backwards-compatible alias kept so existing imports keep working.
+export const signInWithGoogle = signInWithOAuthProvider;
 
 export async function signOut() {
   const supabase = await createClient();
