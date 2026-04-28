@@ -31,13 +31,26 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Cargar las ligas del usuario para alimentar el dropdown del header
+  let userLeagues: { id: string; name: string }[] = [];
+  if (user) {
+    const { data } = await supabase
+      .from("league_members")
+      .select("league:leagues(id, name)")
+      .order("joined_at", { ascending: true })
+      .returns<{ league: { id: string; name: string } | null }[]>();
+    userLeagues = (data ?? [])
+      .map((r) => r.league)
+      .filter((l): l is { id: string; name: string } => !!l);
+  }
+
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header initialUser={user} />
+        <Header initialUser={user} userLeagues={userLeagues} />
         {children}
       </body>
     </html>

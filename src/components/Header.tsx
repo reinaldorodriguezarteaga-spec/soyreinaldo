@@ -18,15 +18,22 @@ const productos = [
   },
 ];
 
+type League = { id: string; name: string };
+
 export default function Header({
   initialUser,
+  userLeagues = [],
 }: {
   initialUser: User | null;
+  userLeagues?: League[];
 }) {
   const [openProductos, setOpenProductos] = useState(false);
+  const [openQuiniela, setOpenQuiniela] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileProductosOpen, setMobileProductosOpen] = useState(false);
+  const [mobileQuinielaOpen, setMobileQuinielaOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const quinielaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!openProductos) return;
@@ -41,6 +48,22 @@ export default function Header({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openProductos]);
+
+  useEffect(() => {
+    if (!openQuiniela) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        quinielaRef.current &&
+        !quinielaRef.current.contains(event.target as Node)
+      ) {
+        setOpenQuiniela(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openQuiniela]);
+
+  const hasLeagues = userLeagues.length > 0;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-900 bg-black/70 backdrop-blur-md">
@@ -94,12 +117,73 @@ export default function Header({
               </div>
             )}
           </div>
-          <Link
-            href="/quiniela"
-            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
-          >
-            Quiniela
-          </Link>
+          {hasLeagues ? (
+            <div ref={quinielaRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenQuiniela((o) => !o)}
+                aria-expanded={openQuiniela}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+              >
+                Quiniela
+                <svg
+                  className={`h-3.5 w-3.5 transition-transform ${openQuiniela ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {openQuiniela && (
+                <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl">
+                  {userLeagues.map((l, idx) => (
+                    <div key={l.id}>
+                      {idx > 0 && (
+                        <div className="my-1 border-t border-zinc-900" />
+                      )}
+                      <DropdownItem
+                        href="/quiniela/partidos"
+                        title="Predicciones"
+                        suffix={l.name}
+                        onClose={() => setOpenQuiniela(false)}
+                      />
+                      <DropdownItem
+                        href={`/quiniela/ranking/${l.id}`}
+                        title="Ranking"
+                        suffix={l.name}
+                        onClose={() => setOpenQuiniela(false)}
+                      />
+                    </div>
+                  ))}
+                  <div className="my-1 border-t border-zinc-900" />
+                  <DropdownItem
+                    href="/quiniela/picks"
+                    title="Picks especiales"
+                    onClose={() => setOpenQuiniela(false)}
+                  />
+                  <DropdownItem
+                    href="/quiniela"
+                    title="Mi quiniela"
+                    muted
+                    onClose={() => setOpenQuiniela(false)}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/quiniela"
+              className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+            >
+              Quiniela
+            </Link>
+          )}
           <Link
             href="/redes"
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
@@ -208,13 +292,86 @@ export default function Header({
           )}
 
           <div className="mt-2 border-t border-zinc-900 pt-2">
-            <Link
-              href="/quiniela"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
-            >
-              Quiniela
-            </Link>
+            {hasLeagues ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMobileQuinielaOpen((o) => !o)}
+                  aria-expanded={mobileQuinielaOpen}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+                >
+                  <span>Quiniela</span>
+                  <svg
+                    className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${mobileQuinielaOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {mobileQuinielaOpen && (
+                  <div className="mt-1 flex flex-col gap-0.5 pl-2">
+                    {userLeagues.map((l, idx) => (
+                      <div key={l.id}>
+                        {idx > 0 && (
+                          <div className="my-1 border-t border-zinc-900" />
+                        )}
+                        <MobileItem
+                          href="/quiniela/partidos"
+                          title="Predicciones"
+                          suffix={l.name}
+                          onClose={() => {
+                            setMobileOpen(false);
+                            setMobileQuinielaOpen(false);
+                          }}
+                        />
+                        <MobileItem
+                          href={`/quiniela/ranking/${l.id}`}
+                          title="Ranking"
+                          suffix={l.name}
+                          onClose={() => {
+                            setMobileOpen(false);
+                            setMobileQuinielaOpen(false);
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <div className="my-1 border-t border-zinc-900" />
+                    <MobileItem
+                      href="/quiniela/picks"
+                      title="Picks especiales"
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
+                    <MobileItem
+                      href="/quiniela"
+                      title="Mi quiniela"
+                      muted
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <Link
+                href="/quiniela"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+              >
+                Quiniela
+              </Link>
+            )}
             <Link
               href="/redes"
               onClick={() => setMobileOpen(false)}
@@ -247,5 +404,61 @@ export default function Header({
         </div>
       )}
     </header>
+  );
+}
+
+function DropdownItem({
+  href,
+  title,
+  suffix,
+  muted,
+  onClose,
+}: {
+  href: string;
+  title: string;
+  suffix?: string;
+  muted?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900 ${
+        muted ? "text-zinc-400" : "text-white"
+      }`}
+    >
+      <span>{title}</span>
+      {suffix && (
+        <span className="truncate text-xs text-zinc-500">{suffix}</span>
+      )}
+    </Link>
+  );
+}
+
+function MobileItem({
+  href,
+  title,
+  suffix,
+  muted,
+  onClose,
+}: {
+  href: string;
+  title: string;
+  suffix?: string;
+  muted?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900 ${
+        muted ? "text-zinc-400" : "text-white"
+      }`}
+    >
+      <span>{title}</span>
+      {suffix && <span className="text-xs text-zinc-500">{suffix}</span>}
+    </Link>
   );
 }
