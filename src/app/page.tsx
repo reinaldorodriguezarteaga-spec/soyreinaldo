@@ -123,9 +123,11 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-widest text-zinc-500">
-                    WhatsApp
+                    WhatsApp · Grupo
                   </p>
-                  <p className="text-base font-semibold">Grupo de la comunidad</p>
+                  <p className="text-base font-semibold">
+                    Los conos de WhatsApp
+                  </p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-zinc-400">
@@ -155,7 +157,10 @@ export default function Home() {
                     Canal de Instagram
                   </p>
                   <p className="text-base font-semibold">
-                    +3.200 miembros
+                    Los conos de Instagram
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    +3.200 conos
                   </p>
                 </div>
               </div>
