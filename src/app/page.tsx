@@ -22,7 +22,7 @@ export default function Home() {
               </p>
             </header>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href="/quiniela"
                 className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-indigo-300 hover:bg-zinc-900"
@@ -65,6 +65,24 @@ export default function Home() {
                 </div>
               </Link>
             </div>
+
+            <Link
+              href="/camisetas"
+              className="group mt-3 flex items-center justify-between gap-4 overflow-hidden rounded-2xl border border-indigo-400/20 bg-gradient-to-r from-[#a50044]/20 via-zinc-950 to-[#154284]/25 p-5 transition hover:border-indigo-300"
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-indigo-300 sm:text-xs">
+                  Tienda partner
+                </p>
+                <p className="mt-1 text-sm font-semibold sm:text-base">
+                  Camisetas oficiales con código{" "}
+                  <span className="font-mono text-indigo-300">REY15</span>
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-medium text-indigo-300 transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
+            </Link>
           </div>
 
           <div className="relative mx-auto w-full max-w-[280px] sm:max-w-none">

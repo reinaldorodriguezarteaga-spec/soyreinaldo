@@ -16,6 +16,11 @@ const productos = [
     label: "Media Kit",
     desc: "Audiencia, tarifas y formatos para marcas",
   },
+  {
+    href: "/camisetas",
+    label: "Camisetas",
+    desc: "Tienda partner con tu código de descuento",
+  },
 ];
 
 export default function Header({

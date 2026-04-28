@@ -1,5 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  InstagramLogo,
+  TikTokLogo,
+  YouTubeLogo,
+} from "@/components/social-logos";
 
 export const metadata = {
   title: "Redes | Soy Reinaldo",
@@ -18,25 +23,35 @@ function VerifiedBadge({ color = "#3897F0" }: { color?: string }) {
         fill={color}
         d="M12 1.5l2.6 1.9 3.2-.4 1 3.1 2.6 1.9-1 3.1 1 3.1-2.6 1.9-1 3.1-3.2-.4L12 22.5l-2.6-1.9-3.2.4-1-3.1-2.6-1.9 1-3.1-1-3.1 2.6-1.9 1-3.1 3.2.4L12 1.5z"
       />
-      <path
-        fill="#fff"
-        d="M10.5 15.3l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z"
-      />
+      <path fill="#fff" d="M10.5 15.3l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
     </svg>
   );
 }
 
-function Avatar({ ring }: { ring?: string }) {
+function AvatarWithLogo({
+  ring,
+  logo,
+  bgClass,
+}: {
+  ring?: string;
+  logo: React.ReactNode;
+  bgClass?: string;
+}) {
   return (
-    <Image
-      src="/branding/avatar.jpg"
-      alt="Reinaldo"
-      width={160}
-      height={160}
-      className={`h-16 w-16 shrink-0 rounded-full object-cover ${
-        ring ?? "ring-2 ring-zinc-700"
-      }`}
-    />
+    <div className="relative shrink-0">
+      <Image
+        src="/branding/avatar.jpg"
+        alt="Reinaldo"
+        width={160}
+        height={160}
+        className={`h-16 w-16 rounded-full object-cover ${ring ?? "ring-2 ring-zinc-700"}`}
+      />
+      <div
+        className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-zinc-950 ${bgClass ?? "bg-zinc-950"}`}
+      >
+        {logo}
+      </div>
+    </div>
   );
 }
 
@@ -65,14 +80,13 @@ export default function RedesPage() {
         </header>
 
         <div className="space-y-4">
-          {/* YouTube */}
           <a
             href="https://www.youtube.com/@SoyReinaldoR"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
           >
-            <Avatar ring="ring-2 ring-zinc-700" />
+            <AvatarWithLogo logo={<YouTubeLogo className="h-4 w-4" />} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <h2 className="truncate text-base font-semibold sm:text-lg">
@@ -81,32 +95,33 @@ export default function RedesPage() {
                 <VerifiedBadge color="#FF0000" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                9K suscriptores · +1,2M visualizaciones/mes
+                YouTube · 9K suscriptores · +1,2M visualizaciones/mes
               </p>
             </div>
-            <span className="hidden shrink-0 rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition group-hover:bg-red-700 sm:inline-block">
-              Suscribirme
-            </span>
-            <span className="shrink-0 rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:hidden">
+            <span className="shrink-0 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:px-5 sm:py-2.5 sm:text-sm">
               Suscribirme
             </span>
           </a>
 
-          {/* Instagram */}
           <a
             href="https://www.instagram.com/soyreinaldor/"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
           >
-            <div className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
-              <Image
-                src="/branding/avatar.jpg"
-                alt="Reinaldo"
-                width={160}
-                height={160}
-                className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
-              />
+            <div className="relative shrink-0">
+              <div className="rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
+                <Image
+                  src="/branding/avatar.jpg"
+                  alt="Reinaldo"
+                  width={160}
+                  height={160}
+                  className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 ring-2 ring-zinc-950">
+                <InstagramLogo className="h-4 w-4" />
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
@@ -116,22 +131,21 @@ export default function RedesPage() {
                 <VerifiedBadge color="#3897F0" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                54K seguidores · +7,7M visualizaciones/mes
+                Instagram · 54K seguidores · +7,7M visualizaciones/mes
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-5 py-2.5 text-sm font-semibold text-white transition group-hover:opacity-90">
+            <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
               Seguir
             </span>
           </a>
 
-          {/* TikTok */}
           <a
             href="https://www.tiktok.com/@soyreinaldor"
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
+            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
           >
-            <Avatar ring="ring-2 ring-zinc-700" />
+            <AvatarWithLogo logo={<TikTokLogo className="h-4 w-4" />} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <h2 className="truncate text-base font-semibold sm:text-lg">
@@ -140,10 +154,10 @@ export default function RedesPage() {
                 <VerifiedBadge color="#25F4EE" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                32K seguidores · +7M visualizaciones/mes
+                TikTok · 32K seguidores · +7M visualizaciones/mes
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-[#FE2C55] px-5 py-2.5 text-sm font-semibold text-white transition group-hover:bg-[#e6234a]">
+            <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
               Seguir
             </span>
           </a>

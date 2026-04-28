@@ -1,5 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import {
+  InstagramLogo,
+  TikTokLogo,
+  YouTubeLogo,
+} from "@/components/social-logos";
 
 export const metadata = {
   title: "Contacto | Soy Reinaldo",
@@ -94,17 +99,28 @@ function VerifiedBadge({ color = "#3897F0" }: { color?: string }) {
   );
 }
 
-function Avatar({ ring }: { ring?: string }) {
+function AvatarWithLogo({
+  ring,
+  logo,
+}: {
+  ring?: string;
+  logo: React.ReactNode;
+}) {
   return (
-    <Image
-      src="/branding/avatar.jpg"
-      alt="Reinaldo"
-      width={160}
-      height={160}
-      className={`h-16 w-16 shrink-0 rounded-full object-cover ${
-        ring ?? "ring-2 ring-zinc-700"
-      }`}
-    />
+    <div className="relative shrink-0">
+      <Image
+        src="/branding/avatar.jpg"
+        alt="Reinaldo"
+        width={160}
+        height={160}
+        className={`h-16 w-16 rounded-full object-cover ${
+          ring ?? "ring-2 ring-zinc-700"
+        }`}
+      />
+      <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 ring-2 ring-zinc-950">
+        {logo}
+      </div>
+    </div>
   );
 }
 
@@ -210,7 +226,7 @@ export default function ContactoPage() {
               rel="noopener noreferrer"
               className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
             >
-              <Avatar ring="ring-2 ring-zinc-700" />
+              <AvatarWithLogo logo={<YouTubeLogo className="h-4 w-4" />} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h3 className="truncate text-base font-semibold sm:text-lg">
@@ -219,7 +235,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#FF0000" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  9K suscriptores · +1,2M visualizaciones/mes
+                  YouTube · 9K suscriptores · +1,2M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -233,14 +249,19 @@ export default function ContactoPage() {
               rel="noopener noreferrer"
               className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
             >
-              <div className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
-                <Image
-                  src="/branding/avatar.jpg"
-                  alt="Reinaldo"
-                  width={160}
-                  height={160}
-                  className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
-                />
+              <div className="relative shrink-0">
+                <div className="rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
+                  <Image
+                    src="/branding/avatar.jpg"
+                    alt="Reinaldo"
+                    width={160}
+                    height={160}
+                    className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
+                  />
+                </div>
+                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 ring-2 ring-zinc-950">
+                  <InstagramLogo className="h-4 w-4" />
+                </div>
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -250,7 +271,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#3897F0" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  54K seguidores · +7,7M visualizaciones/mes
+                  Instagram · 54K seguidores · +7,7M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -264,7 +285,7 @@ export default function ContactoPage() {
               rel="noopener noreferrer"
               className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
             >
-              <Avatar ring="ring-2 ring-zinc-700" />
+              <AvatarWithLogo logo={<TikTokLogo className="h-4 w-4" />} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h3 className="truncate text-base font-semibold sm:text-lg">
@@ -273,7 +294,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#25F4EE" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  32K seguidores · +7M visualizaciones/mes
+                  TikTok · 32K seguidores · +7M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
