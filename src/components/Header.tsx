@@ -142,31 +142,29 @@ export default function Header({
               </button>
               {openQuiniela && (
                 <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl">
-                  {userLeagues.map((l, idx) => (
-                    <div key={l.id}>
-                      {idx > 0 && (
-                        <div className="my-1 border-t border-zinc-900" />
-                      )}
-                      <DropdownItem
-                        href="/quiniela/partidos"
-                        title="Predicciones"
-                        suffix={l.name}
-                        onClose={() => setOpenQuiniela(false)}
-                      />
-                      <DropdownItem
-                        href={`/quiniela/ranking/${l.id}`}
-                        title="Ranking"
-                        suffix={l.name}
-                        onClose={() => setOpenQuiniela(false)}
-                      />
-                    </div>
-                  ))}
-                  <div className="my-1 border-t border-zinc-900" />
+                  <DropdownItem
+                    href="/quiniela/partidos"
+                    title="Predicciones"
+                    onClose={() => setOpenQuiniela(false)}
+                  />
                   <DropdownItem
                     href="/quiniela/picks"
                     title="Picks especiales"
                     onClose={() => setOpenQuiniela(false)}
                   />
+                  <div className="my-1 border-t border-zinc-900" />
+                  <p className="px-3 pb-1 pt-1 text-[10px] uppercase tracking-widest text-zinc-600">
+                    Rankings
+                  </p>
+                  {userLeagues.map((l) => (
+                    <DropdownItem
+                      key={l.id}
+                      href={`/quiniela/ranking/${l.id}`}
+                      title={l.name}
+                      onClose={() => setOpenQuiniela(false)}
+                    />
+                  ))}
+                  <div className="my-1 border-t border-zinc-900" />
                   <DropdownItem
                     href="/quiniela"
                     title="Mi quiniela"
@@ -317,32 +315,14 @@ export default function Header({
                 </button>
                 {mobileQuinielaOpen && (
                   <div className="mt-1 flex flex-col gap-0.5 pl-2">
-                    {userLeagues.map((l, idx) => (
-                      <div key={l.id}>
-                        {idx > 0 && (
-                          <div className="my-1 border-t border-zinc-900" />
-                        )}
-                        <MobileItem
-                          href="/quiniela/partidos"
-                          title="Predicciones"
-                          suffix={l.name}
-                          onClose={() => {
-                            setMobileOpen(false);
-                            setMobileQuinielaOpen(false);
-                          }}
-                        />
-                        <MobileItem
-                          href={`/quiniela/ranking/${l.id}`}
-                          title="Ranking"
-                          suffix={l.name}
-                          onClose={() => {
-                            setMobileOpen(false);
-                            setMobileQuinielaOpen(false);
-                          }}
-                        />
-                      </div>
-                    ))}
-                    <div className="my-1 border-t border-zinc-900" />
+                    <MobileItem
+                      href="/quiniela/partidos"
+                      title="Predicciones"
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
                     <MobileItem
                       href="/quiniela/picks"
                       title="Picks especiales"
@@ -351,6 +331,22 @@ export default function Header({
                         setMobileQuinielaOpen(false);
                       }}
                     />
+                    <div className="my-1 border-t border-zinc-900" />
+                    <p className="px-3 pb-1 pt-1 text-[10px] uppercase tracking-widest text-zinc-600">
+                      Rankings
+                    </p>
+                    {userLeagues.map((l) => (
+                      <MobileItem
+                        key={l.id}
+                        href={`/quiniela/ranking/${l.id}`}
+                        title={l.name}
+                        onClose={() => {
+                          setMobileOpen(false);
+                          setMobileQuinielaOpen(false);
+                        }}
+                      />
+                    ))}
+                    <div className="my-1 border-t border-zinc-900" />
                     <MobileItem
                       href="/quiniela"
                       title="Mi quiniela"
