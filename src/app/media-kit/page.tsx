@@ -560,9 +560,14 @@ export default function MediaKitPage() {
             name="Estadísticas Facebook"
             period="últimos 30 días"
           />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {fbStats.map((s) => (
-              <MetricCard key={s.label} metric={s} />
+              <div
+                key={s.label}
+                className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]"
+              >
+                <MetricCard metric={s} />
+              </div>
             ))}
           </div>
           <div className="mt-5">
@@ -576,9 +581,14 @@ export default function MediaKitPage() {
             name="Estadísticas TikTok"
             period="últimos 30 días"
           />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {tiktokStats.map((s) => (
-              <MetricCard key={s.label} metric={s} />
+              <div
+                key={s.label}
+                className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]"
+              >
+                <MetricCard metric={s} />
+              </div>
             ))}
           </div>
         </section>
