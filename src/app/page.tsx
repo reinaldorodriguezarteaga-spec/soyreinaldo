@@ -182,8 +182,22 @@ export default function Home() {
           <DonationCard />
         </section>
 
-        <footer className="mt-16 text-center text-xs text-zinc-600 sm:mt-20 sm:text-left">
-          © {new Date().getFullYear()} Reinaldo Rodríguez · Fútbol con Reinaldo
+        <footer className="mt-16 flex flex-col gap-3 text-center text-xs text-zinc-600 sm:mt-20 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <p>
+            © {new Date().getFullYear()} Reinaldo Rodríguez · Fútbol con
+            Reinaldo
+          </p>
+          <div className="flex justify-center gap-4 sm:justify-end">
+            <Link href="/privacidad" className="transition hover:text-zinc-300">
+              Privacidad
+            </Link>
+            <Link
+              href="/eliminar-datos"
+              className="transition hover:text-zinc-300"
+            >
+              Eliminar mis datos
+            </Link>
+          </div>
         </footer>
       </div>
     </main>
