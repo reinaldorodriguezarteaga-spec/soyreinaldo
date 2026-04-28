@@ -42,6 +42,15 @@ export default async function AdminLayout({
             <Link href="/admin/ligas" className="hover:text-white">
               Ligas
             </Link>
+            <Link href="/admin/partidos" className="hover:text-white">
+              Resultados
+            </Link>
+            <Link
+              href="/admin/resultado-final"
+              className="hover:text-white"
+            >
+              Final
+            </Link>
           </nav>
         </div>
       </div>

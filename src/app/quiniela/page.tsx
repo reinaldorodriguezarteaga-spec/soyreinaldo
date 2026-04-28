@@ -152,16 +152,24 @@ function LeaguesList({
                   <p className="mt-1 text-sm text-zinc-400">{l.description}</p>
                 )}
               </div>
-              <form action={leaveLeague} className="shrink-0">
-                <input type="hidden" name="league_id" value={l.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-zinc-500 transition hover:text-red-300"
-                  title="Salir de esta liga"
+              <div className="flex shrink-0 items-center gap-3">
+                <Link
+                  href={`/quiniela/ranking/${l.id}`}
+                  className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-indigo-300 hover:text-white"
                 >
-                  Salir
-                </button>
-              </form>
+                  Ver ranking →
+                </Link>
+                <form action={leaveLeague}>
+                  <input type="hidden" name="league_id" value={l.id} />
+                  <button
+                    type="submit"
+                    className="text-xs text-zinc-500 transition hover:text-red-300"
+                    title="Salir de esta liga"
+                  >
+                    Salir
+                  </button>
+                </form>
+              </div>
             </article>
           ))}
         </div>
