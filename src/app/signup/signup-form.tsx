@@ -12,18 +12,12 @@ export default function SignupForm() {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-3">
-        <OAuthButton
-          provider="google"
-          redirect="/quiniela"
-          label="Registrarme con Google"
-        />
-        <OAuthButton
-          provider="facebook"
-          redirect="/quiniela"
-          label="Registrarme con Facebook"
-        />
-      </div>
+      <OAuthButton
+        provider="google"
+        redirect="/quiniela"
+        label="Registrarme con Google"
+      />
+      {/* Facebook OAuth disabled until verification is approved. */}
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-zinc-800" />

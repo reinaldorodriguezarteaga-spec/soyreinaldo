@@ -26,10 +26,9 @@ export default function LoginForm({ redirect }: { redirect: string }) {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-3">
-        <OAuthButton provider="google" redirect={redirect} />
-        <OAuthButton provider="facebook" redirect={redirect} />
-      </div>
+      <OAuthButton provider="google" redirect={redirect} />
+      {/* Facebook OAuth disabled until business/individual verification is approved.
+          Keep <OAuthButton provider="facebook" /> ready to re-enable. */}
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-zinc-800" />

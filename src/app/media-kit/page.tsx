@@ -480,11 +480,11 @@ export default function MediaKitPage() {
           <h2 className="text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
             Presencia en redes
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-5 flex flex-wrap justify-center gap-4">
             {platforms.map((p) => (
               <div
                 key={p.name}
-                className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6"
+                className="relative w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
               >
                 <div
                   aria-hidden
