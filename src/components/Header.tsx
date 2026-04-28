@@ -30,6 +30,7 @@ export default function Header({
 }) {
   const [openProductos, setOpenProductos] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileProductosOpen, setMobileProductosOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -163,24 +164,49 @@ export default function Header({
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-zinc-900 bg-zinc-950 px-6 py-5 md:hidden">
-          <div className="mb-3 text-xs uppercase tracking-[0.2em] text-zinc-500">
-            Productos
-          </div>
-          <div className="flex flex-col gap-1">
-            {productos.map((p) => (
-              <Link
-                key={p.href}
-                href={p.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2.5 transition hover:bg-zinc-900"
-              >
-                <div className="text-sm font-medium">{p.label}</div>
-                <div className="mt-0.5 text-xs text-zinc-400">{p.desc}</div>
-              </Link>
-            ))}
-          </div>
-          <div className="mt-5 border-t border-zinc-900 pt-4">
+        <div className="border-t border-zinc-900 bg-zinc-950 px-6 py-4 md:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileProductosOpen((o) => !o)}
+            aria-expanded={mobileProductosOpen}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+          >
+            <span>Productos</span>
+            <svg
+              className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${mobileProductosOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {mobileProductosOpen && (
+            <div className="mt-1 flex flex-col gap-1 pl-2">
+              {productos.map((p) => (
+                <Link
+                  key={p.href}
+                  href={p.href}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setMobileProductosOpen(false);
+                  }}
+                  className="rounded-lg px-3 py-2.5 transition hover:bg-zinc-900"
+                >
+                  <div className="text-sm font-medium">{p.label}</div>
+                  <div className="mt-0.5 text-xs text-zinc-400">{p.desc}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-2 border-t border-zinc-900 pt-2">
             <Link
               href="/quiniela"
               onClick={() => setMobileOpen(false)}
