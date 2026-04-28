@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  FacebookLogo,
   InstagramLogo,
+  ThreadsLogo,
   TikTokLogo,
   YouTubeLogo,
 } from "@/components/social-logos";
@@ -24,7 +26,9 @@ type MetricKey =
   | "viewers"
   | "newViewers"
   | "subscribers"
-  | "watchTime";
+  | "watchTime"
+  | "playsShort"
+  | "playsLong";
 
 type Metric = { key: MetricKey; value: string; label: string };
 
@@ -32,15 +36,23 @@ const platforms = [
   {
     name: "Instagram",
     handle: "@SoyReinaldoR",
-    metric: "54K",
+    metric: "54.400",
     label: "Seguidores",
     accent: "from-yellow-400 via-pink-600 to-purple-700",
     Logo: InstagramLogo,
   },
   {
+    name: "Facebook",
+    handle: "Fútbol con Reinaldo",
+    metric: "34.001",
+    label: "Seguidores",
+    accent: "from-blue-500 via-blue-600 to-blue-700",
+    Logo: FacebookLogo,
+  },
+  {
     name: "TikTok",
     handle: "@SoyReinaldoR",
-    metric: "32K",
+    metric: "34.300",
     label: "Seguidores activos",
     accent: "from-[#25F4EE] via-zinc-700 to-[#FE2C55]",
     Logo: TikTokLogo,
@@ -48,12 +60,25 @@ const platforms = [
   {
     name: "YouTube",
     handle: "Fútbol con Reinaldo",
-    metric: "9K",
+    metric: "8.948",
     label: "Suscriptores fieles",
     accent: "from-red-500 via-red-600 to-red-700",
     Logo: YouTubeLogo,
   },
+  {
+    name: "Threads",
+    handle: "@SoyReinaldoR",
+    metric: "7.315",
+    label: "Seguidores",
+    accent: "from-zinc-300 via-zinc-500 to-zinc-700",
+    Logo: ThreadsLogo,
+  },
 ] as const;
+
+const TOTAL_FOLLOWERS = platforms.reduce(
+  (acc, p) => acc + Number(p.metric.replace(/\./g, "")),
+  0,
+);
 
 const igStats: Metric[] = [
   { key: "interactions", label: "Interacciones totales", value: "957.600" },
@@ -66,6 +91,19 @@ const igStats: Metric[] = [
   { key: "reposts", label: "Reposts", value: "15.293" },
 ];
 
+const fbStats: Metric[] = [
+  { key: "views", label: "Visualizaciones", value: "2,2M" },
+  { key: "viewers", label: "Espectadores", value: "969.673" },
+  { key: "interactions", label: "Interacciones", value: "190.972" },
+  { key: "playsShort", label: "Reproducciones de 3s", value: "816.435" },
+  { key: "playsLong", label: "Reproducciones de 1 min", value: "138.686" },
+];
+
+const fbDistribution = [
+  { label: "Reels", percent: 85.2, color: "bg-indigo-300" },
+  { label: "Foto", percent: 14.4, color: "bg-blue-500" },
+];
+
 const tiktokStats: Metric[] = [
   { key: "viewers", label: "Espectadores totales", value: "4,4M" },
   { key: "newViewers", label: "Espectadores nuevos", value: "2,7M" },
@@ -75,9 +113,13 @@ const tiktokStats: Metric[] = [
 ];
 
 const ytStats: Metric[] = [
-  { key: "subscribers", label: "Suscriptores fieles", value: "+8.000" },
-  { key: "views", label: "Visualizaciones / mes", value: "+1,2M" },
+  { key: "subscribers", label: "Suscriptores fieles", value: "+9.000" },
+  { key: "views", label: "Visualizaciones / mes", value: "+1,8M" },
   { key: "watchTime", label: "Tiempo visto / mes", value: "6.500h" },
+];
+
+const threadsStats: Metric[] = [
+  { key: "views", label: "Visualizaciones", value: "670" },
 ];
 
 const igDistribution = [
@@ -239,6 +281,8 @@ function MetricIcon({ name }: { name: MetricKey }) {
         </svg>
       );
     case "watchTime":
+    case "playsShort":
+    case "playsLong":
       return (
         <svg {...props}>
           <circle cx="12" cy="12" r="9" />
@@ -264,6 +308,38 @@ function MetricCard({ metric }: { metric: Metric }) {
         </div>
       </div>
       <div className="mt-2 text-xs text-zinc-400">{metric.label}</div>
+    </div>
+  );
+}
+
+function DistributionBars({
+  data,
+}: {
+  data: { label: string; percent: number; color: string }[];
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+      <div className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
+        Distribución de contenido
+      </div>
+      <div className="mt-4 space-y-3">
+        {data.map((row) => (
+          <div key={row.label}>
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <span className="text-zinc-300">{row.label}</span>
+              <span className="tabular-nums text-zinc-400">
+                {row.percent.toLocaleString("es-ES")}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
+              <div
+                className={`h-full rounded-full ${row.color}`}
+                style={{ width: `${row.percent}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -341,7 +417,7 @@ export default function MediaKitPage() {
   return (
     <main className="flex flex-1 flex-col px-6 py-16">
       <div className="mx-auto w-full max-w-4xl">
-        <header className="relative mb-16 overflow-hidden rounded-3xl border border-zinc-800">
+        <header className="relative mb-12 overflow-hidden rounded-3xl border border-zinc-800">
           <div className="relative aspect-[16/9]">
             <Image
               src="/branding/stream-cinematica.jpg"
@@ -367,11 +443,44 @@ export default function MediaKitPage() {
           </div>
         </header>
 
+        <section className="mb-12 overflow-hidden rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-950/40 via-zinc-950 to-zinc-950 p-8 sm:p-10">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
+                Audiencia total
+              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+                  {TOTAL_FOLLOWERS.toLocaleString("es-ES")}
+                </span>
+                <span className="text-base text-zinc-400">seguidores</span>
+              </div>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
+                Sumando Instagram, Facebook, TikTok, YouTube y Threads. La
+                comunidad culé que escucha cada vez que abro un directo.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {platforms.map((p) => (
+                <div
+                  key={p.name}
+                  className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5"
+                >
+                  <p.Logo className="h-4 w-4" />
+                  <span className="text-xs font-medium tabular-nums text-zinc-300">
+                    {p.metric}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mb-16">
           <h2 className="text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
             Presencia en redes
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {platforms.map((p) => (
               <div
                 key={p.name}
@@ -390,7 +499,7 @@ export default function MediaKitPage() {
                       {p.name}
                     </span>
                   </div>
-                  <div className="mt-5 text-5xl font-semibold tracking-tight text-indigo-300">
+                  <div className="mt-5 text-4xl font-semibold tracking-tight text-indigo-300 sm:text-5xl">
                     {p.metric}
                   </div>
                   <div className="mt-1 text-sm text-zinc-300">{p.label}</div>
@@ -440,28 +549,24 @@ export default function MediaKitPage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-              Distribución de contenido
-            </div>
-            <div className="mt-4 space-y-3">
-              {igDistribution.map((row) => (
-                <div key={row.label}>
-                  <div className="mb-1.5 flex items-center justify-between text-xs">
-                    <span className="text-zinc-300">{row.label}</span>
-                    <span className="tabular-nums text-zinc-400">
-                      {row.percent.toLocaleString("es-ES")}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
-                    <div
-                      className={`h-full rounded-full ${row.color}`}
-                      style={{ width: `${row.percent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-5">
+            <DistributionBars data={igDistribution} />
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <PlatformHeader
+            Logo={FacebookLogo}
+            name="Estadísticas Facebook"
+            period="últimos 30 días"
+          />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {fbStats.map((s) => (
+              <MetricCard key={s.label} metric={s} />
+            ))}
+          </div>
+          <div className="mt-5">
+            <DistributionBars data={fbDistribution} />
           </div>
         </section>
 
@@ -486,6 +591,19 @@ export default function MediaKitPage() {
           />
           <div className="grid gap-3 sm:grid-cols-3">
             {ytStats.map((s) => (
+              <MetricCard key={s.label} metric={s} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <PlatformHeader
+            Logo={ThreadsLogo}
+            name="Estadísticas Threads"
+            period="últimos 30 días"
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            {threadsStats.map((s) => (
               <MetricCard key={s.label} metric={s} />
             ))}
           </div>

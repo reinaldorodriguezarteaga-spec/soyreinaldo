@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  FacebookLogo,
   InstagramLogo,
+  ThreadsLogo,
   TikTokLogo,
   YouTubeLogo,
 } from "@/components/social-logos";
@@ -235,7 +237,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#FF0000" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  YouTube · 9K suscriptores · +1,2M visualizaciones/mes
+                  YouTube · +9.000 suscriptores · +1,8M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -271,7 +273,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#3897F0" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  Instagram · 54K seguidores · +7,7M visualizaciones/mes
+                  Instagram · 54,4K seguidores · +7,7M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -294,10 +296,56 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#25F4EE" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  TikTok · 32K seguidores · +4M visualizaciones/mes
+                  TikTok · 34,3K seguidores · +4M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
+                Seguir
+              </span>
+            </a>
+
+            <a
+              href="https://www.facebook.com/soyreinaldor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
+            >
+              <AvatarWithLogo logo={<FacebookLogo className="h-4 w-4" />} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="truncate text-base font-semibold sm:text-lg">
+                    Fútbol con Reinaldo
+                  </h3>
+                  <VerifiedBadge color="#1877F2" />
+                </div>
+                <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+                  Facebook · 34K seguidores · +2,2M visualizaciones/mes
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#1877F2] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#1465d8] sm:px-5 sm:py-2.5 sm:text-sm">
+                Seguir
+              </span>
+            </a>
+
+            <a
+              href="https://www.threads.net/@soyreinaldor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
+            >
+              <AvatarWithLogo logo={<ThreadsLogo className="h-4 w-4 text-white" />} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="truncate text-base font-semibold sm:text-lg">
+                    @SoyReinaldoR
+                  </h3>
+                  <VerifiedBadge color="#a1a1aa" />
+                </div>
+                <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+                  Threads · 7,3K seguidores
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition group-hover:bg-zinc-200 sm:px-5 sm:py-2.5 sm:text-sm">
                 Seguir
               </span>
             </a>

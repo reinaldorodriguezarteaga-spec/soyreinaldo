@@ -16,10 +16,10 @@ export default function Home() {
                 Soy <span className="text-indigo-300">Reinaldo</span>.
               </h1>
               <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-zinc-400 sm:mx-0 sm:text-lg">
-                Cuento el fútbol desde la pasión culé. Más de{" "}
-                <span className="text-indigo-300">7,7M de visualizaciones</span>{" "}
-                en Instagram, +1,2M al mes en YouTube y 95.000 seguidores entre
-                todas mis redes.
+                Cuento el fútbol desde la pasión culé.{" "}
+                <span className="text-indigo-300">+138.000 seguidores</span>{" "}
+                entre Instagram, Facebook, TikTok, YouTube y Threads, y más de
+                7,7M de visualizaciones al mes solo en Instagram.
               </p>
             </header>
 
