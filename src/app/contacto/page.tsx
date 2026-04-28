@@ -150,6 +150,54 @@ export default function ContactoPage() {
           </p>
         </header>
 
+        <Link
+          href="/media-kit"
+          className="group relative mb-10 block overflow-hidden rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/20 via-zinc-950 to-purple-600/20 p-6 transition hover:border-indigo-300 sm:p-8"
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-indigo-500/20 blur-3xl transition group-hover:bg-indigo-400/30"
+          />
+          <div className="relative flex items-center gap-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-300 text-zinc-950 sm:h-16 sm:w-16">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+                />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-indigo-300 sm:text-xs">
+                Para marcas
+              </p>
+              <p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                MEDIA KIT
+              </p>
+              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+                Audiencia, métricas y tarifas · 138K seguidores · 15M views/mes
+              </p>
+            </div>
+            <span className="hidden shrink-0 items-center gap-2 rounded-full bg-indigo-300 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition group-hover:bg-indigo-200 sm:inline-flex">
+              Ver media kit
+              <span className="transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
+            </span>
+            <span className="shrink-0 text-2xl text-indigo-300 transition-transform group-hover:translate-x-0.5 sm:hidden">
+              →
+            </span>
+          </div>
+        </Link>
+
         <section className="mb-10">
           <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
             Email
@@ -352,18 +400,6 @@ export default function ContactoPage() {
           </div>
         </section>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-          <p className="text-sm text-zinc-400">
-            Para propuestas de marcas, te recomiendo echar antes un ojo a mi{" "}
-            <Link
-              href="/media-kit"
-              className="font-medium text-indigo-300 hover:text-indigo-200"
-            >
-              media kit
-            </Link>{" "}
-            con audiencia, métricas y tarifas.
-          </p>
-        </div>
       </div>
     </main>
   );

@@ -12,11 +12,6 @@ const productos = [
     desc: "IA que responde comentarios de YouTube en mi voz",
   },
   {
-    href: "/media-kit",
-    label: "Media Kit",
-    desc: "Audiencia, tarifas y formatos para marcas",
-  },
-  {
     href: "/camisetas",
     label: "Camisetas",
     desc: "Tienda partner con tu código de descuento",
@@ -116,6 +111,12 @@ export default function Header({
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
           >
             Estadios
+          </Link>
+          <Link
+            href="/media-kit"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            Media Kit
           </Link>
           <Link
             href="/contacto"
@@ -227,6 +228,13 @@ export default function Header({
               className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
             >
               Estadios
+            </Link>
+            <Link
+              href="/media-kit"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              Media Kit
             </Link>
             <Link
               href="/contacto"
