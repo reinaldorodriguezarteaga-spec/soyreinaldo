@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Camisetas oficiales con descuento | Soy Reinaldo",
+  title: "Camisetas con descuento | Soy Reinaldo",
   description:
-    "Camisetas de fútbol oficiales con descuento usando el código REY15. Selección de mi tienda partner.",
+    "Camisetas de fútbol con descuento usando el código REY15. Selección de mi tienda partner.",
 };
 
 const AFFILIATE_URL =
@@ -11,8 +11,8 @@ const AFFILIATE_URL =
 
 const beneficios = [
   {
-    title: "Réplicas oficiales",
-    desc: "Camisetas y equipaciones de los principales equipos y selecciones, en réplica oficial.",
+    title: "Réplicas de calidad",
+    desc: "Camisetas y equipaciones de los principales equipos y selecciones, en réplica de buena calidad.",
   },
   {
     title: "Personalización",
@@ -48,7 +48,7 @@ export default function CamisetasPage() {
             <span className="text-indigo-300">con descuento</span>.
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-            Mi tienda de confianza para camisetas oficiales del Barça, la
+            Mi tienda de confianza para camisetas del Barça, la
             selección y cualquier equipo grande. Con tu código personal te
             llevas el descuento aplicado al pasar por caja.
           </p>

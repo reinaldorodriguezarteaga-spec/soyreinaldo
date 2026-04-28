@@ -75,7 +75,7 @@ export default function Home() {
                   Tienda partner
                 </p>
                 <p className="mt-1 text-sm font-semibold sm:text-base">
-                  Camisetas oficiales con código{" "}
+                  Camisetas con código{" "}
                   <span className="font-mono text-indigo-300">REY15</span>
                 </p>
               </div>
