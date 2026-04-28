@@ -1,6 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import DonationCard from "@/components/DonationCard";
+import {
+  InstagramLogo,
+  WhatsAppLogo,
+} from "@/components/social-logos";
 
 export default function Home() {
   return (
@@ -103,6 +107,73 @@ export default function Home() {
         </div>
 
         <section className="mt-16 sm:mt-20">
+          <h2 className="text-xs uppercase tracking-[0.3em] text-indigo-300">
+            Únete a la comunidad
+          </h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <a
+              href="https://chat.whatsapp.com/IGLfZ6vPgL93t2yBOdJlvq?mode=gi_t"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-[#25D366]/60"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#25D366]/15">
+                  <WhatsAppLogo className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-zinc-500">
+                    WhatsApp
+                  </p>
+                  <p className="text-base font-semibold">Grupo de la comunidad</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                Charla diaria sobre fútbol con el resto de culés. Avisos de
+                directos y debates en tiempo real.
+              </p>
+              <div className="mt-5 inline-flex items-center text-sm font-medium text-[#25D366]">
+                Unirme
+                <span className="ml-1 transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
+              </div>
+            </a>
+
+            <a
+              href="https://www.instagram.com/channel/AbbBGATt0sCKBXEn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 transition hover:border-pink-500/60"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700">
+                  <InstagramLogo className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-zinc-500">
+                    Canal de Instagram
+                  </p>
+                  <p className="text-base font-semibold">
+                    +3.200 miembros
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                Avisos exclusivos, encuestas y contenido directo en tu
+                Instagram. Sin saturar el feed.
+              </p>
+              <div className="mt-5 inline-flex items-center text-sm font-medium text-pink-400">
+                Unirme
+                <span className="ml-1 transition-transform group-hover:translate-x-0.5">
+                  →
+                </span>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <section className="mt-12 sm:mt-16">
           <DonationCard />
         </section>
 

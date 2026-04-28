@@ -165,7 +165,7 @@ export default function RedesPage() {
           </a>
 
           <a
-            href="https://www.facebook.com/soyreinaldor"
+            href="https://www.facebook.com/SoyReinaldo"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
@@ -188,7 +188,7 @@ export default function RedesPage() {
           </a>
 
           <a
-            href="https://www.threads.net/@soyreinaldor"
+            href="https://www.threads.com/@soyreinaldor"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
