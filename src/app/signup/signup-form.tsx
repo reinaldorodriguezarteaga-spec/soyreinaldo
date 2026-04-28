@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { signUp, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
@@ -10,7 +11,18 @@ export default function SignupForm() {
   const [state, action, pending] = useActionState(signUp, initialState);
 
   return (
-    <form action={action} className="space-y-4">
+    <div className="space-y-5">
+      <GoogleSignInButton redirect="/quiniela" label="Registrarme con Google" />
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-zinc-800" />
+        <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+          o con email
+        </span>
+        <div className="h-px flex-1 bg-zinc-800" />
+      </div>
+
+      <form action={action} className="space-y-4">
       <Field
         label="Nombre"
         name="display_name"
@@ -72,16 +84,17 @@ export default function SignupForm() {
         </p>
       )}
 
-      <p className="text-center text-sm text-zinc-400">
-        ¿Ya tienes cuenta?{" "}
-        <Link
-          href="/login"
-          className="font-medium text-indigo-300 hover:text-indigo-200"
-        >
-          Iniciar sesión
-        </Link>
-      </p>
-    </form>
+        <p className="text-center text-sm text-zinc-400">
+          ¿Ya tienes cuenta?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-indigo-300 hover:text-indigo-200"
+          >
+            Iniciar sesión
+          </Link>
+        </p>
+      </form>
+    </div>
   );
 }
 

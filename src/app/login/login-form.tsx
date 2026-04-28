@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import {
   signInWithMagicLink,
   signInWithPassword,
@@ -25,6 +26,16 @@ export default function LoginForm({ redirect }: { redirect: string }) {
 
   return (
     <div className="space-y-5">
+      <GoogleSignInButton redirect={redirect} />
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-zinc-800" />
+        <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+          o con email
+        </span>
+        <div className="h-px flex-1 bg-zinc-800" />
+      </div>
+
       <div className="grid grid-cols-2 gap-1 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
         <button
           type="button"
