@@ -154,7 +154,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#25F4EE" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                TikTok · 32K seguidores · +7M visualizaciones/mes
+                TikTok · 32K seguidores · +4M visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
