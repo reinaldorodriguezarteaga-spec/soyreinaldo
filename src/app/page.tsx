@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import DonationCard from "@/components/DonationCard";
 
 export default function Home() {
   return (
@@ -100,6 +101,10 @@ export default function Home() {
             />
           </div>
         </div>
+
+        <section className="mt-16 sm:mt-20">
+          <DonationCard />
+        </section>
 
         <footer className="mt-16 text-center text-xs text-zinc-600 sm:mt-20 sm:text-left">
           © {new Date().getFullYear()} Reinaldo Rodríguez · Fútbol con Reinaldo
