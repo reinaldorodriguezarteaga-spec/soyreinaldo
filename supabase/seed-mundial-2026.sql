@@ -161,3 +161,15 @@ insert into public.matches (id, phase, team_home_placeholder, team_away_placehol
 insert into public.matches (id, phase, team_home_placeholder, team_away_placeholder, kickoff_at, venue) values (102, 'sf', 'W99', 'W100', '2026-07-15T15:00:00-04:00'::timestamptz, 'Atlanta') on conflict (id) do update set phase = excluded.phase, team_home_placeholder = excluded.team_home_placeholder, team_away_placeholder = excluded.team_away_placeholder, kickoff_at = excluded.kickoff_at, venue = excluded.venue;
 insert into public.matches (id, phase, team_home_placeholder, team_away_placeholder, kickoff_at, venue) values (103, 'third_place', 'L101', 'L102', '2026-07-18T17:00:00-04:00'::timestamptz, 'Miami (Miami Gardens)') on conflict (id) do update set phase = excluded.phase, team_home_placeholder = excluded.team_home_placeholder, team_away_placeholder = excluded.team_away_placeholder, kickoff_at = excluded.kickoff_at, venue = excluded.venue;
 insert into public.matches (id, phase, team_home_placeholder, team_away_placeholder, kickoff_at, venue) values (104, 'final', 'W101', 'W102', '2026-07-19T15:00:00-04:00'::timestamptz, 'New York/New Jersey (East Rutherford)') on conflict (id) do update set phase = excluded.phase, team_home_placeholder = excluded.team_home_placeholder, team_away_placeholder = excluded.team_away_placeholder, kickoff_at = excluded.kickoff_at, venue = excluded.venue;
+
+select count(*) as equipos from public.teams;
+
+select group_letter, count(*) as equipos
+from public.teams
+group by group_letter
+order by group_letter;
+
+select phase, count(*) as partidos
+from public.matches
+group by phase
+order by phase;
