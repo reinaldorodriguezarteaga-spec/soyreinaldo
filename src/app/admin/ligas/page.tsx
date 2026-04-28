@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CreateLeagueForm from "./create-league-form";
-import { deleteLeague } from "./actions";
 
 export const metadata = {
   title: "Ligas | Admin | Soy Reinaldo",
@@ -90,15 +90,12 @@ export default async function AdminLeaguesPage() {
                       {new Date(l.created_at).toLocaleDateString("es-ES")}
                     </p>
                   </div>
-                  <form action={deleteLeague} className="shrink-0">
-                    <input type="hidden" name="id" value={l.id} />
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-900/60 bg-red-950/30 px-3 py-2 text-xs font-medium text-red-300 transition hover:border-red-500 hover:text-red-200"
-                    >
-                      Borrar
-                    </button>
-                  </form>
+                  <Link
+                    href={`/admin/ligas/${l.id}`}
+                    className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-200 transition hover:border-indigo-300 hover:text-white"
+                  >
+                    Editar →
+                  </Link>
                 </article>
               ))}
             </div>
