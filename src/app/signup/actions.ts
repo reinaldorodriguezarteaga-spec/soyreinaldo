@@ -18,12 +18,19 @@ async function siteOrigin() {
   return `${proto}://${host}`;
 }
 
+const USERNAME_RE = /^[a-z0-9._-]{3,15}$/;
+const PHONE_RE = /^\+[1-9][0-9]{7,14}$/;
+
 export async function signUp(
   _prev: SignupState,
   formData: FormData,
 ): Promise<SignupState> {
   const email = (formData.get("email") as string | null)?.trim().toLowerCase();
   const displayName = (formData.get("display_name") as string | null)?.trim();
+  const usernameRaw = (formData.get("username") as string | null)?.trim() ?? "";
+  const username = usernameRaw.toLowerCase();
+  const phoneRaw =
+    (formData.get("phone_number") as string | null)?.replace(/\s+/g, "") ?? "";
   const password = (formData.get("password") as string | null) ?? "";
   const confirm = (formData.get("confirm") as string | null) ?? "";
 
@@ -36,6 +43,19 @@ export async function signUp(
       message: "Tu nombre debe tener al menos 2 caracteres.",
     };
   }
+  if (!username || !USERNAME_RE.test(username)) {
+    return {
+      status: "error",
+      message:
+        "Username inválido. Usa 3-15 caracteres, solo letras, números, guión, punto o barra baja.",
+    };
+  }
+  if (phoneRaw && !PHONE_RE.test(phoneRaw)) {
+    return {
+      status: "error",
+      message: "Teléfono inválido. Usa el formato internacional, p. ej. +34666123456.",
+    };
+  }
   if (password.length < 6) {
     return {
       status: "error",
@@ -46,14 +66,31 @@ export async function signUp(
     return { status: "error", message: "Las contraseñas no coinciden." };
   }
 
+  // Comprobar antes de llamar a signUp si el username ya existe
   const supabase = await createClient();
+  const { data: takenRow } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+  if (takenRow) {
+    return {
+      status: "error",
+      message: `El usuario "${username}" ya está cogido. Prueba otro.`,
+    };
+  }
+
   const origin = await siteOrigin();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback?redirect=/quiniela`,
-      data: { display_name: displayName },
+      data: {
+        display_name: displayName,
+        username,
+        phone_number: phoneRaw || null,
+      },
     },
   });
 

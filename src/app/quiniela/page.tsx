@@ -46,6 +46,15 @@ export default async function QuinielaPage() {
 
   const isAdmin = await isAdminUser(supabase, user.id);
 
+  // ¿Le falta username o teléfono al perfil? Para mostrar banner.
+  const { data: profileExtras } = await supabase
+    .from("profiles")
+    .select("username, phone_number")
+    .eq("id", user.id)
+    .maybeSingle();
+  const missingUsername = !profileExtras?.username;
+  const missingPhone = !profileExtras?.phone_number;
+
   return (
     <main className="flex flex-1 flex-col px-6 py-16">
       <div className="mx-auto w-full max-w-2xl">
@@ -64,6 +73,13 @@ export default async function QuinielaPage() {
             Hola, <span className="text-indigo-300">{displayName}</span>.
           </h1>
         </header>
+
+        {(missingUsername || missingPhone) && (
+          <ProfileBanner
+            missingUsername={missingUsername}
+            missingPhone={missingPhone}
+          />
+        )}
 
         {leagues.length === 0 ? (
           <NoLeaguesState />
@@ -88,6 +104,47 @@ export default async function QuinielaPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function ProfileBanner({
+  missingUsername,
+  missingPhone,
+}: {
+  missingUsername: boolean;
+  missingPhone: boolean;
+}) {
+  let title = "";
+  let body = "";
+  if (missingUsername && missingPhone) {
+    title = "Completa tu perfil";
+    body =
+      "Elige un usuario para entrar más rápido y deja tu teléfono para recibir recordatorios cuando se acerque un partido.";
+  } else if (missingUsername) {
+    title = "Elige un usuario";
+    body =
+      "Te servirá para entrar a la web sin tener que escribir tu email completo.";
+  } else {
+    title = "Añade tu teléfono";
+    body =
+      "Para recibir recordatorios cuando se acerque un partido y no se te pase predecir.";
+  }
+
+  return (
+    <Link
+      href="/completar-perfil"
+      className="group mb-6 flex items-center justify-between gap-4 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/10 via-zinc-950 to-zinc-950 p-5 transition hover:border-amber-300/50"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-xs uppercase tracking-[0.25em] text-amber-300">
+          {title}
+        </p>
+        <p className="mt-1 text-sm text-zinc-300">{body}</p>
+      </div>
+      <span className="shrink-0 text-xl text-amber-300 transition-transform group-hover:translate-x-0.5">
+        →
+      </span>
+    </Link>
   );
 }
 

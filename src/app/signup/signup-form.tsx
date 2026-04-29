@@ -37,12 +37,31 @@ export default function SignupForm() {
         disabled={pending}
       />
       <Field
+        label="Usuario"
+        name="username"
+        type="text"
+        placeholder="reinaldor"
+        autoComplete="username"
+        disabled={pending}
+        hint="3-15 caracteres. Solo letras, números, _ - ."
+      />
+      <Field
         label="Email"
         name="email"
         type="email"
         placeholder="tu@email.com"
         autoComplete="email"
         disabled={pending}
+      />
+      <Field
+        label="Teléfono (opcional)"
+        name="phone_number"
+        type="tel"
+        placeholder="+34666123456"
+        autoComplete="tel"
+        disabled={pending}
+        required={false}
+        hint="Para enviarte recordatorios. Formato internacional con +."
       />
       <Field
         label="Contraseña"
@@ -110,6 +129,8 @@ function Field({
   placeholder,
   autoComplete,
   disabled,
+  required = true,
+  hint,
 }: {
   label: string;
   name: string;
@@ -117,6 +138,8 @@ function Field({
   placeholder?: string;
   autoComplete?: string;
   disabled?: boolean;
+  required?: boolean;
+  hint?: string;
 }) {
   return (
     <label className="block">
@@ -126,12 +149,13 @@ function Field({
       <input
         type={type}
         name={name}
-        required
+        required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
         disabled={disabled}
         className="block w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
       />
+      {hint && <p className="mt-1.5 text-[11px] text-zinc-500">{hint}</p>}
     </label>
   );
 }

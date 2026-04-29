@@ -67,11 +67,11 @@ export default function LoginForm({ redirect }: { redirect: string }) {
         <form action={pwAction} className="space-y-4">
           <input type="hidden" name="redirect" value={redirect} />
           <Field
-            label="Email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="tu@email.com"
+            label="Email o usuario"
+            name="identifier"
+            type="text"
+            autoComplete="username"
+            placeholder="tu@email.com  o  reinaldor"
             disabled={pwPending}
           />
           <Field

@@ -55,24 +55,43 @@ export async function signInWithPassword(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  const identifier =
+    (formData.get("identifier") as string | null)?.trim() ?? "";
   const password = (formData.get("password") as string | null) ?? "";
   const redirectTarget =
     (formData.get("redirect") as string | null) ?? "/quiniela";
 
-  if (!email || !email.includes("@") || password.length < 6) {
+  if (!identifier || password.length < 6) {
     return {
       status: "error",
       message:
-        "Email o contraseña inválidos. La contraseña debe tener al menos 6 caracteres.",
+        "Email/usuario o contraseña inválidos. La contraseña debe tener al menos 6 caracteres.",
     };
   }
 
   const supabase = await createClient();
+
+  // Si el identifier no parece un email, asumimos username y resolvemos su
+  // email a través del RPC público
+  let email = identifier.toLowerCase();
+  if (!email.includes("@")) {
+    const { data, error: rpcError } = await supabase.rpc(
+      "lookup_email_by_username",
+      { p_username: email },
+    );
+    if (rpcError || !data) {
+      return {
+        status: "error",
+        message: "Usuario o contraseña incorrectos.",
+      };
+    }
+    email = data as string;
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { status: "error", message: error.message };
+    return { status: "error", message: "Usuario o contraseña incorrectos." };
   }
 
   revalidatePath("/", "layout");
