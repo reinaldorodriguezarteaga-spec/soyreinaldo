@@ -110,7 +110,13 @@ export default async function BracketPage() {
         <div className="-mx-6 overflow-x-auto px-6">
           <div className="min-w-[900px]">
             {/* Cabecera de columnas */}
-            <div className="mb-3 grid grid-cols-5 gap-3 text-center text-[10px] uppercase tracking-widest text-indigo-300">
+            <div
+              className="mb-3 grid text-center text-[10px] uppercase tracking-widest text-indigo-300"
+              style={{
+                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                columnGap: `${COL_GAP}px`,
+              }}
+            >
               <span>{COLUMN_LABELS[1]}</span>
               <span>{COLUMN_LABELS[2]}</span>
               <span>{COLUMN_LABELS[3]}</span>
@@ -118,10 +124,15 @@ export default async function BracketPage() {
               <span>{COLUMN_LABELS[5]}</span>
             </div>
 
-            {/* Bracket grid: 16 filas × 5 columnas */}
+            {/* Bracket grid: 16 filas fijas × 5 columnas */}
             <div
-              className="grid grid-cols-5 gap-3"
-              style={{ gridTemplateRows: "repeat(16, minmax(58px, auto))" }}
+              className="grid"
+              style={{
+                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                gridTemplateRows: `repeat(16, ${ROW_HEIGHT}px)`,
+                columnGap: `${COL_GAP}px`,
+                rowGap: `${ROW_GAP}px`,
+              }}
             >
               {cells.map(({ slot, match, prediction }) => (
                 <BracketCell
@@ -172,6 +183,12 @@ export default async function BracketPage() {
   );
 }
 
+// Geometría del bracket — tienen que coincidir entre la rejilla y los conectores
+const ROW_HEIGHT = 48; // px por fila
+const ROW_GAP = 8;
+const COL_GAP = 16;
+const CARD_HEIGHT = 56; // alto fijo del rectángulo interior
+
 type CellProps = {
   matchId: number;
   column: 1 | 2 | 3 | 4 | 5;
@@ -190,6 +207,18 @@ const PHASE_SLUG: Record<string, string> = {
   third_place: "final",
   final: "final",
 };
+
+function pairPosition(
+  gridRow: number,
+  rowSpan: number,
+): "top" | "bottom" | "single" {
+  if (rowSpan === 16) return "single";
+  const cycle = rowSpan * 2;
+  const offset = (gridRow - 1) % cycle;
+  if (offset === 0) return "top";
+  if (offset === rowSpan) return "bottom";
+  return "single";
+}
 
 function BracketCell({
   matchId,
@@ -219,83 +248,140 @@ function BracketCell({
     : prediction?.score_away;
   const hasAnyScore = homeScore !== null && homeScore !== undefined;
 
-  const phaseSlug = match ? PHASE_SLUG[match.phase] ?? "dieciseisavos" : "dieciseisavos";
+  const phaseSlug = match
+    ? PHASE_SLUG[match.phase] ?? "dieciseisavos"
+    : "dieciseisavos";
   const editHref = `/quiniela/partidos?fase=${phaseSlug}#match-${matchId}`;
 
-  const style = inline
-    ? undefined
-    : ({
+  // Cuánto mide la celda contenedor (incluyendo gaps internos por filas)
+  const cellHeight = ROW_HEIGHT * rowSpan + ROW_GAP * (rowSpan - 1);
+  // Distancia desde el centro de la celda al "punto de unión" entre dos
+  // hermanos = la mitad de la celda + medio gap
+  const connectorH = cellHeight / 2 + ROW_GAP / 2;
+  const connectorW = COL_GAP / 2;
+
+  const pair = pairPosition(gridRow, rowSpan);
+  const hasParents = column > 1;
+  const hasOutgoing = column < 5;
+
+  const wrapperStyle: React.CSSProperties = inline
+    ? {}
+    : {
         gridColumn: column,
         gridRow: `${gridRow} / span ${rowSpan}`,
-      } as React.CSSProperties);
+      };
+
+  const cardClass = `relative flex w-full flex-col justify-center rounded-lg border bg-zinc-950 px-2.5 py-1.5 text-[11px] transition hover:border-indigo-300 ${
+    officialResult
+      ? "border-emerald-900/50"
+      : hasAnyScore
+        ? "border-indigo-400/30"
+        : "border-zinc-800"
+  }`;
 
   return (
-    <Link
-      href={editHref}
-      style={style}
-      className={`group flex flex-col justify-center rounded-lg border bg-zinc-950 px-2.5 py-2 text-[11px] transition hover:border-indigo-300 ${
-        officialResult
-          ? "border-emerald-900/50"
-          : hasAnyScore
-            ? "border-indigo-400/30"
-            : "border-zinc-800"
-      }`}
+    <div
+      style={wrapperStyle}
+      className="relative flex items-center"
     >
-      <div className="flex items-center justify-between gap-1">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="text-sm leading-none">{homeFlag}</span>
-          <span
-            className={`truncate font-medium ${
-              home ? "text-white" : "text-zinc-500"
-            }`}
-            title={homeLabel}
-          >
-            {homeLabel}
-          </span>
-        </span>
+      {/* Línea entrante (izquierda) */}
+      {!inline && hasParents && (
         <span
-          className={`shrink-0 font-mono tabular-nums ${
-            officialResult
-              ? "text-emerald-400"
-              : hasAnyScore
-                ? "text-indigo-300"
-                : "text-zinc-700"
-          }`}
-        >
-          {homeScore ?? "—"}
-        </span>
-      </div>
-      <div className="mt-0.5 flex items-center justify-between gap-1">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="text-sm leading-none">{awayFlag}</span>
-          <span
-            className={`truncate font-medium ${
-              away ? "text-white" : "text-zinc-500"
-            }`}
-            title={awayLabel}
-          >
-            {awayLabel}
-          </span>
-        </span>
+          aria-hidden
+          className="absolute border-zinc-700"
+          style={{
+            right: "100%",
+            top: "50%",
+            width: connectorW,
+            borderTopWidth: 1,
+          }}
+        />
+      )}
+
+      {/* Línea saliente (derecha) — desde el centro hasta el punto de unión */}
+      {!inline && hasOutgoing && pair === "top" && (
         <span
-          className={`shrink-0 font-mono tabular-nums ${
-            officialResult
-              ? "text-emerald-400"
-              : hasAnyScore
-                ? "text-indigo-300"
-                : "text-zinc-700"
-          }`}
-        >
-          {awayScore ?? "—"}
-        </span>
-      </div>
-      <div className="mt-1 flex items-center justify-between text-[9px] uppercase tracking-widest text-zinc-600">
-        <span>#{matchId}</span>
-        {officialResult && <span className="text-emerald-500">✓ Oficial</span>}
-        {!officialResult && hasAnyScore && (
-          <span className="text-indigo-400">Tu pick</span>
-        )}
-      </div>
-    </Link>
+          aria-hidden
+          className="absolute border-zinc-700"
+          style={{
+            left: "100%",
+            top: "50%",
+            width: connectorW,
+            height: connectorH,
+            borderTopWidth: 1,
+            borderRightWidth: 1,
+          }}
+        />
+      )}
+      {!inline && hasOutgoing && pair === "bottom" && (
+        <span
+          aria-hidden
+          className="absolute border-zinc-700"
+          style={{
+            left: "100%",
+            bottom: "50%",
+            width: connectorW,
+            height: connectorH,
+            borderBottomWidth: 1,
+            borderRightWidth: 1,
+          }}
+        />
+      )}
+
+      <Link
+        href={editHref}
+        className={cardClass}
+        style={{ height: `${CARD_HEIGHT}px` }}
+      >
+        <div className="flex items-center justify-between gap-1">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-sm leading-none">{homeFlag}</span>
+            <span
+              className={`truncate font-medium ${
+                home ? "text-white" : "text-zinc-500"
+              }`}
+              title={homeLabel}
+            >
+              {homeLabel}
+            </span>
+          </span>
+          <span
+            className={`shrink-0 font-mono tabular-nums ${
+              officialResult
+                ? "text-emerald-400"
+                : hasAnyScore
+                  ? "text-indigo-300"
+                  : "text-zinc-700"
+            }`}
+          >
+            {homeScore ?? "—"}
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-center justify-between gap-1">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-sm leading-none">{awayFlag}</span>
+            <span
+              className={`truncate font-medium ${
+                away ? "text-white" : "text-zinc-500"
+              }`}
+              title={awayLabel}
+            >
+              {awayLabel}
+            </span>
+          </span>
+          <span
+            className={`shrink-0 font-mono tabular-nums ${
+              officialResult
+                ? "text-emerald-400"
+                : hasAnyScore
+                  ? "text-indigo-300"
+                  : "text-zinc-700"
+            }`}
+          >
+            {awayScore ?? "—"}
+          </span>
+        </div>
+      </Link>
+    </div>
   );
 }
