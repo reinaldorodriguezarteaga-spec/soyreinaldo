@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { venueShortName, venueTimezone } from "@/lib/quiniela/venues";
 import { saveMatchResult, type SaveResultState } from "./actions";
 
 const initial: SaveResultState = { status: "idle" };
@@ -60,6 +61,23 @@ export default function MatchResultForm({
         <time dateTime={match.kickoffAt}>
           {FMT.format(new Date(match.kickoffAt))}
         </time>
+        {(() => {
+          const tz = venueTimezone(match.venue);
+          if (!tz || !match.venue) return null;
+          const venueTime = new Intl.DateTimeFormat("es-ES", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: tz,
+          }).format(new Date(match.kickoffAt));
+          return (
+            <>
+              <span aria-hidden>·</span>
+              <span className="normal-case tracking-normal text-zinc-500">
+                {venueShortName(match.venue)} {venueTime}
+              </span>
+            </>
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">

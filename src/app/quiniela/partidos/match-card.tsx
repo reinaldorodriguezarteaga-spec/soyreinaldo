@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { venueShortName, venueTimezone } from "@/lib/quiniela/venues";
 import { savePrediction } from "./actions";
 
 export type MatchTeam = {
@@ -36,13 +37,36 @@ const TIME_FMT = new Intl.DateTimeFormat("es-ES", {
   minute: "2-digit",
 });
 
-function formatKickoff(iso: string): { day: string; time: string } {
+function timeIn(iso: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(iso));
+}
+
+function formatKickoff(
+  iso: string,
+  venue: string | null,
+): {
+  day: string;
+  time: string;
+  venueLine: string | null;
+} {
   const d = new Date(iso);
-  // "lun 11 jun" → "Lun 11 jun"
-  const day = DAY_FMT.format(d).replace(",", "").replace(/^./, (c) =>
-    c.toUpperCase(),
-  );
-  return { day, time: TIME_FMT.format(d) };
+  const day = DAY_FMT.format(d)
+    .replace(",", "")
+    .replace(/^./, (c) => c.toUpperCase());
+  const time = TIME_FMT.format(d);
+
+  const tz = venueTimezone(venue);
+  const venueLine = tz
+    ? `${venueShortName(venue)} · ${timeIn(iso, tz)} local`
+    : venue
+      ? venueShortName(venue)
+      : null;
+
+  return { day, time, venueLine };
 }
 
 export default function MatchCard({ match }: { match: MatchCardData }) {
@@ -94,7 +118,7 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
     });
   }
 
-  const { day, time } = formatKickoff(match.kickoffAt);
+  const { day, time, venueLine } = formatKickoff(match.kickoffAt, match.venue);
 
   return (
     <article
@@ -105,7 +129,7 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
           : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
       }`}
     >
-      <header className="mb-3 flex items-baseline justify-between gap-2">
+      <header className="mb-3">
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-semibold tracking-tight text-white">
             {day}
@@ -114,10 +138,10 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
             {time}
           </span>
         </div>
-        {match.venue && (
-          <span className="truncate text-[10px] uppercase tracking-widest text-zinc-500">
-            {match.venue}
-          </span>
+        {venueLine && (
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+            {venueLine}
+          </p>
         )}
       </header>
 
