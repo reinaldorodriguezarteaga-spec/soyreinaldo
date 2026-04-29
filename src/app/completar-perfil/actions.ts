@@ -26,6 +26,7 @@ export async function completeProfile(
   const username = usernameRaw.toLowerCase();
   const phoneRaw =
     (formData.get("phone_number") as string | null)?.replace(/\s+/g, "") ?? "";
+  const wantsReminders = formData.get("wants_reminders") === "on";
 
   // Cargar perfil actual para saber qué campos faltan
   const { data: profile } = await supabase
@@ -66,17 +67,12 @@ export async function completeProfile(
     }
   }
 
-  // Construir update solo con los campos que cambian
-  const update: Record<string, string | null> = {};
+  // Construir update con los campos que se van a guardar
+  const update: Record<string, string | boolean | null> = {
+    wants_reminders: wantsReminders,
+  };
   if (username) update.username = username;
   if (phoneRaw) update.phone_number = phoneRaw;
-
-  if (Object.keys(update).length === 0) {
-    return {
-      status: "error",
-      message: "Rellena al menos uno de los campos.",
-    };
-  }
 
   const { error } = await supabase
     .from("profiles")

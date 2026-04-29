@@ -16,7 +16,7 @@ export default async function CompletarPerfilPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, username, phone_number")
+    .select("display_name, username, phone_number, wants_reminders")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -53,6 +53,7 @@ export default async function CompletarPerfilPage() {
         <ProfileForm
           currentUsername={profile?.username ?? null}
           currentPhone={profile?.phone_number ?? null}
+          currentWantsReminders={profile?.wants_reminders ?? true}
         />
       </div>
     </main>

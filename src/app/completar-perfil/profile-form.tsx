@@ -11,9 +11,11 @@ const initial: CompleteProfileState = { status: "idle" };
 export default function ProfileForm({
   currentUsername,
   currentPhone,
+  currentWantsReminders,
 }: {
   currentUsername: string | null;
   currentPhone: string | null;
+  currentWantsReminders: boolean;
 }) {
   const [state, action, pending] = useActionState(completeProfile, initial);
 
@@ -39,6 +41,25 @@ export default function ProfileForm({
         disabled={pending}
         hint="Formato internacional con + y el prefijo del país. Para recordatorios."
       />
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-700">
+        <input
+          type="checkbox"
+          name="wants_reminders"
+          defaultChecked={currentWantsReminders}
+          disabled={pending}
+          className="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-900 accent-indigo-300"
+        />
+        <span className="flex-1">
+          <span className="block text-sm font-medium text-white">
+            Quiero recibir recordatorios por email
+          </span>
+          <span className="mt-0.5 block text-xs text-zinc-500">
+            La noche anterior te aviso de los partidos sin predecir. Los
+            domingos un resumen de la semana.
+          </span>
+        </span>
+      </label>
 
       <div className="flex items-center gap-3">
         <button
