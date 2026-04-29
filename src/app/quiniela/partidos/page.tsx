@@ -124,9 +124,21 @@ export default async function PartidosPage({
     };
   });
 
+  const isGroupStage = phase.keys.some((k) => k.startsWith("group_"));
+
+  // Para fase de grupos agrupamos por letra de grupo (A..L)
+  const cardsByGroup: Map<string, MatchCardData[]> = new Map();
+  if (isGroupStage) {
+    for (const c of cards) {
+      const key = c.groupLetter ?? "?";
+      if (!cardsByGroup.has(key)) cardsByGroup.set(key, []);
+      cardsByGroup.get(key)!.push(c);
+    }
+  }
+
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-4xl">
         <Link
           href="/quiniela"
           className="text-sm text-zinc-500 transition hover:text-white"
@@ -159,15 +171,37 @@ export default async function PartidosPage({
           editarlo una vez empieza el partido.
         </p>
 
-        <div className="mt-6 space-y-3">
-          {cards.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-8 text-center text-sm text-zinc-500">
-              No hay partidos en esta fase.
-            </div>
-          ) : (
-            cards.map((c) => <MatchCard key={c.id} match={c} />)
-          )}
-        </div>
+        {cards.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-8 text-center text-sm text-zinc-500">
+            No hay partidos en esta fase.
+          </div>
+        ) : isGroupStage ? (
+          <div className="mt-6 space-y-8">
+            {Array.from(cardsByGroup.entries())
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([letter, list]) => (
+                <section key={letter}>
+                  <h2 className="mb-3 flex items-baseline gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
+                    Grupo {letter}
+                    <span className="text-xs text-zinc-600">
+                      · {list.length} partido{list.length === 1 ? "" : "s"}
+                    </span>
+                  </h2>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {list.map((c) => (
+                      <MatchCard key={c.id} match={c} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {cards.map((c) => (
+              <MatchCard key={c.id} match={c} />
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

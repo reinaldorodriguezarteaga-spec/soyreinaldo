@@ -25,13 +25,25 @@ export type MatchCardData = {
   locked: boolean;
 };
 
-const KICKOFF_FMT = new Intl.DateTimeFormat("es-ES", {
+const DAY_FMT = new Intl.DateTimeFormat("es-ES", {
   weekday: "short",
   day: "numeric",
   month: "short",
+});
+
+const TIME_FMT = new Intl.DateTimeFormat("es-ES", {
   hour: "2-digit",
   minute: "2-digit",
 });
+
+function formatKickoff(iso: string): { day: string; time: string } {
+  const d = new Date(iso);
+  // "lun 11 jun" → "Lun 11 jun"
+  const day = DAY_FMT.format(d).replace(",", "").replace(/^./, (c) =>
+    c.toUpperCase(),
+  );
+  return { day, time: TIME_FMT.format(d) };
+}
 
 export default function MatchCard({ match }: { match: MatchCardData }) {
   const initialHome = match.prediction?.home ?? "";
@@ -82,37 +94,34 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
     });
   }
 
+  const { day, time } = formatKickoff(match.kickoffAt);
+
   return (
     <article
-      className={`rounded-2xl border p-4 transition sm:p-5 ${
+      className={`rounded-2xl border p-4 transition ${
         isLocked
           ? "border-zinc-800 bg-zinc-950/60 opacity-80"
           : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
       }`}
     >
-      <header className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-widest text-zinc-500">
-        <span>{match.phaseLabel}</span>
-        {match.groupLetter && (
-          <>
-            <span aria-hidden>·</span>
-            <span>Grupo {match.groupLetter}</span>
-          </>
-        )}
-        <span aria-hidden>·</span>
-        <time className="tabular-nums" dateTime={match.kickoffAt}>
-          {KICKOFF_FMT.format(new Date(match.kickoffAt))}
-        </time>
+      <header className="mb-3 flex items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-semibold tracking-tight text-white">
+            {day}
+          </span>
+          <span className="text-sm font-medium tabular-nums text-indigo-300">
+            {time}
+          </span>
+        </div>
         {match.venue && (
-          <>
-            <span aria-hidden>·</span>
-            <span className="truncate">{match.venue}</span>
-          </>
+          <span className="truncate text-[10px] uppercase tracking-widest text-zinc-500">
+            {match.venue}
+          </span>
         )}
       </header>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-        <TeamLabel team={match.home} align="end" />
-        <div className="flex items-center gap-2">
+      <div className="space-y-2">
+        <TeamRow team={match.home} label={homeLabel}>
           <ScoreInput
             value={home}
             onChange={(v) => {
@@ -122,7 +131,8 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
             disabled={inputsDisabled}
             label={`Goles ${homeLabel}`}
           />
-          <span className="text-zinc-500">–</span>
+        </TeamRow>
+        <TeamRow team={match.away} label={awayLabel}>
           <ScoreInput
             value={away}
             onChange={(v) => {
@@ -132,11 +142,10 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
             disabled={inputsDisabled}
             label={`Goles ${awayLabel}`}
           />
-        </div>
-        <TeamLabel team={match.away} align="start" />
+        </TeamRow>
       </div>
 
-      <footer className="mt-3 min-h-5 text-right text-[11px]">
+      <footer className="mt-3 min-h-[1rem] text-right text-[11px]">
         {isLocked && (
           <span className="text-zinc-500">🔒 Bloqueado · ya empezó</span>
         )}
@@ -156,7 +165,7 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
           status === "idle" &&
           (homeIsPlaceholder || awayIsPlaceholder) && (
             <span className="text-zinc-500">
-              Equipos por definir tras la fase de grupos
+              Equipos por definir tras la fase anterior
             </span>
           )}
       </footer>
@@ -164,47 +173,32 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
   );
 }
 
-function TeamLabel({
+function TeamRow({
   team,
-  align,
+  label,
+  children,
 }: {
   team: MatchTeam | { placeholder: string };
-  align: "start" | "end";
+  label: string;
+  children: React.ReactNode;
 }) {
   const isPlaceholder = "placeholder" in team;
   return (
-    <div
-      className={`flex items-center gap-2 text-sm sm:text-base ${
-        align === "end" ? "justify-end" : "justify-start"
-      }`}
-    >
-      {align === "end" ? (
-        <>
-          <span
-            className={`truncate text-right font-medium ${
-              isPlaceholder ? "text-zinc-500" : "text-white"
-            }`}
-          >
-            {isPlaceholder ? team.placeholder : team.name}
-          </span>
-          <span className="shrink-0 text-2xl leading-none">
-            {isPlaceholder ? "🏟️" : team.flag}
-          </span>
-        </>
-      ) : (
-        <>
-          <span className="shrink-0 text-2xl leading-none">
-            {isPlaceholder ? "🏟️" : team.flag}
-          </span>
-          <span
-            className={`truncate font-medium ${
-              isPlaceholder ? "text-zinc-500" : "text-white"
-            }`}
-          >
-            {isPlaceholder ? team.placeholder : team.name}
-          </span>
-        </>
-      )}
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="shrink-0 text-xl leading-none">
+          {isPlaceholder ? "🏟️" : team.flag}
+        </span>
+        <span
+          className={`truncate text-sm font-medium ${
+            isPlaceholder ? "text-zinc-500" : "text-white"
+          }`}
+          title={label}
+        >
+          {label}
+        </span>
+      </div>
+      {children}
     </div>
   );
 }
@@ -234,7 +228,7 @@ function ScoreInput({
       }}
       disabled={disabled}
       aria-label={label}
-      className="h-12 w-12 rounded-lg border border-zinc-800 bg-zinc-900 text-center text-lg font-semibold tabular-nums text-white focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:w-14 sm:text-xl"
+      className="h-10 w-10 rounded-lg border border-zinc-800 bg-zinc-900 text-center text-base font-semibold tabular-nums text-white focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
     />
   );
 }
