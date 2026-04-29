@@ -33,6 +33,7 @@ export default async function QuinielaPage() {
   const { data: memberships } = await supabase
     .from("league_members")
     .select("league:leagues(id, name, code, description)")
+    .eq("user_id", user.id)
     .order("joined_at", { ascending: true })
     .returns<LeagueRow[]>();
 

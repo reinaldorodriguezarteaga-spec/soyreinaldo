@@ -37,6 +37,7 @@ export default async function RootLayout({
     const { data } = await supabase
       .from("league_members")
       .select("league:leagues(id, name)")
+      .eq("user_id", user.id)
       .order("joined_at", { ascending: true })
       .returns<{ league: { id: string; name: string } | null }[]>();
     userLeagues = (data ?? [])
