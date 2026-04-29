@@ -152,6 +152,16 @@ export default function Header({
                     title="Picks especiales"
                     onClose={() => setOpenQuiniela(false)}
                   />
+                  <DropdownItem
+                    href="/quiniela/grupos"
+                    title="Grupos"
+                    onClose={() => setOpenQuiniela(false)}
+                  />
+                  <DropdownItem
+                    href="/quiniela/bracket"
+                    title="Bracket"
+                    onClose={() => setOpenQuiniela(false)}
+                  />
                   <div className="my-1 border-t border-zinc-900" />
                   <p className="px-3 pb-1 pt-1 text-[10px] uppercase tracking-widest text-zinc-600">
                     Rankings
@@ -326,6 +336,22 @@ export default function Header({
                     <MobileItem
                       href="/quiniela/picks"
                       title="Picks especiales"
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
+                    <MobileItem
+                      href="/quiniela/grupos"
+                      title="Grupos"
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
+                    <MobileItem
+                      href="/quiniela/bracket"
+                      title="Bracket"
                       onClose={() => {
                         setMobileOpen(false);
                         setMobileQuinielaOpen(false);

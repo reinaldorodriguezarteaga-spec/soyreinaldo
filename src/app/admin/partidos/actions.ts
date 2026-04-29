@@ -75,6 +75,27 @@ export async function saveMatchResult(
 }
 
 /**
+ * Llama a la función SQL resolve_r32() y devuelve cuántos slots resolvió.
+ * Solo rellena placeholders directos (1A, 2B, 3C...) y solo si todos los
+ * partidos del grupo correspondiente están finalizados. Los placeholders
+ * compuestos como "3A/B/C/D/F" se asignan a mano desde /admin/bracket-manual.
+ */
+export async function resolveR32Action(): Promise<{
+  ok: boolean;
+  resolved: number;
+  message?: string;
+}> {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase.rpc("resolve_r32");
+  if (error) {
+    return { ok: false, resolved: 0, message: error.message };
+  }
+  revalidatePath("/admin/partidos");
+  revalidatePath("/quiniela/bracket");
+  return { ok: true, resolved: (data as number) ?? 0 };
+}
+
+/**
  * Resolves the team for a knockout slot once it's known. The admin types e.g.
  * "ESP" into a placeholder slot like "1H" and we set team_home or team_away.
  */

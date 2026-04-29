@@ -9,6 +9,7 @@ import {
 import MatchResultForm, {
   type AdminMatchData,
 } from "./match-result-form";
+import ResolveBracketButton from "./resolve-bracket-button";
 
 export const metadata = {
   title: "Resultados | Admin | Soy Reinaldo",
@@ -105,6 +106,16 @@ export default async function AdminMatchesPage({
           Mete el resultado y marca <strong>Finalizado</strong> cuando ya no
           vaya a cambiar. Solo los partidos finalizados cuentan para puntos.
         </p>
+
+        <div className="mt-4 rounded-xl border border-indigo-400/20 bg-indigo-500/5 p-4">
+          <p className="mb-2 text-xs text-zinc-400">
+            Cuando termine la fase de grupos, pulsa este botón para rellenar
+            automáticamente los placeholders directos de los R32 (1A, 2B...).
+            Los placeholders compuestos (3A/B/C/D/F) se asignan a mano cuando
+            FIFA publique la matriz definitiva.
+          </p>
+          <ResolveBracketButton />
+        </div>
 
         {error && (
           <p className="mt-3 text-sm text-red-300">
