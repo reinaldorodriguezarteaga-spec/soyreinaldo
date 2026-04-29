@@ -98,7 +98,8 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
 
   return (
     <article
-      className={`rounded-2xl border p-4 transition ${
+      id={`match-${match.id}`}
+      className={`scroll-mt-24 rounded-2xl border p-4 transition ${
         isLocked
           ? "border-zinc-800 bg-zinc-950/60 opacity-80"
           : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"

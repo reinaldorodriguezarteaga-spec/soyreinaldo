@@ -125,6 +125,7 @@ export default async function PartidosPage({
   });
 
   const isGroupStage = phase.keys.some((k) => k.startsWith("group_"));
+  const isKnockout = !isGroupStage;
 
   // Para fase de grupos agrupamos por letra de grupo (A..L)
   const cardsByGroup: Map<string, MatchCardData[]> = new Map();
@@ -165,6 +166,18 @@ export default async function PartidosPage({
         </header>
 
         <PhaseTabs activeSlug={phase.slug} />
+
+        {isKnockout && (
+          <Link
+            href="/quiniela/bracket"
+            className="group mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
+          >
+            🏆 Ver bracket completo
+            <span className="transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
+          </Link>
+        )}
 
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">
           Se guarda automáticamente al completar el resultado. No puedes
