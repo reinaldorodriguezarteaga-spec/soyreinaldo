@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import DonationCard from "@/components/DonationCard";
+import MatchWidget from "@/components/MatchWidget";
+import WorldCupCountdown from "@/components/WorldCupCountdown";
 import {
   InstagramLogo,
   WhatsAppLogo,
@@ -105,6 +107,10 @@ export default function Home() {
             />
           </div>
         </div>
+
+        <WorldCupCountdown />
+
+        <MatchWidget />
 
         <section className="mt-16 sm:mt-20">
           <h2 className="text-xs uppercase tracking-[0.3em] text-indigo-300">

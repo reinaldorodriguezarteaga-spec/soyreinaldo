@@ -33,6 +33,8 @@ export async function signUp(
     (formData.get("phone_number") as string | null)?.replace(/\s+/g, "") ?? "";
   const password = (formData.get("password") as string | null) ?? "";
   const confirm = (formData.get("confirm") as string | null) ?? "";
+  const redirectTarget =
+    (formData.get("redirect") as string | null) ?? "/quiniela";
 
   if (!email || !email.includes("@")) {
     return { status: "error", message: "Introduce un email válido." };
@@ -85,7 +87,9 @@ export async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?redirect=/quiniela`,
+      emailRedirectTo: `${origin}/auth/callback?redirect=${encodeURIComponent(
+        redirectTarget,
+      )}`,
       data: {
         display_name: displayName,
         username,
@@ -102,7 +106,7 @@ export async function signUp(
   // click the link in the email. Otherwise we can already have a session.
   if (data.session) {
     revalidatePath("/", "layout");
-    redirect("/quiniela");
+    redirect(redirectTarget);
   }
 
   return {

@@ -176,6 +176,12 @@ export default function Header({
                   ))}
                   <div className="my-1 border-t border-zinc-900" />
                   <DropdownItem
+                    href="/quiniela/puntos"
+                    title="Cómo se puntúa"
+                    muted
+                    onClose={() => setOpenQuiniela(false)}
+                  />
+                  <DropdownItem
                     href="/quiniela"
                     title="Mi quiniela"
                     muted
@@ -192,6 +198,12 @@ export default function Header({
               Quiniela
             </Link>
           )}
+          <Link
+            href="/laliga"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
+          >
+            LaLiga
+          </Link>
           <Link
             href="/redes"
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
@@ -374,6 +386,14 @@ export default function Header({
                     ))}
                     <div className="my-1 border-t border-zinc-900" />
                     <MobileItem
+                      href="/quiniela/puntos"
+                      title="Cómo se puntúa"
+                      onClose={() => {
+                        setMobileOpen(false);
+                        setMobileQuinielaOpen(false);
+                      }}
+                    />
+                    <MobileItem
                       href="/quiniela"
                       title="Mi quiniela"
                       muted
@@ -394,6 +414,13 @@ export default function Header({
                 Quiniela
               </Link>
             )}
+            <Link
+              href="/laliga"
+              onClick={() => setMobileOpen(false)}
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
+            >
+              LaLiga
+            </Link>
             <Link
               href="/redes"
               onClick={() => setMobileOpen(false)}

@@ -95,7 +95,11 @@ export default function LoginForm({ redirect }: { redirect: string }) {
           <p className="text-center text-sm text-zinc-400">
             ¿No tienes cuenta?{" "}
             <Link
-              href="/signup"
+              href={
+                redirect === "/quiniela"
+                  ? "/signup"
+                  : `/signup?redirect=${encodeURIComponent(redirect)}`
+              }
               className="font-medium text-indigo-300 hover:text-indigo-200"
             >
               Crear cuenta

@@ -8,6 +8,24 @@ import {
   type PhaseKey,
 } from "@/lib/quiniela/phases";
 import MatchCard, { type MatchCardData } from "./match-card";
+import LiveRefresher from "./live-refresher";
+
+/**
+ * Mismo cálculo que `prediction_scores` en migration 005.
+ * 3 si exacto, 1 si solo el ganador (o el empate), 0 si fallo.
+ */
+function computePoints(
+  scoreH: number,
+  scoreA: number,
+  predH: number,
+  predA: number,
+): number {
+  if (scoreH === predH && scoreA === predA) return 3;
+  const realSign = Math.sign(scoreH - scoreA);
+  const predSign = Math.sign(predH - predA);
+  if (realSign === predSign) return 1;
+  return 0;
+}
 
 export const metadata = {
   title: "Pronósticos | Quiniela | Soy Reinaldo",
@@ -28,6 +46,11 @@ type MatchRow = {
   venue: string | null;
   team_home_placeholder: string | null;
   team_away_placeholder: string | null;
+  score_home: number | null;
+  score_away: number | null;
+  finished: boolean;
+  status: string | null;
+  live_minute: number | null;
   home: TeamRow | null;
   away: TeamRow | null;
 };
@@ -55,6 +78,7 @@ export default async function PartidosPage({
       `
       id, phase, group_letter, kickoff_at, venue,
       team_home_placeholder, team_away_placeholder,
+      score_home, score_away, finished, status, live_minute,
       home:team_home(id, name, flag_emoji, group_letter),
       away:team_away(id, name, flag_emoji, group_letter)
     `,
@@ -111,6 +135,12 @@ export default async function PartidosPage({
           groupLetter: m.away.group_letter,
         }
       : { placeholder: m.team_away_placeholder ?? "TBD" };
+    const pred = predictionByMatch.get(m.id) ?? null;
+    const hasScore = m.score_home != null && m.score_away != null;
+    const points =
+      m.finished && hasScore && pred
+        ? computePoints(m.score_home!, m.score_away!, pred.home, pred.away)
+        : null;
     return {
       id: m.id,
       groupLetter: m.group_letter,
@@ -119,10 +149,24 @@ export default async function PartidosPage({
       phaseLabel: labelForKey(m.phase),
       home,
       away,
-      prediction: predictionByMatch.get(m.id) ?? null,
+      prediction: pred,
       locked,
+      live: {
+        scoreHome: m.score_home,
+        scoreAway: m.score_away,
+        finished: m.finished,
+        status: m.status,
+        minute: m.live_minute,
+      },
+      points,
     };
   });
+
+  const hasLiveMatch = matches.some(
+    (m) =>
+      m.status != null &&
+      ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(m.status),
+  );
 
   const isGroupStage = phase.keys.some((k) => k.startsWith("group_"));
   const isKnockout = !isGroupStage;
@@ -139,6 +183,7 @@ export default async function PartidosPage({
 
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
+      {hasLiveMatch && <LiveRefresher intervalMs={30000} />}
       <div className="mx-auto w-full max-w-4xl">
         <Link
           href="/quiniela"

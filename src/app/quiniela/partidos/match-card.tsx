@@ -24,7 +24,20 @@ export type MatchCardData = {
   prediction: { home: number; away: number } | null;
   /** kickoff_at <= now() — RLS will block writes */
   locked: boolean;
+  /** Estado en vivo (rellenado por el cron de ingesta) */
+  live: {
+    scoreHome: number | null;
+    scoreAway: number | null;
+    finished: boolean;
+    status: string | null;
+    minute: number | null;
+  };
+  /** Puntos que sacó este usuario en este partido (null si aún no terminado o sin pronóstico) */
+  points: number | null;
 };
+
+const LIVE_STATES = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE"]);
+const FINAL_STATES = new Set(["FT", "AET", "PEN"]);
 
 const DAY_FMT = new Intl.DateTimeFormat("es-ES", {
   weekday: "short",
@@ -92,6 +105,18 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
   const inputsDisabled =
     isLocked || homeIsPlaceholder || awayIsPlaceholder || status === "saving";
 
+  const liveStatus = match.live.status;
+  const isLive = liveStatus != null && LIVE_STATES.has(liveStatus);
+  const isFinal = match.live.finished || (liveStatus != null && FINAL_STATES.has(liveStatus));
+  const hasScore =
+    (isLive || isFinal) &&
+    match.live.scoreHome != null &&
+    match.live.scoreAway != null;
+  // Cuando hay marcador (live o final), no enseñamos los inputs aunque el
+  // usuario tenga pronóstico anterior — en su lugar mostramos el resultado
+  // real y abajo la predicción del usuario.
+  const showScoreBlock = hasScore;
+
   function tryAutoSave(nextHome: string, nextAway: string) {
     if (isLocked) return;
     if (nextHome === "" || nextAway === "") return;
@@ -129,46 +154,100 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
           : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
       }`}
     >
-      <header className="mb-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold tracking-tight text-white">
-            {day}
-          </span>
-          <span className="text-sm font-medium tabular-nums text-indigo-300">
-            {time}
-          </span>
+      <header className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold tracking-tight text-white">
+              {day}
+            </span>
+            <span className="text-sm font-medium tabular-nums text-indigo-300">
+              {time}
+            </span>
+          </div>
+          {venueLine && (
+            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+              {venueLine}
+            </p>
+          )}
         </div>
-        {venueLine && (
-          <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-            {venueLine}
-          </p>
+        {isLive && (
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+            {liveStatus === "HT"
+              ? "Descanso"
+              : match.live.minute != null
+                ? `${match.live.minute}'`
+                : "EN VIVO"}
+          </span>
+        )}
+        {isFinal && !isLive && (
+          <span className="shrink-0 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
+            Final
+          </span>
         )}
       </header>
 
       <div className="space-y-2">
         <TeamRow team={match.home} label={homeLabel}>
-          <ScoreInput
-            value={home}
-            onChange={(v) => {
-              setHome(v);
-              tryAutoSave(v, away);
-            }}
-            disabled={inputsDisabled}
-            label={`Goles ${homeLabel}`}
-          />
+          {showScoreBlock ? (
+            <ScoreDisplay value={match.live.scoreHome ?? 0} live={isLive} />
+          ) : (
+            <ScoreInput
+              value={home}
+              onChange={(v) => {
+                setHome(v);
+                tryAutoSave(v, away);
+              }}
+              disabled={inputsDisabled}
+              label={`Goles ${homeLabel}`}
+            />
+          )}
         </TeamRow>
         <TeamRow team={match.away} label={awayLabel}>
-          <ScoreInput
-            value={away}
-            onChange={(v) => {
-              setAway(v);
-              tryAutoSave(home, v);
-            }}
-            disabled={inputsDisabled}
-            label={`Goles ${awayLabel}`}
-          />
+          {showScoreBlock ? (
+            <ScoreDisplay value={match.live.scoreAway ?? 0} live={isLive} />
+          ) : (
+            <ScoreInput
+              value={away}
+              onChange={(v) => {
+                setAway(v);
+                tryAutoSave(home, v);
+              }}
+              disabled={inputsDisabled}
+              label={`Goles ${awayLabel}`}
+            />
+          )}
         </TeamRow>
       </div>
+
+      {showScoreBlock && match.prediction && (
+        <div className="mt-3 flex items-center justify-between rounded-lg border border-zinc-900 bg-zinc-900/40 px-3 py-2 text-xs">
+          <span className="text-zinc-500">
+            Tu pronóstico:{" "}
+            <span className="font-mono font-medium tabular-nums text-zinc-300">
+              {match.prediction.home}–{match.prediction.away}
+            </span>
+          </span>
+          {isFinal && match.points != null && (
+            <span
+              className={`rounded-md px-2 py-0.5 font-mono text-xs font-semibold tabular-nums ${
+                match.points === 3
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : match.points === 1
+                    ? "bg-indigo-500/20 text-indigo-300"
+                    : "bg-zinc-800 text-zinc-500"
+              }`}
+            >
+              {match.points > 0 ? `+${match.points}` : match.points} pts
+            </span>
+          )}
+        </div>
+      )}
+      {showScoreBlock && !match.prediction && isFinal && (
+        <p className="mt-3 rounded-lg border border-zinc-900 bg-zinc-900/40 px-3 py-2 text-center text-xs text-zinc-500">
+          No pronosticaste este partido.
+        </p>
+      )}
 
       <footer className="mt-3 min-h-[1rem] text-right text-[11px]">
         {isLocked && (
@@ -225,6 +304,20 @@ function TeamRow({
       </div>
       {children}
     </div>
+  );
+}
+
+function ScoreDisplay({ value, live }: { value: number; live: boolean }) {
+  return (
+    <span
+      className={`flex h-10 w-10 items-center justify-center rounded-lg font-mono text-base font-semibold tabular-nums ${
+        live
+          ? "border border-red-500/40 bg-red-500/10 text-white"
+          : "border border-zinc-800 bg-zinc-900 text-white"
+      }`}
+    >
+      {value}
+    </span>
   );
 }
 

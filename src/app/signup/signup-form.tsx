@@ -7,14 +7,18 @@ import { signUp, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
 
-export default function SignupForm() {
+export default function SignupForm({
+  redirect = "/quiniela",
+}: {
+  redirect?: string;
+}) {
   const [state, action, pending] = useActionState(signUp, initialState);
 
   return (
     <div className="space-y-5">
       <OAuthButton
         provider="google"
-        redirect="/quiniela"
+        redirect={redirect}
         label="Registrarme con Google"
       />
       {/* Facebook OAuth disabled until verification is approved. */}
@@ -28,6 +32,7 @@ export default function SignupForm() {
       </div>
 
       <form action={action} className="space-y-4">
+      <input type="hidden" name="redirect" value={redirect} />
       <Field
         label="Nombre"
         name="display_name"
@@ -111,7 +116,11 @@ export default function SignupForm() {
         <p className="text-center text-sm text-zinc-400">
           ¿Ya tienes cuenta?{" "}
           <Link
-            href="/login"
+            href={
+              redirect === "/quiniela"
+                ? "/login"
+                : `/login?redirect=${encodeURIComponent(redirect)}`
+            }
             className="font-medium text-indigo-300 hover:text-indigo-200"
           >
             Iniciar sesión

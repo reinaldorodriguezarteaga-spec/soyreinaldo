@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import EditLeagueForm from "./edit-league-form";
 import AddAdjustmentForm from "./add-adjustment-form";
+import CopyJoinLink from "./copy-join-link";
 import {
   deleteLeague,
   kickMember,
@@ -24,7 +25,6 @@ type LeagueRow = {
 type MemberRow = {
   user_id: string;
   joined_at: string;
-  profile: { display_name: string } | null;
 };
 
 type AdjustmentRow = {
@@ -33,7 +33,6 @@ type AdjustmentRow = {
   delta: number;
   reason: string;
   created_at: string;
-  user_profile: { display_name: string } | null;
 };
 
 export default async function LeagueDetailPage({
@@ -52,31 +51,56 @@ export default async function LeagueDetailPage({
 
   if (!league) notFound();
 
-  // Members
+  // Members — la FK de league_members va a auth.users, no a profiles, así
+  // que PostgREST no puede embebir profiles directamente. Hacemos las dos
+  // queries y unimos en TS.
   const { data: members } = await supabase
     .from("league_members")
-    .select(
-      "user_id, joined_at, profile:profiles!inner(display_name)",
-    )
+    .select("user_id, joined_at")
     .eq("league_id", id)
     .order("joined_at", { ascending: true })
     .returns<MemberRow[]>();
 
+  const memberIds = (members ?? []).map((m) => m.user_id);
+  const { data: memberProfiles } = memberIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", memberIds)
+        .returns<{ id: string; display_name: string | null }[]>()
+    : { data: [] };
+
+  const profileByUser = new Map(
+    (memberProfiles ?? []).map((p) => [p.id, p.display_name ?? "Sin nombre"]),
+  );
+
   const memberList = (members ?? []).map((m) => ({
     user_id: m.user_id,
-    display_name: m.profile?.display_name ?? "Sin nombre",
+    display_name: profileByUser.get(m.user_id) ?? "Sin nombre",
     joined_at: m.joined_at,
   }));
 
-  // Adjustments
+  // Adjustments — mismo motivo que arriba: la FK va a auth.users, dos queries.
   const { data: adjustments } = await supabase
     .from("point_adjustments")
-    .select(
-      "id, user_id, delta, reason, created_at, user_profile:profiles!point_adjustments_user_id_fkey(display_name)",
-    )
+    .select("id, user_id, delta, reason, created_at")
     .eq("league_id", id)
     .order("created_at", { ascending: false })
     .returns<AdjustmentRow[]>();
+
+  const adjustmentUserIds = Array.from(
+    new Set((adjustments ?? []).map((a) => a.user_id)),
+  );
+  const { data: adjustmentProfiles } = adjustmentUserIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", adjustmentUserIds)
+        .returns<{ id: string; display_name: string | null }[]>()
+    : { data: [] };
+  const adjProfileByUser = new Map(
+    (adjustmentProfiles ?? []).map((p) => [p.id, p.display_name ?? "Sin nombre"]),
+  );
 
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
@@ -101,6 +125,10 @@ export default async function LeagueDetailPage({
             <p className="mt-2 text-sm text-zinc-400">{league.description}</p>
           )}
         </header>
+
+        <section className="mb-6">
+          <CopyJoinLink code={league.code} />
+        </section>
 
         <section className="mb-10 rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8">
           <h2 className="mb-1 text-base font-semibold">Datos de la liga</h2>
@@ -187,7 +215,7 @@ export default async function LeagueDetailPage({
                         {a.delta}
                       </span>
                       <span className="text-sm font-medium">
-                        {a.user_profile?.display_name ?? "Sin nombre"}
+                        {adjProfileByUser.get(a.user_id) ?? "Sin nombre"}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-zinc-400">{a.reason}</p>

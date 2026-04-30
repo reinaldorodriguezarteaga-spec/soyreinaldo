@@ -7,7 +7,14 @@ export const metadata = {
     "Crea tu cuenta para apuntarte a la quiniela del Mundial 2026.",
 };
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>;
+}) {
+  const params = await searchParams;
+  const redirect = params.redirect ?? "/quiniela";
+
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-md">
@@ -31,7 +38,7 @@ export default function SignupPage() {
           </p>
         </header>
 
-        <SignupForm />
+        <SignupForm redirect={redirect} />
       </div>
     </main>
   );

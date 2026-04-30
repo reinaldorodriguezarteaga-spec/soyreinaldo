@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PREFIXES = ["/quiniela"];
 
+// Excepciones bajo prefijos protegidos: páginas informativas que no
+// requieren login (la gente debe poder leer las reglas antes de registrarse).
+const PUBLIC_EXCEPTIONS = ["/quiniela/puntos"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -32,9 +36,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
+  const isProtected =
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix)) &&
+    !PUBLIC_EXCEPTIONS.includes(pathname);
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
