@@ -7,15 +7,13 @@ import UserMenu from "./UserMenu";
 
 const productos = [
   {
-    href: "/bot",
-    label: "Bot de Comentarios",
-    desc: "IA que responde comentarios de YouTube en mi voz",
-  },
-  {
     href: "/camisetas",
     label: "Camisetas",
     desc: "Tienda partner con tu código de descuento",
   },
+  // Oculto temporalmente — solo añadía ruido. La página /bot sigue accesible
+  // por URL para no romper enlaces externos:
+  // { href: "/bot", label: "Bot de Comentarios", desc: "IA que responde comentarios de YouTube en mi voz" },
 ];
 
 type League = { id: string; name: string };
