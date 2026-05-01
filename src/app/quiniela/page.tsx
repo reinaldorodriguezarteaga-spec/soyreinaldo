@@ -85,7 +85,7 @@ export default async function QuinielaPage() {
         {leagues.length === 0 ? (
           <NoLeaguesState />
         ) : (
-          <LeaguesList leagues={leagues} canAddMore />
+          <LeaguesList leagues={leagues} canAddMore isAdmin={isAdmin} />
         )}
 
         {isAdmin && (
@@ -184,9 +184,11 @@ function NoLeaguesState() {
 function LeaguesList({
   leagues,
   canAddMore,
+  isAdmin,
 }: {
   leagues: { id: string; name: string; code: string; description: string | null }[];
   canAddMore?: boolean;
+  isAdmin?: boolean;
 }) {
   return (
     <div className="space-y-6">
