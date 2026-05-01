@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { acceptInvite } from "./actions";
+import { acceptInvite, dismissInvite } from "./actions";
 
 export const metadata = {
   title: "Unirme a la liga | Soy Reinaldo",
@@ -126,12 +126,15 @@ function NotFound({ code }: { code: string }) {
         a ninguna liga. Pídele a quien te haya pasado el enlace que lo
         verifique — es probable que el código se haya cambiado.
       </p>
-      <Link
-        href="/quiniela"
-        className="mt-6 inline-block text-sm font-medium text-indigo-300 hover:text-indigo-200"
-      >
-        Volver a la quiniela →
-      </Link>
+      <form action={dismissInvite} className="mt-6">
+        <input type="hidden" name="target" value="/quiniela" />
+        <button
+          type="submit"
+          className="inline-block text-sm font-medium text-indigo-300 hover:text-indigo-200"
+        >
+          Volver a la quiniela →
+        </button>
+      </form>
     </article>
   );
 }
@@ -165,12 +168,19 @@ function AlreadyMember({ leagueId }: { leagueId: string }) {
       <p className="text-sm text-emerald-300">
         Ya estás dentro de esta liga.
       </p>
-      <Link
-        href={`/quiniela/ranking/${leagueId}`}
-        className="block w-full rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-      >
-        Ver ranking
-      </Link>
+      <form action={dismissInvite}>
+        <input
+          type="hidden"
+          name="target"
+          value={`/quiniela/ranking/${leagueId}`}
+        />
+        <button
+          type="submit"
+          className="block w-full rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
+        >
+          Ver ranking
+        </button>
+      </form>
     </div>
   );
 }
