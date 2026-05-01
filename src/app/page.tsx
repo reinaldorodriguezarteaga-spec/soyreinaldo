@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import DonationCard from "@/components/DonationCard";
 import MatchWidget from "@/components/MatchWidget";
+import { SkeletonBar } from "@/components/Skeleton";
 import {
   InstagramLogo,
   WhatsAppLogo,
@@ -112,7 +114,19 @@ export default function Home() {
           </div>
         </div>
 
-        <MatchWidget />
+        <Suspense
+          fallback={
+            <section className="mt-12 sm:mt-16">
+              <SkeletonBar className="h-3 w-24" />
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <SkeletonBar className="h-16" />
+                <SkeletonBar className="h-16" />
+              </div>
+            </section>
+          }
+        >
+          <MatchWidget />
+        </Suspense>
 
         <section className="mt-16 sm:mt-20">
           <h2 className="text-xs uppercase tracking-[0.3em] text-indigo-300">
