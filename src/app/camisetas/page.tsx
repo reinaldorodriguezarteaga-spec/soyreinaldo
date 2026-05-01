@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata = {
@@ -41,7 +42,7 @@ export default function CamisetasPage() {
 
         <header className="mt-8 mb-12">
           <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Tienda partner
+            Camisetas de Fútbol
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
             Camisetas{" "}
@@ -55,6 +56,14 @@ export default function CamisetasPage() {
         </header>
 
         <section className="mb-10 overflow-hidden rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-[#a50044]/30 via-zinc-950 to-[#154284]/30 p-8 sm:p-10">
+          <Image
+            src="/branding/camisetas-futbol-light.png"
+            alt="Camisetas de Fútbol"
+            width={240}
+            height={120}
+            className="mb-6 h-auto w-40 object-contain sm:w-48"
+            priority
+          />
           <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
             Tu código
           </p>

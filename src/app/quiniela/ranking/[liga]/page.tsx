@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { leaveLeague } from "@/app/quiniela/actions";
 
 export const metadata = {
   title: "Ranking | Quiniela | Soy Reinaldo",
@@ -27,10 +28,14 @@ type LeaderboardRow = {
 
 export default async function RankingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ liga: string }>;
+  searchParams: Promise<{ bienvenida?: string }>;
 }) {
   const { liga: leagueId } = await params;
+  const { bienvenida } = await searchParams;
+  const justJoined = bienvenida === "1";
   const supabase = await createClient();
 
   const {
@@ -80,6 +85,25 @@ export default async function RankingPage({
         >
           ← Volver a la quiniela
         </Link>
+
+        {justJoined && (
+          <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
+            <p className="leading-relaxed">
+              ✓ Acabas de entrar en{" "}
+              <span className="font-semibold">{league.name}</span>.
+            </p>
+            <form action={leaveLeague} className="shrink-0">
+              <input type="hidden" name="league_id" value={league.id} />
+              <button
+                type="submit"
+                className="text-xs font-medium text-emerald-200/80 underline-offset-2 transition hover:text-white hover:underline"
+                title="Salir de esta liga"
+              >
+                ¿Te uniste sin querer? Salir →
+              </button>
+            </form>
+          </div>
+        )}
 
         <header className="mt-6 mb-8 flex flex-wrap items-end justify-between gap-3">
           <div>

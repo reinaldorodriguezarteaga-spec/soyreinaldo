@@ -74,6 +74,16 @@ export default function PuntosPage() {
           />
           <Rule
             points={10}
+            label="Equipo más goleador"
+            example="Acertar la selección que más goles marca en todo el torneo"
+          />
+          <Rule
+            points={10}
+            label="Equipo menos goleado"
+            example="Acertar la selección que menos goles encaja en todo el torneo"
+          />
+          <Rule
+            points={10}
             label="Pichichi (nombre)"
             example="Acertar el máximo goleador del torneo"
           />

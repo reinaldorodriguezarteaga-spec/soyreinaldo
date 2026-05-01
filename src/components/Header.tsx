@@ -154,7 +154,7 @@ export default function Header({
                   />
                   <DropdownItem
                     href="/quiniela/grupos"
-                    title="Grupos"
+                    title="Tabla de clasificación por equipos"
                     onClose={() => setOpenQuiniela(false)}
                   />
                   <DropdownItem
@@ -205,22 +205,10 @@ export default function Header({
             LaLiga
           </Link>
           <Link
-            href="/redes"
-            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
-          >
-            Redes
-          </Link>
-          <Link
             href="/estadios"
             className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
           >
             Estadios
-          </Link>
-          <Link
-            href="/media-kit"
-            className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
-          >
-            Media Kit
           </Link>
           <Link
             href="/contacto"
@@ -355,7 +343,7 @@ export default function Header({
                     />
                     <MobileItem
                       href="/quiniela/grupos"
-                      title="Grupos"
+                      title="Tabla de clasificación por equipos"
                       onClose={() => {
                         setMobileOpen(false);
                         setMobileQuinielaOpen(false);
@@ -422,25 +410,11 @@ export default function Header({
               LaLiga
             </Link>
             <Link
-              href="/redes"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
-            >
-              Redes
-            </Link>
-            <Link
               href="/estadios"
               onClick={() => setMobileOpen(false)}
               className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
             >
               Estadios
-            </Link>
-            <Link
-              href="/media-kit"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-zinc-900"
-            >
-              Media Kit
             </Link>
             <Link
               href="/contacto"

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import EmailForm from "./email-form";
 import PasswordForm from "./password-form";
 import ProfileForm from "./profile-form";
+import { setReminders } from "./actions";
 
 export const metadata = {
   title: "Perfil | Soy Reinaldo",
@@ -19,7 +20,7 @@ export default async function PerfilPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, username, phone_number, joined_at")
+    .select("display_name, username, phone_number, wants_reminders, joined_at")
     .eq("id", user.id)
     .single();
 
@@ -105,6 +106,43 @@ export default async function PerfilPage() {
               </p>
             </>
           )}
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+          <h2 className="mb-1 text-base font-semibold">Recordatorios por email</h2>
+          <p className="mb-4 text-xs text-zinc-500">
+            Te avisamos cada noche si tienes partidos sin pronosticar para el
+            día siguiente, y los domingos un resumen de toda la semana.
+          </p>
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-900 bg-zinc-900/40 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-zinc-100">
+                {profile?.wants_reminders ? "Activos" : "Desactivados"}
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {profile?.wants_reminders
+                  ? "Recibes los emails de la quiniela."
+                  : "No recibes recordatorios. Puedes activarlos cuando quieras."}
+              </p>
+            </div>
+            <form action={setReminders}>
+              <input
+                type="hidden"
+                name="wants_reminders"
+                value={profile?.wants_reminders ? "false" : "true"}
+              />
+              <button
+                type="submit"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  profile?.wants_reminders
+                    ? "border border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-white"
+                    : "bg-indigo-300 text-zinc-950 hover:bg-indigo-200"
+                }`}
+              >
+                {profile?.wants_reminders ? "Desactivar" : "Activar"}
+              </button>
+            </form>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">

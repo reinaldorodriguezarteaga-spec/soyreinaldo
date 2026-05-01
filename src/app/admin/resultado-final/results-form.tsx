@@ -15,6 +15,8 @@ export type Team = {
 export type CurrentResult = {
   champion_team: string | null;
   runner_up_team: string | null;
+  top_scoring_team: string | null;
+  least_conceded_team: string | null;
   pichichi_name: string | null;
   pichichi_actual_goals: number | null;
   final_scorer_names: string[] | null;
@@ -49,6 +51,25 @@ export default function ResultsForm({
             label="Subcampeón"
             teams={teams}
             defaultValue={current?.runner_up_team ?? ""}
+            disabled={pending}
+          />
+        </div>
+      </Section>
+
+      <Section title="Equipos del torneo">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TeamSelect
+            name="top_scoring_team"
+            label="Más goleador"
+            teams={teams}
+            defaultValue={current?.top_scoring_team ?? ""}
+            disabled={pending}
+          />
+          <TeamSelect
+            name="least_conceded_team"
+            label="Menos goleado"
+            teams={teams}
+            defaultValue={current?.least_conceded_team ?? ""}
             disabled={pending}
           />
         </div>

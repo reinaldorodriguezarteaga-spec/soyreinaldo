@@ -38,6 +38,10 @@ export async function saveTournamentResult(
 ): Promise<FinalState> {
   const champion = ((formData.get("champion") as string) || "").trim() || null;
   const runnerUp = ((formData.get("runner_up") as string) || "").trim() || null;
+  const topScoring =
+    ((formData.get("top_scoring_team") as string) || "").trim() || null;
+  const leastConceded =
+    ((formData.get("least_conceded_team") as string) || "").trim() || null;
   const pichichi =
     ((formData.get("pichichi_name") as string) || "").trim() || null;
   const pichichiGoals = parseInt0(
@@ -63,6 +67,12 @@ export async function saveTournamentResult(
       message: "Campeón y subcampeón no pueden ser el mismo equipo.",
     };
   }
+  if (topScoring && !FIFA.test(topScoring)) {
+    return { status: "error", message: "Equipo más goleador inválido." };
+  }
+  if (leastConceded && !FIFA.test(leastConceded)) {
+    return { status: "error", message: "Equipo menos goleado inválido." };
+  }
   if (pichichiGoals !== null && Number.isNaN(pichichiGoals)) {
     return { status: "error", message: "Goles del pichichi inválidos." };
   }
@@ -84,6 +94,8 @@ export async function saveTournamentResult(
     .update({
       champion_team: champion,
       runner_up_team: runnerUp,
+      top_scoring_team: topScoring,
+      least_conceded_team: leastConceded,
       pichichi_name: pichichi,
       pichichi_actual_goals: pichichiGoals,
       final_scorer_names: finalScorers,

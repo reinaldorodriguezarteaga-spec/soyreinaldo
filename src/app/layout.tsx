@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "@/components/Header";
+import WorldCupCountdownBar from "@/components/WorldCupCountdownBar";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -19,6 +20,19 @@ export const metadata: Metadata = {
   description:
     "Web personal de Reinaldo Rodríguez (@SoyReinaldoR) — creador de contenido culé. Quiniela del Mundial, media kit, redes y bot de comentarios.",
   metadataBase: new URL("https://soyreinaldo.com"),
+  applicationName: "Soy Reinaldo",
+  appleWebApp: {
+    capable: true,
+    title: "SoyReinaldo",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: "#0a0a0a",
 };
 
 export default async function RootLayout({
@@ -51,6 +65,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <WorldCupCountdownBar />
         <Header initialUser={user} userLeagues={userLeagues} />
         {children}
       </body>

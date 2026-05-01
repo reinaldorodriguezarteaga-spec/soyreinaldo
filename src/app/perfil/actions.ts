@@ -146,6 +146,20 @@ export async function updatePassword(
   };
 }
 
+export async function setReminders(formData: FormData) {
+  const next = formData.get("wants_reminders") === "true";
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from("profiles")
+    .update({ wants_reminders: next })
+    .eq("id", user.id);
+  revalidatePath("/perfil");
+}
+
 export async function updateEmail(
   _prev: EmailState,
   formData: FormData,

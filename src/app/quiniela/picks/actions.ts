@@ -23,6 +23,9 @@ export async function savePicks(
 ): Promise<PicksState> {
   const champion = (formData.get("champion") as string | null) || null;
   const runnerUp = (formData.get("runner_up") as string | null) || null;
+  const topScoring = (formData.get("top_scoring_team") as string | null) || null;
+  const leastConceded =
+    (formData.get("least_conceded_team") as string | null) || null;
   const pichichi = (formData.get("pichichi_name") as string | null)?.trim() || null;
   const finalScorer =
     (formData.get("final_scorer_name") as string | null)?.trim() || null;
@@ -36,6 +39,12 @@ export async function savePicks(
   }
   if (runnerUp && !FIFA_CODE_RE.test(runnerUp)) {
     return { status: "error", message: "Equipo subcampeón inválido." };
+  }
+  if (topScoring && !FIFA_CODE_RE.test(topScoring)) {
+    return { status: "error", message: "Equipo más goleador inválido." };
+  }
+  if (leastConceded && !FIFA_CODE_RE.test(leastConceded)) {
+    return { status: "error", message: "Equipo menos goleado inválido." };
   }
   if (champion && runnerUp && champion === runnerUp) {
     return {
@@ -67,6 +76,8 @@ export async function savePicks(
         user_id: user.id,
         champion_team: champion,
         runner_up_team: runnerUp,
+        top_scoring_team: topScoring,
+        least_conceded_team: leastConceded,
         pichichi_name: pichichi,
         pichichi_predicted_goals: pichichiGoals,
         final_scorer_name: finalScorer,

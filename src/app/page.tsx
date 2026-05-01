@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import DonationCard from "@/components/DonationCard";
 import MatchWidget from "@/components/MatchWidget";
-import WorldCupCountdown from "@/components/WorldCupCountdown";
 import {
   InstagramLogo,
   WhatsAppLogo,
@@ -75,20 +74,25 @@ export default function Home() {
 
             <Link
               href="/camisetas"
-              className="group mt-3 flex items-center justify-between gap-4 overflow-hidden rounded-2xl border border-indigo-400/20 bg-gradient-to-r from-[#a50044]/20 via-zinc-950 to-[#154284]/25 p-5 transition hover:border-indigo-300"
+              className="group mt-3 flex items-center gap-4 overflow-hidden rounded-2xl border border-indigo-400/20 bg-gradient-to-r from-[#a50044]/20 via-zinc-950 to-[#154284]/25 p-5 transition hover:border-indigo-300"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-indigo-300 sm:text-xs">
-                  Tienda partner
+                  Camisetas de Fútbol
                 </p>
                 <p className="mt-1 text-sm font-semibold sm:text-base">
-                  Camisetas con código{" "}
+                  Con código{" "}
                   <span className="font-mono text-indigo-300">REY15</span>
                 </p>
               </div>
-              <span className="shrink-0 text-sm font-medium text-indigo-300 transition-transform group-hover:translate-x-0.5">
-                →
-              </span>
+              <Image
+                src="/branding/camisetas-futbol-light.png"
+                alt="Camisetas de Fútbol"
+                width={140}
+                height={70}
+                className="h-10 w-auto shrink-0 object-contain transition-transform group-hover:translate-x-0.5 sm:h-12"
+                priority
+              />
             </Link>
           </div>
 
@@ -107,8 +111,6 @@ export default function Home() {
             />
           </div>
         </div>
-
-        <WorldCupCountdown />
 
         <MatchWidget />
 

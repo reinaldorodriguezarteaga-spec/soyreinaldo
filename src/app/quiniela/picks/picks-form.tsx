@@ -15,6 +15,8 @@ export type Team = {
 export type ExistingPicks = {
   champion_team: string | null;
   runner_up_team: string | null;
+  top_scoring_team: string | null;
+  least_conceded_team: string | null;
   pichichi_name: string | null;
   pichichi_predicted_goals: number | null;
   final_scorer_name: string | null;
@@ -60,6 +62,31 @@ export default function PicksForm({
             name="runner_up"
             teams={teams}
             defaultValue={existing?.runner_up_team ?? ""}
+            disabled={disabled}
+            placeholder="Elige una selección"
+          />
+        </div>
+      </Section>
+
+      {/* Equipos goleador / menos goleado */}
+      <Section
+        title="Equipos del torneo"
+        subtitle="10 puntos por acertar el equipo más goleador · 10 puntos por el equipo menos goleado"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TeamSelect
+            label="Más goleador"
+            name="top_scoring_team"
+            teams={teams}
+            defaultValue={existing?.top_scoring_team ?? ""}
+            disabled={disabled}
+            placeholder="Elige una selección"
+          />
+          <TeamSelect
+            label="Menos goleado"
+            name="least_conceded_team"
+            teams={teams}
+            defaultValue={existing?.least_conceded_team ?? ""}
             disabled={disabled}
             placeholder="Elige una selección"
           />
