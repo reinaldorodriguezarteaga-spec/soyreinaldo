@@ -106,8 +106,8 @@ export default function Home() {
             <Image
               src="/branding/retrato.png"
               alt="Reinaldo con la camiseta del FC Barcelona"
-              width={1200}
-              height={1840}
+              width={1509}
+              height={2000}
               className="h-auto w-full object-contain drop-shadow-2xl"
               priority
             />
