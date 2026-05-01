@@ -7,6 +7,11 @@ import UserMenu from "./UserMenu";
 
 const productos = [
   {
+    href: "/asesorias",
+    label: "Asesoría 1:1",
+    desc: "Sesión 1:1 para impulsar tus redes — 75€",
+  },
+  {
     href: "/camisetas",
     label: "Camisetas",
     desc: "Tienda partner con tu código de descuento",
