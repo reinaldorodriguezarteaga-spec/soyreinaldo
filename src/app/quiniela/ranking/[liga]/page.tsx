@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import CopyInviteIcon from "@/components/CopyInviteIcon";
 import { leaveLeague } from "@/app/quiniela/actions";
 
 export const metadata = {
@@ -117,9 +118,12 @@ export default async function RankingPage({
               <p className="mt-1 text-sm text-zinc-400">{league.description}</p>
             )}
           </div>
-          <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1 font-mono text-xs text-indigo-300">
-            {league.code}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1 font-mono text-xs text-indigo-300">
+              {league.code}
+            </span>
+            {profile?.is_admin && <CopyInviteIcon code={league.code} />}
+          </div>
         </header>
 
         {leaderboard.length === 0 ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import CopyInviteIcon from "@/components/CopyInviteIcon";
 import JoinLeagueForm from "./join-league-form";
 import { leaveLeague } from "./actions";
 
@@ -205,6 +206,7 @@ function LeaguesList({
                   <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-0.5 font-mono text-xs text-indigo-300">
                     {l.code}
                   </span>
+                  {isAdmin && <CopyInviteIcon code={l.code} />}
                 </div>
                 {l.description && (
                   <p className="mt-1 text-sm text-zinc-400">{l.description}</p>
