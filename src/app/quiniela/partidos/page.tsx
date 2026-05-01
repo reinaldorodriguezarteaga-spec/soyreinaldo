@@ -210,6 +210,14 @@ export default async function PartidosPage({
           </div>
         </header>
 
+        <Link
+          href="/quiniela/puntos"
+          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 underline-offset-4 hover:underline"
+        >
+          📖 Cómo se puntúa
+          <span>→</span>
+        </Link>
+
         <PhaseTabs activeSlug={phase.slug} />
 
         {isKnockout && (

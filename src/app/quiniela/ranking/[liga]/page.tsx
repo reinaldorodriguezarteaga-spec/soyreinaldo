@@ -127,6 +127,16 @@ export default async function RankingPage({
         ) : (
           <Leaderboard rows={leaderboard} currentUserId={user.id} />
         )}
+
+        <p className="mt-6 text-center text-xs text-zinc-500">
+          ¿Dudas con la suma?{" "}
+          <Link
+            href="/quiniela/puntos"
+            className="font-medium text-indigo-300 underline-offset-4 hover:underline"
+          >
+            Cómo se puntúa →
+          </Link>
+        </p>
       </div>
     </main>
   );
