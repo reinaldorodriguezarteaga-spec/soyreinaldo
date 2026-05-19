@@ -92,7 +92,7 @@ const igStats: Metric[] = [
 ];
 
 const fbStats: Metric[] = [
-  { key: "views", label: "Visualizaciones", value: "2,2M" },
+  { key: "views", label: "Visualizaciones", value: "8,4M" },
   { key: "viewers", label: "Espectadores", value: "969.673" },
   { key: "interactions", label: "Interacciones", value: "190.972" },
   { key: "playsShort", label: "Reproducciones de 3s", value: "816.435" },

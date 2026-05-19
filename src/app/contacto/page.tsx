@@ -367,7 +367,7 @@ export default function ContactoPage() {
                   <VerifiedBadge color="#1877F2" />
                 </div>
                 <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                  Facebook · 43K seguidores · +2,2M visualizaciones/mes
+                  Facebook · 43K seguidores · +8,4M visualizaciones/mes
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-[#1877F2] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#1465d8] sm:px-5 sm:py-2.5 sm:text-sm">
@@ -399,10 +399,17 @@ export default function ContactoPage() {
             </a>
           </div>
 
-          <p className="mt-8 text-center text-xs text-zinc-500">
-            <span className="text-indigo-300">+149.000</span> personas en mis
-            redes · 513K me gusta acumulados en TikTok
-          </p>
+          <div className="mt-8 overflow-hidden rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 px-6 py-6 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
+              Comunidad total
+            </p>
+            <p className="mt-3 font-mono text-4xl font-bold tabular-nums text-white sm:text-5xl">
+              +149.000
+            </p>
+            <p className="mt-2 text-sm text-zinc-400">
+              personas siguiéndome en redes
+            </p>
+          </div>
         </section>
 
       </div>
