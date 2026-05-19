@@ -398,6 +398,11 @@ export default function ContactoPage() {
               </span>
             </a>
           </div>
+
+          <p className="mt-8 text-center text-xs text-zinc-500">
+            <span className="text-indigo-300">+149.000</span> personas en mis
+            redes · 513K me gusta acumulados en TikTok
+          </p>
         </section>
 
       </div>
