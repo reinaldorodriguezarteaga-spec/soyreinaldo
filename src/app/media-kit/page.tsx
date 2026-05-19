@@ -36,7 +36,7 @@ const platforms = [
   {
     name: "Instagram",
     handle: "@SoyReinaldoR",
-    metric: "54.400",
+    metric: "54.500",
     label: "Seguidores",
     accent: "from-yellow-400 via-pink-600 to-purple-700",
     Logo: InstagramLogo,
@@ -44,7 +44,7 @@ const platforms = [
   {
     name: "Facebook",
     handle: "Fútbol con Reinaldo",
-    metric: "34.001",
+    metric: "43.000",
     label: "Seguidores",
     accent: "from-blue-500 via-blue-600 to-blue-700",
     Logo: FacebookLogo,
@@ -52,7 +52,7 @@ const platforms = [
   {
     name: "TikTok",
     handle: "@SoyReinaldoR",
-    metric: "34.300",
+    metric: "34.400",
     label: "Seguidores activos",
     accent: "from-[#25F4EE] via-zinc-700 to-[#FE2C55]",
     Logo: TikTokLogo,
@@ -68,7 +68,7 @@ const platforms = [
   {
     name: "Threads",
     handle: "@SoyReinaldoR",
-    metric: "7.315",
+    metric: "8.700",
     label: "Seguidores",
     accent: "from-zinc-300 via-zinc-500 to-zinc-700",
     Logo: ThreadsLogo,

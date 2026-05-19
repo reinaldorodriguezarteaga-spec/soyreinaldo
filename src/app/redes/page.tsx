@@ -133,7 +133,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#3897F0" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Instagram · 54,4K seguidores · +7,7M visualizaciones/mes
+                Instagram · 54,5K seguidores · +7,7M visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -156,7 +156,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#25F4EE" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                TikTok · 34,3K seguidores · +4M visualizaciones/mes
+                TikTok · 34,4K seguidores · +4M visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
@@ -179,7 +179,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#1877F2" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Facebook · 34K seguidores · +2,2M visualizaciones/mes
+                Facebook · 43K seguidores · +2,2M visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#1877F2] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#1465d8] sm:px-5 sm:py-2.5 sm:text-sm">
@@ -202,7 +202,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#a1a1aa" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Threads · 7,3K seguidores
+                Threads · 8,7K seguidores
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition group-hover:bg-zinc-200 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -212,7 +212,7 @@ export default function RedesPage() {
         </div>
 
         <p className="mt-10 text-center text-xs text-zinc-600">
-          +138.000 personas en mis redes · 513K me gusta acumulados en TikTok
+          +149.000 personas en mis redes · 513K me gusta acumulados en TikTok
         </p>
       </div>
     </main>
