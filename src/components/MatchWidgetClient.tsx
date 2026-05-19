@@ -90,11 +90,41 @@ function TeamSide({
   );
 }
 
+/**
+ * Convierte el string "round" de API-Football a una etiqueta corta:
+ *   "Regular Season - 34"  → "Jornada 34"
+ *   "Group Stage - 1"      → "J1 grupos"
+ *   "Round of 16"          → "Octavos"
+ *   "Quarter-finals"       → "Cuartos"
+ *   "Semi-finals"          → "Semifinales"
+ *   "Final"                → "Final"
+ *   "3rd Place Final"      → "3er puesto"
+ */
+function formatRound(round: string | undefined | null): string | null {
+  if (!round) return null;
+  const m = round.match(/Regular Season\s*-\s*(\d+)/i);
+  if (m) return `Jornada ${m[1]}`;
+  const g = round.match(/Group Stage\s*-\s*(\d+)/i);
+  if (g) return `J${g[1]} grupos`;
+  if (/Round of 16/i.test(round)) return "Octavos";
+  if (/Quarter/i.test(round)) return "Cuartos";
+  if (/Semi/i.test(round)) return "Semifinales";
+  if (/3rd Place/i.test(round)) return "3er puesto";
+  if (/^Final$/i.test(round.trim())) return "Final";
+  return round;
+}
+
 function FixtureRow({ fx }: { fx: Fixture }) {
+  const roundLabel = formatRound(fx.league?.round);
   return (
     <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
       <TeamSide name={fx.teams.home.name} logo={fx.teams.home.logo} align="left" />
       <div className="flex shrink-0 flex-col items-center gap-1">
+        {roundLabel && (
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500">
+            {roundLabel}
+          </span>
+        )}
         <ScoreOrVs fx={fx} />
         <StatusBadge fx={fx} />
       </div>
