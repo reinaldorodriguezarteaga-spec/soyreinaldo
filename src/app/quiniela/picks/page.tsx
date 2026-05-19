@@ -62,6 +62,16 @@ export default async function PicksPage() {
           </p>
         </header>
 
+        <Link
+          href="/quiniela/puntos"
+          className="group mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
+        >
+          📖 Cómo se puntúa
+          <span className="transition-transform group-hover:translate-x-0.5">
+            →
+          </span>
+        </Link>
+
         <PicksForm teams={teams} existing={existing ?? null} locked={locked} />
       </div>
     </main>

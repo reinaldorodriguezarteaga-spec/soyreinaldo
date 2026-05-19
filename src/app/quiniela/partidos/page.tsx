@@ -210,27 +210,30 @@ export default async function PartidosPage({
           </div>
         </header>
 
-        <Link
-          href="/quiniela/puntos"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 underline-offset-4 hover:underline"
-        >
-          📖 Cómo se puntúa
-          <span>→</span>
-        </Link>
-
         <PhaseTabs activeSlug={phase.slug} />
 
-        {isKnockout && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
-            href="/quiniela/bracket"
-            className="group mt-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
+            href="/quiniela/puntos"
+            className="group inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
           >
-            🏆 Ver bracket completo
+            📖 Cómo se puntúa
             <span className="transition-transform group-hover:translate-x-0.5">
               →
             </span>
           </Link>
-        )}
+          {isKnockout && (
+            <Link
+              href="/quiniela/bracket"
+              className="group inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
+            >
+              🏆 Ver bracket completo
+              <span className="transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
+            </Link>
+          )}
+        </div>
 
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">
           Se guarda automáticamente al completar el resultado. No puedes
