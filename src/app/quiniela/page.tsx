@@ -290,6 +290,23 @@ function LeaguesList({
         </Link>
       </div>
 
+      <Link
+        href="/quiniela/puntos"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 transition hover:border-indigo-300/60 hover:bg-zinc-900"
+      >
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
+            📖 Reglas
+          </p>
+          <p className="mt-1 text-sm font-medium text-zinc-200">
+            Cómo se puntúa cada acierto
+          </p>
+        </div>
+        <span className="shrink-0 text-xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
+          →
+        </span>
+      </Link>
+
       <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-6 text-sm text-zinc-400">
         <p className="text-xs uppercase tracking-widest text-indigo-300">
           Próximamente
