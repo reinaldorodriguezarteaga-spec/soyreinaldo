@@ -55,28 +55,33 @@ export async function joinLeague(
 }
 
 /**
- * Unirse a una liga pública con 1 click — sin necesidad de teclear el código.
- * El formulario lleva el code y league_id como hidden inputs. Tras unirse,
- * redirige al ranking con `?bienvenida=1` para que se muestre el banner.
+ * Acción unificada para unirse a una liga vía código. Cubre tanto el flujo
+ * de ligas públicas (code viene de hidden input renderizado por el server)
+ * como el de privadas (code viene de un input que rellena el usuario).
  *
- * Idempotente: si ya eres miembro, el RPC join_league_by_code no inserta
- * nada (ON CONFLICT DO NOTHING) y el redirect lleva al ranking normalmente.
+ * El RPC `join_league_by_code` devuelve la fila league_members con el
+ * league_id correspondiente al code → la usamos para redirigir al ranking
+ * correcto, sin pasar league_id explícito.
+ *
+ * Idempotente: si ya eres miembro, ON CONFLICT DO NOTHING y termina en el
+ * ranking igualmente.
  */
-export async function joinPublicLeague(formData: FormData) {
+export async function joinLeagueByCode(formData: FormData) {
   const code = (formData.get("code") as string | null)?.trim();
-  const leagueId = (formData.get("league_id") as string | null)?.trim();
-  if (!code || !leagueId) {
-    redirect("/quiniela");
+  if (!code) {
+    redirect("/quiniela?join_error=" + encodeURIComponent("Falta el código."));
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     redirect(`/login?redirect=/quiniela`);
   }
 
-  const { error } = await supabase.rpc("join_league_by_code", {
-    p_code: code,
+  const { data, error } = await supabase.rpc("join_league_by_code", {
+    p_code: code!,
   });
 
   if (error) {
@@ -85,8 +90,13 @@ export async function joinPublicLeague(formData: FormData) {
     );
   }
 
+  const leagueId = (data as { league_id?: string } | null)?.league_id;
   revalidatePath("/quiniela");
-  redirect(`/quiniela/ranking/${leagueId}?bienvenida=1`);
+  redirect(
+    leagueId
+      ? `/quiniela/ranking/${leagueId}?bienvenida=1`
+      : "/quiniela",
+  );
 }
 
 export async function leaveLeague(formData: FormData) {
