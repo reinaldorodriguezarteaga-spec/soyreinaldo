@@ -102,7 +102,42 @@ export default async function AdminLeaguesPage() {
           )}
         </section>
 
-        <div className="mt-10 rounded-2xl border border-indigo-400/20 bg-indigo-500/5 p-5 text-sm text-zinc-300">
+        <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/admin/seguidores"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-indigo-300"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
+                📊 Cifras de redes
+              </p>
+              <p className="mt-1 text-sm font-medium text-zinc-200">
+                Actualiza los seguidores/views
+              </p>
+            </div>
+            <span className="text-xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
+          </Link>
+          <Link
+            href="/admin/resultado-final"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-indigo-300"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
+                🏆 Resultado final
+              </p>
+              <p className="mt-1 text-sm font-medium text-zinc-200">
+                Campeón, pichichi, hat-tricks...
+              </p>
+            </div>
+            <span className="text-xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
+          </Link>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-indigo-400/20 bg-indigo-500/5 p-5 text-sm text-zinc-300">
           <p className="font-medium text-indigo-300">💡 Cómo usar los códigos</p>
           <ul className="mt-2 space-y-1.5 text-zinc-400">
             <li>

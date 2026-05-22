@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import DonationCard from "@/components/DonationCard";
 import MatchWidget from "@/components/MatchWidget";
 import { SkeletonBar } from "@/components/Skeleton";
+import { getSocialStats } from "@/lib/social-stats";
 import {
   InstagramLogo,
   WhatsAppLogo,
 } from "@/components/social-logos";
 
-export default function Home() {
+export default async function Home() {
+  const stats = await getSocialStats();
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-12 sm:py-20">
       <div className="w-full max-w-5xl">
@@ -24,9 +26,12 @@ export default function Home() {
               </h1>
               <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-zinc-400 sm:mx-0 sm:text-lg">
                 Cuento el fútbol desde la pasión culé.{" "}
-                <span className="text-indigo-300">+149.000 seguidores</span>{" "}
-                entre Instagram, Facebook, TikTok, YouTube y Threads, y más de
-                7,7M de visualizaciones al mes solo en Instagram.
+                <span className="text-indigo-300">
+                  {stats.total_followers} seguidores
+                </span>{" "}
+                entre Instagram, Facebook, TikTok, YouTube y Threads, y más de{" "}
+                {stats.ig_views_monthly.replace(/^\+/, "")} de visualizaciones
+                al mes solo en Instagram.
               </p>
             </header>
 

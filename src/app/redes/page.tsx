@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getSocialStats } from "@/lib/social-stats";
 import {
   FacebookLogo,
   InstagramLogo,
@@ -57,7 +58,8 @@ function AvatarWithLogo({
   );
 }
 
-export default function RedesPage() {
+export default async function RedesPage() {
+  const stats = await getSocialStats();
   return (
     <main className="flex flex-1 flex-col px-6 py-16">
       <div className="mx-auto w-full max-w-2xl">
@@ -97,7 +99,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#FF0000" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                YouTube · +9.000 suscriptores · +1,8M visualizaciones/mes
+                YouTube · {stats.yt_subscribers} suscriptores · {stats.yt_views_monthly} visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -133,7 +135,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#3897F0" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Instagram · 54,5K seguidores · +7,7M visualizaciones/mes
+                Instagram · {stats.ig_followers} seguidores · {stats.ig_views_monthly} visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -156,7 +158,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#25F4EE" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                TikTok · 34,4K seguidores · +4M visualizaciones/mes
+                TikTok · {stats.tt_followers} seguidores · {stats.tt_views_monthly} visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
@@ -179,7 +181,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#1877F2" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Facebook · 43K seguidores · +8,4M visualizaciones/mes
+                Facebook · {stats.fb_followers} seguidores · {stats.fb_views_monthly} visualizaciones/mes
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#1877F2] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#1465d8] sm:px-5 sm:py-2.5 sm:text-sm">
@@ -202,7 +204,7 @@ export default function RedesPage() {
                 <VerifiedBadge color="#a1a1aa" />
               </div>
               <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Threads · 8,7K seguidores
+                Threads · {stats.threads_followers} seguidores
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition group-hover:bg-zinc-200 sm:px-5 sm:py-2.5 sm:text-sm">
@@ -216,7 +218,7 @@ export default function RedesPage() {
             Comunidad total
           </p>
           <p className="mt-3 font-mono text-4xl font-bold tabular-nums text-white sm:text-5xl">
-            +149.000
+            {stats.total_followers}
           </p>
           <p className="mt-2 text-sm text-zinc-400">
             personas siguiéndome en redes
