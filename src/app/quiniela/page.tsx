@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CopyInviteIcon from "@/components/CopyInviteIcon";
 import JoinLeagueForm from "./join-league-form";
-import { leaveLeague } from "./actions";
+import { joinPublicLeague, leaveLeague } from "./actions";
 
 export const metadata = {
   title: "Quiniela Mundial 2026 | Soy Reinaldo",
@@ -18,6 +18,14 @@ type LeagueRow = {
     code: string;
     description: string | null;
   };
+};
+
+type PublicLeague = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  member_count: { count: number }[];
 };
 
 export default async function QuinielaPage() {
@@ -39,6 +47,18 @@ export default async function QuinielaPage() {
     .returns<LeagueRow[]>();
 
   const leagues = (memberships ?? []).map((m) => m.league).filter(Boolean);
+
+  // Ligas públicas a las que aún no pertenece (para el "únete con 1 click")
+  const joinedIds = new Set(leagues.map((l) => l.id));
+  const { data: publicData } = await supabase
+    .from("leagues")
+    .select("id, name, code, description, member_count:league_members(count)")
+    .eq("is_public", true)
+    .order("created_at", { ascending: false })
+    .returns<PublicLeague[]>();
+  const availablePublic = (publicData ?? []).filter(
+    (l) => !joinedIds.has(l.id),
+  );
 
   const displayName =
     (user.user_metadata?.display_name as string | undefined) ??
@@ -83,9 +103,14 @@ export default async function QuinielaPage() {
         )}
 
         {leagues.length === 0 ? (
-          <NoLeaguesState />
+          <NoLeaguesState publicLeagues={availablePublic} />
         ) : (
-          <LeaguesList leagues={leagues} canAddMore isAdmin={isAdmin} />
+          <LeaguesList
+            leagues={leagues}
+            canAddMore
+            isAdmin={isAdmin}
+            publicLeagues={availablePublic}
+          />
         )}
 
         {isAdmin && (
@@ -149,20 +174,38 @@ function ProfileBanner({
   );
 }
 
-function NoLeaguesState() {
+function NoLeaguesState({
+  publicLeagues,
+}: {
+  publicLeagues: PublicLeague[];
+}) {
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 p-6 sm:p-8">
-        <h2 className="text-lg font-semibold">Introduce tu código de acceso</h2>
-        <p className="mt-2 text-sm text-zinc-400">
-          La quiniela está dividida en grupos privados (familiar, amigos,
-          comunidad...). Pídeme el código del grupo al que perteneces y
-          pégalo aquí.
-        </p>
-        <div className="mt-6">
+      {publicLeagues.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-indigo-300">
+            Únete con un click
+          </h2>
+          <div className="space-y-3">
+            {publicLeagues.map((l) => (
+              <PublicLeagueCard key={l.id} league={l} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <details className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+        <summary className="cursor-pointer text-sm font-medium text-zinc-300 hover:text-white">
+          ¿Tienes un código de invitación privado?
+        </summary>
+        <div className="mt-5">
+          <p className="mb-4 text-xs text-zinc-500">
+            Si te invitaron a una liga privada (familiar, amigos…) pega aquí el
+            código que te pasaron.
+          </p>
           <JoinLeagueForm />
         </div>
-      </div>
+      </details>
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-sm text-zinc-400">
         <p className="font-medium text-white">Reglas del juego</p>
@@ -176,8 +219,48 @@ function NoLeaguesState() {
           <li>· Acertar un goleador de la final — 8 puntos</li>
           <li>· Acertar el total de hat-tricks del torneo — 5 puntos</li>
         </ul>
+        <Link
+          href="/quiniela/puntos"
+          className="mt-4 inline-block text-xs font-medium text-indigo-300 hover:text-indigo-200"
+        >
+          Ver reglas completas →
+        </Link>
       </div>
     </div>
+  );
+}
+
+function PublicLeagueCard({ league }: { league: PublicLeague }) {
+  const count = league.member_count?.[0]?.count ?? 0;
+  return (
+    <article className="flex flex-col gap-3 rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/10 via-zinc-950 to-zinc-950 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold sm:text-lg">{league.name}</h3>
+          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+            Pública
+          </span>
+        </div>
+        {league.description && (
+          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            {league.description}
+          </p>
+        )}
+        <p className="mt-1 text-xs text-zinc-500">
+          {count} {count === 1 ? "miembro" : "miembros"} ya dentro
+        </p>
+      </div>
+      <form action={joinPublicLeague} className="shrink-0">
+        <input type="hidden" name="code" value={league.code} />
+        <input type="hidden" name="league_id" value={league.id} />
+        <button
+          type="submit"
+          className="w-full rounded-xl bg-indigo-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 sm:w-auto"
+        >
+          Unirme
+        </button>
+      </form>
+    </article>
   );
 }
 
@@ -185,10 +268,12 @@ function LeaguesList({
   leagues,
   canAddMore,
   isAdmin,
+  publicLeagues = [],
 }: {
   leagues: { id: string; name: string; code: string; description: string | null }[];
   canAddMore?: boolean;
   isAdmin?: boolean;
+  publicLeagues?: PublicLeague[];
 }) {
   return (
     <div className="space-y-6">
@@ -237,10 +322,23 @@ function LeaguesList({
         </div>
       </section>
 
+      {publicLeagues.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
+            Otras ligas a las que puedes unirte
+          </h2>
+          <div className="space-y-3">
+            {publicLeagues.map((l) => (
+              <PublicLeagueCard key={l.id} league={l} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {canAddMore && (
         <details className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
           <summary className="cursor-pointer text-sm font-medium text-zinc-300 hover:text-white">
-            Unirme a otra liga con un código
+            ¿Tienes un código privado? Unirme a otra liga
           </summary>
           <div className="mt-5">
             <JoinLeagueForm />
