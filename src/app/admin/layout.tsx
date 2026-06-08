@@ -38,7 +38,7 @@ export default async function AdminLayout({
           <span className="rounded-full bg-indigo-300/10 px-2.5 py-0.5 font-medium uppercase tracking-[0.2em] text-indigo-300">
             Admin
           </span>
-          <nav className="flex gap-3 text-zinc-400">
+          <nav className="flex flex-wrap gap-3 text-zinc-400">
             <Link href="/admin/ligas" className="hover:text-white">
               Ligas
             </Link>
@@ -50,6 +50,9 @@ export default async function AdminLayout({
               className="hover:text-white"
             >
               Final
+            </Link>
+            <Link href="/admin/seguidores" className="hover:text-white">
+              Redes
             </Link>
           </nav>
         </div>
