@@ -15,9 +15,15 @@ export type Team = {
 export type CurrentResult = {
   champion_team: string | null;
   runner_up_team: string | null;
+  tercer_lugar: string | null;
+  top_scoring_team: string | null;
   pichichi_name: string | null;
   pichichi_actual_goals: number | null;
   final_scorer_names: string[] | null;
+  balon_oro: string | null;
+  guante_oro: string | null;
+  jugador_revelacion: string | null;
+  max_asistidor: string | null;
 };
 
 export default function ResultsForm({
@@ -34,8 +40,8 @@ export default function ResultsForm({
 
   return (
     <form action={action} className="space-y-6">
-      <Section title="Campeón y subcampeón">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <Section title="Podio">
+        <div className="grid gap-4 sm:grid-cols-3">
           <TeamSelect
             name="champion"
             label="Campeón"
@@ -50,7 +56,24 @@ export default function ResultsForm({
             defaultValue={current?.runner_up_team ?? ""}
             disabled={pending}
           />
+          <TeamSelect
+            name="tercer_lugar"
+            label="Tercer lugar"
+            teams={teams}
+            defaultValue={current?.tercer_lugar ?? ""}
+            disabled={pending}
+          />
         </div>
+      </Section>
+
+      <Section title="Equipo más goleador">
+        <TeamSelect
+          name="top_scoring_team"
+          label="Selección"
+          teams={teams}
+          defaultValue={current?.top_scoring_team ?? ""}
+          disabled={pending}
+        />
       </Section>
 
       <Section title="Pichichi del Mundial">
@@ -85,6 +108,18 @@ export default function ResultsForm({
         <p className="mt-1.5 text-[11px] text-zinc-500">
           Si un usuario predijo cualquiera de estos nombres, se llevará los 8
           puntos.
+        </p>
+      </Section>
+
+      <Section title="Premios individuales">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Text name="balon_oro" label="Balón de oro" placeholder="Mejor jugador" defaultValue={current?.balon_oro ?? ""} disabled={pending} />
+          <Text name="guante_oro" label="Guante de oro" placeholder="Mejor portero" defaultValue={current?.guante_oro ?? ""} disabled={pending} />
+          <Text name="jugador_revelacion" label="Jugador revelación" placeholder="Joven revelación" defaultValue={current?.jugador_revelacion ?? ""} disabled={pending} />
+          <Text name="max_asistidor" label="Máximo asistidor" placeholder="Más asistencias" defaultValue={current?.max_asistidor ?? ""} disabled={pending} />
+        </div>
+        <p className="mt-1.5 text-[11px] text-zinc-500">
+          Nombres comparados ignorando tildes y mayúsculas.
         </p>
       </Section>
 

@@ -251,7 +251,7 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
 
       <footer className="mt-3 min-h-[1rem] text-right text-[11px]">
         {isLocked && (
-          <span className="text-zinc-500">🔒 Bloqueado · ya empezó</span>
+          <span className="text-zinc-500">🔒 Cerrado · falta &lt;1h</span>
         )}
         {!isLocked && status === "saving" && (
           <span className="text-zinc-400">Guardando…</span>

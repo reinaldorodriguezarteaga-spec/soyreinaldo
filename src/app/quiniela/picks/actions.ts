@@ -23,18 +23,30 @@ export async function savePicks(
 ): Promise<PicksState> {
   const champion = (formData.get("champion") as string | null) || null;
   const runnerUp = (formData.get("runner_up") as string | null) || null;
+  const tercero = (formData.get("tercer_lugar") as string | null) || null;
+  const topScoring = (formData.get("top_scoring_team") as string | null) || null;
   const pichichi = (formData.get("pichichi_name") as string | null)?.trim() || null;
   const finalScorer =
     (formData.get("final_scorer_name") as string | null)?.trim() || null;
+  const balonOro = (formData.get("balon_oro") as string | null)?.trim() || null;
+  const guanteOro = (formData.get("guante_oro") as string | null)?.trim() || null;
+  const revelacion =
+    (formData.get("jugador_revelacion") as string | null)?.trim() || null;
+  const asistidor =
+    (formData.get("max_asistidor") as string | null)?.trim() || null;
   const pichichiGoalsRaw = formData.get("pichichi_predicted_goals") as
     | string
     | null;
 
-  if (champion && !FIFA_CODE_RE.test(champion)) {
-    return { status: "error", message: "Equipo campeón inválido." };
-  }
-  if (runnerUp && !FIFA_CODE_RE.test(runnerUp)) {
-    return { status: "error", message: "Equipo subcampeón inválido." };
+  for (const [val, label] of [
+    [champion, "campeón"],
+    [runnerUp, "subcampeón"],
+    [tercero, "tercer lugar"],
+    [topScoring, "equipo más goleador"],
+  ] as const) {
+    if (val && !FIFA_CODE_RE.test(val)) {
+      return { status: "error", message: `Equipo de ${label} inválido.` };
+    }
   }
   if (champion && runnerUp && champion === runnerUp) {
     return {
@@ -62,9 +74,15 @@ export async function savePicks(
         user_id: user.id,
         champion_team: champion,
         runner_up_team: runnerUp,
+        tercer_lugar: tercero,
+        top_scoring_team: topScoring,
         pichichi_name: pichichi,
         pichichi_predicted_goals: pichichiGoals,
         final_scorer_name: finalScorer,
+        balon_oro: balonOro,
+        guante_oro: guanteOro,
+        jugador_revelacion: revelacion,
+        max_asistidor: asistidor,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },

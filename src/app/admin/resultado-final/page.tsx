@@ -24,7 +24,7 @@ export default async function AdminFinalResultPage() {
   const { data: current } = await supabase
     .from("tournament_results")
     .select(
-      "champion_team, runner_up_team, pichichi_name, pichichi_actual_goals, final_scorer_names",
+      "champion_team, runner_up_team, tercer_lugar, top_scoring_team, pichichi_name, pichichi_actual_goals, final_scorer_names, balon_oro, guante_oro, jugador_revelacion, max_asistidor",
     )
     .eq("id", 1)
     .maybeSingle<CurrentResult>();

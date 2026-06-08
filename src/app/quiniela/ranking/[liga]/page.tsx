@@ -25,7 +25,10 @@ type LeaderboardRow = {
   exact_count: number;
   partial_count: number;
   predictions_made: number;
+  picks_made: number;
 };
+
+const TOTAL_PICKS = 10; // campeón, subcampeón, 3º, equipo goleador, pichichi, balón oro, guante, revelación, asistidor, goleador final
 
 export default async function RankingPage({
   params,
@@ -177,6 +180,9 @@ function Leaderboard({
               Predichos
             </th>
             <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
+              Especiales
+            </th>
+            <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
               Exactos
             </th>
             <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
@@ -219,6 +225,18 @@ function Leaderboard({
                 </td>
                 <td className="hidden px-3 py-3 text-right tabular-nums text-zinc-400 sm:table-cell sm:px-4">
                   {r.predictions_made}
+                </td>
+                <td
+                  className={`hidden px-3 py-3 text-right tabular-nums sm:table-cell sm:px-4 ${
+                    r.picks_made >= TOTAL_PICKS
+                      ? "text-emerald-300"
+                      : r.picks_made > 0
+                        ? "text-zinc-300"
+                        : "text-zinc-600"
+                  }`}
+                  title="Picks especiales completados"
+                >
+                  {r.picks_made}/{TOTAL_PICKS}
                 </td>
                 <td className="hidden px-3 py-3 text-right tabular-nums text-emerald-300 sm:table-cell sm:px-4">
                   {r.exact_count}

@@ -115,10 +115,13 @@ export default async function PartidosPage({
     .select("*", { count: "exact", head: true });
 
   const now = new Date();
+  // Las predicciones se cierran 1 HORA antes del kickoff (mismo límite que
+  // la RLS de la BD, para que UI y backend coincidan).
+  const LOCK_LEAD_MS = 60 * 60 * 1000;
 
   const cards: MatchCardData[] = matches.map((m) => {
     const kickoff = new Date(m.kickoff_at);
-    const locked = kickoff <= now;
+    const locked = kickoff.getTime() - LOCK_LEAD_MS <= now.getTime();
     const home: MatchCardData["home"] = m.home
       ? {
           code: m.home.id,
@@ -236,8 +239,9 @@ export default async function PartidosPage({
         </div>
 
         <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-          Se guarda automáticamente al completar el resultado. No puedes
-          editarlo una vez empieza el partido.
+          Se guarda automáticamente al completar el resultado. El pronóstico
+          se cierra 1 hora antes del inicio de cada partido — después no se
+          puede editar.
         </p>
 
         {cards.length === 0 ? (

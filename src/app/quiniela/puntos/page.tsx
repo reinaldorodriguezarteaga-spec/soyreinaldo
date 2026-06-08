@@ -73,6 +73,16 @@ export default function PuntosPage() {
             example="Acertar el equipo que pierde la final"
           />
           <Rule
+            points={7}
+            label="Tercer lugar"
+            example="Acertar el equipo que queda tercero"
+          />
+          <Rule
+            points={10}
+            label="Equipo más goleador"
+            example="La selección que más goles marca en todo el torneo"
+          />
+          <Rule
             points={10}
             label="Pichichi (nombre)"
             example="Acertar el máximo goleador del torneo"
@@ -82,6 +92,26 @@ export default function PuntosPage() {
             label="Pichichi (goles exactos)"
             extra="extra"
             example="Si además aciertas cuántos goles marca: +5 sobre el bonus de nombre"
+          />
+          <Rule
+            points={10}
+            label="Balón de oro"
+            example="El mejor jugador del Mundial"
+          />
+          <Rule
+            points={7}
+            label="Guante de oro"
+            example="El mejor portero del torneo"
+          />
+          <Rule
+            points={7}
+            label="Jugador revelación"
+            example="El jugador joven revelación del Mundial"
+          />
+          <Rule
+            points={5}
+            label="Máximo asistidor"
+            example="El jugador con más asistencias"
           />
           <Rule
             points={8}

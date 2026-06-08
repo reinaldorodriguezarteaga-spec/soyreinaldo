@@ -38,8 +38,17 @@ export async function saveTournamentResult(
 ): Promise<FinalState> {
   const champion = ((formData.get("champion") as string) || "").trim() || null;
   const runnerUp = ((formData.get("runner_up") as string) || "").trim() || null;
+  const tercero = ((formData.get("tercer_lugar") as string) || "").trim() || null;
+  const topScoring =
+    ((formData.get("top_scoring_team") as string) || "").trim() || null;
   const pichichi =
     ((formData.get("pichichi_name") as string) || "").trim() || null;
+  const balonOro = ((formData.get("balon_oro") as string) || "").trim() || null;
+  const guanteOro = ((formData.get("guante_oro") as string) || "").trim() || null;
+  const revelacion =
+    ((formData.get("jugador_revelacion") as string) || "").trim() || null;
+  const asistidor =
+    ((formData.get("max_asistidor") as string) || "").trim() || null;
   const pichichiGoals = parseInt0(
     formData.get("pichichi_actual_goals") as string | null,
     99,
@@ -47,11 +56,15 @@ export async function saveTournamentResult(
   const finalScorersRaw =
     ((formData.get("final_scorer_names") as string) || "").trim();
 
-  if (champion && !FIFA.test(champion)) {
-    return { status: "error", message: "Equipo campeón inválido." };
-  }
-  if (runnerUp && !FIFA.test(runnerUp)) {
-    return { status: "error", message: "Equipo subcampeón inválido." };
+  for (const [val, label] of [
+    [champion, "campeón"],
+    [runnerUp, "subcampeón"],
+    [tercero, "tercer lugar"],
+    [topScoring, "equipo más goleador"],
+  ] as const) {
+    if (val && !FIFA.test(val)) {
+      return { status: "error", message: `Equipo de ${label} inválido.` };
+    }
   }
   if (champion && runnerUp && champion === runnerUp) {
     return {
@@ -77,9 +90,15 @@ export async function saveTournamentResult(
     .update({
       champion_team: champion,
       runner_up_team: runnerUp,
+      tercer_lugar: tercero,
+      top_scoring_team: topScoring,
       pichichi_name: pichichi,
       pichichi_actual_goals: pichichiGoals,
       final_scorer_names: finalScorers,
+      balon_oro: balonOro,
+      guante_oro: guanteOro,
+      jugador_revelacion: revelacion,
+      max_asistidor: asistidor,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);
