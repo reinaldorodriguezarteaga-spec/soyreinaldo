@@ -88,11 +88,6 @@ export default function PuntosPage() {
             label="Goleador en la final"
             example="Si el jugador que elegiste marca en la final"
           />
-          <Rule
-            points={5}
-            label="Total de hat-tricks"
-            example="Acertar cuántos tripletes hay en todo el torneo"
-          />
           <Note>
             Los nombres se comparan ignorando mayúsculas, acentos y espacios
             extra — no te preocupes si escribes &ldquo;Mbappe&rdquo; en vez de

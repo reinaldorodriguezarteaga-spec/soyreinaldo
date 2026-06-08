@@ -128,7 +128,7 @@ export default async function AdminLeaguesPage() {
                 🏆 Resultado final
               </p>
               <p className="mt-1 text-sm font-medium text-zinc-200">
-                Campeón, pichichi, hat-tricks...
+                Campeón, pichichi, goleador final...
               </p>
             </div>
             <span className="text-xl text-indigo-300 transition-transform group-hover:translate-x-0.5">

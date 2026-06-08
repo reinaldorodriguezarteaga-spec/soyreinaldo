@@ -46,10 +46,6 @@ export async function saveTournamentResult(
   );
   const finalScorersRaw =
     ((formData.get("final_scorer_names") as string) || "").trim();
-  const hatTricks = parseInt0(
-    formData.get("hat_tricks_count") as string | null,
-    99,
-  );
 
   if (champion && !FIFA.test(champion)) {
     return { status: "error", message: "Equipo campeón inválido." };
@@ -65,9 +61,6 @@ export async function saveTournamentResult(
   }
   if (pichichiGoals !== null && Number.isNaN(pichichiGoals)) {
     return { status: "error", message: "Goles del pichichi inválidos." };
-  }
-  if (hatTricks !== null && Number.isNaN(hatTricks)) {
-    return { status: "error", message: "Total de hat-tricks inválido." };
   }
 
   // Lista de goleadores en la final, separados por coma o salto de línea
@@ -87,7 +80,6 @@ export async function saveTournamentResult(
       pichichi_name: pichichi,
       pichichi_actual_goals: pichichiGoals,
       final_scorer_names: finalScorers,
-      hat_tricks_count: hatTricks,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);

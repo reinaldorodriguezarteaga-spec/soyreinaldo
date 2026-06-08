@@ -18,7 +18,6 @@ export type CurrentResult = {
   pichichi_name: string | null;
   pichichi_actual_goals: number | null;
   final_scorer_names: string[] | null;
-  hat_tricks_count: number | null;
 };
 
 export default function ResultsForm({
@@ -87,16 +86,6 @@ export default function ResultsForm({
           Si un usuario predijo cualquiera de estos nombres, se llevará los 8
           puntos.
         </p>
-      </Section>
-
-      <Section title="Total de hat-tricks">
-        <Number
-          name="hat_tricks_count"
-          label="Hat-tricks totales del torneo"
-          defaultValue={current?.hat_tricks_count ?? null}
-          disabled={pending}
-          wide
-        />
       </Section>
 
       <div className="flex items-center gap-3">

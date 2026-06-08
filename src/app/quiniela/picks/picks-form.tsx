@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { savePicks, type PicksState } from "./actions";
 
 const initial: PicksState = { status: "idle" };
@@ -18,7 +18,6 @@ export type ExistingPicks = {
   pichichi_name: string | null;
   pichichi_predicted_goals: number | null;
   final_scorer_name: string | null;
-  hat_tricks_count: number | null;
 };
 
 export default function PicksForm({
@@ -32,6 +31,21 @@ export default function PicksForm({
 }) {
   const [state, action, pending] = useActionState(savePicks, initial);
   const disabled = locked || pending;
+
+  // Campos CONTROLADOS — imprescindible: React 19 resetea los campos no
+  // controlados de un <form action> al enviarse, lo que hacía que las
+  // selecciones "desaparecieran" tras guardar aunque sí se guardaban.
+  const [champion, setChampion] = useState(existing?.champion_team ?? "");
+  const [runnerUp, setRunnerUp] = useState(existing?.runner_up_team ?? "");
+  const [pichichi, setPichichi] = useState(existing?.pichichi_name ?? "");
+  const [pichichiGoals, setPichichiGoals] = useState(
+    existing?.pichichi_predicted_goals != null
+      ? String(existing.pichichi_predicted_goals)
+      : "",
+  );
+  const [finalScorer, setFinalScorer] = useState(
+    existing?.final_scorer_name ?? "",
+  );
 
   return (
     <form action={action} className="space-y-8">
@@ -51,7 +65,8 @@ export default function PicksForm({
             label="Campeón"
             name="champion"
             teams={teams}
-            defaultValue={existing?.champion_team ?? ""}
+            value={champion}
+            onChange={setChampion}
             disabled={disabled}
             placeholder="Elige una selección"
           />
@@ -59,7 +74,8 @@ export default function PicksForm({
             label="Subcampeón"
             name="runner_up"
             teams={teams}
-            defaultValue={existing?.runner_up_team ?? ""}
+            value={runnerUp}
+            onChange={setRunnerUp}
             disabled={disabled}
             placeholder="Elige una selección"
           />
@@ -75,7 +91,8 @@ export default function PicksForm({
           <TextField
             label="Jugador"
             name="pichichi_name"
-            defaultValue={existing?.pichichi_name ?? ""}
+            value={pichichi}
+            onChange={setPichichi}
             placeholder="Ej. Lamine Yamal"
             disabled={disabled}
             maxLength={80}
@@ -83,7 +100,8 @@ export default function PicksForm({
           <NumberField
             label="Goles"
             name="pichichi_predicted_goals"
-            defaultValue={existing?.pichichi_predicted_goals ?? null}
+            value={pichichiGoals}
+            onChange={setPichichiGoals}
             placeholder="6"
             disabled={disabled}
             max={20}
@@ -103,26 +121,11 @@ export default function PicksForm({
         <TextField
           label="Jugador"
           name="final_scorer_name"
-          defaultValue={existing?.final_scorer_name ?? ""}
+          value={finalScorer}
+          onChange={setFinalScorer}
           placeholder="Ej. Mbappé"
           disabled={disabled}
           maxLength={80}
-        />
-      </Section>
-
-      {/* Hat-tricks */}
-      <Section
-        title="Total de hat-tricks del Mundial"
-        subtitle="5 puntos si aciertas el número exacto de hat-tricks (incluye 0)"
-      >
-        <NumberField
-          label="Hat-tricks totales"
-          name="hat_tricks_count"
-          defaultValue={existing?.hat_tricks_count ?? null}
-          placeholder="3"
-          disabled={disabled}
-          max={50}
-          wide
         />
       </Section>
 
@@ -173,18 +176,19 @@ function TeamSelect({
   label,
   name,
   teams,
-  defaultValue,
+  value,
+  onChange,
   disabled,
   placeholder,
 }: {
   label: string;
   name: string;
   teams: Team[];
-  defaultValue?: string;
+  value: string;
+  onChange: (v: string) => void;
   disabled?: boolean;
   placeholder?: string;
 }) {
-  // Group teams by their group letter for nicer scanning
   const byGroup = new Map<string, Team[]>();
   for (const t of teams) {
     const arr = byGroup.get(t.group_letter) ?? [];
@@ -202,7 +206,8 @@ function TeamSelect({
       </span>
       <select
         name={name}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className="block h-12 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
@@ -226,14 +231,16 @@ function TeamSelect({
 function TextField({
   label,
   name,
-  defaultValue,
+  value,
+  onChange,
   placeholder,
   disabled,
   maxLength,
 }: {
   label: string;
   name: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (v: string) => void;
   placeholder?: string;
   disabled?: boolean;
   maxLength?: number;
@@ -246,7 +253,8 @@ function TextField({
       <input
         type="text"
         name={name}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         maxLength={maxLength}
@@ -260,7 +268,8 @@ function TextField({
 function NumberField({
   label,
   name,
-  defaultValue,
+  value,
+  onChange,
   placeholder,
   disabled,
   max,
@@ -268,7 +277,8 @@ function NumberField({
 }: {
   label: string;
   name: string;
-  defaultValue: number | null;
+  value: string;
+  onChange: (v: string) => void;
   placeholder?: string;
   disabled?: boolean;
   max?: number;
@@ -283,7 +293,8 @@ function NumberField({
         type="number"
         inputMode="numeric"
         name={name}
-        defaultValue={defaultValue ?? ""}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         min={0}

@@ -30,7 +30,7 @@ export default async function PicksPage() {
   const { data: existing } = await supabase
     .from("user_picks")
     .select(
-      "champion_team, runner_up_team, pichichi_name, pichichi_predicted_goals, final_scorer_name, hat_tricks_count",
+      "champion_team, runner_up_team, pichichi_name, pichichi_predicted_goals, final_scorer_name",
     )
     .eq("user_id", user.id)
     .maybeSingle<ExistingPicks>();

@@ -29,7 +29,6 @@ export async function savePicks(
   const pichichiGoalsRaw = formData.get("pichichi_predicted_goals") as
     | string
     | null;
-  const hatTricksRaw = formData.get("hat_tricks_count") as string | null;
 
   if (champion && !FIFA_CODE_RE.test(champion)) {
     return { status: "error", message: "Equipo campeón inválido." };
@@ -46,10 +45,6 @@ export async function savePicks(
   const pichichiGoals = parseSmallInt(pichichiGoalsRaw, 99);
   if (pichichiGoals !== null && Number.isNaN(pichichiGoals)) {
     return { status: "error", message: "Goles del pichichi inválidos." };
-  }
-  const hatTricks = parseSmallInt(hatTricksRaw, 99);
-  if (hatTricks !== null && Number.isNaN(hatTricks)) {
-    return { status: "error", message: "Total de hat-tricks inválido." };
   }
 
   const supabase = await createClient();
@@ -70,7 +65,6 @@ export async function savePicks(
         pichichi_name: pichichi,
         pichichi_predicted_goals: pichichiGoals,
         final_scorer_name: finalScorer,
-        hat_tricks_count: hatTricks,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },

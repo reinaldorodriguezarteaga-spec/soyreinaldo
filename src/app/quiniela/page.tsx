@@ -236,7 +236,6 @@ function NoLeaguesState({
           <li>· Acertar el Pichichi — 10 puntos</li>
           <li>· + goles exactos del Pichichi — 5 puntos extra</li>
           <li>· Acertar un goleador de la final — 8 puntos</li>
-          <li>· Acertar el total de hat-tricks del torneo — 5 puntos</li>
         </ul>
         <Link
           href="/quiniela/puntos"
@@ -409,7 +408,7 @@ function LeaguesList({
               Campeón · Pichichi
             </p>
             <p className="mt-1 text-sm text-zinc-400">
-              Goleador en la final · Hat-tricks
+              Subcampeón · Goleador en la final
             </p>
           </div>
           <span className="shrink-0 text-2xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
