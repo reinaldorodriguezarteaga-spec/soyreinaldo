@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe/server";
 
 export const metadata = {
@@ -18,6 +17,10 @@ export default async function DonacionExitoPage({
   let amountEur: number | null = null;
   let donorName: string | null = null;
 
+  // Página SOLO de display: el registro en BD lo hace el webhook de Stripe
+  // (/api/stripe/webhook), que es la fuente canónica con reintentos. Aquí solo
+  // leemos la sesión para mostrar el importe y el nombre — sin escribir nada,
+  // así evitamos la doble escritura y sus condiciones de carrera.
   if (sessionId) {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -27,34 +30,6 @@ export default async function DonacionExitoPage({
           session.customer_details?.name ??
           session.customer_details?.email?.split("@")[0] ??
           null;
-
-        // Persist the donation if we don't have it yet. Idempotent thanks
-        // a la PK en stripe_checkout_session_id. Usamos service role porque
-        // la tabla tiene RLS estricta (solo admin lee, nadie escribe desde
-        // el front) y este endpoint corre server-side tras verificar el
-        // pago contra Stripe.
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (url && serviceRoleKey) {
-          const supabase = createServiceClient(url, serviceRoleKey);
-          await supabase.from("donations").upsert(
-            {
-              stripe_checkout_session_id: session.id,
-              stripe_payment_intent_id:
-                typeof session.payment_intent === "string"
-                  ? session.payment_intent
-                  : session.payment_intent?.id ?? null,
-              amount_cents: session.amount_total,
-              currency: session.currency ?? "eur",
-              status: "succeeded",
-              user_id: session.metadata?.user_id || null,
-              email: session.customer_details?.email ?? null,
-              message: session.metadata?.message || null,
-              completed_at: new Date().toISOString(),
-            },
-            { onConflict: "stripe_checkout_session_id" },
-          );
-        }
       }
     } catch {
       // Stripe couldn't find the session — fall through to the generic page.

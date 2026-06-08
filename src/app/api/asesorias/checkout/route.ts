@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe/server";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -28,13 +29,21 @@ export async function POST() {
 
   const origin = await siteOrigin();
 
+  // Trazabilidad: si está logueado, guardamos su user_id en la metadata para
+  // que el webhook lo registre en consultations.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/asesorias/agendar?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/asesorias?cancelled=1`,
-    metadata: { type: "asesoria_1on1" },
+    customer_email: user?.email ?? undefined,
+    metadata: { type: "asesoria_1on1", user_id: user?.id ?? "" },
     // Permitir que Stripe recoja el email para tener referencia incluso si
     // luego se pierde la pestaña entre pago y agendar
     customer_creation: "always",
