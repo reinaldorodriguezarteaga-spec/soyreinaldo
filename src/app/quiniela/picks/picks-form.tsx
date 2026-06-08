@@ -70,7 +70,7 @@ export default function PicksForm({
       {/* Podio */}
       <Section
         title="Podio del Mundial"
-        subtitle="Campeón 20 pts · Subcampeón 5 pts · Tercer lugar 7 pts"
+        subtitle="Campeón 20 pts · Subcampeón 5 pts · Tercer lugar 3 pts"
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <TeamSelect label="Campeón" name="champion" teams={teams} value={champion} onChange={setChampion} disabled={disabled} />

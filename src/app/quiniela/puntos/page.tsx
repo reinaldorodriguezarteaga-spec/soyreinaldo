@@ -73,7 +73,7 @@ export default function PuntosPage() {
             example="Acertar el equipo que pierde la final"
           />
           <Rule
-            points={7}
+            points={3}
             label="Tercer lugar"
             example="Acertar el equipo que queda tercero"
           />
