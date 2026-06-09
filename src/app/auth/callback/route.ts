@@ -32,6 +32,20 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${redirectTarget}`);
       }
 
+      // DIAGNÓSTICO temporal: por qué falla el intercambio del code (PKCE).
+      // El User-Agent revela si es un navegador in-app (Instagram/FB/etc.),
+      // que es la causa típica de que falte la cookie del code verifier.
+      const ua = request.headers.get("user-agent") ?? "";
+      console.error("[auth/callback] exchange failed", {
+        reason: error.message,
+        hasCode: !!code,
+        host: searchParams.get("host") ?? new URL(request.url).host,
+        ua,
+        inApp: /instagram|fban|fbav|fb_iab|line\/|micromessenger|whatsapp|tiktok/i.test(
+          ua,
+        ),
+      });
+
       return NextResponse.redirect(
         `${origin}/auth/error?reason=${encodeURIComponent(error.message)}`,
       );
