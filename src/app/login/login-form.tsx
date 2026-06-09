@@ -24,60 +24,55 @@ export default function LoginForm({ redirect }: { redirect: string }) {
     initialState,
   );
 
-  return (
-    <div className="space-y-5">
-      <OAuthButton provider="google" redirect={redirect} />
-      {/* Facebook OAuth disabled until business/individual verification is approved.
-          Keep <OAuthButton provider="facebook" /> ready to re-enable. */}
+  const signupHref =
+    redirect === "/quiniela"
+      ? "/signup"
+      : `/signup?redirect=${encodeURIComponent(redirect)}`;
 
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-800" />
-        <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-          o con email
-        </span>
-        <div className="h-px flex-1 bg-zinc-800" />
+  return (
+    <div>
+      <div className="oauth">
+        <OAuthButton provider="google" redirect={redirect} />
       </div>
 
-      <div className="grid grid-cols-2 gap-1 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+      <div className="divider">o con tu email</div>
+
+      <div className="tabs" style={{ marginBottom: 18 }}>
         <button
           type="button"
+          className={tab === "password" ? "on" : ""}
           onClick={() => setTab("password")}
-          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-            tab === "password"
-              ? "bg-zinc-800 text-white"
-              : "text-zinc-400 hover:text-white"
-          }`}
         >
           Email y contraseña
         </button>
         <button
           type="button"
+          className={tab === "magic" ? "on" : ""}
           onClick={() => setTab("magic")}
-          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-            tab === "magic"
-              ? "bg-zinc-800 text-white"
-              : "text-zinc-400 hover:text-white"
-          }`}
         >
           Enlace mágico
         </button>
       </div>
 
       {tab === "password" ? (
-        <form action={pwAction} className="space-y-4">
+        <form action={pwAction}>
           <input type="hidden" name="redirect" value={redirect} />
-          <Field
-            label="Email o usuario"
-            name="identifier"
+          <label className="label">Email o usuario</label>
+          <input
+            className="field"
             type="text"
+            name="identifier"
+            required
             autoComplete="username"
             placeholder="tu@email.com  o  reinaldor"
             disabled={pwPending}
           />
-          <Field
-            label="Contraseña"
-            name="password"
+          <label className="label">Contraseña</label>
+          <input
+            className="field"
             type="password"
+            name="password"
+            required
             autoComplete="current-password"
             placeholder="Mínimo 6 caracteres"
             disabled={pwPending}
@@ -85,34 +80,23 @@ export default function LoginForm({ redirect }: { redirect: string }) {
           <button
             type="submit"
             disabled={pwPending}
-            className="w-full rounded-xl bg-indigo-300 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn btn--accent w-full justify-center"
           >
-            {pwPending ? "Entrando..." : "Entrar"}
+            {pwPending ? "Entrando…" : "Iniciar sesión"}
           </button>
           {pwState.status === "error" && pwState.message && (
             <ErrorBox message={pwState.message} />
           )}
-          <p className="text-center text-sm text-zinc-400">
-            ¿No tienes cuenta?{" "}
-            <Link
-              href={
-                redirect === "/quiniela"
-                  ? "/signup"
-                  : `/signup?redirect=${encodeURIComponent(redirect)}`
-              }
-              className="font-medium text-indigo-300 hover:text-indigo-200"
-            >
-              Crear cuenta
-            </Link>
-          </p>
         </form>
       ) : (
-        <form action={mlAction} className="space-y-4">
+        <form action={mlAction}>
           <input type="hidden" name="redirect" value={redirect} />
-          <Field
-            label="Email"
-            name="email"
+          <label className="label">Email</label>
+          <input
+            className="field"
             type="email"
+            name="email"
+            required
             autoComplete="email"
             placeholder="tu@email.com"
             disabled={mlPending || mlState.status === "success"}
@@ -120,10 +104,10 @@ export default function LoginForm({ redirect }: { redirect: string }) {
           <button
             type="submit"
             disabled={mlPending || mlState.status === "success"}
-            className="w-full rounded-xl bg-indigo-300 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn btn--accent w-full justify-center"
           >
             {mlPending
-              ? "Enviando..."
+              ? "Enviando…"
               : mlState.status === "success"
                 ? "Email enviado"
                 : "Recibir enlace de acceso"}
@@ -136,46 +120,31 @@ export default function LoginForm({ redirect }: { redirect: string }) {
           )}
         </form>
       )}
-    </div>
-  );
-}
 
-function Field({
-  label,
-  name,
-  type,
-  placeholder,
-  autoComplete,
-  disabled,
-}: {
-  label: string;
-  name: string;
-  type: string;
-  placeholder?: string;
-  autoComplete?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
-      <input
-        type={type}
-        name={name}
-        required
-        autoComplete={autoComplete}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="block w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
-      />
-    </label>
+      <p className="auth__foot">
+        ¿Aún no tienes cuenta?{" "}
+        <Link href={signupHref}>Regístrate gratis</Link>
+      </p>
+    </div>
   );
 }
 
 function ErrorBox({ message }: { message: string }) {
   return (
-    <p className="rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-200">
+    <p
+      className="mono"
+      style={{
+        marginTop: 12,
+        padding: "12px 14px",
+        borderRadius: "var(--radius)",
+        border: "1px solid rgba(255,77,77,0.4)",
+        background: "rgba(255,77,77,0.12)",
+        color: "#ffb4b4",
+        letterSpacing: "0.04em",
+        textTransform: "none",
+        fontSize: "0.82rem",
+      }}
+    >
       {message}
     </p>
   );
@@ -183,10 +152,21 @@ function ErrorBox({ message }: { message: string }) {
 
 function SuccessBox({ message }: { message: string }) {
   return (
-    <p className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 p-3 text-sm text-emerald-200">
+    <p
+      style={{
+        marginTop: 12,
+        padding: "12px 14px",
+        borderRadius: "var(--radius)",
+        border: "1px solid color-mix(in oklch, var(--accent) 40%, transparent)",
+        background: "color-mix(in oklch, var(--accent) 12%, transparent)",
+        color: "var(--text)",
+        fontSize: "0.88rem",
+        lineHeight: 1.5,
+      }}
+    >
       {message}
       <br />
-      <span className="text-xs text-emerald-300/70">
+      <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
         Si no lo ves, revisa la carpeta de spam.
       </span>
     </p>

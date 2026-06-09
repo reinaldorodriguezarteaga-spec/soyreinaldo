@@ -13,118 +13,83 @@ export default function SignupForm({
   redirect?: string;
 }) {
   const [state, action, pending] = useActionState(signUp, initialState);
+  const loginHref =
+    redirect === "/quiniela"
+      ? "/login"
+      : `/login?redirect=${encodeURIComponent(redirect)}`;
 
   return (
-    <div className="space-y-5">
-      <OAuthButton
-        provider="google"
-        redirect={redirect}
-        label="Registrarme con Google"
-      />
-      {/* Facebook OAuth disabled until verification is approved. */}
-
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-800" />
-        <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-          o con email
-        </span>
-        <div className="h-px flex-1 bg-zinc-800" />
+    <div>
+      <div className="oauth">
+        <OAuthButton
+          provider="google"
+          redirect={redirect}
+          label="Registrarme con Google"
+        />
       </div>
 
-      <form action={action} className="space-y-4">
-      <input type="hidden" name="redirect" value={redirect} />
-      <Field
-        label="Nombre"
-        name="display_name"
-        type="text"
-        placeholder="Cómo apareces en el ranking"
-        autoComplete="nickname"
-        disabled={pending}
-      />
-      <Field
-        label="Usuario"
-        name="username"
-        type="text"
-        placeholder="reinaldor"
-        autoComplete="username"
-        disabled={pending}
-        hint="3-15 caracteres. Solo letras, números, _ - ."
-      />
-      <Field
-        label="Email"
-        name="email"
-        type="email"
-        placeholder="tu@email.com"
-        autoComplete="email"
-        disabled={pending}
-      />
-      <Field
-        label="Teléfono (opcional)"
-        name="phone_number"
-        type="tel"
-        placeholder="+34666123456"
-        autoComplete="tel"
-        disabled={pending}
-        required={false}
-        hint="Para enviarte recordatorios. Formato internacional con +."
-      />
-      <Field
-        label="Contraseña"
-        name="password"
-        type="password"
-        placeholder="Mínimo 6 caracteres"
-        autoComplete="new-password"
-        disabled={pending}
-      />
-      <Field
-        label="Confirmar contraseña"
-        name="confirm"
-        type="password"
-        placeholder="Repite tu contraseña"
-        autoComplete="new-password"
-        disabled={pending}
-      />
+      <div className="divider">o con tu email</div>
 
-      <button
-        type="submit"
-        disabled={pending || state.status === "success"}
-        className="w-full rounded-xl bg-indigo-300 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {pending
-          ? "Creando cuenta..."
-          : state.status === "success"
-            ? "Email enviado"
-            : "Crear cuenta"}
-      </button>
+      <form action={action}>
+        <input type="hidden" name="redirect" value={redirect} />
+        <Field label="Nombre" name="display_name" type="text" placeholder="Cómo apareces en el ranking" autoComplete="nickname" disabled={pending} />
+        <Field label="Usuario" name="username" type="text" placeholder="reinaldor" autoComplete="username" disabled={pending} hint="3-15 caracteres. Solo letras, números, _ - ." />
+        <Field label="Email" name="email" type="email" placeholder="tu@email.com" autoComplete="email" disabled={pending} />
+        <Field label="Teléfono (opcional)" name="phone_number" type="tel" placeholder="+34666123456" autoComplete="tel" disabled={pending} required={false} hint="Para recordatorios. Formato internacional con +." />
+        <Field label="Contraseña" name="password" type="password" placeholder="Mínimo 6 caracteres" autoComplete="new-password" disabled={pending} />
+        <Field label="Confirmar contraseña" name="confirm" type="password" placeholder="Repite tu contraseña" autoComplete="new-password" disabled={pending} />
 
-      {state.status === "error" && state.message && (
-        <p className="rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-200">
-          {state.message}
-        </p>
-      )}
+        <button
+          type="submit"
+          disabled={pending || state.status === "success"}
+          className="btn btn--accent w-full justify-center"
+        >
+          {pending
+            ? "Creando cuenta…"
+            : state.status === "success"
+              ? "Email enviado"
+              : "Crear cuenta"}
+        </button>
 
-      {state.status === "success" && state.message && (
-        <p className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 p-3 text-sm text-emerald-200">
-          {state.message}
-          <br />
-          <span className="text-xs text-emerald-300/70">
-            Si no lo ves, revisa la carpeta de spam.
-          </span>
-        </p>
-      )}
-
-        <p className="text-center text-sm text-zinc-400">
-          ¿Ya tienes cuenta?{" "}
-          <Link
-            href={
-              redirect === "/quiniela"
-                ? "/login"
-                : `/login?redirect=${encodeURIComponent(redirect)}`
-            }
-            className="font-medium text-indigo-300 hover:text-indigo-200"
+        {state.status === "error" && state.message && (
+          <p
+            style={{
+              marginTop: 12,
+              padding: "12px 14px",
+              borderRadius: "var(--radius)",
+              border: "1px solid rgba(255,77,77,0.4)",
+              background: "rgba(255,77,77,0.12)",
+              color: "#ffb4b4",
+              fontSize: "0.85rem",
+            }}
           >
-            Iniciar sesión
-          </Link>
+            {state.message}
+          </p>
+        )}
+        {state.status === "success" && state.message && (
+          <p
+            style={{
+              marginTop: 12,
+              padding: "12px 14px",
+              borderRadius: "var(--radius)",
+              border:
+                "1px solid color-mix(in oklch, var(--accent) 40%, transparent)",
+              background: "color-mix(in oklch, var(--accent) 12%, transparent)",
+              color: "var(--text)",
+              fontSize: "0.88rem",
+              lineHeight: 1.5,
+            }}
+          >
+            {state.message}
+            <br />
+            <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
+              Si no lo ves, revisa la carpeta de spam.
+            </span>
+          </p>
+        )}
+
+        <p className="auth__foot">
+          ¿Ya tienes cuenta? <Link href={loginHref}>Iniciar sesión</Link>
         </p>
       </form>
     </div>
@@ -151,20 +116,23 @@ function Field({
   hint?: string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
+    <div>
+      <label className="label">{label}</label>
       <input
+        className="field"
         type={type}
         name={name}
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
         disabled={disabled}
-        className="block w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
+        style={hint ? { marginBottom: 4 } : undefined}
       />
-      {hint && <p className="mt-1.5 text-[11px] text-zinc-500">{hint}</p>}
-    </label>
+      {hint && (
+        <p style={{ margin: "0 0 12px", fontSize: "0.7rem", color: "var(--text-dim)" }}>
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }

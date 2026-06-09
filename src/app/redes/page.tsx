@@ -1,5 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
 import { getSocialStats } from "@/lib/social-stats";
 import {
   FacebookLogo,
@@ -10,221 +8,146 @@ import {
 } from "@/components/social-logos";
 
 export const metadata = {
-  title: "Redes | Soy Reinaldo",
+  title: "Mis redes | Soy Reinaldo",
   description:
-    "Todas las redes de @SoyReinaldoR: YouTube, Instagram y TikTok. Más de 95.000 personas siguiéndome.",
+    "Todas las redes de @SoyReinaldoR: YouTube, Instagram, TikTok, Facebook y Threads.",
 };
 
-function VerifiedBadge({ color = "#3897F0" }: { color?: string }) {
+/** Separa el sufijo (K/M/+) para pintarlo en color de acento. */
+function Foll({ value }: { value: string }) {
+  const m = value.match(/^([\d.,\s]+)(.*)$/);
+  if (!m) return <>{value}</>;
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-4 w-4 shrink-0"
-      aria-label="Verificado"
-    >
-      <path
-        fill={color}
-        d="M12 1.5l2.6 1.9 3.2-.4 1 3.1 2.6 1.9-1 3.1 1 3.1-2.6 1.9-1 3.1-3.2-.4L12 22.5l-2.6-1.9-3.2.4-1-3.1-2.6-1.9 1-3.1-1-3.1 2.6-1.9 1-3.1 3.2.4L12 1.5z"
-      />
-      <path fill="#fff" d="M10.5 15.3l-3-3 1.4-1.4 1.6 1.6 4.6-4.6 1.4 1.4z" />
-    </svg>
-  );
-}
-
-function AvatarWithLogo({
-  ring,
-  logo,
-  bgClass,
-}: {
-  ring?: string;
-  logo: React.ReactNode;
-  bgClass?: string;
-}) {
-  return (
-    <div className="relative shrink-0">
-      <Image
-        src="/branding/avatar.jpg"
-        alt="Reinaldo"
-        width={160}
-        height={160}
-        className={`h-16 w-16 rounded-full object-cover ${ring ?? "ring-2 ring-zinc-700"}`}
-      />
-      <div
-        className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-zinc-950 ${bgClass ?? "bg-zinc-950"}`}
-      >
-        {logo}
-      </div>
-    </div>
+    <>
+      {m[1].trim()}
+      {m[2] && <span>{m[2]}</span>}
+    </>
   );
 }
 
 export default async function RedesPage() {
-  const stats = await getSocialStats();
+  const s = await getSocialStats();
+
+  const platforms = [
+    {
+      name: "Instagram",
+      handle: "@SoyReinaldoR",
+      foll: s.ig_followers,
+      href: "https://www.instagram.com/soyreinaldor/",
+      Logo: InstagramLogo,
+    },
+    {
+      name: "TikTok",
+      handle: "@SoyReinaldoR",
+      foll: s.tt_followers,
+      href: "https://www.tiktok.com/@soyreinaldor",
+      Logo: TikTokLogo,
+    },
+    {
+      name: "Facebook",
+      handle: "Fútbol con Reinaldo",
+      foll: s.fb_followers,
+      href: "https://www.facebook.com/SoyReinaldo",
+      Logo: FacebookLogo,
+    },
+    {
+      name: "YouTube",
+      handle: "Fútbol con Reinaldo",
+      foll: s.yt_subscribers,
+      href: "https://www.youtube.com/@SoyReinaldoR",
+      Logo: YouTubeLogo,
+    },
+    {
+      name: "Threads",
+      handle: "@SoyReinaldoR",
+      foll: s.threads_followers,
+      href: "https://www.threads.com/@soyreinaldor",
+      Logo: ThreadsLogo,
+    },
+  ];
+
   return (
-    <main className="flex flex-1 flex-col px-6 py-16">
-      <div className="mx-auto w-full max-w-2xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-8 mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            @SoyReinaldoR
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Mis <span className="text-indigo-300">redes</span>.
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">@SoyReinaldoR</p>
+          <h1 className="phero__title">
+            Mis redes<span className="dot">.</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-            Sígueme donde más uses. Subo análisis, reacciones y debates de
-            fútbol — siempre desde la pasión culé.
+          <p className="phero__lede">
+            Sígueme donde más uses. Análisis, reacciones y debate de fútbol —
+            siempre desde la pasión culé.
           </p>
-        </header>
-
-        <div className="space-y-4">
-          <a
-            href="https://www.youtube.com/@SoyReinaldoR"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
-          >
-            <AvatarWithLogo logo={<YouTubeLogo className="h-4 w-4" />} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-base font-semibold sm:text-lg">
-                  Fútbol con Reinaldo
-                </h2>
-                <VerifiedBadge color="#FF0000" />
-              </div>
-              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                YouTube · {stats.yt_subscribers} suscriptores · {stats.yt_views_monthly} visualizaciones/mes
-              </p>
+          <div className="phero__meta">
+            <div className="mi">
+              <b><Foll value={s.total_followers} /></b>
+              <span className="l">Seguidores</span>
             </div>
-            <span className="shrink-0 rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-red-700 sm:px-5 sm:py-2.5 sm:text-sm">
-              Suscribirme
-            </span>
-          </a>
-
-          <a
-            href="https://www.instagram.com/soyreinaldor/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
-          >
-            <div className="relative shrink-0">
-              <div className="rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 p-[2px]">
-                <Image
-                  src="/branding/avatar.jpg"
-                  alt="Reinaldo"
-                  width={160}
-                  height={160}
-                  className="block h-[60px] w-[60px] rounded-full bg-zinc-950 object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 ring-2 ring-zinc-950">
-                <InstagramLogo className="h-4 w-4" />
-              </div>
+            <div className="mi">
+              <b><Foll value={s.ig_views_monthly} /></b>
+              <span className="l">Visualizaciones/mes</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-base font-semibold sm:text-lg">
-                  @SoyReinaldoR
-                </h2>
-                <VerifiedBadge color="#3897F0" />
-              </div>
-              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Instagram · {stats.ig_followers} seguidores · {stats.ig_views_monthly} visualizaciones/mes
-              </p>
+            <div className="mi">
+              <b>5<span>+</span></b>
+              <span className="l">Plataformas</span>
             </div>
-            <span className="shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white transition group-hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-sm">
-              Seguir
-            </span>
-          </a>
-
-          <a
-            href="https://www.tiktok.com/@soyreinaldor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
-          >
-            <AvatarWithLogo logo={<TikTokLogo className="h-4 w-4" />} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-base font-semibold sm:text-lg">
-                  @SoyReinaldoR
-                </h2>
-                <VerifiedBadge color="#25F4EE" />
-              </div>
-              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                TikTok · {stats.tt_followers} seguidores · {stats.tt_views_monthly} visualizaciones/mes
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-[#FE2C55] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#e6234a] sm:px-5 sm:py-2.5 sm:text-sm">
-              Seguir
-            </span>
-          </a>
-
-          <a
-            href="https://www.facebook.com/SoyReinaldo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
-          >
-            <AvatarWithLogo logo={<FacebookLogo className="h-4 w-4" />} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-base font-semibold sm:text-lg">
-                  Fútbol con Reinaldo
-                </h2>
-                <VerifiedBadge color="#1877F2" />
-              </div>
-              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Facebook · {stats.fb_followers} seguidores · {stats.fb_views_monthly} visualizaciones/mes
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-[#1877F2] px-4 py-2 text-xs font-semibold text-white transition group-hover:bg-[#1465d8] sm:px-5 sm:py-2.5 sm:text-sm">
-              Seguir
-            </span>
-          </a>
-
-          <a
-            href="https://www.threads.com/@soyreinaldor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-700"
-          >
-            <AvatarWithLogo logo={<ThreadsLogo className="h-4 w-4 text-white" />} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-base font-semibold sm:text-lg">
-                  @SoyReinaldoR
-                </h2>
-                <VerifiedBadge color="#a1a1aa" />
-              </div>
-              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
-                Threads · {stats.threads_followers} seguidores
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition group-hover:bg-zinc-200 sm:px-5 sm:py-2.5 sm:text-sm">
-              Seguir
-            </span>
-          </a>
+          </div>
         </div>
+      </section>
 
-        <div className="mt-10 overflow-hidden rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 px-6 py-6 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Comunidad total
-          </p>
-          <p className="mt-3 font-mono text-4xl font-bold tabular-nums text-white sm:text-5xl">
-            {stats.total_followers}
-          </p>
-          <p className="mt-2 text-sm text-zinc-400">
-            personas siguiéndome en redes
-          </p>
+      <section className="section">
+        <div className="wrap">
+          <div className="grid3">
+            {platforms.map((p) => (
+              <a
+                key={p.name}
+                className="plat"
+                href={p.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="plat__top">
+                  <span className="plat__icon">
+                    <p.Logo className="h-6 w-6" />
+                  </span>
+                </div>
+                <div>
+                  <div className="plat__h">{p.name}</div>
+                  <div className="plat__handle">{p.handle}</div>
+                </div>
+                <div className="plat__foll">
+                  <Foll value={p.foll} />
+                </div>
+                <span className="plat__go">
+                  Seguir <span className="arr">→</span>
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section className="comu">
+        <div className="wrap section">
+          <div
+            className="panel"
+            style={{ padding: "clamp(28px,5vw,56px)", textAlign: "center" }}
+          >
+            <p className="eyebrow" style={{ justifyContent: "center" }}>
+              Comunidad total
+            </p>
+            <div
+              className="display"
+              style={{ fontSize: "clamp(3rem,9vw,6rem)", marginTop: 14 }}
+            >
+              <Foll value={s.total_followers} />
+            </div>
+            <p style={{ color: "var(--text-dim)", marginTop: 10 }}>
+              personas siguiéndome en redes
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
