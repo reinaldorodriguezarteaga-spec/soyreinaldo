@@ -91,7 +91,11 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { status: "error", message: "Usuario o contraseña incorrectos." };
+    return {
+      status: "error",
+      message:
+        "Usuario o contraseña incorrectos. Si te registraste con Google, entra con el botón de Google de arriba — esas cuentas no tienen contraseña.",
+    };
   }
 
   revalidatePath("/", "layout");
