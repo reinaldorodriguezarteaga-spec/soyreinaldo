@@ -11,7 +11,7 @@ import {
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
-import MundialTabs from "./mundial-tabs";
+import MundialTabs, { type Tab } from "./mundial-tabs";
 
 export const metadata = {
   title: "Mundial 2026 | Soy Reinaldo",
@@ -31,7 +31,20 @@ export type MundialData = {
   active: boolean;
 };
 
-export default async function MundialPage() {
+function normalizeView(v: string | undefined): Tab {
+  if (v === "grupos") return "grupos";
+  if (v === "stats" || v === "estadisticas") return "stats";
+  return "partidos";
+}
+
+export default async function MundialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ v?: string }>;
+}) {
+  const { v } = await searchParams;
+  const view = normalizeView(v);
+
   let fixtures: Fixture[] = [];
   let groups: WcGroup[] = [];
   let scorers: PlayerStatLeader[] = [];
@@ -79,7 +92,7 @@ export default async function MundialPage() {
         </div>
       </section>
 
-      <MundialTabs data={data} />
+      <MundialTabs data={data} view={view} />
     </main>
   );
 }

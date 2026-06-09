@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   isFinal,
   isLive,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/sports/api-football";
 import type { MundialData, XgLeader } from "./page";
 
-type Tab = "partidos" | "grupos" | "stats";
+export type Tab = "partidos" | "grupos" | "stats";
 
 const MADRID_TZ = "Europe/Madrid";
 
@@ -29,8 +29,16 @@ function formatKickoff(iso: string) {
     .toUpperCase();
 }
 
-export default function MundialTabs({ data }: { data: MundialData }) {
-  const [tab, setTab] = useState<Tab>("partidos");
+export default function MundialTabs({
+  data,
+  view,
+}: {
+  data: MundialData;
+  view: Tab;
+}) {
+  const [tab, setTab] = useState<Tab>(view);
+  // Sincroniza con la URL (?v=) cuando se navega desde el desplegable del nav.
+  useEffect(() => setTab(view), [view]);
 
   return (
     <section className="section" style={{ paddingTop: 28 }}>

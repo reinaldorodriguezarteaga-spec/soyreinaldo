@@ -25,8 +25,6 @@ const PRODUCTOS = [
 const QUINIELA_LINKS = [
   { href: "/quiniela/partidos", label: "Predicciones" },
   { href: "/quiniela/picks", label: "Picks especiales" },
-  { href: "/quiniela/grupos", label: "Tabla por equipos" },
-  { href: "/quiniela/bracket", label: "Bracket" },
 ];
 
 const QUINIELA_FOOT = [
@@ -34,8 +32,14 @@ const QUINIELA_FOOT = [
   { href: "/quiniela", label: "Mi quiniela" },
 ];
 
+const MUNDIAL_LINKS = [
+  { href: "/mundial", label: "Próximos partidos" },
+  { href: "/mundial?v=grupos", label: "Grupos" },
+  { href: "/mundial?v=stats", label: "Estadísticas" },
+  { href: "/quiniela/bracket", label: "Bracket" },
+];
+
 const NAV_LINKS = [
-  { href: "/mundial", label: "Mundial 2026" },
   { href: "/estadios", label: "Estadios" },
   { href: "/redes", label: "Redes" },
   { href: "/contacto", label: "Contáctame" },
@@ -70,10 +74,12 @@ export default function Header({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<"quiniela" | "productos" | null>(
-    null,
-  );
-  const [mAcc, setMAcc] = useState<"quiniela" | "productos" | null>(null);
+  const [openMenu, setOpenMenu] = useState<
+    "quiniela" | "mundial" | "productos" | null
+  >(null);
+  const [mAcc, setMAcc] = useState<
+    "quiniela" | "mundial" | "productos" | null
+  >(null);
   const [left, setLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(
     null,
   );
@@ -218,6 +224,29 @@ export default function Header({
                 </Link>
               )}
 
+              {/* Mundial 2026 */}
+              <div className="navdrop">
+                <button
+                  type="button"
+                  className={`navdrop__btn ${pathname.startsWith("/mundial") ? "is-active" : ""}`}
+                  aria-expanded={openMenu === "mundial"}
+                  onClick={() =>
+                    setOpenMenu((m) => (m === "mundial" ? null : "mundial"))
+                  }
+                >
+                  Mundial 2026 <Caret />
+                </button>
+                {openMenu === "mundial" && (
+                  <div className="navdrop__menu">
+                    {MUNDIAL_LINKS.map((l) => (
+                      <Link key={l.label} href={l.href} className="navdrop__item">
+                        {l.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Links simples */}
               {NAV_LINKS.map((n) => (
                 <Link
@@ -324,6 +353,27 @@ export default function Header({
                   </>
                 ) : (
                   <MobileLink href="/quiniela">Quiniela</MobileLink>
+                )}
+
+                {/* Mundial 2026 acordeón */}
+                <button
+                  type="button"
+                  className="navacc__btn"
+                  aria-expanded={mAcc === "mundial"}
+                  onClick={() =>
+                    setMAcc((m) => (m === "mundial" ? null : "mundial"))
+                  }
+                >
+                  Mundial 2026 <Caret />
+                </button>
+                {mAcc === "mundial" && (
+                  <div className="navacc__sub">
+                    {MUNDIAL_LINKS.map((l) => (
+                      <Link key={l.label} href={l.href}>
+                        {l.label}
+                      </Link>
+                    ))}
+                  </div>
                 )}
 
                 {NAV_LINKS.map((n) => (
