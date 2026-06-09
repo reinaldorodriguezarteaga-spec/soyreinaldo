@@ -35,7 +35,7 @@ const platforms = [
   {
     name: "Instagram",
     handle: "@SoyReinaldoR",
-    metric: "54.500",
+    metric: "54.700",
     label: "Seguidores",
     Logo: InstagramLogo,
   },
@@ -49,21 +49,21 @@ const platforms = [
   {
     name: "TikTok",
     handle: "@SoyReinaldoR",
-    metric: "34.400",
+    metric: "35.000",
     label: "Seguidores activos",
     Logo: TikTokLogo,
   },
   {
     name: "YouTube",
     handle: "Fútbol con Reinaldo",
-    metric: "8.948",
+    metric: "9.300",
     label: "Suscriptores fieles",
     Logo: YouTubeLogo,
   },
   {
     name: "Threads",
     handle: "@SoyReinaldoR",
-    metric: "8.700",
+    metric: "9.000",
     label: "Seguidores",
     Logo: ThreadsLogo,
   },
@@ -107,7 +107,7 @@ const tiktokStats: Metric[] = [
 ];
 
 const ytStats: Metric[] = [
-  { key: "subscribers", label: "Suscriptores fieles", value: "+9.000" },
+  { key: "subscribers", label: "Suscriptores fieles", value: "+9.300" },
   { key: "views", label: "Visualizaciones / mes", value: "+1,8M" },
   { key: "watchTime", label: "Tiempo visto / mes", value: "6.500h" },
 ];
