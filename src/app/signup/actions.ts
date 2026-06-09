@@ -102,6 +102,23 @@ export async function signUp(
     return { status: "error", message: error.message };
   }
 
+  // Protección anti-enumeración de Supabase: si el email YA tiene cuenta,
+  // signUp NO devuelve error ni envía email de confirmación — devuelve un
+  // `user` con `identities` vacío. Sin esto le diríamos "te enviamos un email"
+  // y el usuario espera un correo que nunca llega (caso típico: ya se registró
+  // con Google). Lo detectamos y le mandamos a iniciar sesión.
+  if (
+    data.user &&
+    Array.isArray(data.user.identities) &&
+    data.user.identities.length === 0
+  ) {
+    return {
+      status: "error",
+      message:
+        "Ya existe una cuenta con este email. Inicia sesión más abajo — si te registraste con Google, entra con el botón de Google.",
+    };
+  }
+
   // If Supabase has email confirmations on, the session is null; user must
   // click the link in the email. Otherwise we can already have a session.
   if (data.session) {
