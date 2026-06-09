@@ -52,66 +52,83 @@ export default async function JoinByCodePage({
   const joinPath = `/unirse/${encodeURIComponent(code)}`;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Ir a la quiniela
-        </Link>
+    <main className="page">
+      <div className="wrap">
+        <div className="statewrap">
+          <div className="auth">
+            <p className="eyebrow" style={{ justifyContent: "center" }}>
+              Invitación
+            </p>
+            <h1
+              className="display"
+              style={{
+                fontSize: "clamp(2rem,5vw,2.8rem)",
+                textAlign: "center",
+                margin: "12px 0 26px",
+              }}
+            >
+              {preview ? (
+                <>
+                  Únete a{" "}
+                  <span style={{ color: "var(--accent)" }}>{preview.name}</span>
+                </>
+              ) : (
+                "Liga no encontrada"
+              )}
+            </h1>
 
-        <header className="mt-8 mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Invitación
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {preview ? (
-              <>
-                Únete a{" "}
-                <span className="text-indigo-300">{preview.name}</span>
-              </>
+            {!preview ? (
+              <NotFound code={code} />
             ) : (
-              "Liga no encontrada"
-            )}
-          </h1>
-        </header>
+              <article className="auth__card">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="codepill">{code}</span>
+                  <span className="mono" style={{ color: "var(--text-dim)" }}>
+                    {preview.member_count}{" "}
+                    {preview.member_count === 1 ? "miembro" : "miembros"}
+                  </span>
+                </div>
 
-        {!preview ? (
-          <NotFound code={code} />
-        ) : (
-          <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1 font-mono text-xs text-indigo-300">
-                {code}
-              </span>
-              <span className="text-xs text-zinc-500">
-                {preview.member_count}{" "}
-                {preview.member_count === 1 ? "miembro" : "miembros"}
-              </span>
-            </div>
+                {preview.description && (
+                  <p
+                    style={{
+                      marginBottom: 20,
+                      color: "var(--text-dim)",
+                      fontSize: "0.92rem",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {preview.description}
+                  </p>
+                )}
 
-            {preview.description && (
-              <p className="mb-6 text-sm leading-relaxed text-zinc-400">
-                {preview.description}
-              </p>
+                {errorParam && (
+                  <p className="notice notice--err" style={{ marginBottom: 16 }}>
+                    {errorParam}
+                  </p>
+                )}
+
+                {!user ? (
+                  <NotLoggedIn joinPath={joinPath} />
+                ) : alreadyMember ? (
+                  <AlreadyMember leagueId={preview.id} />
+                ) : (
+                  <ConfirmJoin code={code} />
+                )}
+              </article>
             )}
 
-            {errorParam && (
-              <p className="mb-4 rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-200">
-                {errorParam}
-              </p>
-            )}
-
-            {!user ? (
-              <NotLoggedIn joinPath={joinPath} />
-            ) : alreadyMember ? (
-              <AlreadyMember leagueId={preview.id} />
-            ) : (
-              <ConfirmJoin code={code} />
-            )}
-          </article>
-        )}
+            <p style={{ textAlign: "center", marginTop: 22 }}>
+              <Link
+                href="/quiniela"
+                className="mono"
+                style={{ color: "var(--text-dim)" }}
+              >
+                ← Ir a la quiniela
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );
@@ -119,18 +136,18 @@ export default async function JoinByCodePage({
 
 function NotFound({ code }: { code: string }) {
   return (
-    <article className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8">
-      <p className="text-sm leading-relaxed text-zinc-400">
-        El código{" "}
-        <span className="font-mono text-zinc-300">{code}</span> no corresponde
-        a ninguna liga. Pídele a quien te haya pasado el enlace que lo
-        verifique — es probable que el código se haya cambiado.
+    <article className="auth__card">
+      <p style={{ color: "var(--text-dim)", fontSize: "0.92rem", lineHeight: 1.6 }}>
+        El código <span className="mono" style={{ color: "var(--text)" }}>{code}</span>{" "}
+        no corresponde a ninguna liga. Pídele a quien te haya pasado el enlace
+        que lo verifique — es probable que el código se haya cambiado.
       </p>
-      <form action={dismissInvite} className="mt-6">
+      <form action={dismissInvite} style={{ marginTop: 22 }}>
         <input type="hidden" name="target" value="/quiniela" />
         <button
           type="submit"
-          className="inline-block text-sm font-medium text-indigo-300 hover:text-indigo-200"
+          className="mono"
+          style={{ background: "transparent", border: 0, color: "var(--accent)", cursor: "pointer" }}
         >
           Volver a la quiniela →
         </button>
@@ -143,18 +160,18 @@ function NotLoggedIn({ joinPath }: { joinPath: string }) {
   const next = encodeURIComponent(joinPath);
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-400">
+      <p style={{ color: "var(--text-dim)", fontSize: "0.92rem" }}>
         Tienes que iniciar sesión para entrar a esta liga.
       </p>
       <Link
         href={`/login?redirect=${next}`}
-        className="block w-full rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
+        className="btn btn--accent w-full justify-center"
       >
         Entrar y unirme
       </Link>
       <Link
         href={`/signup?redirect=${next}`}
-        className="block w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-zinc-200 transition hover:border-zinc-700 hover:text-white"
+        className="btn btn--ghost w-full justify-center"
       >
         Crear cuenta
       </Link>
@@ -165,19 +182,14 @@ function NotLoggedIn({ joinPath }: { joinPath: string }) {
 function AlreadyMember({ leagueId }: { leagueId: string }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-emerald-300">
-        Ya estás dentro de esta liga.
-      </p>
+      <p className="notice notice--ok">Ya estás dentro de esta liga.</p>
       <form action={dismissInvite}>
         <input
           type="hidden"
           name="target"
           value={`/quiniela/ranking/${leagueId}`}
         />
-        <button
-          type="submit"
-          className="block w-full rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-        >
+        <button type="submit" className="btn btn--accent w-full justify-center">
           Ver ranking
         </button>
       </form>
@@ -189,13 +201,13 @@ function ConfirmJoin({ code }: { code: string }) {
   return (
     <form action={acceptInvite} className="space-y-3">
       <input type="hidden" name="code" value={code} />
-      <button
-        type="submit"
-        className="block w-full rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-      >
+      <button type="submit" className="btn btn--accent w-full justify-center">
         Unirme a la liga
       </button>
-      <p className="text-center text-xs text-zinc-500">
+      <p
+        className="mono"
+        style={{ textAlign: "center", color: "var(--text-dim)" }}
+      >
         Podrás salirte cuando quieras desde la quiniela.
       </p>
     </form>

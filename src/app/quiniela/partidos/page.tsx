@@ -185,97 +185,96 @@ export default async function PartidosPage({
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
+    <main className="page">
       {hasLiveMatch && <LiveRefresher intervalMs={30000} />}
-      <div className="mx-auto w-full max-w-4xl">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a la quiniela
-        </Link>
-
-        <header className="mt-6 mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-              Pronósticos · Mundial 2026
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              {phase.label}
-            </h1>
-          </div>
-          <div className="text-sm text-zinc-400 tabular-nums">
-            <span className="font-semibold text-indigo-300">
-              {totalPredictions ?? 0}
-            </span>
-            <span className="text-zinc-500"> / {totalMatches ?? 104}</span>{" "}
-            predichos
-          </div>
-        </header>
-
-        <PhaseTabs activeSlug={phase.slug} />
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link
-            href="/quiniela/puntos"
-            className="group inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
-          >
-            📖 Cómo se puntúa
-            <span className="transition-transform group-hover:translate-x-0.5">
-              →
-            </span>
-          </Link>
-          {isKnockout && (
-            <Link
-              href="/quiniela/bracket"
-              className="group inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
-            >
-              🏆 Ver bracket completo
-              <span className="transition-transform group-hover:translate-x-0.5">
-                →
+      <section className="phero" style={{ paddingBottom: 24 }}>
+        <div className="wrap">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow">Pronósticos · Mundial 2026</p>
+              <h1 className="phero__title" style={{ fontSize: "clamp(2.4rem,6vw,4.5rem)" }}>
+                {phase.label}
+              </h1>
+            </div>
+            <div style={{ color: "var(--text-dim)" }}>
+              <span
+                className="display"
+                style={{ fontSize: "1.6rem", color: "var(--accent)" }}
+              >
+                {totalPredictions ?? 0}
               </span>
+              <span> / {totalMatches ?? 104} predichos</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 32 }}>
+        <div className="wrap">
+          <PhaseTabs activeSlug={phase.slug} />
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Link href="/quiniela/puntos" className="chip-pill chip-pill--accent">
+              📖 Cómo se puntúa <span>→</span>
             </Link>
+            {isKnockout && (
+              <Link
+                href="/quiniela/bracket"
+                className="chip-pill chip-pill--accent"
+              >
+                🏆 Ver bracket completo <span>→</span>
+              </Link>
+            )}
+          </div>
+
+          <p className="hint" style={{ marginTop: 16 }}>
+            Se guarda automáticamente al completar el resultado. El pronóstico se
+            cierra 1 hora antes del inicio de cada partido — después no se puede
+            editar.
+          </p>
+
+          {cards.length === 0 ? (
+            <div
+              className="panel"
+              style={{
+                marginTop: 24,
+                padding: 32,
+                textAlign: "center",
+                borderStyle: "dashed",
+                color: "var(--text-dim)",
+              }}
+            >
+              No hay partidos en esta fase.
+            </div>
+          ) : isGroupStage ? (
+            <div className="mt-6 space-y-8">
+              {Array.from(cardsByGroup.entries())
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([letter, list]) => (
+                  <section key={letter}>
+                    <div className="shead" style={{ marginBottom: 14 }}>
+                      <h2>Grupo {letter}</h2>
+                      <span className="sh-note">
+                        {list.length} partido{list.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {list.map((c) => (
+                        <MatchCard key={c.id} match={c} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {cards.map((c) => (
+                <MatchCard key={c.id} match={c} />
+              ))}
+            </div>
           )}
         </div>
-
-        <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-          Se guarda automáticamente al completar el resultado. El pronóstico
-          se cierra 1 hora antes del inicio de cada partido — después no se
-          puede editar.
-        </p>
-
-        {cards.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-8 text-center text-sm text-zinc-500">
-            No hay partidos en esta fase.
-          </div>
-        ) : isGroupStage ? (
-          <div className="mt-6 space-y-8">
-            {Array.from(cardsByGroup.entries())
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([letter, list]) => (
-                <section key={letter}>
-                  <h2 className="mb-3 flex items-baseline gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-indigo-300">
-                    Grupo {letter}
-                    <span className="text-xs text-zinc-600">
-                      · {list.length} partido{list.length === 1 ? "" : "s"}
-                    </span>
-                  </h2>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {list.map((c) => (
-                      <MatchCard key={c.id} match={c} />
-                    ))}
-                  </div>
-                </section>
-              ))}
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {cards.map((c) => (
-              <MatchCard key={c.id} match={c} />
-            ))}
-          </div>
-        )}
-      </div>
+      </section>
     </main>
   );
 }
@@ -286,18 +285,14 @@ function PhaseTabs({ activeSlug }: { activeSlug: string }) {
       aria-label="Fases del torneo"
       className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0"
     >
-      <ul className="flex min-w-max gap-2 sm:flex-wrap">
+      <ul className="flex min-w-max gap-2 sm:flex-wrap" style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {UI_PHASES.map((p) => {
           const active = p.slug === activeSlug;
           return (
             <li key={p.slug}>
               <Link
                 href={`/quiniela/partidos?fase=${p.slug}`}
-                className={`block rounded-full border px-3.5 py-1.5 text-sm transition ${
-                  active
-                    ? "border-indigo-300 bg-indigo-300 text-zinc-950"
-                    : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:text-white"
-                }`}
+                className={`chip-pill${active ? " on" : ""}`}
               >
                 {p.label}
               </Link>

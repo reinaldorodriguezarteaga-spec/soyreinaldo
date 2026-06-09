@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,34 +53,29 @@ export default async function GruposPage() {
   );
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-5xl">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a la quiniela
-        </Link>
-
-        <header className="mt-6 mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Mundial 2026
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Clasificación por grupos
+    <main className="page">
+      <section className="phero" style={{ paddingBottom: 24 }}>
+        <div className="wrap">
+          <p className="eyebrow">Mundial 2026</p>
+          <h1 className="phero__title" style={{ fontSize: "clamp(2.4rem,6vw,4.5rem)" }}>
+            Clasificación por grupos<span className="dot">.</span>
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Tabla en vivo conforme se juegan los partidos. Los dos primeros de
             cada grupo y los 8 mejores terceros pasan a dieciseisavos.
           </p>
-        </header>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {allStandings.map(({ letter, rows }) => (
-            <GroupTable key={letter} letter={letter} rows={rows} />
-          ))}
         </div>
-      </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 32 }}>
+        <div className="wrap">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {allStandings.map(({ letter, rows }) => (
+              <GroupTable key={letter} letter={letter} rows={rows} />
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -94,54 +88,60 @@ function GroupTable({
   rows: StandingRow[];
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-      <header className="border-b border-zinc-900 bg-zinc-950/60 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-300">
+    <section className="panel" style={{ overflow: "hidden" }}>
+      <header
+        className="mono"
+        style={{
+          borderBottom: "1px solid var(--line)",
+          padding: "12px 16px",
+          color: "var(--accent)",
+          fontWeight: 700,
+        }}
+      >
         Grupo {letter}
       </header>
-      <table className="w-full text-xs">
-        <thead className="text-[10px] uppercase tracking-wider text-zinc-500">
+      <table className="standings">
+        <thead>
           <tr>
-            <th className="px-2 py-2 text-left font-medium">#</th>
-            <th className="py-2 pr-2 text-left font-medium">Equipo</th>
-            <th className="px-1 py-2 text-right font-medium">PJ</th>
-            <th className="px-1 py-2 text-right font-medium">DG</th>
-            <th className="px-2 py-2 text-right font-medium">Pts</th>
+            <th>#</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th>DG</th>
+            <th>Pts</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-900">
+        <tbody>
           {rows.map((r) => (
             <tr key={r.team_id}>
-              <td className="px-2 py-2">
+              <td>
                 <RankBadge rank={r.rank} />
               </td>
-              <td className="py-2 pr-2">
-                <span className="flex items-center gap-2">
-                  <span className="text-base leading-none">
+              <td>
+                <span className="club">
+                  <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>
                     {r.flag ?? ""}
                   </span>
-                  <span className="truncate font-medium text-white">
-                    {r.team_name}
-                  </span>
+                  <b>{r.team_name}</b>
                 </span>
               </td>
-              <td className="px-1 py-2 text-right tabular-nums text-zinc-400">
+              <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
                 {r.played}
               </td>
               <td
-                className={`px-1 py-2 text-right tabular-nums ${
-                  r.goal_diff > 0
-                    ? "text-emerald-400"
-                    : r.goal_diff < 0
-                      ? "text-red-300"
-                      : "text-zinc-400"
-                }`}
+                className="tabular-nums"
+                style={{
+                  color:
+                    r.goal_diff > 0
+                      ? "#4ade80"
+                      : r.goal_diff < 0
+                        ? "#ff8a8a"
+                        : "var(--text-dim)",
+                }}
               >
                 {r.goal_diff > 0 ? "+" : ""}
                 {r.goal_diff}
               </td>
-              <td className="px-2 py-2 text-right text-sm font-semibold tabular-nums text-white">
-                {r.points}
-              </td>
+              <td className="ptsc">{r.points}</td>
             </tr>
           ))}
         </tbody>
@@ -151,17 +151,29 @@ function GroupTable({
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  const color =
-    rank === 1
-      ? "bg-emerald-500/15 text-emerald-300"
-      : rank === 2
-        ? "bg-emerald-500/10 text-emerald-300"
-        : rank === 3
-          ? "bg-amber-500/10 text-amber-300"
-          : "bg-zinc-800 text-zinc-500";
+  const style =
+    rank <= 2
+      ? { background: "rgba(74,222,128,0.15)", color: "#4ade80" }
+      : rank === 3
+        ? {
+            background: "color-mix(in oklch, var(--accent-2) 14%, transparent)",
+            color: "var(--accent-2)",
+          }
+        : { background: "var(--surface-2)", color: "var(--text-dim)" };
   return (
     <span
-      className={`inline-flex h-5 w-5 items-center justify-center rounded text-[10px] font-semibold tabular-nums ${color}`}
+      className="tabular-nums"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 22,
+        height: 22,
+        borderRadius: 5,
+        fontSize: "0.7rem",
+        fontWeight: 700,
+        ...style,
+      }}
     >
       {rank}
     </span>

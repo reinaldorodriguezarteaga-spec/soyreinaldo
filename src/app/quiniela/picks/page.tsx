@@ -40,40 +40,33 @@ export default async function PicksPage() {
   const locked = lockData === true;
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a la quiniela
-        </Link>
-
-        <header className="mt-6 mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Picks especiales · Mundial 2026
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Tus picks de torneo
+    <main className="page">
+      <section className="phero" style={{ paddingBottom: 24 }}>
+        <div className="wrap" style={{ maxWidth: 820 }}>
+          <p className="eyebrow">Picks especiales · Mundial 2026</p>
+          <h1 className="phero__title" style={{ fontSize: "clamp(2.4rem,6vw,4.5rem)" }}>
+            Tus picks de torneo<span className="dot">.</span>
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Estas predicciones se cierran cuando arranque el primer partido del
             Mundial (11 de junio). No se editan después.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <Link
-          href="/quiniela/puntos"
-          className="group mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-300 hover:bg-indigo-500/10"
-        >
-          📖 Cómo se puntúa
-          <span className="transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
-        </Link>
+      <section className="section" style={{ paddingTop: 32 }}>
+        <div className="wrap" style={{ maxWidth: 820 }}>
+          <Link
+            href="/quiniela/puntos"
+            className="chip-pill chip-pill--accent"
+            style={{ marginBottom: 24 }}
+          >
+            📖 Cómo se puntúa <span>→</span>
+          </Link>
 
-        <PicksForm teams={teams} existing={existing ?? null} locked={locked} />
-      </div>
+          <PicksForm teams={teams} existing={existing ?? null} locked={locked} />
+        </div>
+      </section>
     </main>
   );
 }

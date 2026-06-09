@@ -81,79 +81,96 @@ export default async function RankingPage({
   const leaderboard = (rows ?? []) as LeaderboardRow[];
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-4xl">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a la quiniela
-        </Link>
+    <main className="page">
+      <section className="phero" style={{ paddingBottom: 24 }}>
+        <div className="wrap">
+          {justJoined && (
+            <div
+              className="notice notice--ok flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+              style={{ marginBottom: 24 }}
+            >
+              <p style={{ margin: 0 }}>
+                ✓ Acabas de entrar en{" "}
+                <strong style={{ color: "var(--text)" }}>{league.name}</strong>.
+              </p>
+              <form action={leaveLeague} className="shrink-0">
+                <input type="hidden" name="league_id" value={league.id} />
+                <button
+                  type="submit"
+                  className="mono"
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "var(--text-dim)",
+                    cursor: "pointer",
+                  }}
+                  title="Salir de esta liga"
+                >
+                  ¿Te uniste sin querer? Salir →
+                </button>
+              </form>
+            </div>
+          )}
 
-        {justJoined && (
-          <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 sm:flex-row sm:items-center sm:justify-between">
-            <p className="leading-relaxed">
-              ✓ Acabas de entrar en{" "}
-              <span className="font-semibold">{league.name}</span>.
-            </p>
-            <form action={leaveLeague} className="shrink-0">
-              <input type="hidden" name="league_id" value={league.id} />
-              <button
-                type="submit"
-                className="text-xs font-medium text-emerald-200/80 underline-offset-2 transition hover:text-white hover:underline"
-                title="Salir de esta liga"
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div style={{ minWidth: 0 }}>
+              <p className="eyebrow">Ranking · Liga {league.name}</p>
+              <h1
+                className="phero__title"
+                style={{ fontSize: "clamp(2.4rem,6vw,4.5rem)" }}
               >
-                ¿Te uniste sin querer? Salir →
-              </button>
-            </form>
+                {league.name}
+              </h1>
+              {league.description && (
+                <p className="phero__lede" style={{ marginTop: 12 }}>
+                  {league.description}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="codepill">{league.code}</span>
+              {profile?.is_admin && <CopyInviteIcon code={league.code} />}
+            </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        <header className="mt-6 mb-8 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-              Ranking · Liga {league.name}
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              {league.name}
-            </h1>
-            {league.description && (
-              <p className="mt-1 text-sm text-zinc-400">{league.description}</p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1 font-mono text-xs text-indigo-300">
-              {league.code}
-            </span>
-            {profile?.is_admin && <CopyInviteIcon code={league.code} />}
-          </div>
-        </header>
+      <section className="section" style={{ paddingTop: 32 }}>
+        <div className="wrap">
+          {leaderboard.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <Leaderboard rows={leaderboard} currentUserId={user.id} />
+          )}
 
-        {leaderboard.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <Leaderboard rows={leaderboard} currentUserId={user.id} />
-        )}
-
-        <p className="mt-6 text-center text-xs text-zinc-500">
-          ¿Dudas con la suma?{" "}
-          <Link
-            href="/quiniela/puntos"
-            className="font-medium text-indigo-300 underline-offset-4 hover:underline"
+          <p
+            className="hint"
+            style={{ marginTop: 24, textAlign: "center" }}
           >
-            Cómo se puntúa →
-          </Link>
-        </p>
-      </div>
+            ¿Dudas con la suma?{" "}
+            <Link href="/quiniela/puntos" style={{ color: "var(--accent)" }}>
+              Cómo se puntúa →
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-8 text-center text-sm text-zinc-400">
-      <p>Aún no hay nadie en esta liga.</p>
-      <p className="mt-2 text-xs text-zinc-500">
+    <div
+      className="panel"
+      style={{
+        padding: 32,
+        textAlign: "center",
+        borderStyle: "dashed",
+        color: "var(--text-dim)",
+      }}
+    >
+      <p style={{ margin: 0 }}>Aún no hay nadie en esta liga.</p>
+      <p className="hint" style={{ marginTop: 8 }}>
         Comparte el código para que entren los demás.
       </p>
     </div>
@@ -168,100 +185,85 @@ function Leaderboard({
   currentUserId: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-800">
-      <table className="w-full text-sm">
-        <thead className="bg-zinc-950/60 text-xs uppercase tracking-wider text-zinc-500">
+    <div className="panel" style={{ overflowX: "auto" }}>
+      <table className="board">
+        <thead>
           <tr>
-            <th className="px-3 py-3 text-left font-medium sm:px-4">#</th>
-            <th className="px-3 py-3 text-left font-medium sm:px-4">
-              Jugador
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
-              Predichos
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
-              Especiales
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
-              Exactos
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium sm:table-cell sm:px-4">
-              Parciales
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium md:table-cell md:px-4">
-              Picks
-            </th>
-            <th className="hidden px-3 py-3 text-right font-medium md:table-cell md:px-4">
-              Ajustes
-            </th>
-            <th className="px-3 py-3 text-right font-medium sm:px-4">
-              Total
-            </th>
+            <th>#</th>
+            <th>Jugador</th>
+            <th className="hidden text-right sm:table-cell">Predichos</th>
+            <th className="hidden text-right sm:table-cell">Especiales</th>
+            <th className="hidden text-right sm:table-cell">Exactos</th>
+            <th className="hidden text-right sm:table-cell">Parciales</th>
+            <th className="hidden text-right md:table-cell">Picks</th>
+            <th className="hidden text-right md:table-cell">Ajustes</th>
+            <th className="text-right">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-900">
+        <tbody>
           {rows.map((r, i) => {
             const isMe = r.user_id === currentUserId;
             const rank = i + 1;
             return (
-              <tr
-                key={r.user_id}
-                className={
-                  isMe
-                    ? "bg-indigo-500/10"
-                    : "transition hover:bg-zinc-900/40"
-                }
-              >
-                <td className="px-3 py-3 sm:px-4">
+              <tr key={r.user_id} className={isMe ? "me" : undefined}>
+                <td className="pos">
                   <RankBadge rank={rank} />
                 </td>
-                <td className="px-3 py-3 font-medium sm:px-4">
+                <td className="who">
                   {r.display_name}
                   {isMe && (
-                    <span className="ml-2 rounded bg-indigo-300/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-indigo-300">
+                    <span className="badge badge--accent" style={{ marginLeft: 8 }}>
                       Tú
                     </span>
                   )}
                 </td>
-                <td className="hidden px-3 py-3 text-right tabular-nums text-zinc-400 sm:table-cell sm:px-4">
+                <td
+                  className="hidden text-right tabular-nums sm:table-cell"
+                  style={{ color: "var(--text-dim)" }}
+                >
                   {r.predictions_made}
                 </td>
                 <td
-                  className={`hidden px-3 py-3 text-right tabular-nums sm:table-cell sm:px-4 ${
-                    r.picks_made >= TOTAL_PICKS
-                      ? "text-emerald-300"
-                      : r.picks_made > 0
-                        ? "text-zinc-300"
-                        : "text-zinc-600"
-                  }`}
+                  className="hidden text-right tabular-nums sm:table-cell"
+                  style={{
+                    color:
+                      r.picks_made >= TOTAL_PICKS
+                        ? "#4ade80"
+                        : r.picks_made > 0
+                          ? "var(--text)"
+                          : "var(--text-dim)",
+                  }}
                   title="Picks especiales completados"
                 >
                   {r.picks_made}/{TOTAL_PICKS}
                 </td>
-                <td className="hidden px-3 py-3 text-right tabular-nums text-emerald-300 sm:table-cell sm:px-4">
+                <td
+                  className="hidden text-right tabular-nums sm:table-cell"
+                  style={{ color: "#4ade80" }}
+                >
                   {r.exact_count}
                 </td>
-                <td className="hidden px-3 py-3 text-right tabular-nums text-zinc-300 sm:table-cell sm:px-4">
+                <td className="hidden text-right tabular-nums sm:table-cell">
                   {r.partial_count}
                 </td>
-                <td className="hidden px-3 py-3 text-right tabular-nums text-zinc-300 md:table-cell md:px-4">
+                <td className="hidden text-right tabular-nums md:table-cell">
                   {r.picks_points}
                 </td>
                 <td
-                  className={`hidden px-3 py-3 text-right tabular-nums md:table-cell md:px-4 ${
-                    r.adjustment_points < 0
-                      ? "text-red-300"
-                      : r.adjustment_points > 0
-                        ? "text-emerald-300"
-                        : "text-zinc-500"
-                  }`}
+                  className="hidden text-right tabular-nums md:table-cell"
+                  style={{
+                    color:
+                      r.adjustment_points < 0
+                        ? "#ff8a8a"
+                        : r.adjustment_points > 0
+                          ? "#4ade80"
+                          : "var(--text-dim)",
+                  }}
                 >
                   {r.adjustment_points > 0 ? "+" : ""}
                   {r.adjustment_points}
                 </td>
-                <td className="px-3 py-3 text-right text-base font-semibold tabular-nums sm:px-4">
-                  {r.total_points}
-                </td>
+                <td className="pts">{r.total_points}</td>
               </tr>
             );
           })}
@@ -273,14 +275,22 @@ function Leaderboard({
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1)
-    return <span className="text-lg" title="1º">🥇</span>;
+    return (
+      <span style={{ fontSize: "1.2rem" }} title="1º">
+        🥇
+      </span>
+    );
   if (rank === 2)
-    return <span className="text-lg" title="2º">🥈</span>;
+    return (
+      <span style={{ fontSize: "1.2rem" }} title="2º">
+        🥈
+      </span>
+    );
   if (rank === 3)
-    return <span className="text-lg" title="3º">🥉</span>;
-  return (
-    <span className="inline-flex h-6 w-6 items-center justify-center text-xs tabular-nums text-zinc-500">
-      {rank}
-    </span>
-  );
+    return (
+      <span style={{ fontSize: "1.2rem" }} title="3º">
+        🥉
+      </span>
+    );
+  return <span className={rank <= 3 ? "top" : undefined}>{rank}</span>;
 }

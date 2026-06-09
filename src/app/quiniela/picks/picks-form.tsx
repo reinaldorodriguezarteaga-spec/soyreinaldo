@@ -62,7 +62,7 @@ export default function PicksForm({
   return (
     <form action={action} className="space-y-8">
       {locked && (
-        <div className="rounded-xl border border-amber-900/40 bg-amber-950/20 p-4 text-sm text-amber-200">
+        <div className="notice" style={{ borderColor: "color-mix(in oklch, var(--accent-2) 40%, transparent)", background: "color-mix(in oklch, var(--accent-2) 12%, transparent)", color: "var(--accent-2)" }}>
           🔒 El torneo ya empezó. Los picks están bloqueados — solo lectura.
         </div>
       )}
@@ -96,7 +96,7 @@ export default function PicksForm({
           <TextField label="Jugador" name="pichichi_name" value={pichichi} onChange={setPichichi} placeholder="Ej. Lamine Yamal" disabled={disabled} maxLength={80} />
           <NumberField label="Goles" name="pichichi_predicted_goals" value={pichichiGoals} onChange={setPichichiGoals} placeholder="6" disabled={disabled} max={20} />
         </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
+        <p className="hint">
           Escribe el nombre como tú lo digas — luego se compara con el oficial
           ignorando tildes y mayúsculas.
         </p>
@@ -125,18 +125,18 @@ export default function PicksForm({
 
       {!locked && (
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-xl bg-indigo-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {pending ? "Guardando..." : "Guardar picks"}
+          <button type="submit" disabled={pending} className="btn btn--accent">
+            {pending ? "Guardando…" : "Guardar picks"}
           </button>
           {state.status === "error" && state.message && (
-            <span className="text-sm text-red-300">{state.message}</span>
+            <span style={{ color: "#ffb4b4", fontSize: "0.88rem" }}>
+              {state.message}
+            </span>
           )}
           {state.status === "success" && state.message && (
-            <span className="text-sm text-emerald-300">✓ {state.message}</span>
+            <span style={{ color: "var(--accent)", fontSize: "0.88rem" }}>
+              ✓ {state.message}
+            </span>
           )}
         </div>
       )}
@@ -154,9 +154,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 sm:p-6">
-      <h2 className="text-base font-semibold">{title}</h2>
-      {subtitle && <p className="mb-4 mt-1 text-xs text-zinc-500">{subtitle}</p>}
+    <section className="acard">
+      <h2>{title}</h2>
+      {subtitle && <p className="sub">{subtitle}</p>}
       {children}
     </section>
   );
@@ -189,15 +189,14 @@ function TeamSelect({
 
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
+      <span className="label">{label}</span>
       <select
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="block h-12 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-sm text-white focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="field"
+        style={{ marginBottom: 0 }}
       >
         <option value="">Elige una selección</option>
         {groups.map(([letter, list]) => (
@@ -235,9 +234,7 @@ function TextField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
+      <span className="label">{label}</span>
       <input
         type="text"
         name={name}
@@ -247,7 +244,8 @@ function TextField({
         disabled={disabled}
         maxLength={maxLength}
         autoComplete="off"
-        className="block h-12 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="field"
+        style={{ marginBottom: 0 }}
       />
     </label>
   );
@@ -272,9 +270,7 @@ function NumberField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
+      <span className="label">{label}</span>
       <input
         type="number"
         inputMode="numeric"
@@ -285,7 +281,8 @@ function NumberField({
         disabled={disabled}
         min={0}
         max={max ?? 99}
-        className="block h-12 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-sm tabular-nums text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="field"
+        style={{ marginBottom: 0 }}
       />
     </label>
   );

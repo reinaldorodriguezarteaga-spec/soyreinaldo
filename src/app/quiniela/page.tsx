@@ -82,62 +82,55 @@ export default async function QuinielaPage() {
   const missingPhone = !profileExtras?.phone_number;
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-16">
-      <div className="mx-auto w-full max-w-2xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-8 mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Mundial 2026 · 11 jun – 19 jul
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Hola, <span className="text-indigo-300">{displayName}</span>.
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">Mundial 2026 · 11 jun – 19 jul</p>
+          <h1 className="phero__title">
+            Hola, <span style={{ color: "var(--accent)" }}>{displayName}</span>
+            <span className="dot">.</span>
           </h1>
-        </header>
+        </div>
+      </section>
 
-        {(missingUsername || missingPhone) && (
-          <ProfileBanner
-            missingUsername={missingUsername}
-            missingPhone={missingPhone}
-          />
-        )}
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 720 }}>
+          {(missingUsername || missingPhone) && (
+            <ProfileBanner
+              missingUsername={missingUsername}
+              missingPhone={missingPhone}
+            />
+          )}
 
-        {leagues.length === 0 ? (
-          <NoLeaguesState
-            publicLeagues={availablePublic}
-            privateLeagues={availablePrivate}
-          />
-        ) : (
-          <LeaguesList
-            leagues={leagues}
-            canAddMore
-            isAdmin={isAdmin}
-            publicLeagues={availablePublic}
-            privateLeagues={availablePrivate}
-          />
-        )}
+          {leagues.length === 0 ? (
+            <NoLeaguesState
+              publicLeagues={availablePublic}
+              privateLeagues={availablePrivate}
+            />
+          ) : (
+            <LeaguesList
+              leagues={leagues}
+              canAddMore
+              isAdmin={isAdmin}
+              publicLeagues={availablePublic}
+              privateLeagues={availablePrivate}
+            />
+          )}
 
-        {isAdmin && (
-          <div className="mt-10 rounded-xl border border-indigo-400/30 bg-indigo-500/5 p-5 text-sm">
-            <p className="text-indigo-300">🛠 Eres admin</p>
-            <p className="mt-1 text-zinc-400">
-              Gestiona las ligas y sus códigos en{" "}
-              <Link
-                href="/admin/ligas"
-                className="font-medium text-indigo-300 hover:text-indigo-200"
-              >
-                /admin/ligas
-              </Link>
-              .
-            </p>
-          </div>
-        )}
-      </div>
+          {isAdmin && (
+            <div className="notice notice--ok" style={{ marginTop: 32 }}>
+              <p style={{ margin: 0, fontWeight: 700 }}>🛠 Eres admin</p>
+              <p style={{ margin: "4px 0 0", color: "var(--text-dim)" }}>
+                Gestiona las ligas y sus códigos en{" "}
+                <Link href="/admin/ligas" style={{ color: "var(--accent)" }}>
+                  /admin/ligas
+                </Link>
+                .
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }
@@ -166,19 +159,12 @@ function ProfileBanner({
   }
 
   return (
-    <Link
-      href="/completar-perfil"
-      className="group mb-6 flex items-center justify-between gap-4 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/10 via-zinc-950 to-zinc-950 p-5 transition hover:border-amber-300/50"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-xs uppercase tracking-[0.25em] text-amber-300">
-          {title}
-        </p>
-        <p className="mt-1 text-sm text-zinc-300">{body}</p>
+    <Link href="/completar-perfil" className="banner" style={{ marginBottom: 24 }}>
+      <div style={{ minWidth: 0 }}>
+        <p className="banner__tag">{title}</p>
+        <p className="banner__p">{body}</p>
       </div>
-      <span className="shrink-0 text-xl text-amber-300 transition-transform group-hover:translate-x-0.5">
-        →
-      </span>
+      <span className="banner__arr">→</span>
     </Link>
   );
 }
@@ -194,9 +180,9 @@ function NoLeaguesState({
     <div className="space-y-8">
       {publicLeagues.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-indigo-300">
-            Únete con un click
-          </h2>
+          <div className="shead">
+            <h2>Únete con un click</h2>
+          </div>
           <div className="space-y-3">
             {publicLeagues.map((l) => (
               <PublicLeagueCard key={l.id} league={l} />
@@ -207,9 +193,10 @@ function NoLeaguesState({
 
       {privateLeagues.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-red-300">
-            Ligas privadas (requieren código)
-          </h2>
+          <div className="shead">
+            <h2>Ligas privadas</h2>
+            <span className="sh-note">Requieren código</span>
+          </div>
           <div className="space-y-3">
             {privateLeagues.map((l) => (
               <PrivateLeagueCard
@@ -226,9 +213,19 @@ function NoLeaguesState({
         </section>
       )}
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-sm text-zinc-400">
-        <p className="font-medium text-white">Reglas del juego</p>
-        <ul className="mt-3 space-y-1.5">
+      <div className="panel" style={{ padding: 24 }}>
+        <p style={{ fontWeight: 700, margin: 0 }}>Reglas del juego</p>
+        <ul
+          style={{
+            margin: "14px 0 0",
+            padding: 0,
+            listStyle: "none",
+            display: "grid",
+            gap: 8,
+            color: "var(--text-dim)",
+            fontSize: "0.9rem",
+          }}
+        >
           <li>· Resultado exacto del partido — 3 puntos</li>
           <li>· Solo ganador / empate — 1 punto</li>
           <li>· Acertar el campeón del Mundial — 20 puntos</li>
@@ -239,7 +236,8 @@ function NoLeaguesState({
         </ul>
         <Link
           href="/quiniela/puntos"
-          className="mt-4 inline-block text-xs font-medium text-indigo-300 hover:text-indigo-200"
+          className="mono"
+          style={{ display: "inline-block", marginTop: 16, color: "var(--accent)" }}
         >
           Ver reglas completas →
         </Link>
@@ -251,29 +249,22 @@ function NoLeaguesState({
 function PublicLeagueCard({ league }: { league: AvailableLeague }) {
   const count = league.member_count?.[0]?.count ?? 0;
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/10 via-zinc-950 to-zinc-950 p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold sm:text-lg">{league.name}</h3>
-          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-            Pública
-          </span>
-        </div>
+    <article className="leaguerow leaguerow--accent">
+      <div className="leaguerow__main">
+        <h3 className="leaguerow__name">
+          {league.name}
+          <span className="badge badge--ok">Pública</span>
+        </h3>
         {league.description && (
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-            {league.description}
-          </p>
+          <p className="leaguerow__desc">{league.description}</p>
         )}
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="leaguerow__meta">
           {count} {count === 1 ? "miembro" : "miembros"} ya dentro
         </p>
       </div>
-      <form action={joinLeagueByCode} className="shrink-0">
+      <form action={joinLeagueByCode} className="leaguerow__actions">
         <input type="hidden" name="code" value={league.code} />
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-indigo-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 sm:w-auto"
-        >
+        <button type="submit" className="btn btn--accent">
           Unirme
         </button>
       </form>
@@ -283,7 +274,6 @@ function PublicLeagueCard({ league }: { league: AvailableLeague }) {
 
 function LeaguesList({
   leagues,
-  canAddMore,
   isAdmin,
   publicLeagues = [],
   privateLeagues = [],
@@ -297,39 +287,42 @@ function LeaguesList({
   return (
     <div className="space-y-6">
       <section>
-        <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
-          Tus ligas ({leagues.length})
-        </h2>
+        <div className="shead">
+          <h2>Tus ligas</h2>
+          <span className="sh-note">{leagues.length} en total</span>
+        </div>
         <div className="space-y-3">
           {leagues.map((l) => (
-            <article
-              key={l.id}
-              className="flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-base font-semibold">{l.name}</h3>
-                  <span className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-0.5 font-mono text-xs text-indigo-300">
-                    {l.code}
-                  </span>
+            <article key={l.id} className="leaguerow">
+              <div className="leaguerow__main">
+                <h3 className="leaguerow__name">
+                  {l.name}
+                  <span className="codepill">{l.code}</span>
                   {isAdmin && <CopyInviteIcon code={l.code} />}
-                </div>
+                </h3>
                 {l.description && (
-                  <p className="mt-1 text-sm text-zinc-400">{l.description}</p>
+                  <p className="leaguerow__desc">{l.description}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="leaguerow__actions">
                 <Link
                   href={`/quiniela/ranking/${l.id}`}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-indigo-300 hover:text-white"
+                  className="btn btn--ghost"
+                  style={{ padding: "10px 16px", fontSize: "0.68rem" }}
                 >
-                  Ver ranking →
+                  Ver ranking <span className="arr">→</span>
                 </Link>
                 <form action={leaveLeague}>
                   <input type="hidden" name="league_id" value={l.id} />
                   <button
                     type="submit"
-                    className="text-xs text-zinc-500 transition hover:text-red-300"
+                    className="mono"
+                    style={{
+                      background: "transparent",
+                      border: 0,
+                      color: "var(--text-dim)",
+                      cursor: "pointer",
+                    }}
                     title="Salir de esta liga"
                   >
                     Salir
@@ -343,9 +336,9 @@ function LeaguesList({
 
       {publicLeagues.length > 0 && (
         <section>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-indigo-300">
-            Únete a otra liga pública
-          </h2>
+          <div className="shead">
+            <h2>Únete a otra liga pública</h2>
+          </div>
           <div className="space-y-3">
             {publicLeagues.map((l) => (
               <PublicLeagueCard key={l.id} league={l} />
@@ -356,9 +349,10 @@ function LeaguesList({
 
       {privateLeagues.length > 0 && (
         <section>
-          <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-red-300">
-            Ligas privadas (requieren código)
-          </h2>
+          <div className="shead">
+            <h2>Ligas privadas</h2>
+            <span className="sh-note">Requieren código</span>
+          </div>
           <div className="space-y-3">
             {privateLeagues.map((l) => (
               <PrivateLeagueCard
@@ -375,72 +369,44 @@ function LeaguesList({
         </section>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link
-          href="/quiniela/partidos"
-          className="group flex items-center justify-between gap-4 rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 p-6 transition hover:border-indigo-300"
-        >
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-              Pronósticos
-            </p>
-            <p className="mt-1.5 text-base font-semibold sm:text-lg">
-              Los 104 partidos
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
-              Por fase, con auto-guardado
-            </p>
+      <div className="grid2">
+        <Link href="/quiniela/partidos" className="linkcard linkcard--accent">
+          <div style={{ minWidth: 0 }}>
+            <p className="linkcard__tag">Pronósticos</p>
+            <p className="linkcard__h">Los 104 partidos</p>
+            <p className="linkcard__p">Por fase, con auto-guardado</p>
           </div>
-          <span className="shrink-0 text-2xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
+          <span className="linkcard__arr">→</span>
         </Link>
 
-        <Link
-          href="/quiniela/picks"
-          className="group flex items-center justify-between gap-4 rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/15 via-zinc-950 to-zinc-950 p-6 transition hover:border-indigo-300"
-        >
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-              Picks de torneo
-            </p>
-            <p className="mt-1.5 text-base font-semibold sm:text-lg">
-              Campeón · Pichichi
-            </p>
-            <p className="mt-1 text-sm text-zinc-400">
-              Subcampeón · Goleador en la final
-            </p>
+        <Link href="/quiniela/picks" className="linkcard linkcard--accent">
+          <div style={{ minWidth: 0 }}>
+            <p className="linkcard__tag">Picks de torneo</p>
+            <p className="linkcard__h">Campeón · Pichichi</p>
+            <p className="linkcard__p">Subcampeón · Goleador en la final</p>
           </div>
-          <span className="shrink-0 text-2xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
+          <span className="linkcard__arr">→</span>
         </Link>
       </div>
 
-      <Link
-        href="/quiniela/puntos"
-        className="group flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 transition hover:border-indigo-300/60 hover:bg-zinc-900"
-      >
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-            📖 Reglas
-          </p>
-          <p className="mt-1 text-sm font-medium text-zinc-200">
+      <Link href="/quiniela/puntos" className="linkcard">
+        <div style={{ minWidth: 0 }}>
+          <p className="linkcard__tag">📖 Reglas</p>
+          <p className="linkcard__p" style={{ marginTop: 4 }}>
             Cómo se puntúa cada acierto
           </p>
         </div>
-        <span className="shrink-0 text-xl text-indigo-300 transition-transform group-hover:translate-x-0.5">
-          →
-        </span>
+        <span className="linkcard__arr">→</span>
       </Link>
 
-      <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-6 text-sm text-zinc-400">
-        <p className="text-xs uppercase tracking-widest text-indigo-300">
-          Próximamente
-        </p>
-        <p className="mt-2">
-          Ranking en vivo durante el torneo. En cuanto cargue el primer
-          partido, los puntos empiezan a contar.
+      <div
+        className="panel"
+        style={{ padding: 24, borderStyle: "dashed" }}
+      >
+        <p className="linkcard__tag">Próximamente</p>
+        <p style={{ marginTop: 8, color: "var(--text-dim)", fontSize: "0.92rem" }}>
+          Ranking en vivo durante el torneo. En cuanto cargue el primer partido,
+          los puntos empiezan a contar.
         </p>
       </div>
     </div>

@@ -148,31 +148,19 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
   return (
     <article
       id={`match-${match.id}`}
-      className={`scroll-mt-24 rounded-2xl border p-4 transition ${
-        isLocked
-          ? "border-zinc-800 bg-zinc-950/60 opacity-80"
-          : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
-      }`}
+      className={`gamecard scroll-mt-24${isLocked ? " locked" : ""}`}
     >
-      <header className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold tracking-tight text-white">
-              {day}
-            </span>
-            <span className="text-sm font-medium tabular-nums text-indigo-300">
-              {time}
-            </span>
+      <header className="gamecard__head">
+        <div className="gamecard__when">
+          <div>
+            <b>{day}</b>
+            <span className="t">{time}</span>
           </div>
-          {venueLine && (
-            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-              {venueLine}
-            </p>
-          )}
+          {venueLine && <p className="gamecard__venue">{venueLine}</p>}
         </div>
         {isLive && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+          <span className="badge badge--danger">
+            <span className="livepulse" />
             {liveStatus === "HT"
               ? "Descanso"
               : match.live.minute != null
@@ -180,14 +168,10 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
                 : "EN VIVO"}
           </span>
         )}
-        {isFinal && !isLive && (
-          <span className="shrink-0 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
-            Final
-          </span>
-        )}
+        {isFinal && !isLive && <span className="badge">Final</span>}
       </header>
 
-      <div className="space-y-2">
+      <div>
         <TeamRow team={match.home} label={homeLabel}>
           {showScoreBlock ? (
             <ScoreDisplay value={match.live.scoreHome ?? 0} live={isLive} />
@@ -221,21 +205,21 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
       </div>
 
       {showScoreBlock && match.prediction && (
-        <div className="mt-3 flex items-center justify-between rounded-lg border border-zinc-900 bg-zinc-900/40 px-3 py-2 text-xs">
-          <span className="text-zinc-500">
+        <div className="predbar">
+          <span>
             Tu pronóstico:{" "}
-            <span className="font-mono font-medium tabular-nums text-zinc-300">
+            <b>
               {match.prediction.home}–{match.prediction.away}
-            </span>
+            </b>
           </span>
           {isFinal && match.points != null && (
             <span
-              className={`rounded-md px-2 py-0.5 font-mono text-xs font-semibold tabular-nums ${
+              className={`badge ${
                 match.points === 3
-                  ? "bg-emerald-500/20 text-emerald-300"
+                  ? "badge--ok"
                   : match.points === 1
-                    ? "bg-indigo-500/20 text-indigo-300"
-                    : "bg-zinc-800 text-zinc-500"
+                    ? "badge--accent"
+                    : ""
               }`}
             >
               {match.points > 0 ? `+${match.points}` : match.points} pts
@@ -244,33 +228,25 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
         </div>
       )}
       {showScoreBlock && !match.prediction && isFinal && (
-        <p className="mt-3 rounded-lg border border-zinc-900 bg-zinc-900/40 px-3 py-2 text-center text-xs text-zinc-500">
+        <p className="predbar" style={{ justifyContent: "center" }}>
           No pronosticaste este partido.
         </p>
       )}
 
-      <footer className="mt-3 min-h-[1rem] text-right text-[11px]">
-        {isLocked && (
-          <span className="text-zinc-500">🔒 Cerrado · falta &lt;1h</span>
-        )}
-        {!isLocked && status === "saving" && (
-          <span className="text-zinc-400">Guardando…</span>
-        )}
+      <footer className="gamecard__foot">
+        {isLocked && <span>🔒 Cerrado · falta &lt;1h</span>}
+        {!isLocked && status === "saving" && <span>Guardando…</span>}
         {!isLocked && status === "saved" && (
-          <span className="text-emerald-400">✓ Guardado</span>
+          <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
         )}
-        {!isLocked && status === "locked" && (
-          <span className="text-zinc-500">🔒 Justo se bloqueó</span>
-        )}
+        {!isLocked && status === "locked" && <span>🔒 Justo se bloqueó</span>}
         {!isLocked && status === "error" && errMsg && (
-          <span className="text-red-300">⚠ {errMsg}</span>
+          <span style={{ color: "#ffb4b4" }}>⚠ {errMsg}</span>
         )}
         {!isLocked &&
           status === "idle" &&
           (homeIsPlaceholder || awayIsPlaceholder) && (
-            <span className="text-zinc-500">
-              Equipos por definir tras la fase anterior
-            </span>
+            <span>Equipos por definir tras la fase anterior</span>
           )}
       </footer>
     </article>
@@ -288,15 +264,13 @@ function TeamRow({
 }) {
   const isPlaceholder = "placeholder" in team;
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-xl leading-none">
+    <div className="gamerow">
+      <div className="gamerow__team">
+        <span className="gamerow__flag">
           {isPlaceholder ? "🏟️" : team.flag}
         </span>
         <span
-          className={`truncate text-sm font-medium ${
-            isPlaceholder ? "text-zinc-500" : "text-white"
-          }`}
+          className={`gamerow__name${isPlaceholder ? " ph" : ""}`}
           title={label}
         >
           {label}
@@ -308,17 +282,7 @@ function TeamRow({
 }
 
 function ScoreDisplay({ value, live }: { value: number; live: boolean }) {
-  return (
-    <span
-      className={`flex h-10 w-10 items-center justify-center rounded-lg font-mono text-base font-semibold tabular-nums ${
-        live
-          ? "border border-red-500/40 bg-red-500/10 text-white"
-          : "border border-zinc-800 bg-zinc-900 text-white"
-      }`}
-    >
-      {value}
-    </span>
-  );
+  return <span className={`scoreout${live ? " live" : ""}`}>{value}</span>;
 }
 
 function ScoreInput({
@@ -346,7 +310,7 @@ function ScoreInput({
       }}
       disabled={disabled}
       aria-label={label}
-      className="h-10 w-10 rounded-lg border border-zinc-800 bg-zinc-900 text-center text-base font-semibold tabular-nums text-white focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+      className="scorein"
     />
   );
 }

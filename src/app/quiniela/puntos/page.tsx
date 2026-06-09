@@ -8,184 +8,130 @@ export const metadata = {
 
 export default function PuntosPage() {
   return (
-    <main className="flex flex-1 flex-col px-6 py-12 sm:py-16">
-      <div className="mx-auto w-full max-w-2xl">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a la quiniela
-        </Link>
-
-        <header className="mt-8 mb-10">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Mundial 2026
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Cómo se <span className="text-indigo-300">puntúa</span>.
+    <main className="page">
+      <section className="phero">
+        <div className="wrap" style={{ maxWidth: 720 }}>
+          <p className="eyebrow">Mundial 2026</p>
+          <h1 className="phero__title">
+            Cómo se <span style={{ color: "var(--accent)" }}>puntúa</span>
+            <span className="dot">.</span>
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Sumas puntos por acertar resultados, por tus picks especiales del
             torneo, y por los ajustes que pueda aplicar el admin de tu liga.
           </p>
-        </header>
-
-        <Section
-          eyebrow="Por cada partido"
-          title="Pronóstico del marcador"
-          description="Para cada uno de los partidos del Mundial dejas tu marcador exacto antes del kickoff. Una vez empieza el partido no se puede editar."
-        >
-          <Rule
-            points={3}
-            label="Marcador exacto"
-            example="Predijiste 2-1 y acabó 2-1"
-          />
-          <Rule
-            points={1}
-            label="Solo el ganador (o el empate)"
-            example="Predijiste 2-1 y acabó 3-0 — acertaste que ganaba el local"
-          />
-          <Rule
-            points={0}
-            label="Fallo"
-            example="Predijiste empate y ganó alguno"
-          />
-          <Note>
-            Cada partido suma de forma independiente. No importa si pronosticas
-            todos o solo algunos: solo cuentan los que tengas registrados antes
-            del pitido inicial.
-          </Note>
-        </Section>
-
-        <Section
-          eyebrow="Una sola vez por torneo"
-          title="Picks especiales"
-          description="Eliges tus apuestas globales del Mundial al inicio del torneo. Se evalúan al final."
-        >
-          <Rule
-            points={20}
-            label="Campeón"
-            example="Acertar el equipo que gana el Mundial"
-          />
-          <Rule
-            points={5}
-            label="Subcampeón"
-            example="Acertar el equipo que pierde la final"
-          />
-          <Rule
-            points={3}
-            label="Tercer lugar"
-            example="Acertar el equipo que queda tercero"
-          />
-          <Rule
-            points={10}
-            label="Equipo más goleador"
-            example="La selección que más goles marca en todo el torneo"
-          />
-          <Rule
-            points={10}
-            label="Pichichi (nombre)"
-            example="Acertar el máximo goleador del torneo"
-          />
-          <Rule
-            points={5}
-            label="Pichichi (goles exactos)"
-            extra="extra"
-            example="Si además aciertas cuántos goles marca: +5 sobre el bonus de nombre"
-          />
-          <Rule
-            points={10}
-            label="Balón de oro"
-            example="El mejor jugador del Mundial"
-          />
-          <Rule
-            points={7}
-            label="Guante de oro"
-            example="El mejor portero del torneo"
-          />
-          <Rule
-            points={7}
-            label="Jugador revelación"
-            example="El jugador joven revelación del Mundial"
-          />
-          <Rule
-            points={5}
-            label="Máximo asistidor"
-            example="El jugador con más asistencias"
-          />
-          <Rule
-            points={8}
-            label="Goleador en la final"
-            example="Si el jugador que elegiste marca en la final"
-          />
-          <Note>
-            Los nombres se comparan ignorando mayúsculas, acentos y espacios
-            extra — no te preocupes si escribes &ldquo;Mbappe&rdquo; en vez de
-            &ldquo;Mbappé&rdquo;.
-          </Note>
-        </Section>
-
-        <Section
-          eyebrow="Solo en tu liga"
-          title="Ajustes del admin"
-          description="Cada liga tiene un admin que puede sumar o restar puntos manualmente, con motivo."
-        >
-          <p className="text-sm leading-relaxed text-zinc-400">
-            Sirve para resolver penalizaciones puntuales (apuestas paralelas
-            entre amigos, jugadas que la liga acuerde premiar, etc.). No afecta
-            a otras ligas en las que estés.
-          </p>
-        </Section>
-
-        <Section
-          eyebrow="Cuenta total"
-          title="Tu puntuación final"
-          description="En el ranking de cada liga ves los tres bloques sumados:"
-        >
-          <ul className="space-y-2 text-sm leading-relaxed text-zinc-300">
-            <li className="flex items-start gap-2">
-              <span className="mt-1 text-indigo-300">·</span>
-              <span>
-                <strong className="text-white">Predicciones</strong> — todos los
-                puntos por marcadores acertados a lo largo del torneo.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-1 text-indigo-300">·</span>
-              <span>
-                <strong className="text-white">Picks especiales</strong> —
-                ganados al final del Mundial.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-1 text-indigo-300">·</span>
-              <span>
-                <strong className="text-white">Ajustes</strong> — bonus o
-                penalizaciones del admin.
-              </span>
-            </li>
-          </ul>
-          <Note>
-            Los empates se desempatan por orden alfabético del nombre. Si te
-            importa quedar bien colocado, ponte un nombre que empiece por A 😉
-          </Note>
-        </Section>
-
-        <div className="mt-12 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/quiniela/partidos"
-            className="flex-1 rounded-xl bg-indigo-300 px-4 py-3 text-center text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-          >
-            Ir a mis predicciones
-          </Link>
-          <Link
-            href="/quiniela/picks"
-            className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-zinc-200 transition hover:border-zinc-700 hover:text-white"
-          >
-            Editar mis picks especiales
-          </Link>
         </div>
-      </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 720 }}>
+          <div className="space-y-8">
+            <Section
+              eyebrow="Por cada partido"
+              title="Pronóstico del marcador"
+              description="Para cada uno de los partidos del Mundial dejas tu marcador exacto antes del kickoff. Una vez empieza el partido no se puede editar."
+            >
+              <Rule
+                points={3}
+                label="Marcador exacto"
+                example="Predijiste 2-1 y acabó 2-1"
+              />
+              <Rule
+                points={1}
+                label="Solo el ganador (o el empate)"
+                example="Predijiste 2-1 y acabó 3-0 — acertaste que ganaba el local"
+              />
+              <Rule
+                points={0}
+                label="Fallo"
+                example="Predijiste empate y ganó alguno"
+              />
+              <Note>
+                Cada partido suma de forma independiente. No importa si
+                pronosticas todos o solo algunos: solo cuentan los que tengas
+                registrados antes del pitido inicial.
+              </Note>
+            </Section>
+
+            <Section
+              eyebrow="Una sola vez por torneo"
+              title="Picks especiales"
+              description="Eliges tus apuestas globales del Mundial al inicio del torneo. Se evalúan al final."
+            >
+              <Rule points={20} label="Campeón" example="Acertar el equipo que gana el Mundial" />
+              <Rule points={5} label="Subcampeón" example="Acertar el equipo que pierde la final" />
+              <Rule points={3} label="Tercer lugar" example="Acertar el equipo que queda tercero" />
+              <Rule points={10} label="Equipo más goleador" example="La selección que más goles marca en todo el torneo" />
+              <Rule points={10} label="Pichichi (nombre)" example="Acertar el máximo goleador del torneo" />
+              <Rule points={5} label="Pichichi (goles exactos)" extra="extra" example="Si además aciertas cuántos goles marca: +5 sobre el bonus de nombre" />
+              <Rule points={10} label="Balón de oro" example="El mejor jugador del Mundial" />
+              <Rule points={7} label="Guante de oro" example="El mejor portero del torneo" />
+              <Rule points={7} label="Jugador revelación" example="El jugador joven revelación del Mundial" />
+              <Rule points={5} label="Máximo asistidor" example="El jugador con más asistencias" />
+              <Rule points={8} label="Goleador en la final" example="Si el jugador que elegiste marca en la final" />
+              <Note>
+                Los nombres se comparan ignorando mayúsculas, acentos y espacios
+                extra — no te preocupes si escribes &ldquo;Mbappe&rdquo; en vez
+                de &ldquo;Mbappé&rdquo;.
+              </Note>
+            </Section>
+
+            <Section
+              eyebrow="Solo en tu liga"
+              title="Ajustes del admin"
+              description="Cada liga tiene un admin que puede sumar o restar puntos manualmente, con motivo."
+            >
+              <p style={{ color: "var(--text-dim)", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>
+                Sirve para resolver penalizaciones puntuales (apuestas paralelas
+                entre amigos, jugadas que la liga acuerde premiar, etc.). No
+                afecta a otras ligas en las que estés.
+              </p>
+            </Section>
+
+            <Section
+              eyebrow="Cuenta total"
+              title="Tu puntuación final"
+              description="En el ranking de cada liga ves los tres bloques sumados:"
+            >
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 8, color: "var(--text-dim)", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                <li>
+                  <span style={{ color: "var(--accent)" }}>· </span>
+                  <strong style={{ color: "var(--text)" }}>Predicciones</strong> — todos los puntos por marcadores acertados a lo largo del torneo.
+                </li>
+                <li>
+                  <span style={{ color: "var(--accent)" }}>· </span>
+                  <strong style={{ color: "var(--text)" }}>Picks especiales</strong> — ganados al final del Mundial.
+                </li>
+                <li>
+                  <span style={{ color: "var(--accent)" }}>· </span>
+                  <strong style={{ color: "var(--text)" }}>Ajustes</strong> — bonus o penalizaciones del admin.
+                </li>
+              </ul>
+              <Note>
+                Los empates se desempatan por orden alfabético del nombre. Si te
+                importa quedar bien colocado, ponte un nombre que empiece por A 😉
+              </Note>
+            </Section>
+          </div>
+
+          <div className="mt-12 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/quiniela/partidos"
+              className="btn btn--accent justify-center"
+              style={{ flex: 1 }}
+            >
+              Ir a mis predicciones
+            </Link>
+            <Link
+              href="/quiniela/picks"
+              className="btn btn--ghost justify-center"
+              style={{ flex: 1 }}
+            >
+              Editar mis picks especiales
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -202,13 +148,17 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-10 rounded-2xl border border-zinc-800 bg-zinc-950 p-6 sm:p-8">
-      <p className="text-[10px] uppercase tracking-[0.3em] text-indigo-300">
+    <section className="acard">
+      <p className="eyebrow" style={{ fontSize: "0.62rem" }}>
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-xl font-semibold sm:text-2xl">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">{description}</p>
-      <div className="mt-5 space-y-3">{children}</div>
+      <h2 style={{ marginTop: 12 }}>{title}</h2>
+      <p className="sub" style={{ marginTop: 8 }}>
+        {description}
+      </p>
+      <div className="space-y-3" style={{ marginTop: 18 }}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -226,27 +176,38 @@ function Rule({
 }) {
   const tone =
     points === 0
-      ? "text-zinc-500"
+      ? "var(--text-dim)"
       : points >= 10
-        ? "text-indigo-200"
-        : "text-emerald-300";
+        ? "var(--accent)"
+        : "#4ade80";
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-zinc-900 bg-zinc-900/40 px-4 py-3">
+    <div
+      className="flex items-start gap-4"
+      style={{
+        border: "1px solid var(--line)",
+        borderRadius: "var(--radius)",
+        background: "var(--bg)",
+        padding: "14px 16px",
+      }}
+    >
       <div className="flex shrink-0 flex-col items-center">
         <span
-          className={`font-mono text-xl font-semibold tabular-nums ${tone}`}
+          className="display"
+          style={{ fontSize: "1.6rem", color: tone, lineHeight: 1 }}
         >
           {points > 0 ? `+${points}` : points}
         </span>
         {extra && (
-          <span className="mt-0.5 text-[9px] uppercase tracking-widest text-zinc-500">
+          <span className="mono" style={{ marginTop: 2, fontSize: "0.52rem", color: "var(--text-dim)" }}>
             {extra}
           </span>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-zinc-100">{label}</p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">{example}</p>
+        <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
+        <p style={{ margin: "4px 0 0", fontSize: "0.8rem", lineHeight: 1.5, color: "var(--text-dim)" }}>
+          {example}
+        </p>
       </div>
     </div>
   );
@@ -254,7 +215,7 @@ function Rule({
 
 function Note({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-3 rounded-lg border border-zinc-900 bg-zinc-900/40 px-4 py-3 text-xs leading-relaxed text-zinc-400">
+    <p className="notice notice--info" style={{ fontSize: "0.8rem" }}>
       {children}
     </p>
   );

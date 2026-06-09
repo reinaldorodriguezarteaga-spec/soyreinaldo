@@ -22,31 +22,27 @@ export default function PrivateLeagueCard({ league }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-500/5 via-zinc-950 to-zinc-950 p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold sm:text-lg">{league.name}</h3>
-          <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300">
-            Privada
-          </span>
-        </div>
+    <article className="leaguerow">
+      <div className="leaguerow__main">
+        <h3 className="leaguerow__name">
+          {league.name}
+          <span className="badge badge--danger">Privada</span>
+        </h3>
         {league.description && (
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-            {league.description}
-          </p>
+          <p className="leaguerow__desc">{league.description}</p>
         )}
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="leaguerow__meta">
           {league.memberCount}{" "}
           {league.memberCount === 1 ? "miembro" : "miembros"} ya dentro
         </p>
       </div>
 
-      <div className="shrink-0">
+      <div className="leaguerow__actions">
         {!open ? (
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-sm font-semibold text-zinc-200 transition hover:border-red-400/40 hover:text-white sm:w-auto"
+            className="btn btn--ghost"
           >
             Unirme
           </button>
@@ -65,19 +61,29 @@ export default function PrivateLeagueCard({ league }: Props) {
               autoCapitalize="characters"
               autoFocus
               placeholder="CÓDIGO"
-              className="h-11 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 font-mono text-sm uppercase tracking-wider text-white placeholder:text-zinc-600 focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-400 sm:w-40"
+              className="field"
+              style={{
+                marginBottom: 0,
+                width: 160,
+                fontFamily: "var(--font-mono-stack)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
             />
             <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                className="rounded-xl bg-indigo-300 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-              >
+              <button type="submit" className="btn btn--accent">
                 Entrar
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-xs text-zinc-500 transition hover:text-zinc-300"
+                className="mono"
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  color: "var(--text-dim)",
+                  cursor: "pointer",
+                }}
                 title="Cancelar"
               >
                 ✕

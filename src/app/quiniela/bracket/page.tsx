@@ -84,101 +84,98 @@ export default async function BracketPage() {
     predByMatch.get(THIRD_PLACE_MATCH_ID) ?? null;
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-6xl">
-        <Link
-          href="/quiniela/partidos"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver a pronósticos
-        </Link>
-
-        <header className="mt-6 mb-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Bracket · Mundial 2026
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Eliminatorias
+    <main className="page">
+      <section className="phero" style={{ paddingBottom: 24 }}>
+        <div className="wrap" style={{ maxWidth: 1200 }}>
+          <p className="eyebrow">Bracket · Mundial 2026</p>
+          <h1 className="phero__title" style={{ fontSize: "clamp(2.4rem,6vw,4.5rem)" }}>
+            Eliminatorias<span className="dot">.</span>
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Vista general de las eliminatorias. Ves el resultado oficial si
-            ya está, o tu pronóstico si aún no se ha jugado. Click en
-            cualquier partido para editar.
+          <p className="phero__lede">
+            Vista general de las eliminatorias. Ves el resultado oficial si ya
+            está, o tu pronóstico si aún no se ha jugado. Click en cualquier
+            partido para editar.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <div className="-mx-6 overflow-x-auto px-6">
-          <div className="min-w-[900px]">
-            {/* Cabecera de columnas */}
-            <div
-              className="mb-3 grid text-center text-[10px] uppercase tracking-widest text-indigo-300"
-              style={{
-                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                columnGap: `${COL_GAP}px`,
-              }}
-            >
-              <span>{COLUMN_LABELS[1]}</span>
-              <span>{COLUMN_LABELS[2]}</span>
-              <span>{COLUMN_LABELS[3]}</span>
-              <span>{COLUMN_LABELS[4]}</span>
-              <span>{COLUMN_LABELS[5]}</span>
-            </div>
+      <section className="section" style={{ paddingTop: 32 }}>
+        <div className="wrap" style={{ maxWidth: 1200 }}>
+          <div className="-mx-6 overflow-x-auto px-6">
+            <div className="min-w-[900px]">
+              {/* Cabecera de columnas */}
+              <div
+                className="mono mb-3 grid text-center"
+                style={{
+                  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                  columnGap: `${COL_GAP}px`,
+                  color: "var(--accent)",
+                  fontSize: "0.6rem",
+                }}
+              >
+                <span>{COLUMN_LABELS[1]}</span>
+                <span>{COLUMN_LABELS[2]}</span>
+                <span>{COLUMN_LABELS[3]}</span>
+                <span>{COLUMN_LABELS[4]}</span>
+                <span>{COLUMN_LABELS[5]}</span>
+              </div>
 
-            {/* Bracket grid: 16 filas fijas × 5 columnas */}
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                gridTemplateRows: `repeat(16, ${ROW_HEIGHT}px)`,
-                columnGap: `${COL_GAP}px`,
-                rowGap: `${ROW_GAP}px`,
-              }}
-            >
-              {cells.map(({ slot, match, prediction }) => (
-                <BracketCell
-                  key={slot.matchId}
-                  matchId={slot.matchId}
-                  column={slot.column}
-                  gridRow={slot.gridRow}
-                  rowSpan={slot.rowSpan}
-                  match={match}
-                  prediction={prediction}
-                />
-              ))}
+              {/* Bracket grid: 16 filas fijas × 5 columnas */}
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                  gridTemplateRows: `repeat(16, ${ROW_HEIGHT}px)`,
+                  columnGap: `${COL_GAP}px`,
+                  rowGap: `${ROW_GAP}px`,
+                }}
+              >
+                {cells.map(({ slot, match, prediction }) => (
+                  <BracketCell
+                    key={slot.matchId}
+                    matchId={slot.matchId}
+                    column={slot.column}
+                    gridRow={slot.gridRow}
+                    rowSpan={slot.rowSpan}
+                    match={match}
+                    prediction={prediction}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Tercer puesto, separado */}
+          {thirdPlaceMatch && (
+            <section className="mt-10">
+              <div className="shead" style={{ marginBottom: 14 }}>
+                <h2>Tercer puesto</h2>
+              </div>
+              <div className="max-w-xs">
+                <BracketCell
+                  matchId={THIRD_PLACE_MATCH_ID}
+                  column={1}
+                  gridRow={1}
+                  rowSpan={1}
+                  match={thirdPlaceMatch}
+                  prediction={thirdPlacePrediction}
+                  inline
+                />
+              </div>
+            </section>
+          )}
+
+          <p className="hint" style={{ marginTop: 32 }}>
+            ¿Quieres editar tus pronósticos?{" "}
+            <Link
+              href="/quiniela/partidos?fase=dieciseisavos"
+              style={{ color: "var(--accent)" }}
+            >
+              Volver a pronósticos →
+            </Link>
+          </p>
         </div>
-
-        {/* Tercer puesto, separado */}
-        {thirdPlaceMatch && (
-          <section className="mt-10">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-300">
-              Tercer puesto
-            </h2>
-            <div className="max-w-xs">
-              <BracketCell
-                matchId={THIRD_PLACE_MATCH_ID}
-                column={1}
-                gridRow={1}
-                rowSpan={1}
-                match={thirdPlaceMatch}
-                prediction={thirdPlacePrediction}
-                inline
-              />
-            </div>
-          </section>
-        )}
-
-        <p className="mt-10 text-xs text-zinc-500">
-          ¿Quieres editar tus pronósticos?{" "}
-          <Link
-            href="/quiniela/partidos?fase=dieciseisavos"
-            className="text-indigo-300 hover:text-indigo-200"
-          >
-            Volver a pronósticos →
-          </Link>
-        </p>
-      </div>
+      </section>
     </main>
   );
 }
@@ -188,6 +185,8 @@ const ROW_HEIGHT = 48; // px por fila
 const ROW_GAP = 8;
 const COL_GAP = 16;
 const CARD_HEIGHT = 56; // alto fijo del rectángulo interior
+
+const CONNECTOR_COLOR = "var(--line-strong)";
 
 type CellProps = {
   matchId: number;
@@ -271,29 +270,30 @@ function BracketCell({
         gridRow: `${gridRow} / span ${rowSpan}`,
       };
 
-  const cardClass = `relative flex w-full flex-col justify-center rounded-lg border bg-zinc-950 px-2.5 py-1.5 text-[11px] transition hover:border-indigo-300 ${
-    officialResult
-      ? "border-emerald-900/50"
-      : hasAnyScore
-        ? "border-indigo-400/30"
-        : "border-zinc-800"
-  }`;
+  const cardBorder = officialResult
+    ? "rgba(74, 222, 128, 0.4)"
+    : hasAnyScore
+      ? "color-mix(in oklch, var(--accent) 35%, transparent)"
+      : "var(--line)";
+  const scoreColor = officialResult
+    ? "#4ade80"
+    : hasAnyScore
+      ? "var(--accent)"
+      : "var(--text-dim)";
 
   return (
-    <div
-      style={wrapperStyle}
-      className="relative flex items-center"
-    >
+    <div style={wrapperStyle} className="relative flex items-center">
       {/* Línea entrante (izquierda) */}
       {!inline && hasParents && (
         <span
           aria-hidden
-          className="absolute border-zinc-700"
+          className="absolute"
           style={{
             right: "100%",
             top: "50%",
             width: connectorW,
             borderTopWidth: 1,
+            borderColor: CONNECTOR_COLOR,
           }}
         />
       )}
@@ -302,7 +302,7 @@ function BracketCell({
       {!inline && hasOutgoing && pair === "top" && (
         <span
           aria-hidden
-          className="absolute border-zinc-700"
+          className="absolute"
           style={{
             left: "100%",
             top: "50%",
@@ -310,13 +310,14 @@ function BracketCell({
             height: connectorH,
             borderTopWidth: 1,
             borderRightWidth: 1,
+            borderColor: CONNECTOR_COLOR,
           }}
         />
       )}
       {!inline && hasOutgoing && pair === "bottom" && (
         <span
           aria-hidden
-          className="absolute border-zinc-700"
+          className="absolute"
           style={{
             left: "100%",
             bottom: "50%",
@@ -324,59 +325,54 @@ function BracketCell({
             height: connectorH,
             borderBottomWidth: 1,
             borderRightWidth: 1,
+            borderColor: CONNECTOR_COLOR,
           }}
         />
       )}
 
       <Link
         href={editHref}
-        className={cardClass}
-        style={{ height: `${CARD_HEIGHT}px` }}
+        className="relative flex w-full flex-col justify-center px-2.5 py-1.5"
+        style={{
+          height: `${CARD_HEIGHT}px`,
+          background: "var(--surface)",
+          border: `1px solid ${cardBorder}`,
+          borderRadius: "var(--radius)",
+          fontSize: "11px",
+        }}
       >
         <div className="flex items-center justify-between gap-1">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="text-sm leading-none">{homeFlag}</span>
+            <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>{homeFlag}</span>
             <span
-              className={`truncate font-medium ${
-                home ? "text-white" : "text-zinc-500"
-              }`}
+              className="truncate font-medium"
+              style={{ color: home ? "var(--text)" : "var(--text-dim)" }}
               title={homeLabel}
             >
               {homeLabel}
             </span>
           </span>
           <span
-            className={`shrink-0 font-mono tabular-nums ${
-              officialResult
-                ? "text-emerald-400"
-                : hasAnyScore
-                  ? "text-indigo-300"
-                  : "text-zinc-700"
-            }`}
+            className="mono shrink-0 tabular-nums"
+            style={{ color: scoreColor }}
           >
             {homeScore ?? "—"}
           </span>
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-1">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="text-sm leading-none">{awayFlag}</span>
+            <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>{awayFlag}</span>
             <span
-              className={`truncate font-medium ${
-                away ? "text-white" : "text-zinc-500"
-              }`}
+              className="truncate font-medium"
+              style={{ color: away ? "var(--text)" : "var(--text-dim)" }}
               title={awayLabel}
             >
               {awayLabel}
             </span>
           </span>
           <span
-            className={`shrink-0 font-mono tabular-nums ${
-              officialResult
-                ? "text-emerald-400"
-                : hasAnyScore
-                  ? "text-indigo-300"
-                  : "text-zinc-700"
-            }`}
+            className="mono shrink-0 tabular-nums"
+            style={{ color: scoreColor }}
           >
             {awayScore ?? "—"}
           </span>
