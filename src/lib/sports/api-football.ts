@@ -160,6 +160,8 @@ export type StandingRow = {
   team: { id: number; name: string; logo: string };
   points: number;
   goalsDiff: number;
+  /** Nombre del grupo en torneos con fase de grupos (p. ej. "Group A"). */
+  group?: string;
   all: {
     played: number;
     win: number;
@@ -203,6 +205,112 @@ export async function getLaligaUpcomingFixtures(n: number): Promise<Fixture[]> {
     600,
   );
   return r.response;
+}
+
+/** Un grupo del Mundial con sus filas de clasificación, en orden. */
+export type WcGroup = { group: string; rows: StandingRow[] };
+
+/**
+ * Clasificación del Mundial 2026 agrupada (Group A..L). Cachea 10 min;
+ * durante el torneo el cron de ingesta y este caché mantienen la tabla fresca.
+ */
+export async function getWorldCupStandings(): Promise<WcGroup[]> {
+  const r = await get<StandingsResponse>(
+    "/standings",
+    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    600,
+  );
+  const groups = r.response[0]?.league.standings ?? [];
+  return groups
+    .map((rows) => ({ group: rows[0]?.group ?? "", rows }))
+    .filter((g) => g.rows.length > 0)
+    // Solo los grupos reales (A..L). El API añade una tabla extra "Ranking of
+    // third-placed teams" que no es un grupo — la dejamos fuera.
+    .filter((g) => /^Group [A-Z]$/.test(g.group))
+    .sort((a, b) => a.group.localeCompare(b.group));
+}
+
+/** Próximas N fixturas del Mundial 2026. */
+export async function getWorldCupUpcomingFixtures(n: number): Promise<Fixture[]> {
+  const r = await get<Fixture>(
+    "/fixtures",
+    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season, next: n },
+    600,
+  );
+  return r.response;
+}
+
+/** Líder de una estadística de jugador (goleador / asistidor). */
+export type PlayerStatLeader = {
+  player: {
+    id: number;
+    name: string;
+    photo: string;
+    nationality: string | null;
+  };
+  statistics: Array<{
+    team: { id: number; name: string; logo: string };
+    goals: { total: number | null; assists: number | null };
+    games: { appearences: number | null; minutes: number | null };
+  }>;
+};
+
+async function topPlayers(
+  path: "/players/topscorers" | "/players/topassists",
+  n: number,
+): Promise<PlayerStatLeader[]> {
+  const r = await get<PlayerStatLeader>(
+    path,
+    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    600,
+  );
+  return r.response.slice(0, n);
+}
+
+/** Máximos goleadores del Mundial (vacío hasta que empiece el torneo). */
+export function getWorldCupTopScorers(n = 5): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topscorers", n);
+}
+
+/** Máximos asistidores del Mundial (vacío hasta que empiece el torneo). */
+export function getWorldCupTopAssists(n = 5): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topassists", n);
+}
+
+/**
+ * Equipo más goleador y más goleado, derivados de la clasificación de grupos.
+ * Devuelve null cuando aún no se ha marcado ningún gol (pre-torneo) para que
+ * la UI muestre estado vacío en lugar de un equipo arbitrario.
+ */
+export function teamGoalLeaders(groups: WcGroup[]): {
+  mostScoring: StandingRow | null;
+  mostConceded: StandingRow | null;
+} {
+  const rows = groups.flatMap((g) => g.rows);
+  const anyGoals = rows.some(
+    (r) => r.all.goals.for > 0 || r.all.goals.against > 0,
+  );
+  if (!anyGoals) return { mostScoring: null, mostConceded: null };
+  const mostScoring = [...rows].sort(
+    (a, b) => b.all.goals.for - a.all.goals.for,
+  )[0];
+  const mostConceded = [...rows].sort(
+    (a, b) => b.all.goals.against - a.all.goals.against,
+  )[0];
+  return { mostScoring: mostScoring ?? null, mostConceded: mostConceded ?? null };
+}
+
+/**
+ * xG agregado por equipo — sin fuente fiable a día de hoy (API-Football no
+ * expone xG agregado del Mundial de forma consistente). Stub con fallback:
+ * devuelve null para que la UI oculte la tarjeta. Cablear aquí si en el futuro
+ * hay una fuente fiable de xG.
+ */
+export async function getWorldCupTopXg(): Promise<{
+  team: { name: string; logo: string };
+  xg: number;
+} | null> {
+  return null;
 }
 
 export function isWorldCupActive(now = new Date()) {

@@ -242,6 +242,80 @@ img {
 .nav__links a.is-active::after { width: 100%; }
 .nav__cta { display: flex; align-items: center; gap: 12px; }
 
+/* Desplegables del nav */
+.navdrop { position: relative; }
+.navdrop__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+  padding: 4px 0;
+  transition: color 0.15s ease;
+}
+.navdrop__btn:hover, .navdrop__btn.is-active { color: var(--text); }
+.navdrop__btn .caret { transition: transform 0.2s ease; }
+.navdrop__btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.navdrop__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 272px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 60;
+  animation: dropfade 0.14s ease;
+}
+@keyframes dropfade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.navdrop__item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.navdrop__item:hover { background: var(--surface-2); color: var(--accent); }
+.navdrop__item .d { display: block; font-weight: 400; color: var(--text-dim); font-size: 0.76rem; margin-top: 2px; }
+.navdrop__item--muted { color: var(--text-dim); font-weight: 500; }
+.navdrop__sep { height: 1px; background: var(--line); margin: 6px 4px; }
+.navdrop__label { padding: 8px 12px 3px; font-family: var(--font-mono-stack); font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+
+/* Acordeón móvil del nav */
+.navacc__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.navacc__btn:hover { background: var(--surface-2); color: var(--text); }
+.navacc__btn .caret { transition: transform 0.2s ease; }
+.navacc__btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.navacc__sub { display: flex; flex-direction: column; padding: 2px 0 6px 10px; }
+.navacc__sub a { padding: 9px 12px; border-radius: var(--radius); font-size: 0.86rem; color: var(--text-dim); transition: background 0.15s ease, color 0.15s ease; }
+.navacc__sub a:hover { background: var(--surface-2); color: var(--text); }
+.navacc__sublabel { padding: 8px 12px 2px; font-family: var(--font-mono-stack); font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+
 .hero { position: relative; padding-top: clamp(40px, 6vw, 80px); overflow: hidden; }
 .hero__content { position: relative; z-index: 2; }
 .hero__title {
