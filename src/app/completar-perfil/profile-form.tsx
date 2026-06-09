@@ -42,19 +42,16 @@ export default function ProfileForm({
         hint="Formato internacional con + y el prefijo del país. Para recordatorios."
       />
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-700">
+      <label className="checkrow">
         <input
           type="checkbox"
           name="wants_reminders"
           defaultChecked={currentWantsReminders}
           disabled={pending}
-          className="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-900 accent-indigo-300"
         />
-        <span className="flex-1">
-          <span className="block text-sm font-medium text-white">
-            Quiero recibir recordatorios por email
-          </span>
-          <span className="mt-0.5 block text-xs text-zinc-500">
+        <span style={{ flex: 1 }}>
+          <b>Quiero recibir recordatorios por email</b>
+          <span className="h">
             La noche anterior te aviso de los partidos sin predecir. Los
             domingos un resumen de la semana.
           </span>
@@ -62,18 +59,18 @@ export default function ProfileForm({
       </label>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-xl bg-indigo-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Guardando..." : "Guardar"}
+        <button type="submit" disabled={pending} className="btn btn--accent">
+          {pending ? "Guardando…" : "Guardar"}
         </button>
         {state.status === "error" && state.message && (
-          <span className="text-sm text-red-300">{state.message}</span>
+          <span style={{ color: "#ffb4b4", fontSize: "0.88rem" }}>
+            {state.message}
+          </span>
         )}
         {state.status === "success" && state.message && (
-          <span className="text-sm text-emerald-300">✓ {state.message}</span>
+          <span style={{ color: "var(--accent)", fontSize: "0.88rem" }}>
+            ✓ {state.message}
+          </span>
         )}
       </div>
     </form>
@@ -100,20 +97,19 @@ function Field({
   hint?: string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-        {label}
-      </span>
+    <div>
+      <label className="label">{label}</label>
       <input
+        className="field"
         type={type}
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
         autoComplete={autoComplete}
         disabled={disabled}
-        className="block w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-600 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
+        style={{ marginBottom: 0 }}
       />
-      {hint && <p className="mt-1.5 text-[11px] text-zinc-500">{hint}</p>}
-    </label>
+      {hint && <span className="hint">{hint}</span>}
+    </div>
   );
 }

@@ -48,70 +48,77 @@ export default async function AgendarPage({
   embedUrl.searchParams.set("embed", "true");
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12 sm:py-16">
-      <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Inicio
-        </Link>
-
-        <header className="mt-8 mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">
-            ✓ Pago confirmado
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Elige <span className="text-indigo-300">día y hora</span>.
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">✓ Pago confirmado</p>
+          <h1 className="phero__title">
+            Elige <span style={{ color: "var(--accent)" }}>día y hora</span>
+            <span className="dot">.</span>
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Selecciona un hueco que te encaje. Recibirás email de confirmación
             con el link de la videollamada y podrás cambiar la cita hasta 24h
             antes.
           </p>
-        </header>
-
-        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-          <iframe
-            src={embedUrl.toString()}
-            title="Calendario de reserva"
-            className="h-[700px] w-full bg-white"
-            allow="camera; microphone; fullscreen; clipboard-write"
-          />
         </div>
+      </section>
 
-        <p className="mt-6 text-xs text-zinc-500">
-          ¿Problemas con el calendario?{" "}
-          <Link
-            href="/contacto"
-            className="text-indigo-300 hover:text-indigo-200"
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 880 }}>
+          <div
+            className="panel"
+            style={{ overflow: "hidden" }}
           >
-            Escríbeme con tu referencia de pago
-          </Link>{" "}
-          y lo agendamos a mano.
-        </p>
-        <p className="mt-2 text-[10px] text-zinc-600">
-          Referencia: <span className="font-mono">{session_id.slice(0, 20)}…</span>
-        </p>
-      </div>
+            <iframe
+              src={embedUrl.toString()}
+              title="Calendario de reserva"
+              className="h-[700px] w-full bg-white"
+              allow="camera; microphone; fullscreen; clipboard-write"
+            />
+          </div>
+
+          <p className="hint" style={{ marginTop: 24 }}>
+            ¿Problemas con el calendario?{" "}
+            <Link href="/contacto" style={{ color: "var(--accent)" }}>
+              Escríbeme con tu referencia de pago
+            </Link>{" "}
+            y lo agendamos a mano.
+          </p>
+          <p className="mono" style={{ marginTop: 8, color: "var(--text-dim)" }}>
+            Referencia: {session_id.slice(0, 20)}…
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
 
 function Invalid({ reason }: { reason: string }) {
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-red-900/60 bg-red-950/20 p-6 text-sm text-red-200">
-          <p className="font-semibold">No se puede agendar todavía.</p>
-          <p className="mt-2 leading-relaxed text-red-200/80">{reason}</p>
+    <main className="page">
+      <div className="wrap">
+        <div className="statewrap">
+          <div className="statecard" style={{ textAlign: "left" }}>
+            <div className="notice notice--err">
+              <p style={{ fontWeight: 700, margin: 0 }}>
+                No se puede agendar todavía.
+              </p>
+              <p style={{ margin: "8px 0 0" }}>{reason}</p>
+            </div>
+            <Link
+              href="/asesorias"
+              className="mono"
+              style={{
+                display: "inline-block",
+                marginTop: 24,
+                color: "var(--text-dim)",
+              }}
+            >
+              ← Volver a la asesoría
+            </Link>
+          </div>
         </div>
-        <Link
-          href="/asesorias"
-          className="mt-6 inline-block text-sm font-medium text-indigo-300 hover:text-indigo-200"
-        >
-          ← Volver a la asesoría
-        </Link>
       </div>
     </main>
   );

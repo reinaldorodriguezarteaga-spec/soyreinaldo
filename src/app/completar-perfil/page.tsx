@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -21,41 +20,40 @@ export default async function CompletarPerfilPage() {
     .maybeSingle();
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-md">
-        <Link
-          href="/quiniela"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-6 mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Tu perfil
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Completa tu perfil
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">Tu perfil</p>
+          <h1 className="phero__title">
+            Completa tu perfil<span className="dot">.</span>
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Hola{" "}
             {profile?.display_name ? (
-              <span className="text-indigo-300">{profile.display_name}</span>
+              <span style={{ color: "var(--accent)" }}>
+                {profile.display_name}
+              </span>
             ) : (
               "amigo"
             )}
-            . Ponte un usuario para entrar más rápido la próxima vez, y deja
-            tu teléfono si quieres recibir recordatorios cuando se acerque un
+            . Ponte un usuario para entrar más rápido la próxima vez, y deja tu
+            teléfono si quieres recibir recordatorios cuando se acerque un
             partido.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <ProfileForm
-          currentUsername={profile?.username ?? null}
-          currentPhone={profile?.phone_number ?? null}
-          currentWantsReminders={profile?.wants_reminders ?? true}
-        />
-      </div>
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 480 }}>
+          <div className="acard">
+            <ProfileForm
+              currentUsername={profile?.username ?? null}
+              currentPhone={profile?.phone_number ?? null}
+              currentWantsReminders={profile?.wants_reminders ?? true}
+            />
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

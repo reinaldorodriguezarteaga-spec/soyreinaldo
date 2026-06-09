@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 export const metadata = {
   title: "Camisetas con descuento | Soy Reinaldo",
@@ -31,86 +30,77 @@ const beneficios = [
 
 export default function CamisetasPage() {
   return (
-    <main className="flex flex-1 flex-col px-6 py-16">
-      <div className="mx-auto w-full max-w-2xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-8 mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Camisetas de Fútbol
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Camisetas{" "}
-            <span className="text-indigo-300">con descuento</span>.
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">Camisetas de Fútbol</p>
+          <h1 className="phero__title">
+            Camisetas con{" "}
+            <span style={{ color: "var(--accent)" }}>descuento</span>
+            <span className="dot">.</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-            Mi tienda de confianza para camisetas del Barça, la
-            selección y cualquier equipo grande. Con tu código personal te
-            llevas el descuento aplicado al pasar por caja.
+          <p className="phero__lede">
+            Mi tienda de confianza para camisetas del Barça, la selección y
+            cualquier equipo grande. Con tu código personal te llevas el
+            descuento aplicado al pasar por caja.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <section className="mb-10 overflow-hidden rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-[#a50044]/30 via-zinc-950 to-[#154284]/30 p-8 sm:p-10">
-          <Image
-            src="/branding/camisetas-futbol-light.png"
-            alt="Camisetas de Fútbol"
-            width={240}
-            height={120}
-            className="mb-6 h-auto w-40 object-contain sm:w-48"
-            priority
-          />
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Tu código
-          </p>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="font-mono text-5xl font-bold tracking-tight text-white sm:text-6xl">
-              REY15
-            </span>
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 760 }}>
+          <div className="brandband">
+            <Image
+              src="/branding/camisetas-futbol-light.png"
+              alt="Camisetas de Fútbol"
+              width={240}
+              height={120}
+              className="mb-6 h-auto w-40 object-contain sm:w-48"
+              priority
+            />
+            <p className="brandband__label">Tu código</p>
+            <div style={{ marginTop: 10 }}>
+              <span className="bignum bignum--mono">REY15</span>
+            </div>
+            <p
+              className="phero__lede"
+              style={{ marginTop: 16, fontSize: "0.95rem", maxWidth: "44ch" }}
+            >
+              Aplícalo en el carrito antes de pagar. Funciona sobre cualquier
+              camiseta de la tienda.
+            </p>
+            <a
+              href={AFFILIATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--accent"
+              style={{ marginTop: 22 }}
+            >
+              Ir a la tienda <span className="arr">→</span>
+            </a>
           </div>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300">
-            Aplícalo en el carrito antes de pagar. Funciona sobre cualquier
-            camiseta de la tienda.
-          </p>
-          <a
-            href={AFFILIATE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
-          >
-            Ir a la tienda
-            <span>→</span>
-          </a>
-        </section>
 
-        <section className="mb-10">
-          <h2 className="text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
-            Por qué la recomiendo
-          </h2>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="shead" style={{ marginTop: 56 }}>
+            <h2>Por qué la recomiendo</h2>
+          </div>
+          <div className="grid2">
             {beneficios.map((b) => (
-              <div
-                key={b.title}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5"
-              >
-                <h3 className="text-sm font-semibold">{b.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  {b.desc}
-                </p>
+              <div key={b.title} className="infocard">
+                <h3>{b.title}</h3>
+                <p>{b.desc}</p>
               </div>
             ))}
           </div>
-        </section>
 
-        <p className="text-xs text-zinc-500">
-          Si compras a través de mi link soy parte del programa de afiliados de
-          la tienda — me apoyas sin coste extra para ti.
-        </p>
-      </div>
+          <p
+            className="phero__lede"
+            style={{ marginTop: 40, fontSize: "0.85rem" }}
+          >
+            Si compras a través de mi link soy parte del programa de afiliados de
+            la tienda — me apoyas sin coste extra para ti.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

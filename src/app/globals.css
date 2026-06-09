@@ -693,6 +693,139 @@ select.field { appearance: none; }
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
 
+/* ============================================================
+   LOTE 2 — producto, cuenta, legal
+   ============================================================ */
+
+/* Banda destacada con degradado blaugrana (precio / código / CTA) */
+.brandband {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 150% at 0% 0%, color-mix(in oklch, #a50044 42%, transparent), transparent 56%),
+    radial-gradient(120% 150% at 100% 100%, color-mix(in oklch, #154284 60%, transparent), transparent 56%),
+    var(--surface);
+  padding: clamp(28px, 4vw, 48px);
+  box-shadow: var(--shadow);
+}
+.brandband__label {
+  font-family: var(--font-mono-stack);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.bignum {
+  font-family: var(--font-display-stack);
+  font-weight: 900;
+  line-height: 0.9;
+  font-size: clamp(3rem, 7vw, 5.2rem);
+  color: var(--text);
+}
+.bignum--mono { font-family: var(--font-mono-stack); font-weight: 700; letter-spacing: -0.02em; }
+
+/* Tarjeta de info genérica (features, beneficios, opciones, tarifas) */
+.infocard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.infocard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.infocard h3 {
+  font-family: var(--font-display-stack);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.infocard p { color: var(--text-dim); line-height: 1.55; font-size: 0.94rem; margin: 10px 0 0; }
+.infocard__tag { color: var(--accent); font-family: var(--font-mono-stack); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* Tarjeta de métrica (media kit) */
+.mcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.mcard__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mcard__v { font-family: var(--font-display-stack); font-weight: 900; font-size: clamp(1.7rem, 3vw, 2.3rem); line-height: 1; }
+.mcard__icon { width: 34px; height: 34px; border-radius: var(--radius); display: grid; place-items: center; background: var(--surface-2); color: var(--accent); border: 1px solid var(--line); flex: none; }
+.mcard__l { margin-top: 10px; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Barras de distribución (media kit) */
+.bars { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.bars__h { font-family: var(--font-mono-stack); font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); }
+.bar { margin-top: 14px; }
+.bar__top { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; }
+.bar__top .lbl { color: var(--text); }
+.bar__top .pct { color: var(--text-dim); font-family: var(--font-mono-stack); }
+.bar__track { height: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.bar__fill { height: 100%; border-radius: 999px; background: var(--accent); }
+
+/* Lista de filas clave/valor (stack del bot) */
+.rowlist { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rowlist__row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; border-top: 1px solid var(--line); }
+.rowlist__row:first-child { border-top: 0; }
+.rowlist__k { color: var(--text-dim); font-size: 0.9rem; }
+.rowlist__v { font-weight: 700; font-size: 0.95rem; }
+
+/* FAQ (details/summary) */
+.faqs { display: grid; gap: 10px; }
+.faq { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 2px 20px; transition: border-color 0.2s ease; }
+.faq[open] { border-color: var(--line-strong); }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; padding: 16px 0; font-weight: 700; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary .chev { color: var(--accent); transition: transform 0.2s ease; flex: none; }
+.faq[open] summary .chev { transform: rotate(180deg); }
+.faq p { color: var(--text-dim); line-height: 1.6; font-size: 0.92rem; margin: 0 0 16px; }
+
+/* Avisos */
+.notice { border-radius: var(--radius); padding: 14px 16px; font-size: 0.9rem; line-height: 1.5; border: 1px solid var(--line); background: var(--surface); }
+.notice--ok { border-color: color-mix(in oklch, var(--accent) 45%, transparent); background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--text); }
+.notice--err { border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.12); color: #ffb4b4; }
+.notice--info { color: var(--text-dim); background: var(--bg); }
+
+/* Prosa legal */
+.legal { display: grid; gap: 30px; }
+.legal section h2 { font-family: var(--font-display-stack); font-weight: 800; text-transform: uppercase; font-size: 1.4rem; letter-spacing: 0.01em; margin: 0 0 12px; }
+.legal p { color: var(--text-dim); line-height: 1.7; font-size: 0.95rem; margin: 0 0 12px; }
+.legal p:last-child { margin-bottom: 0; }
+.legal strong { color: var(--text); font-weight: 700; }
+.legal a { color: var(--accent); text-decoration: none; }
+.legal a:hover { text-decoration: underline; }
+.legal ul, .legal ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--text-dim); line-height: 1.6; font-size: 0.95rem; }
+.legal ul { list-style: disc; }
+.legal ol { list-style: decimal; }
+
+/* Página de estado centrada (auth error, baja recordatorios) */
+.statewrap { min-height: calc(100vh - 220px); display: grid; place-items: center; padding: 48px 0; }
+.statecard { width: min(480px, 92vw); text-align: center; }
+.stateicon { width: 56px; height: 56px; border-radius: var(--radius); display: grid; place-items: center; margin: 0 auto 18px; font-size: 1.5rem; border: 1px solid var(--line); background: var(--surface-2); }
+.stateicon--err { color: #ff8a8a; border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.12); }
+.statecard h1 { font-family: var(--font-display-stack); font-weight: 900; text-transform: uppercase; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 0.95; margin: 0; }
+.statecard p { color: var(--text-dim); line-height: 1.6; margin: 14px 0 0; font-size: 0.95rem; }
+
+/* Tarjeta de cuenta (perfil) */
+.acard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(20px, 3vw, 28px); }
+.acard h2 { font-family: var(--font-display-stack); font-weight: 800; text-transform: uppercase; font-size: 1.3rem; margin: 0; }
+.acard .sub { color: var(--text-dim); font-size: 0.86rem; margin: 6px 0 18px; line-height: 1.5; }
+
+/* Toggle de ajuste (perfil) */
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); padding: 16px 18px; }
+.setting__t b { display: block; font-weight: 700; }
+.setting__t span { color: var(--text-dim); font-size: 0.84rem; }
+
+/* Fila con checkbox (completar perfil) */
+.checkrow { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); padding: 16px; cursor: pointer; transition: border-color 0.2s ease; }
+.checkrow:hover { border-color: var(--line-strong); }
+.checkrow input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.checkrow b { display: block; font-weight: 600; }
+.checkrow .h { color: var(--text-dim); font-size: 0.82rem; display: block; margin-top: 3px; }
+
+/* Hint bajo un campo */
+.hint { display: block; margin-top: 8px; color: var(--text-dim); font-size: 0.78rem; line-height: 1.45; }
+
 @media (max-width: 960px) {
   .hero__bgphoto { width: 100%; opacity: 0.55; }
   .hero__scrim {

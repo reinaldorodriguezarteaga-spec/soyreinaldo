@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export const metadata = {
   title: "Bot de Comentarios | Soy Reinaldo",
   description:
@@ -34,81 +32,60 @@ const stack = [
 
 export default function BotPage() {
   return (
-    <main className="flex flex-1 flex-col px-6 py-16">
-      <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-8 mb-14">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Producto · Side project
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Bot de <span className="text-indigo-300">Comentarios</span>
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">Producto · Side project</p>
+          <h1 className="phero__title">
+            Bot de Comentarios<span className="dot">.</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
+          <p className="phero__lede">
             Una IA que lee los comentarios de mis vídeos en YouTube y responde
             como respondería yo. Sarcasmo culé, mensajes cortos, y análisis
             técnico cuando toca.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <section className="mb-14">
-          <h2 className="text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
-            Cómo funciona
-          </h2>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <section className="section">
+        <div className="wrap">
+          <div className="shead">
+            <h2>Cómo funciona</h2>
+          </div>
+          <div className="grid2">
             {features.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6"
-              >
-                <h3 className="text-base font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  {f.desc}
-                </p>
+              <div key={f.title} className="infocard">
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
               </div>
             ))}
           </div>
-        </section>
 
-        <section className="mb-14">
-          <h2 className="text-xs font-medium uppercase tracking-[0.25em] text-zinc-500">
-            Stack
-          </h2>
-          <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-            {stack.map((s, idx) => (
-              <div
-                key={s.label}
-                className={`flex items-center justify-between px-6 py-4 ${
-                  idx > 0 ? "border-t border-zinc-900" : ""
-                }`}
-              >
-                <span className="text-sm text-zinc-400">{s.label}</span>
-                <span className="text-sm font-medium">{s.value}</span>
+          <div className="shead" style={{ marginTop: 52 }}>
+            <h2>Stack</h2>
+          </div>
+          <div className="rowlist">
+            {stack.map((s) => (
+              <div key={s.label} className="rowlist__row">
+                <span className="rowlist__k">{s.label}</span>
+                <span className="rowlist__v">{s.value}</span>
               </div>
             ))}
           </div>
-        </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8">
-          <h2 className="text-xl font-semibold">
-            ¿Por qué este proyecto?
-          </h2>
-          <p className="mt-4 leading-relaxed text-zinc-400">
-            Mi canal recibe cientos de comentarios por vídeo. Responder a todos
-            con calidad es imposible — y los que más necesitan respuesta son los
-            ataques personales o las mentiras sobre el contenido. El bot se
-            encarga del 80% que es repetitivo (defensas tipo, troleos, apoyos)
-            para que yo me centre en los comentarios que aportan algo de
-            verdad.
-          </p>
-        </section>
-      </div>
+          <div className="acard" style={{ marginTop: 52 }}>
+            <h2>¿Por qué este proyecto?</h2>
+            <p className="sub" style={{ marginBottom: 0 }}>
+              Mi canal recibe cientos de comentarios por vídeo. Responder a
+              todos con calidad es imposible — y los que más necesitan
+              respuesta son los ataques personales o las mentiras sobre el
+              contenido. El bot se encarga del 80% que es repetitivo (defensas
+              tipo, troleos, apoyos) para que yo me centre en los comentarios
+              que aportan algo de verdad.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

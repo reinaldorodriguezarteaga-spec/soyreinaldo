@@ -1,12 +1,16 @@
 /**
- * Skeleton genérico — barras grises animadas para placeholders.
+ * Skeleton genérico — barras animadas para placeholders.
  * Se usa en loading.tsx files para dar feedback visual instantáneo
- * durante navegaciones.
+ * durante navegaciones. Tema Blaugrana Neón (tokens de globals.css).
  */
 export function SkeletonBar({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-zinc-800/60 ${className}`}
+      className={`animate-pulse ${className}`}
+      style={{
+        borderRadius: "var(--radius)",
+        background: "color-mix(in oklch, var(--line) 70%, transparent)",
+      }}
       aria-hidden
     />
   );
@@ -14,13 +18,28 @@ export function SkeletonBar({ className = "" }: { className?: string }) {
 
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`animate-pulse rounded-2xl border border-zinc-800 bg-zinc-950 p-6 ${className}`}
-      aria-hidden
-    >
-      <div className="mb-3 h-3 w-24 rounded bg-zinc-800/60" />
-      <div className="mb-2 h-5 w-2/3 rounded bg-zinc-800/60" />
-      <div className="h-3 w-full rounded bg-zinc-800/60" />
+    <div className={`animate-pulse panel ${className}`} style={{ padding: 26 }} aria-hidden>
+      <div
+        className="mb-3 h-3 w-24"
+        style={{
+          borderRadius: 4,
+          background: "color-mix(in oklch, var(--line) 70%, transparent)",
+        }}
+      />
+      <div
+        className="mb-2 h-5 w-2/3"
+        style={{
+          borderRadius: 4,
+          background: "color-mix(in oklch, var(--line) 70%, transparent)",
+        }}
+      />
+      <div
+        className="h-3 w-full"
+        style={{
+          borderRadius: 4,
+          background: "color-mix(in oklch, var(--line) 70%, transparent)",
+        }}
+      />
     </div>
   );
 }
@@ -31,20 +50,23 @@ export function PageSkeleton({
   title?: string;
 }) {
   return (
-    <main className="flex flex-1 flex-col px-6 py-12">
-      <div className="mx-auto w-full max-w-4xl">
-        <SkeletonBar className="h-3 w-20" />
-        <header className="mt-8 mb-10">
-          <SkeletonBar className="h-3 w-32" />
-          <SkeletonBar className="mt-4 h-10 w-64" />
-        </header>
-        <div className="space-y-3">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <SkeletonBar className="h-3 w-20" />
+          <SkeletonBar className="mt-6 h-12 w-80" />
         </div>
-        <p className="sr-only">{title}</p>
-      </div>
+      </section>
+      <section className="section">
+        <div className="wrap">
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
+      </section>
+      <p className="sr-only">{title}</p>
     </main>
   );
 }

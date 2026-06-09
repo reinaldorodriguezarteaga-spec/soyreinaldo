@@ -30,16 +30,19 @@ export default function AsesoriaCheckoutButton() {
         type="button"
         onClick={go}
         disabled={loading}
-        className="block w-full rounded-xl bg-indigo-300 px-6 py-4 text-base font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="btn btn--accent"
       >
-        {loading ? "Redirigiendo a pago..." : "Reservar asesoría · 75€"}
+        {loading ? "Redirigiendo a pago…" : "Reservar asesoría · 75€"}
+        {!loading && <span className="arr">→</span>}
       </button>
       {err && (
-        <p className="text-sm text-red-300">⚠ {err}</p>
+        <p className="notice notice--err" style={{ marginTop: 6 }}>
+          ⚠ {err}
+        </p>
       )}
-      <p className="text-[11px] text-zinc-500">
-        Pago seguro vía Stripe. Tras el pago elegirás día y hora directamente
-        en mi calendario.
+      <p className="hint">
+        Pago seguro vía Stripe. Tras el pago elegirás día y hora directamente en
+        mi calendario.
       </p>
     </div>
   );

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import AsesoriaCheckoutButton from "@/components/AsesoriaCheckoutButton";
+import Link from "next/link";
 
 export const metadata = {
   title: "Asesoría 1:1 con Reinaldo | Soy Reinaldo",
@@ -51,101 +51,87 @@ const faqs = [
 
 export default function AsesoriasPage() {
   return (
-    <main className="flex flex-1 flex-col px-6 py-12 sm:py-16">
-      <div className="mx-auto w-full max-w-3xl">
-        <Link
-          href="/"
-          className="text-sm text-zinc-500 transition hover:text-white"
-        >
-          ← Volver
-        </Link>
-
-        <header className="mt-8 mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Asesoría 1:1
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
+    <main className="page">
+      <section className="phero">
+        <div className="wrap">
+          <p className="eyebrow">Asesoría 1:1</p>
+          <h1 className="phero__title">
             Aprende a impulsar{" "}
-            <span className="text-indigo-300">tus redes</span> conmigo.
+            <span style={{ color: "var(--accent)" }}>tus redes</span> conmigo
+            <span className="dot">.</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-            Una llamada de 2-3 horas en la que te paso todo lo que sé:
-            análisis de tus videos, trucos de edición en CapCut, qué publica
-            la gente que crece y cómo aplicarlo a tu cuenta.
+          <p className="phero__lede">
+            Una llamada de 2-3 horas en la que te paso todo lo que sé: análisis
+            de tus videos, trucos de edición en CapCut, qué publica la gente que
+            crece y cómo aplicarlo a tu cuenta.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <section className="mb-10 overflow-hidden rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-[#a50044]/30 via-zinc-950 to-[#154284]/30 p-8 sm:p-10">
-          <p className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-            Precio
-          </p>
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="font-mono text-5xl font-bold tracking-tight text-white sm:text-6xl">
-              75€
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 880 }}>
+          <div className="brandband">
+            <p className="brandband__label">Precio</p>
+            <div
+              className="flex items-baseline gap-3"
+              style={{ marginTop: 10 }}
+            >
+              <span className="bignum bignum--mono">75€</span>
+              <span style={{ color: "var(--text-dim)" }}>por sesión</span>
+            </div>
+            <p
+              className="phero__lede"
+              style={{ marginTop: 16, fontSize: "0.95rem", maxWidth: "44ch" }}
+            >
+              Pago único. Tras el pago eliges fecha y hora en mi calendario,
+              según mis huecos disponibles.
+            </p>
+            <div style={{ marginTop: 22 }}>
+              <AsesoriaCheckoutButton />
+            </div>
+          </div>
+
+          <div className="shead" style={{ marginTop: 56 }}>
+            <h2>Qué incluye</h2>
+            <span className="sh-note">
+              Sesión 100% personalizada — no hay dos asesorías iguales.
             </span>
-            <span className="text-sm text-zinc-400">por sesión</span>
           </div>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-zinc-300">
-            Pago único. Tras el pago eliges fecha y hora en mi calendario,
-            según mis huecos disponibles.
-          </p>
-          <div className="mt-6">
-            <AsesoriaCheckoutButton />
-          </div>
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-1 text-base font-semibold">Qué incluye</h2>
-          <p className="mb-5 text-xs text-zinc-500">
-            Sesión 100% personalizada — no hay dos asesorías iguales.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid2">
             {incluye.map((b) => (
-              <div
-                key={b.title}
-                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5"
-              >
-                <h3 className="text-sm font-semibold">{b.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  {b.desc}
-                </p>
+              <div key={b.title} className="infocard">
+                <h3>{b.title}</h3>
+                <p>{b.desc}</p>
               </div>
             ))}
           </div>
-        </section>
 
-        <section className="mb-10">
-          <h2 className="mb-5 text-base font-semibold">Preguntas frecuentes</h2>
-          <div className="space-y-3">
+          <div className="shead" style={{ marginTop: 56 }}>
+            <h2>Preguntas frecuentes</h2>
+          </div>
+          <div className="faqs">
             {faqs.map((f) => (
-              <details
-                key={f.q}
-                className="group rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-medium">
+              <details key={f.q} className="faq">
+                <summary>
                   {f.q}
-                  <span className="text-zinc-500 transition group-open:rotate-180">
-                    ▾
-                  </span>
+                  <span className="chev">▾</span>
                 </summary>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-                  {f.a}
-                </p>
+                <p>{f.a}</p>
               </details>
             ))}
           </div>
-        </section>
 
-        <p className="text-xs text-zinc-500">
-          ¿Dudas antes de reservar?{" "}
-          <Link
-            href="/contacto"
-            className="text-indigo-300 hover:text-indigo-200"
+          <p
+            className="phero__lede"
+            style={{ marginTop: 40, fontSize: "0.88rem" }}
           >
-            Escríbeme →
-          </Link>
-        </p>
-      </div>
+            ¿Dudas antes de reservar?{" "}
+            <Link href="/contacto" style={{ color: "var(--accent)" }}>
+              Escríbeme →
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

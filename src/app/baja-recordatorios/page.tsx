@@ -43,61 +43,64 @@ export default async function UnsubscribePage({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md text-center">
-        {outcome === "success" ? (
-          <>
-            <p className="text-5xl">📭</p>
-            <h1 className="mt-6 text-2xl font-semibold">
-              Listo{displayName ? `, ${displayName}` : ""}.
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-              No te enviaré más recordatorios por email. Si cambias de idea,
-              puedes activarlos otra vez en{" "}
-              <Link
-                href="/completar-perfil"
-                className="text-indigo-300 hover:text-indigo-200"
-              >
-                tu perfil
-              </Link>
-              .
-            </p>
-          </>
-        ) : outcome === "invalid" ? (
-          <>
-            <p className="text-5xl">🤔</p>
-            <h1 className="mt-6 text-2xl font-semibold">Link no válido</h1>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-              Este enlace no corresponde a ninguna cuenta. Si quieres
-              gestionar tus recordatorios, entra a tu cuenta y ve a{" "}
-              <Link
-                href="/completar-perfil"
-                className="text-indigo-300 hover:text-indigo-200"
-              >
-                tu perfil
-              </Link>
-              .
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-5xl">⚠️</p>
-            <h1 className="mt-6 text-2xl font-semibold">
-              Algo no fue bien
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-              No pude darte de baja en este momento. Inténtalo otra vez en
-              unos minutos o escríbeme a hola@soyreinaldo.com.
-            </p>
-          </>
-        )}
+    <main className="page">
+      <div className="wrap">
+        <div className="statewrap">
+          <div className="statecard">
+            {outcome === "success" ? (
+              <>
+                <div className="stateicon">📭</div>
+                <h1>Listo{displayName ? `, ${displayName}` : ""}.</h1>
+                <p>
+                  No te enviaré más recordatorios por email. Si cambias de idea,
+                  puedes activarlos otra vez en{" "}
+                  <Link
+                    href="/completar-perfil"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    tu perfil
+                  </Link>
+                  .
+                </p>
+              </>
+            ) : outcome === "invalid" ? (
+              <>
+                <div className="stateicon">🤔</div>
+                <h1>Link no válido</h1>
+                <p>
+                  Este enlace no corresponde a ninguna cuenta. Si quieres
+                  gestionar tus recordatorios, entra a tu cuenta y ve a{" "}
+                  <Link
+                    href="/completar-perfil"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    tu perfil
+                  </Link>
+                  .
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="stateicon">⚠️</div>
+                <h1>Algo no fue bien</h1>
+                <p>
+                  No pude darte de baja en este momento. Inténtalo otra vez en
+                  unos minutos o escríbeme a hola@soyreinaldo.com.
+                </p>
+              </>
+            )}
 
-        <Link
-          href="/"
-          className="mt-8 inline-block text-xs text-zinc-500 hover:text-white"
-        >
-          ← Volver al inicio
-        </Link>
+            <p style={{ marginTop: 28 }}>
+              <Link
+                href="/"
+                className="mono"
+                style={{ color: "var(--text-dim)" }}
+              >
+                ← Volver al inicio
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );
