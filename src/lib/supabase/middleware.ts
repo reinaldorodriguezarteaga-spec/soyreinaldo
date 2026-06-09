@@ -13,7 +13,39 @@ const PENDING_INVITE_COOKIE = "pending_invite";
 const PENDING_INVITE_MAX_AGE = 60 * 30;
 const INVITE_CODE_RE = /^[A-Z0-9_-]{1,32}$/;
 
+// Los códigos PKCE de GoTrue son UUIDs.
+const AUTH_CODE_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function updateSession(request: NextRequest) {
+  // GoTrue valida el redirect_to contra su allow-list; si no pasa, cae al
+  // Site URL (la raíz) y el usuario aterriza en /?code=... donde nadie canjea
+  // el código → no se crea la sesión (Google "no funciona"). Reenviamos el
+  // código a /auth/callback, que hace el exchange. Conservamos el resto de
+  // query params por si GoTrue algún día respeta el ?redirect=.
+  {
+    const authCode = request.nextUrl.searchParams.get("code");
+    if (
+      authCode &&
+      AUTH_CODE_RE.test(authCode) &&
+      request.nextUrl.pathname !== "/auth/callback"
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/callback";
+      return NextResponse.redirect(url);
+    }
+    // Idem para errores de GoTrue (enlace caducado, etc.) que caen en la raíz.
+    if (
+      request.nextUrl.pathname === "/" &&
+      request.nextUrl.searchParams.has("error") &&
+      request.nextUrl.searchParams.has("error_description")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/callback";
+      return NextResponse.redirect(url);
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
