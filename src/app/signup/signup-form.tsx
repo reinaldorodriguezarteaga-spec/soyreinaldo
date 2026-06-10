@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import OAuthButton from "@/components/OAuthButton";
+import ContextWarning from "@/app/login/context-warning";
 import { signUp, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
@@ -20,6 +21,7 @@ export default function SignupForm({
 
   return (
     <div>
+      <ContextWarning />
       <div className="oauth">
         <OAuthButton
           provider="google"

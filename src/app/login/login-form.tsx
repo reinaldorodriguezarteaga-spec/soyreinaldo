@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import OAuthButton from "@/components/OAuthButton";
+import ContextWarning from "./context-warning";
 import {
   signInWithMagicLink,
   signInWithPassword,
@@ -31,6 +32,7 @@ export default function LoginForm({ redirect }: { redirect: string }) {
 
   return (
     <div>
+      <ContextWarning />
       <div className="oauth">
         <OAuthButton provider="google" redirect={redirect} />
       </div>
