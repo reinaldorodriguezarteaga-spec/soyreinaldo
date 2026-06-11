@@ -5,6 +5,8 @@ import {
   getWorldCupTopAssists,
   getWorldCupTopXg,
   teamGoalLeaders,
+  teamAttackDefense,
+  ratingLeaders,
   isWorldCupActive,
   type Fixture,
   type WcGroup,
@@ -26,7 +28,9 @@ export type MundialData = {
   groups: WcGroup[];
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
+  ratings: PlayerStatLeader[];
   teamLeaders: { mostScoring: StandingRow | null; mostConceded: StandingRow | null };
+  attackDefense: { attack: StandingRow[]; defense: StandingRow[] };
   xg: XgLeader | null;
   active: boolean;
 };
@@ -55,8 +59,8 @@ export default async function MundialPage({
     [fixtures, groups, scorers, assists, xg] = await Promise.all([
       getWorldCupUpcomingFixtures(12),
       getWorldCupStandings(),
-      getWorldCupTopScorers(5),
-      getWorldCupTopAssists(5),
+      getWorldCupTopScorers(10),
+      getWorldCupTopAssists(10),
       getWorldCupTopXg(),
     ]);
   } catch {
@@ -64,6 +68,8 @@ export default async function MundialPage({
   }
 
   const teamLeaders = teamGoalLeaders(groups);
+  const attackDefense = teamAttackDefense(groups);
+  const ratings = ratingLeaders(scorers, assists, 10);
   const active = isWorldCupActive();
 
   const data: MundialData = {
@@ -71,7 +77,9 @@ export default async function MundialPage({
     groups,
     scorers,
     assists,
+    ratings,
     teamLeaders,
+    attackDefense,
     xg,
     active,
   };

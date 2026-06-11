@@ -263,19 +263,12 @@ function RankPill({ rank }: { rank: number }) {
 /* ---------- Estadísticas ---------- */
 
 function StatsView({ data }: { data: MundialData }) {
-  const { scorers, assists, teamLeaders, xg, active } = data;
+  const { scorers, assists, ratings, teamLeaders, attackDefense, xg, active } =
+    data;
   const noPlayerData = scorers.length === 0 && assists.length === 0;
 
   return (
     <div className="space-y-8">
-      {noPlayerData && (
-        <Empty>
-          {active
-            ? "Aún no hay estadísticas registradas — aparecerán según se jueguen los partidos."
-            : "Las estadísticas empiezan a contar cuando arranque el Mundial el 11 de junio. Vuelve durante el torneo."}
-        </Empty>
-      )}
-
       {(teamLeaders.mostScoring || teamLeaders.mostConceded || xg) && (
         <div className="grid3">
           {teamLeaders.mostScoring && (
@@ -299,23 +292,70 @@ function StatsView({ data }: { data: MundialData }) {
         </div>
       )}
 
-      {scorers.length > 0 && (
-        <div>
-          <div className="shead">
-            <h2>Máximo goleador</h2>
+      {(attackDefense.attack.length > 0 || attackDefense.defense.length > 0) && (
+        <div className="grid2" style={{ alignItems: "start" }}>
+          <div>
+            <div className="shead">
+              <h2>Mejor ataque</h2>
+              <span className="sh-note">goles a favor</span>
+            </div>
+            <TeamMiniTable rows={attackDefense.attack} metric="gf" />
           </div>
-          <PlayerTable players={scorers} metric="goals" />
+          <div>
+            <div className="shead">
+              <h2>Mejor defensa</h2>
+              <span className="sh-note">goles en contra</span>
+            </div>
+            <TeamMiniTable rows={attackDefense.defense} metric="gc" />
+          </div>
         </div>
       )}
 
-      {assists.length > 0 && (
-        <div>
-          <div className="shead">
-            <h2>Máximo asistidor</h2>
-          </div>
-          <PlayerTable players={assists} metric="assists" />
+      <div>
+        <div className="shead">
+          <h2>Tabla de goleadores</h2>
         </div>
-      )}
+        {scorers.length > 0 ? (
+          <PlayerTable players={scorers} metric="goals" />
+        ) : (
+          <Empty>
+            {active
+              ? "El API publica las estadísticas de jugadores con algo de retraso los primeros días — aparecerán solas."
+              : "Disponible cuando arranque el Mundial."}
+          </Empty>
+        )}
+      </div>
+
+      <div>
+        <div className="shead">
+          <h2>Tabla de asistidores</h2>
+        </div>
+        {assists.length > 0 ? (
+          <PlayerTable players={assists} metric="assists" />
+        ) : (
+          <Empty>
+            {active
+              ? "Igual que los goleadores: en cuanto el API los publique, aquí estarán."
+              : "Disponible cuando arranque el Mundial."}
+          </Empty>
+        )}
+      </div>
+
+      <div>
+        <div className="shead">
+          <h2>Valoración por jugador</h2>
+          <span className="sh-note">nota media · entre los destacados</span>
+        </div>
+        {ratings.length > 0 ? (
+          <PlayerTable players={ratings} metric="rating" />
+        ) : (
+          <Empty>
+            {noPlayerData && active
+              ? "Se calcula con la nota media que publica el API — llegará con las tablas de arriba."
+              : "Disponible cuando arranque el Mundial."}
+          </Empty>
+        )}
+      </div>
     </div>
   );
 }
@@ -325,8 +365,10 @@ function PlayerTable({
   metric,
 }: {
   players: PlayerStatLeader[];
-  metric: "goals" | "assists";
+  metric: "goals" | "assists" | "rating";
 }) {
+  const label =
+    metric === "goals" ? "Goles" : metric === "assists" ? "Asist." : "Nota";
   return (
     <div className="panel" style={{ overflowX: "auto" }}>
       <table className="board">
@@ -335,14 +377,22 @@ function PlayerTable({
             <th>#</th>
             <th>Jugador</th>
             <th>Selección</th>
-            <th className="text-right">{metric === "goals" ? "Goles" : "Asist."}</th>
+            <th className="hidden text-right sm:table-cell">PJ</th>
+            <th className="hidden text-right sm:table-cell">Min</th>
+            <th className="text-right">{label}</th>
           </tr>
         </thead>
         <tbody>
           {players.map((p, i) => {
             const st = p.statistics[0];
             const value =
-              metric === "goals" ? st?.goals.total : st?.goals.assists;
+              metric === "goals"
+                ? (st?.goals.total ?? 0)
+                : metric === "assists"
+                  ? (st?.goals.assists ?? 0)
+                  : st?.games.rating
+                    ? parseFloat(st.games.rating).toFixed(2)
+                    : "—";
             return (
               <tr key={p.player.id}>
                 <td className="pos">{i + 1}</td>
@@ -369,10 +419,73 @@ function PlayerTable({
                     {st?.team.name}
                   </span>
                 </td>
-                <td className="pts">{value ?? 0}</td>
+                <td
+                  className="hidden text-right tabular-nums sm:table-cell"
+                  style={{ color: "var(--text-dim)" }}
+                >
+                  {st?.games.appearences ?? "—"}
+                </td>
+                <td
+                  className="hidden text-right tabular-nums sm:table-cell"
+                  style={{ color: "var(--text-dim)" }}
+                >
+                  {st?.games.minutes ?? "—"}
+                </td>
+                <td className="pts">{value}</td>
               </tr>
             );
           })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TeamMiniTable({
+  rows,
+  metric,
+}: {
+  rows: StandingRow[];
+  metric: "gf" | "gc";
+}) {
+  return (
+    <div className="panel" style={{ overflowX: "auto" }}>
+      <table className="board">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Selección</th>
+            <th className="hidden text-right sm:table-cell">PJ</th>
+            <th className="text-right">{metric === "gf" ? "GF" : "GC"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.team.id}>
+              <td className="pos">{i + 1}</td>
+              <td className="who">
+                <span className="flex items-center gap-2">
+                  <Image
+                    src={r.team.logo}
+                    alt=""
+                    width={22}
+                    height={22}
+                    unoptimized
+                  />
+                  {r.team.name}
+                </span>
+              </td>
+              <td
+                className="hidden text-right tabular-nums sm:table-cell"
+                style={{ color: "var(--text-dim)" }}
+              >
+                {r.all.played}
+              </td>
+              <td className="pts">
+                {metric === "gf" ? r.all.goals.for : r.all.goals.against}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

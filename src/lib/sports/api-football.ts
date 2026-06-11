@@ -244,7 +244,7 @@ export async function getWorldCupUpcomingFixtures(n: number): Promise<Fixture[]>
   return r.response;
 }
 
-/** Líder de una estadística de jugador (goleador / asistidor). */
+/** Líder de una estadística de jugador (goleador / asistidor / valoración). */
 export type PlayerStatLeader = {
   player: {
     id: number;
@@ -255,7 +255,12 @@ export type PlayerStatLeader = {
   statistics: Array<{
     team: { id: number; name: string; logo: string };
     goals: { total: number | null; assists: number | null };
-    games: { appearences: number | null; minutes: number | null };
+    games: {
+      appearences: number | null;
+      minutes: number | null;
+      /** Valoración media del torneo, p. ej. "7.43". */
+      rating: string | null;
+    };
   }>;
 };
 
@@ -272,13 +277,60 @@ async function topPlayers(
 }
 
 /** Máximos goleadores del Mundial (vacío hasta que empiece el torneo). */
-export function getWorldCupTopScorers(n = 5): Promise<PlayerStatLeader[]> {
+export function getWorldCupTopScorers(n = 10): Promise<PlayerStatLeader[]> {
   return topPlayers("/players/topscorers", n);
 }
 
 /** Máximos asistidores del Mundial (vacío hasta que empiece el torneo). */
-export function getWorldCupTopAssists(n = 5): Promise<PlayerStatLeader[]> {
+export function getWorldCupTopAssists(n = 10): Promise<PlayerStatLeader[]> {
   return topPlayers("/players/topassists", n);
+}
+
+/**
+ * Ranking por valoración media, derivado de la unión goleadores+asistidores
+ * (el API no expone un "top rated" global; esto cubre a los destacados del
+ * torneo sin gastar llamadas extra).
+ */
+export function ratingLeaders(
+  scorers: PlayerStatLeader[],
+  assists: PlayerStatLeader[],
+  n = 10,
+): PlayerStatLeader[] {
+  const byId = new Map<number, PlayerStatLeader>();
+  for (const p of [...scorers, ...assists]) {
+    if (!byId.has(p.player.id)) byId.set(p.player.id, p);
+  }
+  return [...byId.values()]
+    .filter((p) => {
+      const r = p.statistics[0]?.games.rating;
+      return r != null && !Number.isNaN(parseFloat(r));
+    })
+    .sort(
+      (a, b) =>
+        parseFloat(b.statistics[0].games.rating!) -
+        parseFloat(a.statistics[0].games.rating!),
+    )
+    .slice(0, n);
+}
+
+/**
+ * Mejor ataque (más GF) y mejor defensa (menos GC) por selección, derivados
+ * de la clasificación de grupos — cero llamadas extra. Vacíos pre-torneo.
+ */
+export function teamAttackDefense(groups: WcGroup[]): {
+  attack: StandingRow[];
+  defense: StandingRow[];
+} {
+  const rows = groups.flatMap((g) => g.rows);
+  const played = rows.filter((r) => r.all.played > 0);
+  if (played.length === 0) return { attack: [], defense: [] };
+  const attack = [...played]
+    .sort((a, b) => b.all.goals.for - a.all.goals.for)
+    .slice(0, 5);
+  const defense = [...played]
+    .sort((a, b) => a.all.goals.against - b.all.goals.against)
+    .slice(0, 5);
+  return { attack, defense };
 }
 
 /**
