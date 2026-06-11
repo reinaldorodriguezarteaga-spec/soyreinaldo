@@ -224,9 +224,13 @@ export async function getWorldCupStandings(): Promise<WcGroup[]> {
   return groups
     .map((rows) => ({ group: rows[0]?.group ?? "", rows }))
     .filter((g) => g.rows.length > 0)
-    // Solo los grupos reales (A..L). El API añade una tabla extra "Ranking of
-    // third-placed teams" que no es un grupo — la dejamos fuera.
-    .filter((g) => /^Group [A-Z]$/.test(g.group))
+    // Solo los grupos reales (A..L), normalizando el nombre: el API a veces
+    // los llama "Group A" y a veces "Group Stage - Group A" (cambió el 11-jun).
+    // La tabla extra "Ranking of third-placed teams" no matchea y queda fuera.
+    .flatMap((g) => {
+      const m = g.group.match(/Group ([A-L])$/);
+      return m ? [{ group: `Group ${m[1]}`, rows: g.rows }] : [];
+    })
     .sort((a, b) => a.group.localeCompare(b.group));
 }
 
