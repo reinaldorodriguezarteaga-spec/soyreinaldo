@@ -1,6 +1,7 @@
 import {
   getWorldCupStandings,
   getWorldCupUpcomingFixtures,
+  getWorldCupFinishedFixtures,
   getWorldCupTopScorers,
   getWorldCupTopAssists,
   getWorldCupTopXg,
@@ -25,6 +26,7 @@ export type XgLeader = { team: { name: string; logo: string }; xg: number };
 
 export type MundialData = {
   fixtures: Fixture[];
+  finished: Fixture[];
   groups: WcGroup[];
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
@@ -38,6 +40,7 @@ export type MundialData = {
 function normalizeView(v: string | undefined): Tab {
   if (v === "grupos") return "grupos";
   if (v === "stats" || v === "estadisticas") return "stats";
+  if (v === "finalizados" || v === "resultados") return "finalizados";
   return "partidos";
 }
 
@@ -50,14 +53,16 @@ export default async function MundialPage({
   const view = normalizeView(v);
 
   let fixtures: Fixture[] = [];
+  let finished: Fixture[] = [];
   let groups: WcGroup[] = [];
   let scorers: PlayerStatLeader[] = [];
   let assists: PlayerStatLeader[] = [];
   let xg: XgLeader | null = null;
 
   try {
-    [fixtures, groups, scorers, assists, xg] = await Promise.all([
+    [fixtures, finished, groups, scorers, assists, xg] = await Promise.all([
       getWorldCupUpcomingFixtures(12),
+      getWorldCupFinishedFixtures(16),
       getWorldCupStandings(),
       getWorldCupTopScorers(10),
       getWorldCupTopAssists(10),
@@ -74,6 +79,7 @@ export default async function MundialPage({
 
   const data: MundialData = {
     fixtures,
+    finished,
     groups,
     scorers,
     assists,

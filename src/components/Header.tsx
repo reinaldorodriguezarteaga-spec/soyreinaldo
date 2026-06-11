@@ -34,6 +34,7 @@ const QUINIELA_FOOT = [
 
 const MUNDIAL_LINKS = [
   { href: "/mundial", label: "Próximos partidos" },
+  { href: "/mundial?v=finalizados", label: "Resultados" },
   { href: "/mundial?v=grupos", label: "Grupos" },
   { href: "/mundial?v=stats", label: "Estadísticas" },
   { href: "/quiniela/bracket", label: "Bracket" },

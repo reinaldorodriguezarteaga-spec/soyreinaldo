@@ -12,7 +12,7 @@ import {
 } from "@/lib/sports/api-football";
 import type { MundialData, XgLeader } from "./page";
 
-export type Tab = "partidos" | "grupos" | "stats";
+export type Tab = "partidos" | "finalizados" | "grupos" | "stats";
 
 const MADRID_TZ = "Europe/Madrid";
 
@@ -43,13 +43,20 @@ export default function MundialTabs({
   return (
     <section className="section" style={{ paddingTop: 28 }}>
       <div className="wrap">
-        <div className="tabs" style={{ marginBottom: 28, maxWidth: 460 }}>
+        <div className="tabs" style={{ marginBottom: 28, maxWidth: 640 }}>
           <button
             type="button"
             className={tab === "partidos" ? "on" : ""}
             onClick={() => setTab("partidos")}
           >
             Próximos partidos
+          </button>
+          <button
+            type="button"
+            className={tab === "finalizados" ? "on" : ""}
+            onClick={() => setTab("finalizados")}
+          >
+            Finalizados
           </button>
           <button
             type="button"
@@ -68,6 +75,7 @@ export default function MundialTabs({
         </div>
 
         {tab === "partidos" && <PartidosView fixtures={data.fixtures} />}
+        {tab === "finalizados" && <FinalizadosView fixtures={data.finished} />}
         {tab === "grupos" && <GruposView groups={data.groups} />}
         {tab === "stats" && <StatsView data={data} />}
       </div>
@@ -147,6 +155,74 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ---------- Finalizados ---------- */
+
+function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
+  const done = fixtures.filter((fx) => isFinal(fx));
+  if (done.length === 0) {
+    return <Empty>Aún no hay partidos finalizados — el primero cayó… digo, caerá pronto.</Empty>;
+  }
+  return (
+    <div className="grid2">
+      {done.map((fx) => (
+        <div className="match" key={fx.fixture.id}>
+          <div className="match__meta">
+            <span className="match__grp">{fx.league.round}</span>
+            <span className="badge">Final</span>
+          </div>
+          <div className="team">
+            <span className="flag">
+              <Image
+                src={fx.teams.home.logo}
+                alt=""
+                width={20}
+                height={20}
+                unoptimized
+              />
+            </span>
+            <span
+              className="tn"
+              style={fx.teams.home.winner ? undefined : { color: "var(--text-dim)" }}
+            >
+              {fx.teams.home.name}
+            </span>
+          </div>
+          <div className="score">
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+              {fx.goals.home ?? 0}
+            </b>
+            <span className="vs">–</span>
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+              {fx.goals.away ?? 0}
+            </b>
+          </div>
+          <div className="team right">
+            <span
+              className="tn"
+              style={fx.teams.away.winner ? undefined : { color: "var(--text-dim)" }}
+            >
+              {fx.teams.away.name}
+            </span>
+            <span className="flag">
+              <Image
+                src={fx.teams.away.logo}
+                alt=""
+                width={20}
+                height={20}
+                unoptimized
+              />
+            </span>
+          </div>
+          <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+            <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
+            <span />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

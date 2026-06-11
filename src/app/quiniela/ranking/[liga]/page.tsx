@@ -210,7 +210,13 @@ function Leaderboard({
                   <RankBadge rank={rank} />
                 </td>
                 <td className="who">
-                  {r.display_name}
+                  <Link
+                    href={`/quiniela/jugador/${r.user_id}`}
+                    style={{ color: "inherit" }}
+                    title={`Ver los picks de ${r.display_name}`}
+                  >
+                    {r.display_name}
+                  </Link>
                   {isMe && (
                     <span className="badge badge--accent" style={{ marginLeft: 8 }}>
                       Tú
