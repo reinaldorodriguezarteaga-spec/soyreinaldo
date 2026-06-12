@@ -5,7 +5,6 @@ import {
   getWorldCupTopScorers,
   getWorldCupTopAssists,
   getWorldCupTopXg,
-  teamGoalLeaders,
   teamAttackDefense,
   ratingLeaders,
   isWorldCupActive,
@@ -31,7 +30,6 @@ export type MundialData = {
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
-  teamLeaders: { mostScoring: StandingRow | null; mostConceded: StandingRow | null };
   attackDefense: { attack: StandingRow[]; defense: StandingRow[] };
   xg: XgLeader | null;
   active: boolean;
@@ -72,7 +70,6 @@ export default async function MundialPage({
     // estados vacíos en cada vista
   }
 
-  const teamLeaders = teamGoalLeaders(groups);
   const attackDefense = teamAttackDefense(groups);
   const ratings = ratingLeaders(scorers, assists, 10);
   const active = isWorldCupActive();
@@ -84,7 +81,6 @@ export default async function MundialPage({
     scorers,
     assists,
     ratings,
-    teamLeaders,
     attackDefense,
     xg,
     active,

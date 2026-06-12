@@ -339,32 +339,14 @@ function RankPill({ rank }: { rank: number }) {
 /* ---------- Estadísticas ---------- */
 
 function StatsView({ data }: { data: MundialData }) {
-  const { scorers, assists, ratings, teamLeaders, attackDefense, xg, active } =
-    data;
+  const { scorers, assists, ratings, attackDefense, xg, active } = data;
   const noPlayerData = scorers.length === 0 && assists.length === 0;
 
   return (
     <div className="space-y-8">
-      {(teamLeaders.mostScoring || teamLeaders.mostConceded || xg) && (
+      {xg && (
         <div className="grid3">
-          {teamLeaders.mostScoring && (
-            <TeamStatCard
-              tag="Equipo más goleador"
-              row={teamLeaders.mostScoring}
-              value={teamLeaders.mostScoring.all.goals.for}
-              unit="goles a favor"
-            />
-          )}
-          {teamLeaders.mostConceded && (
-            <TeamStatCard
-              tag="Equipo más goleado"
-              row={teamLeaders.mostConceded}
-              value={teamLeaders.mostConceded.all.goals.against}
-              unit="goles en contra"
-              danger
-            />
-          )}
-          {xg && <XgCard xg={xg} />}
+          <XgCard xg={xg} />
         </div>
       )}
 
@@ -564,45 +546,6 @@ function TeamMiniTable({
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function TeamStatCard({
-  tag,
-  row,
-  value,
-  unit,
-  danger,
-}: {
-  tag: string;
-  row: StandingRow;
-  value: number;
-  unit: string;
-  danger?: boolean;
-}) {
-  return (
-    <div className="infocard">
-      <span className="infocard__tag">{tag}</span>
-      <div className="flex items-center gap-3" style={{ marginTop: 14 }}>
-        <Image src={row.team.logo} alt="" width={36} height={36} unoptimized />
-        <span className="display" style={{ fontSize: "1.5rem" }}>
-          {row.team.name}
-        </span>
-      </div>
-      <div
-        className="bignum"
-        style={{
-          fontSize: "2.6rem",
-          marginTop: 12,
-          color: danger ? "#ff8a8a" : "var(--accent)",
-        }}
-      >
-        {value}
-      </div>
-      <p style={{ color: "var(--text-dim)", fontSize: "0.84rem", margin: "2px 0 0" }}>
-        {unit}
-      </p>
     </div>
   );
 }
