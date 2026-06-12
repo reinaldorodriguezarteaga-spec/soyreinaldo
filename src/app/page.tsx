@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import DonationBlock from "@/components/DonationBlock";
+import MatchWidget from "@/components/MatchWidget";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
 
@@ -84,6 +85,9 @@ export default async function Home() {
           ))}
         </div>
       </div>
+
+      {/* MARCADOR EN VIVO (solo cuando hay partidos que enseñar) */}
+      <MatchWidget />
 
       {/* FEATURES */}
       <section className="section" id="quiniela">

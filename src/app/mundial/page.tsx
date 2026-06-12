@@ -2,12 +2,14 @@ import {
   getWorldCupStandings,
   getWorldCupUpcomingFixtures,
   getWorldCupFinishedFixtures,
+  getWorldCupFixturesWindow,
   getWorldCupTopScorers,
   getWorldCupTopAssists,
   getWorldCupTopXg,
   teamAttackDefense,
   ratingLeaders,
   isWorldCupActive,
+  isLive,
   type Fixture,
   type WcGroup,
   type PlayerStatLeader,
@@ -27,6 +29,11 @@ export type MundialData = {
   fixtures: Fixture[];
   finished: Fixture[];
   groups: WcGroup[];
+  /** Partidos de la jornada de hoy (en juego, recientes y próximos). */
+  today: Fixture[];
+  /** Ids de partidos en juego en el render — la pestaña "en vivo" los sigue
+   * aplicando a la tabla provisional si terminan con la página abierta. */
+  carryIds: number[];
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
@@ -35,11 +42,12 @@ export type MundialData = {
   active: boolean;
 };
 
-function normalizeView(v: string | undefined): Tab {
+function normalizeView(v: string | undefined): Tab | null {
+  if (v === "envivo" || v === "live" || v === "marcador") return "envivo";
   if (v === "grupos") return "grupos";
   if (v === "stats" || v === "estadisticas") return "stats";
   if (v === "finalizados" || v === "resultados") return "finalizados";
-  return "partidos";
+  return v ? "partidos" : null;
 }
 
 export default async function MundialPage({
@@ -48,24 +56,26 @@ export default async function MundialPage({
   searchParams: Promise<{ v?: string }>;
 }) {
   const { v } = await searchParams;
-  const view = normalizeView(v);
 
   let fixtures: Fixture[] = [];
   let finished: Fixture[] = [];
   let groups: WcGroup[] = [];
+  let today: Fixture[] = [];
   let scorers: PlayerStatLeader[] = [];
   let assists: PlayerStatLeader[] = [];
   let xg: XgLeader | null = null;
 
   try {
-    [fixtures, finished, groups, scorers, assists, xg] = await Promise.all([
-      getWorldCupUpcomingFixtures(12),
-      getWorldCupFinishedFixtures(16),
-      getWorldCupStandings(),
-      getWorldCupTopScorers(10),
-      getWorldCupTopAssists(10),
-      getWorldCupTopXg(),
-    ]);
+    [fixtures, finished, groups, today, scorers, assists, xg] =
+      await Promise.all([
+        getWorldCupUpcomingFixtures(12),
+        getWorldCupFinishedFixtures(16),
+        getWorldCupStandings(),
+        getWorldCupFixturesWindow(),
+        getWorldCupTopScorers(10),
+        getWorldCupTopAssists(10),
+        getWorldCupTopXg(),
+      ]);
   } catch {
     // estados vacíos en cada vista
   }
@@ -73,11 +83,17 @@ export default async function MundialPage({
   const attackDefense = teamAttackDefense(groups);
   const ratings = ratingLeaders(scorers, assists, 10);
   const active = isWorldCupActive();
+  const carryIds = today.filter(isLive).map((f) => f.fixture.id);
+
+  // Sin ?v= explícito, abrir en "Marcador en vivo" si hay partido en juego.
+  const view = normalizeView(v) ?? (carryIds.length > 0 ? "envivo" : "partidos");
 
   const data: MundialData = {
     fixtures,
     finished,
     groups,
+    today,
+    carryIds,
     scorers,
     assists,
     ratings,

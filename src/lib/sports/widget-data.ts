@@ -1,7 +1,7 @@
 import {
   TEAM_IDS,
   getRelevantFixtureForTeam,
-  getWorldCupFixturesForDay,
+  getWorldCupFixturesWindow,
   isFinal,
   isLive,
   isWorldCupActive,
@@ -40,7 +40,7 @@ function orderForDisplay(fixtures: Fixture[]): Fixture[] {
 
 export async function getWidgetData(): Promise<WidgetData> {
   if (isWorldCupActive()) {
-    const fixtures = orderForDisplay(await getWorldCupFixturesForDay(new Date()));
+    const fixtures = orderForDisplay(await getWorldCupFixturesWindow());
     return { mode: "wc", fixtures, needsPolling: shouldPoll(fixtures) };
   }
 

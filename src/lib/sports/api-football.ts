@@ -155,6 +155,34 @@ export async function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> 
   return r.response;
 }
 
+/**
+ * Partidos del Mundial alrededor de "hoy": en juego, o con kickoff entre
+ * now−12h y now+14h. A diferencia del corte por día UTC, esta ventana no
+ * parte la jornada cuando hay partidos de madrugada en husos americanos.
+ */
+export async function getWorldCupFixturesWindow(): Promise<Fixture[]> {
+  const now = Date.now();
+  const fromMs = now - 12 * 3600_000;
+  const toMs = now + 14 * 3600_000;
+  const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+  const r = await get<Fixture>(
+    "/fixtures",
+    {
+      league: WORLD_CUP.leagueId,
+      season: WORLD_CUP.season,
+      from: day(fromMs),
+      to: day(toMs),
+    },
+    60,
+  );
+  return r.response.filter((f) => {
+    if (isLive(f)) return true;
+    const ko = new Date(f.fixture.date).getTime();
+    return ko >= fromMs && ko <= toMs;
+  });
+}
+
 export type StandingRow = {
   rank: number;
   team: { id: number; name: string; logo: string };

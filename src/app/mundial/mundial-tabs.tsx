@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   isFinal,
   isLive,
@@ -10,9 +10,15 @@ import {
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
+import {
+  mergeLiveStandings,
+  pendingFixtures,
+  type LiveGroup,
+} from "@/lib/sports/live-standings";
+import type { WidgetData } from "@/lib/sports/widget-data";
 import type { MundialData, XgLeader } from "./page";
 
-export type Tab = "partidos" | "finalizados" | "grupos" | "stats";
+export type Tab = "envivo" | "partidos" | "finalizados" | "grupos" | "stats";
 
 const MADRID_TZ = "Europe/Madrid";
 
@@ -40,10 +46,22 @@ export default function MundialTabs({
   // Sincroniza con la URL (?v=) cuando se navega desde el desplegable del nav.
   useEffect(() => setTab(view), [view]);
 
+  const anyLive = data.today.some(isLive);
+
   return (
     <section className="section" style={{ paddingTop: 28 }}>
       <div className="wrap">
-        <div className="tabs" style={{ marginBottom: 28, maxWidth: 640 }}>
+        <div className="tabs" style={{ marginBottom: 28, maxWidth: 860 }}>
+          <button
+            type="button"
+            className={tab === "envivo" ? "on" : ""}
+            onClick={() => setTab("envivo")}
+          >
+            {anyLive && (
+              <span className="livepulse" style={{ marginRight: 7 }} />
+            )}
+            Marcador en vivo
+          </button>
           <button
             type="button"
             className={tab === "partidos" ? "on" : ""}
@@ -74,11 +92,331 @@ export default function MundialTabs({
           </button>
         </div>
 
+        {tab === "envivo" && <EnVivoView data={data} />}
         {tab === "partidos" && <PartidosView fixtures={data.fixtures} />}
         {tab === "finalizados" && <FinalizadosView fixtures={data.finished} />}
         {tab === "grupos" && <GruposView groups={data.groups} />}
         {tab === "stats" && <StatsView data={data} />}
       </div>
+    </section>
+  );
+}
+
+/* ---------- Marcador en vivo ---------- */
+
+const POLL_MS = 30_000;
+const POLL_LEAD_MS = 30 * 60 * 1000;
+
+/** Hay que seguir poleando si algo está en juego o arranca en <30 min. */
+function shouldKeepPolling(fixtures: Fixture[]): boolean {
+  const now = Date.now();
+  return fixtures.some((f) => {
+    if (isLive(f)) return true;
+    if (isFinal(f)) return false;
+    const ko = new Date(f.fixture.date).getTime();
+    return ko - now < POLL_LEAD_MS && ko - now > -3 * 60 * 60 * 1000;
+  });
+}
+
+function EnVivoView({ data }: { data: MundialData }) {
+  const [fixtures, setFixtures] = useState<Fixture[]>(data.today);
+  // Partidos que han estado en juego con la página abierta: su resultado no
+  // está en el snapshot de la clasificación oficial, así que se les sigue
+  // sumando aunque terminen (hasta recargar).
+  const carryRef = useRef<Set<number>>(new Set(data.carryIds));
+
+  const polling = shouldKeepPolling(fixtures);
+
+  useEffect(() => {
+    if (!polling) return;
+
+    let cancelled = false;
+
+    async function tick() {
+      if (document.hidden) return;
+      try {
+        const res = await fetch("/api/sports/widget", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const next: WidgetData = await res.json();
+        if (cancelled || next.mode !== "wc") return;
+        for (const f of next.fixtures) {
+          if (isLive(f)) carryRef.current.add(f.fixture.id);
+        }
+        setFixtures(next.fixtures);
+      } catch {
+        // Best-effort: un fallo puntual de red no debe romper la vista.
+      }
+    }
+
+    const timer = setInterval(tick, POLL_MS);
+    const onVisibility = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [polling]);
+
+  const byKickoff = (a: Fixture, b: Fixture) =>
+    new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime();
+
+  const live = fixtures.filter(isLive).sort(byKickoff);
+  const upcoming = fixtures
+    .filter((f) => !isLive(f) && !isFinal(f))
+    .sort(byKickoff);
+  const finishedToday = fixtures.filter(isFinal).sort((a, b) => byKickoff(b, a));
+
+  const pending = pendingFixtures(fixtures, carryRef.current);
+  const liveGroups = mergeLiveStandings(data.groups, pending).filter(
+    (g) => g.adjusted,
+  );
+
+  return (
+    <div className="space-y-8">
+      {live.length > 0 ? (
+        <div>
+          <div className="shead">
+            <h2>En juego</h2>
+            <span className="sh-note">
+              <span className="livepulse" style={{ marginRight: 7 }} />
+              el marcador se actualiza solo
+            </span>
+          </div>
+          <div className="grid2">
+            {live.map((fx) => (
+              <LiveMatchCard key={fx.fixture.id} fx={fx} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <Empty>
+          No hay ningún partido en juego ahora mismo.
+          {upcoming.length > 0 && (
+            <>
+              {" "}
+              El próximo: <b>{upcoming[0].teams.home.name}</b> –{" "}
+              <b>{upcoming[0].teams.away.name}</b> ·{" "}
+              {formatKickoff(upcoming[0].fixture.date)}.
+            </>
+          )}
+        </Empty>
+      )}
+
+      {liveGroups.length > 0 && (
+        <div>
+          <div className="shead">
+            <h2>Clasificación en vivo</h2>
+            <span className="sh-note">
+              provisional — se mueve con el marcador
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {liveGroups.map((g) => (
+              <LiveGroupTable key={g.group} group={g} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {upcoming.length > 0 && (
+        <div>
+          <div className="shead">
+            <h2>Próximos hoy</h2>
+          </div>
+          <div className="grid2">
+            {upcoming.map((fx) => (
+              <LiveMatchCard key={fx.fixture.id} fx={fx} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {finishedToday.length > 0 && (
+        <div>
+          <div className="shead">
+            <h2>Terminados</h2>
+            <span className="sh-note">la jornada de hoy</span>
+          </div>
+          <div className="grid2">
+            {finishedToday.map((fx) => (
+              <LiveMatchCard key={fx.fixture.id} fx={fx} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LiveMatchCard({ fx }: { fx: Fixture }) {
+  const live = isLive(fx);
+  const final = isFinal(fx);
+  const showScore = live || final;
+  return (
+    <div className="match">
+      <div className="match__meta">
+        <span className="match__grp">{fx.league.round}</span>
+        {live ? (
+          <span className="badge badge--danger">
+            <span className="livepulse" />
+            {fx.fixture.status.short === "HT"
+              ? "DESCANSO"
+              : fx.fixture.status.elapsed != null
+                ? `${fx.fixture.status.elapsed}'`
+                : "EN VIVO"}
+          </span>
+        ) : final ? (
+          <span className="badge">Final</span>
+        ) : (
+          <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
+        )}
+      </div>
+      <div className="team">
+        <span className="flag">
+          <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+        <span
+          className="tn"
+          style={final && !fx.teams.home.winner ? { color: "var(--text-dim)" } : undefined}
+        >
+          {fx.teams.home.name}
+        </span>
+      </div>
+      <div className="score">
+        {showScore ? (
+          <>
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+              {fx.goals.home ?? 0}
+            </b>
+            <span className="vs">–</span>
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+              {fx.goals.away ?? 0}
+            </b>
+          </>
+        ) : (
+          <span className="vs">VS</span>
+        )}
+      </div>
+      <div className="team right">
+        <span
+          className="tn"
+          style={final && !fx.teams.away.winner ? { color: "var(--text-dim)" } : undefined}
+        >
+          {fx.teams.away.name}
+        </span>
+        <span className="flag">
+          <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LiveGroupTable({ group }: { group: LiveGroup }) {
+  return (
+    <section className="panel" style={{ overflow: "hidden" }}>
+      <header
+        className="mono"
+        style={{
+          borderBottom: "1px solid var(--line)",
+          padding: "12px 16px",
+          color: "var(--accent)",
+          fontWeight: 700,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {group.group.replace("Group", "Grupo")}
+        <span className="badge badge--danger">
+          <span className="livepulse" />
+          EN VIVO
+        </span>
+      </header>
+      <table className="standings">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th>DG</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.rows.map((r) => (
+            <tr key={r.team.id}>
+              <td>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <RankPill rank={r.rank} />
+                  {r.delta !== 0 && (
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontSize: "0.66rem",
+                        fontWeight: 700,
+                        color: r.delta > 0 ? "#4ade80" : "#ff8a8a",
+                      }}
+                      title={`${r.delta > 0 ? "Sube" : "Baja"} ${Math.abs(r.delta)} ${Math.abs(r.delta) === 1 ? "puesto" : "puestos"} con el marcador actual`}
+                    >
+                      {r.delta > 0 ? "▲" : "▼"}
+                      {Math.abs(r.delta)}
+                    </span>
+                  )}
+                </span>
+              </td>
+              <td>
+                <span className="club">
+                  <Image
+                    className="crest"
+                    src={r.team.logo}
+                    alt=""
+                    width={24}
+                    height={24}
+                    unoptimized
+                  />
+                  <b>{r.team.name}</b>
+                  {r.isPlaying && <span className="livepulse" />}
+                </span>
+              </td>
+              <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
+                {r.all.played}
+              </td>
+              <td
+                className="tabular-nums"
+                style={{
+                  color:
+                    r.goalsDiff > 0
+                      ? "#4ade80"
+                      : r.goalsDiff < 0
+                        ? "#ff8a8a"
+                        : "var(--text-dim)",
+                }}
+              >
+                {r.goalsDiff > 0 ? "+" : ""}
+                {r.goalsDiff}
+              </td>
+              <td className="ptsc">{r.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p
+        style={{
+          margin: 0,
+          padding: "10px 16px",
+          fontSize: "0.74rem",
+          color: "var(--text-dim)",
+          borderTop: "1px solid var(--line)",
+        }}
+      >
+        Tabla provisional con el resultado parcial — la oficial se consolida al
+        final del partido.
+      </p>
     </section>
   );
 }

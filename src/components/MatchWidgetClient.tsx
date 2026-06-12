@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isFinal, isLive, type Fixture } from "@/lib/sports/api-football";
 import type { WidgetData } from "@/lib/sports/widget-data";
@@ -8,7 +9,7 @@ import type { WidgetData } from "@/lib/sports/widget-data";
 const MADRID_TZ = "Europe/Madrid";
 const POLL_MS = 30_000;
 
-function formatKickoffMadrid(iso: string) {
+function formatKickoff(iso: string) {
   return new Intl.DateTimeFormat("es-ES", {
     timeZone: MADRID_TZ,
     weekday: "short",
@@ -16,89 +17,19 @@ function formatKickoffMadrid(iso: string) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
-}
-
-function StatusBadge({ fx }: { fx: Fixture }) {
-  if (isLive(fx)) {
-    const min = fx.fixture.status.elapsed;
-    const label =
-      fx.fixture.status.short === "HT"
-        ? "Descanso"
-        : min != null
-          ? `${min}'`
-          : "EN VIVO";
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-        {label}
-      </span>
-    );
-  }
-  if (isFinal(fx)) {
-    return (
-      <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
-        Final
-      </span>
-    );
-  }
-  return (
-    <span className="text-[11px] text-zinc-500">
-      {formatKickoffMadrid(fx.fixture.date)}
-    </span>
-  );
-}
-
-function ScoreOrVs({ fx }: { fx: Fixture }) {
-  if (isLive(fx) || isFinal(fx)) {
-    return (
-      <span className="font-mono text-lg font-semibold tabular-nums text-white">
-        {fx.goals.home ?? 0}
-        <span className="mx-2 text-zinc-600">–</span>
-        {fx.goals.away ?? 0}
-      </span>
-    );
-  }
-  return <span className="text-sm font-medium text-zinc-500">vs</span>;
-}
-
-function TeamSide({
-  name,
-  logo,
-  align,
-}: {
-  name: string;
-  logo: string;
-  align: "left" | "right";
-}) {
-  return (
-    <div
-      className={`flex min-w-0 flex-1 items-center gap-2.5 ${
-        align === "right" ? "flex-row-reverse text-right" : ""
-      }`}
-    >
-      <Image
-        src={logo}
-        alt=""
-        width={28}
-        height={28}
-        className="h-7 w-7 shrink-0 object-contain"
-        unoptimized
-      />
-      <span className="truncate text-sm font-medium text-zinc-200">{name}</span>
-    </div>
-  );
+  })
+    .format(new Date(iso))
+    .toUpperCase();
 }
 
 /**
  * Convierte el string "round" de API-Football a una etiqueta corta:
- *   "Regular Season - 34"  → "Jornada 34"
  *   "Group Stage - 1"      → "J1 grupos"
  *   "Round of 16"          → "Octavos"
  *   "Quarter-finals"       → "Cuartos"
  *   "Semi-finals"          → "Semifinales"
- *   "Final"                → "Final"
  *   "3rd Place Final"      → "3er puesto"
+ *   "Final"                → "Final"
  */
 function formatRound(round: string | undefined | null): string | null {
   if (!round) return null;
@@ -114,29 +45,85 @@ function formatRound(round: string | undefined | null): string | null {
   return round;
 }
 
-function FixtureRow({ fx }: { fx: Fixture }) {
+function LiveBadge({ fx }: { fx: Fixture }) {
+  const label =
+    fx.fixture.status.short === "HT"
+      ? "DESCANSO"
+      : fx.fixture.status.elapsed != null
+        ? `${fx.fixture.status.elapsed}'`
+        : "EN VIVO";
+  return (
+    <span className="badge badge--danger">
+      <span className="livepulse" />
+      {label}
+    </span>
+  );
+}
+
+function WidgetMatchCard({ fx }: { fx: Fixture }) {
+  const live = isLive(fx);
+  const final = isFinal(fx);
+  const showScore = live || final;
   const roundLabel = formatRound(fx.league?.round);
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-      <TeamSide name={fx.teams.home.name} logo={fx.teams.home.logo} align="left" />
-      <div className="flex shrink-0 flex-col items-center gap-1">
-        {roundLabel && (
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500">
-            {roundLabel}
-          </span>
+    <div className="match">
+      <div className="match__meta">
+        <span className="match__grp">{roundLabel ?? "Mundial 2026"}</span>
+        {live ? (
+          <LiveBadge fx={fx} />
+        ) : final ? (
+          <span className="badge">Final</span>
+        ) : (
+          <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
         )}
-        <ScoreOrVs fx={fx} />
-        <StatusBadge fx={fx} />
       </div>
-      <TeamSide
-        name={fx.teams.away.name}
-        logo={fx.teams.away.logo}
-        align="right"
-      />
+      <div className="team">
+        <span className="flag">
+          <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+        <span
+          className="tn"
+          style={final && !fx.teams.home.winner ? { color: "var(--text-dim)" } : undefined}
+        >
+          {fx.teams.home.name}
+        </span>
+      </div>
+      <div className="score">
+        {showScore ? (
+          <>
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.3rem" }}>
+              {fx.goals.home ?? 0}
+            </b>
+            <span className="vs">–</span>
+            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.3rem" }}>
+              {fx.goals.away ?? 0}
+            </b>
+          </>
+        ) : (
+          <span className="vs">VS</span>
+        )}
+      </div>
+      <div className="team right">
+        <span
+          className="tn"
+          style={final && !fx.teams.away.winner ? { color: "var(--text-dim)" } : undefined}
+        >
+          {fx.teams.away.name}
+        </span>
+        <span className="flag">
+          <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </div>
     </div>
   );
 }
 
+/**
+ * Franja de marcadores para la portada: los partidos del Mundial de hoy
+ * (o el partido relevante de Barça/Madrid fuera del torneo). Se actualiza
+ * sola cada 30s mientras haya partido en juego o a punto de empezar, y
+ * desaparece cuando no hay nada que mostrar.
+ */
 export default function MatchWidgetClient({ initial }: { initial: WidgetData }) {
   const [data, setData] = useState<WidgetData>(initial);
 
@@ -144,7 +131,6 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
     if (!data.needsPolling) return;
 
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
 
     async function tick() {
       if (document.hidden) return;
@@ -158,7 +144,7 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
       }
     }
 
-    timer = setInterval(tick, POLL_MS);
+    const timer = setInterval(tick, POLL_MS);
     const onVisibility = () => {
       if (!document.hidden) tick();
     };
@@ -166,35 +152,46 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
 
     return () => {
       cancelled = true;
-      if (timer) clearInterval(timer);
+      clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [data.needsPolling]);
 
   if (data.fixtures.length === 0) return null;
 
-  const heading = data.mode === "wc" ? "Mundial 2026 · Hoy" : "Marcador";
-  const subtitle =
-    data.mode === "wc"
-      ? `${data.fixtures.length} ${data.fixtures.length === 1 ? "partido" : "partidos"}`
-      : data.needsPolling
-        ? "En directo"
-        : "Próximos partidos";
+  const anyLive = data.fixtures.some(isLive);
+  const heading = anyLive
+    ? "Marcador en vivo"
+    : data.mode === "wc"
+      ? "El Mundial hoy"
+      : "Marcador";
 
   return (
-    <section className="mt-12 sm:mt-16" aria-label={heading}>
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-indigo-300">
-          {heading}
-        </h2>
-        <span className="text-[10px] uppercase tracking-widest text-zinc-600">
-          {subtitle}
-        </span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {data.fixtures.map((fx) => (
-          <FixtureRow key={fx.fixture.id} fx={fx} />
-        ))}
+    <section
+      className="section"
+      style={{ paddingTop: 44, paddingBottom: 10 }}
+      aria-label="Marcador en vivo"
+    >
+      <div className="wrap">
+        <div className="shead" style={{ marginBottom: 18 }}>
+          <div>
+            <p className="eyebrow">
+              {anyLive && <span className="livepulse" style={{ marginRight: 8 }} />}
+              Mundial 2026
+            </p>
+            <h2 className="feat__title" style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)" }}>
+              {heading}.
+            </h2>
+          </div>
+          <Link href="/mundial?v=envivo" className="btn btn--ghost">
+            Ver el Mundial <span className="arr">→</span>
+          </Link>
+        </div>
+        <div className="grid2">
+          {data.fixtures.map((fx) => (
+            <WidgetMatchCard key={fx.fixture.id} fx={fx} />
+          ))}
+        </div>
       </div>
     </section>
   );

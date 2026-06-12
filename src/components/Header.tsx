@@ -33,6 +33,7 @@ const QUINIELA_FOOT = [
 ];
 
 const MUNDIAL_LINKS = [
+  { href: "/mundial?v=envivo", label: "Marcador en vivo" },
   { href: "/mundial", label: "Próximos partidos" },
   { href: "/mundial?v=finalizados", label: "Resultados" },
   { href: "/mundial?v=grupos", label: "Grupos" },
