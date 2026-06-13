@@ -3,11 +3,9 @@ import {
   getWorldCupUpcomingFixtures,
   getWorldCupFinishedFixtures,
   getWorldCupFixturesWindow,
-  getWorldCupTopScorers,
-  getWorldCupTopAssists,
+  getWorldCupPlayerStats,
   getWorldCupTopXg,
   teamAttackDefense,
-  ratingLeaders,
   isWorldCupActive,
   isLive,
   type Fixture,
@@ -61,27 +59,28 @@ export default async function MundialPage({
   let finished: Fixture[] = [];
   let groups: WcGroup[] = [];
   let today: Fixture[] = [];
-  let scorers: PlayerStatLeader[] = [];
-  let assists: PlayerStatLeader[] = [];
+  let players: {
+    scorers: PlayerStatLeader[];
+    assists: PlayerStatLeader[];
+    ratings: PlayerStatLeader[];
+  } = { scorers: [], assists: [], ratings: [] };
   let xg: XgLeader | null = null;
 
   try {
-    [fixtures, finished, groups, today, scorers, assists, xg] =
-      await Promise.all([
-        getWorldCupUpcomingFixtures(12),
-        getWorldCupFinishedFixtures(16),
-        getWorldCupStandings(),
-        getWorldCupFixturesWindow(),
-        getWorldCupTopScorers(10),
-        getWorldCupTopAssists(10),
-        getWorldCupTopXg(),
-      ]);
+    [fixtures, finished, groups, today, players, xg] = await Promise.all([
+      getWorldCupUpcomingFixtures(12),
+      getWorldCupFinishedFixtures(16),
+      getWorldCupStandings(),
+      getWorldCupFixturesWindow(),
+      getWorldCupPlayerStats(10),
+      getWorldCupTopXg(),
+    ]);
   } catch {
     // estados vacíos en cada vista
   }
 
+  const { scorers, assists, ratings } = players;
   const attackDefense = teamAttackDefense(groups);
-  const ratings = ratingLeaders(scorers, assists, 10);
   const active = isWorldCupActive();
   const carryIds = today.filter(isLive).map((f) => f.fixture.id);
 
