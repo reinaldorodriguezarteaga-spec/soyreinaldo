@@ -115,9 +115,9 @@ export default async function PartidosPage({
     .select("*", { count: "exact", head: true });
 
   const now = new Date();
-  // Las predicciones se cierran 1 HORA antes del kickoff (mismo límite que
+  // Las predicciones se cierran 30 MINUTOS antes del kickoff (mismo límite que
   // la RLS de la BD, para que UI y backend coincidan).
-  const LOCK_LEAD_MS = 60 * 60 * 1000;
+  const LOCK_LEAD_MS = 30 * 60 * 1000;
 
   const cards: MatchCardData[] = matches.map((m) => {
     const kickoff = new Date(m.kickoff_at);
@@ -229,8 +229,8 @@ export default async function PartidosPage({
 
           <p className="hint" style={{ marginTop: 16 }}>
             Se guarda automáticamente al completar el resultado. El pronóstico se
-            cierra 1 hora antes del inicio de cada partido — después no se puede
-            editar.
+            cierra 30 minutos antes del inicio de cada partido — después no se
+            puede editar.
           </p>
 
           {cards.length === 0 ? (

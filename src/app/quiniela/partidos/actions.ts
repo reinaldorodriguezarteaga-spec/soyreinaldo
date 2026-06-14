@@ -49,7 +49,7 @@ export async function savePrediction(
     );
 
   if (error) {
-    // RLS blocks if kickoff <= now()
+    // RLS bloquea si kickoff <= now() + 30min (cierre 30 min antes del inicio)
     if (
       error.code === "42501" ||
       error.message?.toLowerCase().includes("row-level security")
@@ -57,7 +57,7 @@ export async function savePrediction(
       return {
         ok: false,
         reason: "locked",
-        message: "El partido ya empezó, ya no puedes editar.",
+        message: "Pronóstico cerrado: se bloquea 30 minutos antes del inicio.",
       };
     }
     return { ok: false, reason: "db", message: error.message };

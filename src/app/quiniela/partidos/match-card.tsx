@@ -234,7 +234,7 @@ export default function MatchCard({ match }: { match: MatchCardData }) {
       )}
 
       <footer className="gamecard__foot">
-        {isLocked && <span>🔒 Cerrado · falta &lt;1h</span>}
+        {isLocked && <span>🔒 Cerrado · falta &lt;30min</span>}
         {!isLocked && status === "saving" && <span>Guardando…</span>}
         {!isLocked && status === "saved" && (
           <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
