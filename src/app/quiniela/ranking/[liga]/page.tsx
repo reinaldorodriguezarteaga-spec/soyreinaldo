@@ -195,8 +195,6 @@ function Leaderboard({
             <th className="hidden text-right sm:table-cell">Especiales</th>
             <th className="hidden text-right sm:table-cell">Exactos</th>
             <th className="hidden text-right sm:table-cell">Parciales</th>
-            <th className="hidden text-right md:table-cell">Picks</th>
-            <th className="hidden text-right md:table-cell">Ajustes</th>
             <th className="text-right">Total</th>
           </tr>
         </thead>
@@ -251,23 +249,6 @@ function Leaderboard({
                 </td>
                 <td className="hidden text-right tabular-nums sm:table-cell">
                   {r.partial_count}
-                </td>
-                <td className="hidden text-right tabular-nums md:table-cell">
-                  {r.picks_points}
-                </td>
-                <td
-                  className="hidden text-right tabular-nums md:table-cell"
-                  style={{
-                    color:
-                      r.adjustment_points < 0
-                        ? "#ff8a8a"
-                        : r.adjustment_points > 0
-                          ? "#4ade80"
-                          : "var(--text-dim)",
-                  }}
-                >
-                  {r.adjustment_points > 0 ? "+" : ""}
-                  {r.adjustment_points}
                 </td>
                 <td className="pts">{r.total_points}</td>
               </tr>

@@ -399,16 +399,6 @@ function LeaguesList({
         <span className="linkcard__arr">→</span>
       </Link>
 
-      <div
-        className="panel"
-        style={{ padding: 24, borderStyle: "dashed" }}
-      >
-        <p className="linkcard__tag">Próximamente</p>
-        <p style={{ marginTop: 8, color: "var(--text-dim)", fontSize: "0.92rem" }}>
-          Ranking en vivo durante el torneo. En cuanto cargue el primer partido,
-          los puntos empiezan a contar.
-        </p>
-      </div>
     </div>
   );
 }
