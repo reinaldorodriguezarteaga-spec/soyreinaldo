@@ -27,6 +27,39 @@ function computePoints(
   return 0;
 }
 
+// --- Ordenación: en vivo primero, terminados al fondo ---
+const LIVE_STATUSES = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"];
+
+type CardStatus = "live" | "upcoming" | "finished";
+
+function cardStatus(c: MatchCardData): CardStatus {
+  if (c.live.status && LIVE_STATUSES.includes(c.live.status)) return "live";
+  if (c.live.finished) return "finished";
+  return "upcoming";
+}
+
+const STATUS_ORDER: Record<CardStatus, number> = {
+  live: 0,
+  upcoming: 1,
+  finished: 2,
+};
+
+/**
+ * En vivo arriba, luego los próximos por hora ascendente (lo más cercano
+ * primero) y los terminados al fondo (el más reciente primero). Así no hay que
+ * bajar para encontrar el partido de hoy o el que se está jugando.
+ */
+function compareCards(a: MatchCardData, b: MatchCardData): number {
+  const sa = cardStatus(a);
+  const sb = cardStatus(b);
+  if (STATUS_ORDER[sa] !== STATUS_ORDER[sb]) {
+    return STATUS_ORDER[sa] - STATUS_ORDER[sb];
+  }
+  const ta = new Date(a.kickoffAt).getTime();
+  const tb = new Date(b.kickoffAt).getTime();
+  return sa === "finished" ? tb - ta : ta - tb;
+}
+
 export const metadata = {
   title: "Pronósticos | Quiniela | Soy Reinaldo",
 };
@@ -165,16 +198,17 @@ export default async function PartidosPage({
     };
   });
 
-  const hasLiveMatch = matches.some(
-    (m) =>
-      m.status != null &&
-      ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(m.status),
-  );
+  const hasLiveMatch = cards.some((c) => cardStatus(c) === "live");
 
   const isGroupStage = phase.keys.some((k) => k.startsWith("group_"));
   const isKnockout = !isGroupStage;
 
-  // Para fase de grupos agrupamos por letra de grupo (A..L)
+  // Eliminatorias: lista plana con en vivo/próximos arriba y terminados al fondo.
+  const knockoutCards = isKnockout ? [...cards].sort(compareCards) : [];
+
+  // Fase de grupos: agrupamos por letra (A..L). Dentro de cada grupo ordenamos
+  // por estado (en vivo → próximos → terminados) y además flotamos arriba los
+  // grupos con partido en vivo/hoy, hundiendo los que ya se jugaron.
   const cardsByGroup: Map<string, MatchCardData[]> = new Map();
   if (isGroupStage) {
     for (const c of cards) {
@@ -183,6 +217,13 @@ export default async function PartidosPage({
       cardsByGroup.get(key)!.push(c);
     }
   }
+  const groupSections = Array.from(cardsByGroup.entries())
+    .map(([letter, list]) => ({ letter, list: [...list].sort(compareCards) }))
+    .sort(
+      (g1, g2) =>
+        compareCards(g1.list[0], g2.list[0]) ||
+        g1.letter.localeCompare(g2.letter),
+    );
 
   return (
     <main className="page">
@@ -248,10 +289,8 @@ export default async function PartidosPage({
             </div>
           ) : isGroupStage ? (
             <div className="mt-6 space-y-8">
-              {Array.from(cardsByGroup.entries())
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([letter, list]) => (
-                  <section key={letter}>
+              {groupSections.map(({ letter, list }) => (
+                <section key={letter}>
                     <div className="shead" style={{ marginBottom: 14 }}>
                       <h2>Grupo {letter}</h2>
                       <span className="sh-note">
@@ -268,7 +307,7 @@ export default async function PartidosPage({
             </div>
           ) : (
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {cards.map((c) => (
+              {knockoutCards.map((c) => (
                 <MatchCard key={c.id} match={c} />
               ))}
             </div>
