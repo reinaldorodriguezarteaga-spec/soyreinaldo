@@ -6,6 +6,7 @@ import {
   findPhaseBySlug,
   labelForKey,
   type PhaseKey,
+  type PhaseDef,
 } from "@/lib/quiniela/phases";
 import MatchCard, { type MatchCardData } from "./match-card";
 import LiveRefresher from "./live-refresher";
@@ -60,6 +61,48 @@ function compareCards(a: MatchCardData, b: MatchCardData): number {
   return sa === "finished" ? tb - ta : ta - tb;
 }
 
+/**
+ * Fecha "actual" para abrir por defecto (sin ?fase=): la del partido en vivo,
+ * o el próximo más cercano, o —si todo terminó— el último jugado. Así al entrar
+ * en Pronósticos caes directo en la jornada relevante en vez de en la Fecha 1.
+ */
+async function currentPhase(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<PhaseDef> {
+  const { data } = await supabase
+    .from("matches")
+    .select("phase, kickoff_at, status, finished")
+    .returns<
+      {
+        phase: PhaseKey;
+        kickoff_at: string;
+        status: string | null;
+        finished: boolean;
+      }[]
+    >();
+  const rows = data ?? [];
+  if (rows.length === 0) return UI_PHASES[0];
+
+  const rank = (m: (typeof rows)[number]) =>
+    m.status && LIVE_STATUSES.includes(m.status) ? 0 : m.finished ? 2 : 1;
+
+  let best = rows[0];
+  for (const m of rows) {
+    const rm = rank(m);
+    const rb = rank(best);
+    if (rm !== rb) {
+      if (rm < rb) best = m;
+      continue;
+    }
+    const tm = new Date(m.kickoff_at).getTime();
+    const tb = new Date(best.kickoff_at).getTime();
+    // terminados: el más reciente arriba; en vivo/próximos: el más cercano.
+    if (rm === 2 ? tm > tb : tm < tb) best = m;
+  }
+
+  return UI_PHASES.find((p) => p.keys.includes(best.phase)) ?? UI_PHASES[0];
+}
+
 export const metadata = {
   title: "Pronósticos | Quiniela | Soy Reinaldo",
 };
@@ -94,7 +137,6 @@ export default async function PartidosPage({
   searchParams: Promise<{ fase?: string }>;
 }) {
   const params = await searchParams;
-  const phase = findPhaseBySlug(params.fase);
 
   const supabase = await createClient();
   const {
@@ -103,6 +145,11 @@ export default async function PartidosPage({
   if (!user) {
     redirect("/login?redirect=/quiniela/partidos");
   }
+
+  // Con ?fase= se respeta la pestaña elegida; sin él, se abre en la fecha actual.
+  const phase = params.fase
+    ? findPhaseBySlug(params.fase)
+    : await currentPhase(supabase);
 
   // Cargar partidos de la fase seleccionada (puede englobar varias claves DB)
   const { data: matchesData } = await supabase
