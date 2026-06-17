@@ -499,68 +499,115 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
 
 /* ---------- Finalizados ---------- */
 
+/** Orden de torneo + etiqueta corta para la ronda que devuelve el API. */
+function roundMeta(round: string): { order: number; label: string } {
+  const g = round.match(/Group Stage\s*-\s*(\d+)/i);
+  if (g) return { order: Number(g[1]), label: `Jornada ${g[1]}` };
+  if (/Round of 32/i.test(round)) return { order: 10, label: "Dieciseisavos" };
+  if (/Round of 16/i.test(round)) return { order: 11, label: "Octavos" };
+  if (/Quarter/i.test(round)) return { order: 12, label: "Cuartos" };
+  if (/Semi/i.test(round)) return { order: 13, label: "Semis" };
+  if (/3rd Place/i.test(round)) return { order: 14, label: "3er puesto" };
+  if (/^Final$/i.test(round.trim())) return { order: 15, label: "Final" };
+  return { order: 99, label: round };
+}
+
 function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
   const done = fixtures.filter((fx) => isFinal(fx));
-  if (done.length === 0) {
-    return <Empty>Aún no hay partidos finalizados — el primero cayó… digo, caerá pronto.</Empty>;
+
+  // Agrupar por ronda (Jornada 1/2/3, Octavos, …) en orden de torneo.
+  const byRound = new Map<string, Fixture[]>();
+  for (const fx of done) {
+    const r = fx.league.round || "—";
+    const arr = byRound.get(r);
+    if (arr) arr.push(fx);
+    else byRound.set(r, [fx]);
   }
+  const rounds = Array.from(byRound.keys()).sort(
+    (a, b) => roundMeta(a).order - roundMeta(b).order,
+  );
+
+  // Por defecto, la última ronda con resultados (la jornada más avanzada).
+  const [sel, setSel] = useState<string>(() => rounds[rounds.length - 1] ?? "");
+
+  if (done.length === 0) {
+    return <Empty>Aún no hay partidos finalizados — el primero cae pronto.</Empty>;
+  }
+
+  const active = byRound.has(sel) ? sel : rounds[rounds.length - 1];
+  const list = [...(byRound.get(active) ?? [])].sort(
+    (a, b) =>
+      new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+  );
+
   return (
-    <div className="grid2">
-      {done.map((fx) => (
-        <div className="match" key={fx.fixture.id}>
-          <div className="match__meta">
-            <span className="match__grp">{fx.league.round}</span>
-            <span className="badge">Final</span>
-          </div>
-          <div className="team">
-            <span className="flag">
-              <Image
-                src={fx.teams.home.logo}
-                alt=""
-                width={20}
-                height={20}
-                unoptimized
-              />
+    <div>
+      <div className="mb-6 flex flex-wrap gap-2">
+        {rounds.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={`chip-pill${r === active ? " on" : ""}`}
+            onClick={() => setSel(r)}
+          >
+            {roundMeta(r).label}
+            <span style={{ marginLeft: 6, opacity: 0.6 }}>
+              {byRound.get(r)!.length}
             </span>
-            <span
-              className="tn"
-              style={fx.teams.home.winner ? undefined : { color: "var(--text-dim)" }}
-            >
-              {fx.teams.home.name}
-            </span>
-          </div>
-          <div className="score">
-            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
-              {fx.goals.home ?? 0}
-            </b>
-            <span className="vs">–</span>
-            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
-              {fx.goals.away ?? 0}
-            </b>
-          </div>
-          <div className="team right">
-            <span
-              className="tn"
-              style={fx.teams.away.winner ? undefined : { color: "var(--text-dim)" }}
-            >
-              {fx.teams.away.name}
-            </span>
-            <span className="flag">
-              <Image
-                src={fx.teams.away.logo}
-                alt=""
-                width={20}
-                height={20}
-                unoptimized
-              />
-            </span>
-          </div>
-          <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
-            <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
-            <span />
-          </div>
-        </div>
-      ))}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        {list.map((fx) => (
+          <FinishedCard key={fx.fixture.id} fx={fx} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FinishedCard({ fx }: { fx: Fixture }) {
+  return (
+    <div className="match">
+      <div className="match__meta">
+        <span className="match__grp">{fx.league.round}</span>
+        <span className="badge">Final</span>
+      </div>
+      <div className="team">
+        <span className="flag">
+          <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+        <span
+          className="tn"
+          style={fx.teams.home.winner ? undefined : { color: "var(--text-dim)" }}
+        >
+          {fx.teams.home.name}
+        </span>
+      </div>
+      <div className="score">
+        <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+          {fx.goals.home ?? 0}
+        </b>
+        <span className="vs">–</span>
+        <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+          {fx.goals.away ?? 0}
+        </b>
+      </div>
+      <div className="team right">
+        <span
+          className="tn"
+          style={fx.teams.away.winner ? undefined : { color: "var(--text-dim)" }}
+        >
+          {fx.teams.away.name}
+        </span>
+        <span className="flag">
+          <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </div>
+      <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+        <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
+        <span />
+      </div>
     </div>
   );
 }
