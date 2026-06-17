@@ -272,14 +272,22 @@ export async function getWorldCupUpcomingFixtures(n: number): Promise<Fixture[]>
   return r.response;
 }
 
-/** Últimas N fixturas FINALIZADAS del Mundial 2026 (la más reciente primero). */
-export async function getWorldCupFinishedFixtures(n: number): Promise<Fixture[]> {
-  const r = await get<Fixture>(
-    "/fixtures",
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season, last: n },
-    300,
-  );
-  return r.response;
+/**
+ * Fixturas FINALIZADAS del Mundial 2026, la más reciente primero. Sin `n`
+ * devuelve TODAS (no solo las últimas) — se derivan del calendario completo
+ * (`getWorldCupAllFixtures`, cacheado y compartido con las stats, así que no
+ * gasta cuota extra) en vez del parámetro `last`, que limitaba a N y dejaba
+ * fuera los resultados más antiguos.
+ */
+export async function getWorldCupFinishedFixtures(n?: number): Promise<Fixture[]> {
+  const all = await getWorldCupAllFixtures();
+  const finished = all
+    .filter(isFinal)
+    .sort(
+      (a, b) =>
+        new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
+    );
+  return n != null ? finished.slice(0, n) : finished;
 }
 
 /** Líder de una estadística de jugador (goleador / asistidor / valoración). */

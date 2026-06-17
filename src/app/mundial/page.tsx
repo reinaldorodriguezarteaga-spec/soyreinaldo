@@ -69,7 +69,7 @@ export default async function MundialPage({
   try {
     [fixtures, finished, groups, today, players, xg] = await Promise.all([
       getWorldCupUpcomingFixtures(12),
-      getWorldCupFinishedFixtures(16),
+      getWorldCupFinishedFixtures(),
       getWorldCupStandings(),
       getWorldCupFixturesWindow(),
       getWorldCupPlayerStats(10),
