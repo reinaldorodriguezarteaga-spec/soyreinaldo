@@ -456,39 +456,84 @@ export async function getFixtureCards(id: number): Promise<FixtureCard[]> {
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
-/** Valoración (y datos básicos) de un jugador en un partido. */
+/** Estadística detallada de un jugador en un partido (nulos = no registrado). */
+export type PlayerMatchStats = {
+  shotsTotal: number | null;
+  shotsOn: number | null;
+  passesTotal: number | null;
+  passesKey: number | null;
+  passesAcc: number | null;
+  tackles: number | null;
+  interceptions: number | null;
+  duelsTotal: number | null;
+  duelsWon: number | null;
+  dribblesAttempts: number | null;
+  dribblesSuccess: number | null;
+  foulsDrawn: number | null;
+  foulsCommitted: number | null;
+  saves: number | null;
+  yellow: number;
+  red: number;
+};
+
+/** Valoración (y datos) de un jugador en un partido. */
 export type PlayerRating = {
   name: string;
+  photo: string | null;
   rating: number | null;
   /** Código del API: G / D / M / F. */
   position: string | null;
   minutes: number | null;
+  number: number | null;
+  captain: boolean;
   goals: number;
   assists: number;
+  stats: PlayerMatchStats;
 };
 export type TeamPlayers = {
   team: { id: number; name: string; logo: string };
   players: PlayerRating[];
 };
 
+type RawPlayerStat = {
+  games: {
+    minutes: number | null;
+    number: number | null;
+    position: string | null;
+    rating: string | null;
+    captain: boolean | null;
+  };
+  shots: { total: number | null; on: number | null };
+  goals: {
+    total: number | null;
+    assists: number | null;
+    saves: number | null;
+  };
+  passes: { total: number | null; key: number | null; accuracy: number | string | null };
+  tackles: { total: number | null; interceptions: number | null };
+  duels: { total: number | null; won: number | null };
+  dribbles: { attempts: number | null; success: number | null };
+  fouls: { drawn: number | null; committed: number | null };
+  cards: { yellow: number | null; red: number | null };
+};
+
 type FixturePlayersResponse = {
   team: { id: number; name: string; logo: string };
   players: Array<{
-    player: { id: number; name: string };
-    statistics: Array<{
-      games: {
-        minutes: number | null;
-        position: string | null;
-        rating: string | null;
-      };
-      goals: { total: number | null; assists: number | null };
-    }>;
+    player: { id: number; name: string; photo: string | null };
+    statistics: RawPlayerStat[];
   }>;
 };
 
+function numOrNull(v: number | string | null | undefined): number | null {
+  if (v == null) return null;
+  const n = typeof v === "number" ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 /**
- * Valoraciones de los jugadores de un partido (las dos alineaciones), con
- * nota, posición y minutos. Solo los que jugaron (tienen nota). Caché 600s.
+ * Valoraciones + estadística detallada de los jugadores de un partido (las dos
+ * alineaciones). Solo los que jugaron (tienen nota). Caché 600s.
  */
 export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
   const r = await get<FixturePlayersResponse>(
@@ -501,14 +546,35 @@ export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
     players: t.players
       .map((p) => {
         const s = p.statistics[0];
-        const rating = s?.games.rating ? parseFloat(s.games.rating) : null;
+        const rating = numOrNull(s?.games.rating ?? null);
         return {
           name: p.player.name,
-          rating: rating != null && !Number.isNaN(rating) ? rating : null,
+          photo: p.player.photo ?? null,
+          rating,
           position: s?.games.position ?? null,
           minutes: s?.games.minutes ?? null,
+          number: s?.games.number ?? null,
+          captain: s?.games.captain ?? false,
           goals: s?.goals.total ?? 0,
           assists: s?.goals.assists ?? 0,
+          stats: {
+            shotsTotal: numOrNull(s?.shots.total),
+            shotsOn: numOrNull(s?.shots.on),
+            passesTotal: numOrNull(s?.passes.total),
+            passesKey: numOrNull(s?.passes.key),
+            passesAcc: numOrNull(s?.passes.accuracy),
+            tackles: numOrNull(s?.tackles.total),
+            interceptions: numOrNull(s?.tackles.interceptions),
+            duelsTotal: numOrNull(s?.duels.total),
+            duelsWon: numOrNull(s?.duels.won),
+            dribblesAttempts: numOrNull(s?.dribbles.attempts),
+            dribblesSuccess: numOrNull(s?.dribbles.success),
+            foulsDrawn: numOrNull(s?.fouls.drawn),
+            foulsCommitted: numOrNull(s?.fouls.committed),
+            saves: numOrNull(s?.goals.saves),
+            yellow: s?.cards.yellow ?? 0,
+            red: s?.cards.red ?? 0,
+          },
         };
       })
       .filter((p) => p.rating != null)

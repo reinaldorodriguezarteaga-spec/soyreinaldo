@@ -1020,6 +1020,21 @@ select.field { appearance: none; }
 .gamecard__foot { margin-top: 12px; min-height: 1rem; text-align: right; font-size: 0.7rem; color: var(--text-dim); }
 .livepulse { width: 6px; height: 6px; border-radius: 50%; background: #ff5a5a; animation: pulse 1.6s infinite; display: inline-block; }
 
+/* Valoraciones: fila de jugador expandible (<details>) con sus stats */
+.prow { border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: none; }
+.prow > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
+.prow > summary::-webkit-details-marker { display: none; }
+.prow > summary:hover { background: var(--surface-2); }
+.prow[open] > summary { background: var(--surface-2); }
+.prow .chev { color: var(--text-dim); flex: none; transition: transform 0.15s ease; }
+.prow[open] .chev { transform: rotate(90deg); }
+.pstats { padding: 6px 14px 14px 52px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px 20px; }
+.pstat { display: flex; justify-content: space-between; gap: 12px; font-size: 0.82rem; }
+.pstat > span { color: var(--text-dim); }
+.pstat > b { font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .pstats { grid-template-columns: 1fr; padding-left: 14px; } }
+
 /* Chip-pill (tabs de fase, filtros) */
 .chip-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-dim); font-size: 0.8rem; transition: all 0.15s ease; white-space: nowrap; cursor: pointer; }
 .chip-pill:hover { border-color: var(--accent); color: var(--text); }

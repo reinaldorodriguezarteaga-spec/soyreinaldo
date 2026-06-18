@@ -301,51 +301,156 @@ function RatingsCol({
       </div>
       <div className="panel" style={{ overflow: "hidden" }}>
         {players.map((p, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "9px 14px",
-              borderBottom:
-                i < players.length - 1 ? "1px solid var(--line)" : undefined,
-            }}
-          >
-            <span
-              className="mono"
-              style={{ width: 34, fontSize: "0.64rem", color: "var(--text-dim)" }}
-            >
-              {p.position ? (POS_ES[p.position] ?? p.position) : ""}
-            </span>
-            <span
-              style={{
-                flex: 1,
-                minWidth: 0,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {p.name}
-              {p.goals > 0 ? <span> {"⚽".repeat(p.goals)}</span> : null}
-              {p.assists > 0 ? (
-                <span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
-                  {" "}
-                  · {p.assists}A
-                </span>
-              ) : null}
-            </span>
-            <b
-              className="tabular-nums"
-              style={{ color: ratingColor(p.rating ?? 0), fontSize: "0.95rem" }}
-            >
-              {p.rating?.toFixed(1)}
-            </b>
-          </div>
+          <PlayerRow key={i} p={p} />
         ))}
       </div>
     </div>
+  );
+}
+
+function PlayerAvatar({ photo, n }: { photo: string | null; n: number | null }) {
+  if (photo) {
+    return (
+      <Image
+        src={photo}
+        alt=""
+        width={28}
+        height={28}
+        unoptimized
+        style={{
+          borderRadius: "50%",
+          objectFit: "cover",
+          background: "var(--surface-2)",
+          flex: "none",
+        }}
+      />
+    );
+  }
+  return (
+    <span
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        background: "var(--surface-2)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "0.66rem",
+        color: "var(--text-dim)",
+        flex: "none",
+      }}
+    >
+      {n ?? "—"}
+    </span>
+  );
+}
+
+function statLines(p: PlayerRating): { label: string; value: string }[] {
+  const s = p.stats;
+  const out: { label: string; value: string }[] = [];
+  const push = (label: string, value: string | null) => {
+    if (value != null) out.push({ label, value });
+  };
+  push("Minutos", p.minutes != null ? `${p.minutes}'` : null);
+  if (p.goals > 0) push("Goles", String(p.goals));
+  if (p.assists > 0) push("Asistencias", String(p.assists));
+  if (s.shotsTotal != null)
+    push(
+      "Tiros",
+      s.shotsOn != null
+        ? `${s.shotsTotal} (${s.shotsOn} a puerta)`
+        : String(s.shotsTotal),
+    );
+  if (s.passesTotal != null)
+    push(
+      "Pases",
+      s.passesAcc != null
+        ? `${s.passesTotal} · ${s.passesAcc}%`
+        : String(s.passesTotal),
+    );
+  if (s.passesKey != null) push("Pases clave", String(s.passesKey));
+  if (s.dribblesAttempts != null || s.dribblesSuccess != null)
+    push("Regates", `${s.dribblesSuccess ?? 0}/${s.dribblesAttempts ?? 0}`);
+  if (s.duelsTotal != null)
+    push("Duelos", `${s.duelsWon ?? 0}/${s.duelsTotal}`);
+  if (s.tackles != null) push("Entradas", String(s.tackles));
+  if (s.interceptions != null) push("Intercep.", String(s.interceptions));
+  if (s.foulsCommitted != null) push("Faltas com.", String(s.foulsCommitted));
+  if (s.foulsDrawn != null) push("Faltas rec.", String(s.foulsDrawn));
+  if (s.saves != null) push("Paradas", String(s.saves));
+  if (s.yellow > 0) push("Amarillas", String(s.yellow));
+  if (s.red > 0) push("Rojas", String(s.red));
+  return out;
+}
+
+function PlayerRow({ p }: { p: PlayerRating }) {
+  const lines = statLines(p);
+  return (
+    <details className="prow">
+      <summary>
+        <PlayerAvatar photo={p.photo} n={p.number} />
+        <span
+          className="mono"
+          style={{ width: 30, fontSize: "0.62rem", color: "var(--text-dim)" }}
+        >
+          {p.position ? (POS_ES[p.position] ?? p.position) : ""}
+        </span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {p.name}
+          {p.captain ? (
+            <span
+              title="Capitán"
+              style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}
+            >
+              {" "}
+              (C)
+            </span>
+          ) : null}
+          {p.goals > 0 ? <span> {"⚽".repeat(p.goals)}</span> : null}
+          {p.assists > 0 ? (
+            <span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
+              {" "}
+              · {p.assists}A
+            </span>
+          ) : null}
+        </span>
+        <b
+          className="tabular-nums"
+          style={{ color: ratingColor(p.rating ?? 0), fontSize: "0.95rem" }}
+        >
+          {p.rating?.toFixed(1)}
+        </b>
+        <svg
+          className="chev"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+        </svg>
+      </summary>
+      <div className="pstats">
+        {lines.map((l) => (
+          <div className="pstat" key={l.label}>
+            <span>{l.label}</span>
+            <b>{l.value}</b>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
