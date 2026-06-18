@@ -119,7 +119,11 @@ function RatingBadge({ rating, big }: { rating: number | null; big?: boolean }) 
 
 /* ---------- Vista CAMPO (formación) ---------- */
 
-function teamNodes(lineup: LineupTeam, half: "top" | "bottom") {
+function teamNodes(
+  lineup: LineupTeam,
+  side: "home" | "away",
+  horizontal: boolean,
+) {
   const xi = lineup.startXI;
   const posRow: Record<string, number> = { G: 1, D: 2, M: 3, F: 4 };
   const rowOf = (p: { grid: string | null; pos: string | null }) =>
@@ -141,13 +145,28 @@ function teamNodes(lineup: LineupTeam, half: "top" | "bottom") {
     const players = rows.get(r)!.slice().sort((a, b) => colOf(a) - colOf(b));
     const N = players.length;
     players.forEach((p, cIdx) => {
-      let x = (cIdx + 1) / (N + 1);
-      const t = R > 1 ? rIdx / (R - 1) : 0;
+      const d = R > 1 ? rIdx / (R - 1) : 0; // profundidad: 0 = portero, 1 = ataque
+      const w = (cIdx + 1) / (N + 1); // posición dentro de la línea
+      let x: number;
       let y: number;
-      if (half === "top") y = 0.06 + t * 0.36;
-      else {
-        y = 0.94 - t * 0.36;
-        x = 1 - x; // espejo para que el rival mire al centro
+      if (horizontal) {
+        // Local a la izquierda, rival a la derecha (ataque hacia el centro).
+        if (side === "home") {
+          x = 0.05 + d * 0.4;
+          y = w;
+        } else {
+          x = 0.95 - d * 0.4;
+          y = 1 - w;
+        }
+      } else {
+        // Local arriba, rival abajo.
+        if (side === "home") {
+          y = 0.06 + d * 0.36;
+          x = w;
+        } else {
+          y = 0.94 - d * 0.36;
+          x = 1 - w;
+        }
       }
       out.push({ p, x, y });
     });
@@ -263,6 +282,7 @@ function PitchView({
   awayLineup,
   byId,
   onPick,
+  horizontal,
 }: {
   home: Team;
   away: Team;
@@ -270,17 +290,40 @@ function PitchView({
   awayLineup: LineupTeam;
   byId: Map<number, PlayerRating>;
   onPick: (id: number) => void;
+  horizontal: boolean;
 }) {
-  const homeNodes = teamNodes(homeLineup, "top");
-  const awayNodes = teamNodes(awayLineup, "bottom");
+  const homeNodes = teamNodes(homeLineup, "home", horizontal);
+  const awayNodes = teamNodes(awayLineup, "away", horizontal);
   return (
     <div>
-      <TeamCaption team={home} formation={homeLineup.formation} align="left" />
-      <div className="pitch">
-        <div className="pitch-mid" />
+      {horizontal ? (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+          <TeamCaption team={home} formation={homeLineup.formation} align="left" />
+          <TeamCaption team={away} formation={awayLineup.formation} align="right" />
+        </div>
+      ) : (
+        <TeamCaption team={home} formation={homeLineup.formation} align="left" />
+      )}
+      <div
+        className="pitch"
+        style={{
+          aspectRatio: horizontal ? "16 / 10" : "10 / 15",
+          maxWidth: horizontal ? 760 : 460,
+        }}
+      >
+        {horizontal ? <div className="pitch-midv" /> : <div className="pitch-mid" />}
         <div className="pitch-circle" />
-        <div className="pitch-box t" />
-        <div className="pitch-box b" />
+        {horizontal ? (
+          <>
+            <div className="pitch-box l" />
+            <div className="pitch-box r" />
+          </>
+        ) : (
+          <>
+            <div className="pitch-box t" />
+            <div className="pitch-box b" />
+          </>
+        )}
         {homeNodes.map((n) => (
           <PitchNode key={n.p.id} lp={n.p} pr={byId.get(n.p.id)} x={n.x} y={n.y} onPick={onPick} />
         ))}
@@ -288,9 +331,11 @@ function PitchView({
           <PitchNode key={n.p.id} lp={n.p} pr={byId.get(n.p.id)} x={n.x} y={n.y} onPick={onPick} />
         ))}
       </div>
-      <div style={{ marginTop: 8 }}>
-        <TeamCaption team={away} formation={awayLineup.formation} align="right" />
-      </div>
+      {!horizontal && (
+        <div style={{ marginTop: 8 }}>
+          <TeamCaption team={away} formation={awayLineup.formation} align="right" />
+        </div>
+      )}
       <SubsRow team={home} subs={homeLineup.substitutes} byId={byId} onPick={onPick} />
       <SubsRow team={away} subs={awayLineup.substitutes} byId={byId} onPick={onPick} />
     </div>
@@ -379,10 +424,21 @@ export default function PlayerRatings({
   const canPitch = !!(homeLineup?.startXI.length && awayLineup?.startXI.length);
   const [view, setView] = useState<"campo" | "lista">(canPitch ? "campo" : "lista");
   const [open, setOpen] = useState<number | null>(null);
+  // Campo horizontal en escritorio, vertical en móvil. Arranca vertical (= SSR)
+  // y se ajusta al montar para no romper la hidratación.
+  const [horizontal, setHorizontal] = useState(false);
   const pickById = (id: number) => {
     const i = indexById.get(id);
     if (i != null) setOpen(i);
   };
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 820px)");
+    const apply = () => setHorizontal(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     if (open == null) return;
@@ -425,6 +481,7 @@ export default function PlayerRatings({
           awayLineup={awayLineup!}
           byId={byId}
           onPick={pickById}
+          horizontal={horizontal}
         />
       ) : (
         <ListView
