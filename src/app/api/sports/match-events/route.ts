@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFixtureCards, getFixtureGoals } from "@/lib/sports/api-football";
+import { getFixtureGoalsAndCards } from "@/lib/sports/api-football";
 
 export const runtime = "nodejs";
 
@@ -23,11 +23,9 @@ export async function GET(req: Request) {
   const entries = await Promise.all(
     ids.map(async (id) => {
       try {
-        const [goals, cards] = await Promise.all([
-          getFixtureGoals(id, 86400),
-          getFixtureCards(id, 86400),
-        ]);
-        return [id, { goals, reds: cards.filter((c) => c.expulsion) }] as const;
+        // Reusa los eventos completos ya cacheados por el agregado de goleadores.
+        const { goals, reds } = await getFixtureGoalsAndCards(id, true);
+        return [id, { goals, reds }] as const;
       } catch {
         return [id, { goals: [], reds: [] }] as const;
       }

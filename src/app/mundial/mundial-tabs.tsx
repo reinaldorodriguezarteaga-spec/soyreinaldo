@@ -8,6 +8,7 @@ import {
   isLive,
   type Fixture,
   type WcGroup,
+  type PlayerSeason,
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
@@ -799,9 +800,13 @@ function RankPill({ rank }: { rank: number }) {
 function StatsView({ data }: { data: MundialData }) {
   const { scorers, assists, ratings, attackDefense, xg, active } = data;
   const noPlayerData = scorers.length === 0 && assists.length === 0;
+  const [openId, setOpenId] = useState<number | null>(null);
 
   return (
     <div className="space-y-8">
+      {openId != null && (
+        <PlayerSeasonModal id={openId} onClose={() => setOpenId(null)} />
+      )}
       {xg && (
         <div className="grid3">
           <XgCard xg={xg} />
@@ -832,7 +837,7 @@ function StatsView({ data }: { data: MundialData }) {
           <h2>Tabla de goleadores</h2>
         </div>
         {scorers.length > 0 ? (
-          <PlayerTable players={scorers} metric="goals" />
+          <PlayerTable players={scorers} metric="goals" onPick={setOpenId} />
         ) : (
           <Empty>
             {active
@@ -847,7 +852,7 @@ function StatsView({ data }: { data: MundialData }) {
           <h2>Tabla de asistidores</h2>
         </div>
         {assists.length > 0 ? (
-          <PlayerTable players={assists} metric="assists" />
+          <PlayerTable players={assists} metric="assists" onPick={setOpenId} />
         ) : (
           <Empty>
             {active
@@ -863,7 +868,7 @@ function StatsView({ data }: { data: MundialData }) {
           <span className="sh-note">nota media · entre los destacados</span>
         </div>
         {ratings.length > 0 ? (
-          <PlayerTable players={ratings} metric="rating" />
+          <PlayerTable players={ratings} metric="rating" onPick={setOpenId} />
         ) : (
           <Empty>
             {noPlayerData && active
@@ -879,9 +884,11 @@ function StatsView({ data }: { data: MundialData }) {
 function PlayerTable({
   players,
   metric,
+  onPick,
 }: {
   players: PlayerStatLeader[];
   metric: "goals" | "assists" | "rating";
+  onPick: (id: number) => void;
 }) {
   const label =
     metric === "goals" ? "Goles" : metric === "assists" ? "Asist." : "Nota";
@@ -910,7 +917,12 @@ function PlayerTable({
                     ? parseFloat(st.games.rating).toFixed(2)
                     : "—";
             return (
-              <tr key={p.player.id}>
+              <tr
+                key={p.player.id}
+                onClick={() => onPick(p.player.id)}
+                style={{ cursor: "pointer" }}
+                title={`Ver estadísticas de ${p.player.name} en el Mundial`}
+              >
                 <td className="pos">{i + 1}</td>
                 <td className="who">
                   <span className="flex items-center gap-2">
@@ -954,6 +966,209 @@ function PlayerTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+const POS_SEASON: Record<string, string> = {
+  Attacker: "Delantero",
+  Midfielder: "Centrocampista",
+  Defender: "Defensa",
+  Goalkeeper: "Portero",
+};
+
+function seasonColor(r: number): string {
+  if (r >= 7.5) return "#4ade80";
+  if (r >= 6.5) return "var(--text)";
+  return "#ff8a8a";
+}
+
+function PlayerSeasonModal({
+  id,
+  onClose,
+}: {
+  id: number;
+  onClose: () => void;
+}) {
+  const [p, setP] = useState<PlayerSeason | null | "loading">("loading");
+  useEffect(() => {
+    let cancelled = false;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    fetch(`/api/sports/player?id=${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: PlayerSeason | null) => {
+        if (!cancelled) setP(d ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setP(null);
+      });
+    return () => {
+      cancelled = true;
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [id, onClose]);
+
+  return (
+    <div className="pmodal-backdrop" onClick={onClose} role="dialog" aria-modal>
+      <div className="pmodal" onClick={(e) => e.stopPropagation()}>
+        {p === "loading" ? (
+          <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
+            Cargando…
+          </p>
+        ) : !p ? (
+          <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
+            Aún no hay estadísticas de este jugador.
+          </p>
+        ) : (
+          <SeasonContent p={p} />
+        )}
+        <button
+          type="button"
+          className="btn btn--ghost"
+          style={{ width: "100%", marginTop: 16 }}
+          onClick={onClose}
+        >
+          Hecho
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SeasonContent({ p }: { p: PlayerSeason }) {
+  const lines: { label: string; value: string | number | null }[] = [
+    { label: "Partidos jugados", value: p.appearances },
+    { label: "Titularidades", value: p.lineups },
+    { label: "Minutos", value: p.minutes != null ? `${p.minutes}'` : null },
+    { label: "Goles", value: p.goals },
+    { label: "Asistencias", value: p.assists },
+    {
+      label: "Tiros",
+      value:
+        p.shotsTotal != null
+          ? `${p.shotsTotal}${p.shotsOn != null ? ` (${p.shotsOn} a puerta)` : ""}`
+          : null,
+    },
+    {
+      label: "Pases",
+      value:
+        p.passesTotal != null
+          ? `${p.passesTotal}${p.passesAcc != null ? ` · ${p.passesAcc}%` : ""}`
+          : null,
+    },
+    { label: "Pases clave", value: p.passesKey },
+    {
+      label: "Regates",
+      value:
+        p.dribblesAttempts != null || p.dribblesSuccess != null
+          ? `${p.dribblesSuccess ?? 0}/${p.dribblesAttempts ?? 0}`
+          : null,
+    },
+    {
+      label: "Duelos ganados",
+      value: p.duelsTotal != null ? `${p.duelsWon ?? 0}/${p.duelsTotal}` : null,
+    },
+    { label: "Entradas", value: p.tackles },
+    { label: "Intercepciones", value: p.interceptions },
+    { label: "Faltas cometidas", value: p.foulsCommitted },
+    { label: "Faltas recibidas", value: p.foulsDrawn },
+    { label: "Penaltis marcados", value: p.penaltyScored || null },
+    { label: "Amarillas", value: p.yellow || null },
+    { label: "Rojas", value: p.red || null },
+  ].filter((l) => l.value != null && l.value !== "");
+
+  const posES = p.position ? (POS_SEASON[p.position] ?? p.position) : null;
+
+  return (
+    <>
+      <div className="pmodal-head" style={{ justifyContent: "center" }}>
+        <div style={{ position: "relative", display: "inline-block" }}>
+          {p.photo ? (
+            <Image
+              src={p.photo}
+              alt=""
+              width={76}
+              height={76}
+              unoptimized
+              style={{ borderRadius: "50%", objectFit: "cover", background: "var(--surface-2)" }}
+            />
+          ) : (
+            <span
+              style={{
+                display: "inline-block",
+                width: 76,
+                height: 76,
+                borderRadius: "50%",
+                background: "var(--surface-2)",
+              }}
+            />
+          )}
+          {p.rating != null && (
+            <span
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -10,
+                background: seasonColor(p.rating),
+                color: "#0a1030",
+                borderRadius: 8,
+                padding: "2px 8px",
+                fontWeight: 800,
+                fontSize: "1rem",
+              }}
+            >
+              {p.rating.toFixed(2)}
+            </span>
+          )}
+          {p.team?.logo ? (
+            <Image
+              src={p.team.logo}
+              alt=""
+              width={24}
+              height={24}
+              unoptimized
+              style={{ position: "absolute", bottom: -2, right: -6, borderRadius: "50%", background: "var(--surface)", padding: 1 }}
+            />
+          ) : null}
+        </div>
+      </div>
+      <h3 style={{ textAlign: "center", margin: "8px 0 4px", fontSize: "1.2rem", fontWeight: 800 }}>
+        {p.name}
+      </h3>
+      <p style={{ textAlign: "center", color: "var(--text-dim)", fontSize: "0.85rem", margin: "0 0 12px" }}>
+        {[p.team?.name, posES, p.age != null ? `${p.age} años` : null]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+      <p
+        className="mono"
+        style={{ textAlign: "center", color: "var(--accent)", fontSize: "0.64rem", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 14px" }}
+      >
+        Totales del Mundial
+      </p>
+      <div className="panel" style={{ overflow: "hidden" }}>
+        {lines.map((l, i) => (
+          <div
+            key={l.label}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              padding: "10px 14px",
+              borderBottom: i < lines.length - 1 ? "1px solid var(--line)" : undefined,
+              fontSize: "0.9rem",
+            }}
+          >
+            <span style={{ color: "var(--text-dim)" }}>{l.label}</span>
+            <b className="tabular-nums">{l.value}</b>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

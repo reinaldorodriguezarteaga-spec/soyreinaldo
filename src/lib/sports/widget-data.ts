@@ -1,7 +1,6 @@
 import {
   TEAM_IDS,
-  getFixtureCards,
-  getFixtureGoals,
+  getFixtureGoalsAndCards,
   getRelevantFixtureForTeam,
   getWorldCupFixturesWindow,
   isFinal,
@@ -57,13 +56,14 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
   return Promise.all(
     fixtures.map(async (f): Promise<WcFixture> => {
       if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
-      const rv = isLive(f) ? 25 : 600;
       try {
-        const [goals, cards] = await Promise.all([
-          getFixtureGoals(f.fixture.id, rv),
-          getFixtureCards(f.fixture.id, rv),
-        ]);
-        return { ...f, ev: { goals, reds: cards.filter((c) => c.expulsion) } };
+        // Deriva de los eventos completos (misma caché que los goleadores):
+        // fresco para los live (30s) y largo para los terminados (1 día).
+        const { goals, reds } = await getFixtureGoalsAndCards(
+          f.fixture.id,
+          isFinal(f),
+        );
+        return { ...f, ev: { goals, reds } };
       } catch {
         return { ...f, ev: null };
       }
