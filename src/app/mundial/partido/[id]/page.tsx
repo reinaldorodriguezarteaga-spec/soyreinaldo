@@ -5,6 +5,7 @@ import {
   getFixtureById,
   getFixtureCards,
   getFixtureGoals,
+  getFixtureLineups,
   getFixturePlayers,
   getFixtureStatistics,
   isFinal,
@@ -68,12 +69,13 @@ export default async function PartidoPage({
   const fixtureId = Number(id);
   if (!Number.isFinite(fixtureId)) notFound();
 
-  const [fx, goals, cards, stats, players] = await Promise.all([
+  const [fx, goals, cards, stats, players, lineups] = await Promise.all([
     getFixtureById(fixtureId),
     getFixtureGoals(fixtureId),
     getFixtureCards(fixtureId),
     getFixtureStatistics(fixtureId),
     getFixturePlayers(fixtureId),
+    getFixtureLineups(fixtureId),
   ]);
   if (!fx) notFound();
 
@@ -138,6 +140,8 @@ export default async function PartidoPage({
     players.find((t) => t.team.id === home.id)?.players ?? [];
   const awayPlayers =
     players.find((t) => t.team.id === away.id)?.players ?? [];
+  const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
+  const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
 
   return (
@@ -251,10 +255,12 @@ export default async function PartidoPage({
           {hasRatings && (
             <div style={{ marginTop: 28 }}>
               <PlayerRatings
-                home={{ name: home.name, logo: home.logo }}
-                away={{ name: away.name, logo: away.logo }}
+                home={{ id: home.id, name: home.name, logo: home.logo }}
+                away={{ id: away.id, name: away.name, logo: away.logo }}
                 homePlayers={homePlayers}
                 awayPlayers={awayPlayers}
+                homeLineup={homeLineup}
+                awayLineup={awayLineup}
               />
             </div>
           )}

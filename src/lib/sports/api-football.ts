@@ -478,6 +478,7 @@ export type PlayerMatchStats = {
 
 /** Valoración (y datos) de un jugador en un partido. */
 export type PlayerRating = {
+  id: number;
   name: string;
   photo: string | null;
   rating: number | null;
@@ -548,6 +549,7 @@ export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
         const s = p.statistics[0];
         const rating = numOrNull(s?.games.rating ?? null);
         return {
+          id: p.player.id,
           name: p.player.name,
           photo: p.player.photo ?? null,
           rating,
@@ -579,6 +581,57 @@ export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
       })
       .filter((p) => p.rating != null)
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+  }));
+}
+
+/** Un jugador en la alineación (con su posición en la rejilla "fila:columna"). */
+export type LineupPlayer = {
+  id: number;
+  number: number | null;
+  name: string;
+  pos: string | null;
+  /** "fila:columna" del API (fila 1 = portero). null si no la da. */
+  grid: string | null;
+};
+export type LineupTeam = {
+  teamId: number;
+  formation: string | null;
+  startXI: LineupPlayer[];
+  substitutes: LineupPlayer[];
+};
+
+type RawLineupEntry = {
+  player: {
+    id: number;
+    number: number | null;
+    name: string;
+    pos: string | null;
+    grid: string | null;
+  };
+};
+type LineupsResponse = {
+  team: { id: number };
+  formation: string | null;
+  startXI: RawLineupEntry[];
+  substitutes: RawLineupEntry[];
+};
+
+/** Alineaciones del partido (formación + rejilla de cada titular). Caché 600s. */
+export async function getFixtureLineups(id: number): Promise<LineupTeam[]> {
+  const r = await get<LineupsResponse>("/fixtures/lineups", { fixture: id }, 600);
+  const map = (a: RawLineupEntry[]): LineupPlayer[] =>
+    (a ?? []).map((x) => ({
+      id: x.player.id,
+      number: x.player.number,
+      name: x.player.name,
+      pos: x.player.pos,
+      grid: x.player.grid,
+    }));
+  return r.response.map((t) => ({
+    teamId: t.team.id,
+    formation: t.formation,
+    startXI: map(t.startXI),
+    substitutes: map(t.substitutes),
   }));
 }
 
