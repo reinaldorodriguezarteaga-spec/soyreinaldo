@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getFixtureById,
+  getFixtureCards,
   getFixtureGoals,
   getFixtureStatistics,
   isFinal,
   isLive,
+  type FixtureGoal,
 } from "@/lib/sports/api-football";
 
 export const metadata = {
@@ -46,6 +48,15 @@ function toNum(v: number | string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/** Un evento bajo el equipo (gol o expulsión). */
+type Ev = {
+  icon: string;
+  minute: number | null;
+  player: string;
+  tag: string;
+  assist: string | null;
+};
+
 export default async function PartidoPage({
   params,
 }: {
@@ -55,9 +66,10 @@ export default async function PartidoPage({
   const fixtureId = Number(id);
   if (!Number.isFinite(fixtureId)) notFound();
 
-  const [fx, goals, stats] = await Promise.all([
+  const [fx, goals, cards, stats] = await Promise.all([
     getFixtureById(fixtureId),
     getFixtureGoals(fixtureId),
+    getFixtureCards(fixtureId),
     getFixtureStatistics(fixtureId),
   ]);
   if (!fx) notFound();
@@ -68,6 +80,43 @@ export default async function PartidoPage({
   const final = isFinal(fx);
   const played = live || final;
 
+  // Goles y expulsiones bajo cada equipo (el autogol cuenta para el rival).
+  const benefTeam = (g: FixtureGoal) =>
+    g.detail === "Own Goal"
+      ? g.teamId === home.id
+        ? away.id
+        : home.id
+      : g.teamId;
+  const linesFor = (teamId: number): Ev[] => {
+    const gs: Ev[] = goals
+      .filter((g) => benefTeam(g) === teamId)
+      .map((g) => ({
+        icon: "⚽",
+        minute: g.minute,
+        player: g.player,
+        tag:
+          g.detail === "Penalty"
+            ? "(pen.)"
+            : g.detail === "Own Goal"
+              ? "(p.p.)"
+              : "",
+        assist: g.assist,
+      }));
+    const rs: Ev[] = cards
+      .filter((c) => c.expulsion && c.teamId === teamId)
+      .map((c) => ({
+        icon: "🟥",
+        minute: c.minute,
+        player: c.player,
+        tag: /second/i.test(c.detail) ? "(2ª am.)" : "",
+        assist: null,
+      }));
+    return [...gs, ...rs].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+  };
+  const homeLines = linesFor(home.id);
+  const awayLines = linesFor(away.id);
+  const hasLines = homeLines.length > 0 || awayLines.length > 0;
+
   const homeStats = stats.find((s) => s.team.id === home.id);
   const awayStats = stats.find((s) => s.team.id === away.id);
   const val = (
@@ -75,7 +124,6 @@ export default async function PartidoPage({
     type: string,
   ): number | string | null =>
     s?.statistics.find((x) => x.type === type)?.value ?? null;
-
   const rows = STAT_ROWS.map((r) => ({
     label: r.label,
     pct: r.pct,
@@ -95,10 +143,7 @@ export default async function PartidoPage({
             ← Resultados
           </Link>
 
-          <div
-            className="panel"
-            style={{ marginTop: 16, padding: "24px 20px" }}
-          >
+          <div className="panel" style={{ marginTop: 16, padding: "24px 20px" }}>
             <div className="match__meta" style={{ marginBottom: 14 }}>
               <span className="match__grp">{fx.league.round}</span>
               {live ? (
@@ -119,14 +164,17 @@ export default async function PartidoPage({
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr auto 1fr",
-                alignItems: "center",
+                alignItems: "start",
                 gap: 12,
               }}
             >
-              <TeamHead team={home} winner={home.winner} align="left" />
+              <div>
+                <TeamHead team={home} winner={home.winner} />
+                <EvList lines={homeLines} align="left" />
+              </div>
               <div
                 className="display"
-                style={{ fontSize: "2.6rem", whiteSpace: "nowrap" }}
+                style={{ fontSize: "2.6rem", whiteSpace: "nowrap", paddingTop: 8 }}
               >
                 {played ? (
                   <>
@@ -142,12 +190,20 @@ export default async function PartidoPage({
                   </span>
                 )}
               </div>
-              <TeamHead team={away} winner={away.winner} align="right" />
+              <div>
+                <TeamHead team={away} winner={away.winner} />
+                <EvList lines={awayLines} align="right" />
+              </div>
             </div>
 
             <p
               className="match__when"
-              style={{ textAlign: "center", marginTop: 16 }}
+              style={{
+                textAlign: "center",
+                marginTop: hasLines ? 18 : 16,
+                paddingTop: 14,
+                borderTop: "1px solid var(--line)",
+              }}
             >
               {formatKickoff(fx.fixture.date)}
               {fx.fixture.venue?.name ? ` · ${fx.fixture.venue.name}` : ""}
@@ -157,91 +213,31 @@ export default async function PartidoPage({
       </section>
 
       <section className="section" style={{ paddingTop: 20 }}>
-        <div className="wrap" style={{ display: "grid", gap: 28 }}>
-          {goals.length > 0 && (
-            <div>
-              <div className="shead">
-                <h2>Goles</h2>
-              </div>
-              <div className="panel" style={{ padding: "8px 4px" }}>
-                {goals.map((g, i) => {
-                  const isOwn = g.detail === "Own Goal";
-                  // El autogol cuenta para el rival.
-                  const creditId = isOwn
-                    ? g.teamId === home.id
-                      ? away.id
-                      : home.id
-                    : g.teamId;
-                  const logo = creditId === home.id ? home.logo : away.logo;
-                  const tag =
-                    g.detail === "Penalty"
-                      ? " (pen.)"
-                      : isOwn
-                        ? " (p.p.)"
-                        : "";
-                  return (
-                    <div
-                      key={i}
-                      className="rowline"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "8px 14px",
-                        borderBottom:
-                          i < goals.length - 1
-                            ? "1px solid var(--line)"
-                            : undefined,
-                      }}
-                    >
-                      <span
-                        className="mono"
-                        style={{
-                          color: "var(--accent)",
-                          width: 38,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {g.minute != null ? `${g.minute}'` : ""}
-                      </span>
-                      <Image src={logo} alt="" width={18} height={18} unoptimized />
-                      <span>
-                        {g.player}
-                        <span style={{ color: "var(--text-dim)" }}>{tag}</span>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+        <div className="wrap">
+          <div className="shead">
+            <h2>Estadísticas</h2>
+          </div>
+          {rows.length > 0 ? (
+            <div className="panel" style={{ padding: "18px 20px" }}>
+              {rows.map((r) => (
+                <StatRow key={r.label} row={r} />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="panel"
+              style={{
+                padding: 28,
+                textAlign: "center",
+                borderStyle: "dashed",
+                color: "var(--text-dim)",
+              }}
+            >
+              {played
+                ? "Las estadísticas de este partido aún no están publicadas por el proveedor — suelen tardar un rato tras el pitido final."
+                : "Las estadísticas estarán disponibles cuando se juegue el partido."}
             </div>
           )}
-
-          <div>
-            <div className="shead">
-              <h2>Estadísticas</h2>
-            </div>
-            {rows.length > 0 ? (
-              <div className="panel" style={{ padding: "18px 20px" }}>
-                {rows.map((r) => (
-                  <StatRow key={r.label} row={r} />
-                ))}
-              </div>
-            ) : (
-              <div
-                className="panel"
-                style={{
-                  padding: 28,
-                  textAlign: "center",
-                  borderStyle: "dashed",
-                  color: "var(--text-dim)",
-                }}
-              >
-                {played
-                  ? "Las estadísticas de este partido aún no están publicadas por el proveedor — suelen tardar un rato tras el pitido final."
-                  : "Las estadísticas estarán disponibles cuando se juegue el partido."}
-              </div>
-            )}
-          </div>
         </div>
       </section>
     </main>
@@ -251,11 +247,9 @@ export default async function PartidoPage({
 function TeamHead({
   team,
   winner,
-  align,
 }: {
   team: { name: string; logo: string };
   winner: boolean | null;
-  align: "left" | "right";
 }) {
   return (
     <div
@@ -268,24 +262,82 @@ function TeamHead({
       }}
     >
       <Image src={team.logo} alt="" width={48} height={48} unoptimized />
-      <span
-        style={{
-          fontWeight: 700,
-          textAlign: "center",
-          fontSize: "0.95rem",
-        }}
-      >
+      <span style={{ fontWeight: 700, textAlign: "center", fontSize: "0.95rem" }}>
         {team.name}
       </span>
-      <span style={{ display: "none" }}>{align}</span>
     </div>
+  );
+}
+
+function EvList({ lines, align }: { lines: Ev[]; align: "left" | "right" }) {
+  if (lines.length === 0) return null;
+  const right = align === "right";
+  return (
+    <div style={{ marginTop: 12, display: "grid", gap: 4 }}>
+      {lines.map((e, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: 6,
+            alignItems: "baseline",
+            justifyContent: right ? "flex-end" : "flex-start",
+            flexWrap: "wrap",
+            fontSize: "0.84rem",
+            textAlign: right ? "right" : "left",
+          }}
+        >
+          {right ? (
+            <>
+              <Name e={e} />
+              <Min minute={e.minute} />
+              <span>{e.icon}</span>
+            </>
+          ) : (
+            <>
+              <span>{e.icon}</span>
+              <Min minute={e.minute} />
+              <Name e={e} />
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Min({ minute }: { minute: number | null }) {
+  return (
+    <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.74rem" }}>
+      {minute != null ? `${minute}'` : ""}
+    </span>
+  );
+}
+
+function Name({ e }: { e: Ev }) {
+  return (
+    <span>
+      {e.player}
+      {e.tag ? <span style={{ color: "var(--text-dim)" }}> {e.tag}</span> : null}
+      {e.assist ? (
+        <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
+          {" "}
+          · {e.assist}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
 function StatRow({
   row,
 }: {
-  row: { label: string; pct?: boolean; home: number | string | null; away: number | string | null };
+  row: {
+    label: string;
+    pct?: boolean;
+    home: number | string | null;
+    away: number | string | null;
+  };
 }) {
   const hRaw = row.home ?? (row.pct ? "0%" : 0);
   const aRaw = row.away ?? (row.pct ? "0%" : 0);

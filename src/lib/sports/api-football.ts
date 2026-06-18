@@ -398,6 +398,8 @@ export type FixtureGoal = {
   player: string;
   /** "Normal Goal" | "Penalty" | "Own Goal". */
   detail: string;
+  /** Asistente del gol, si lo hay. */
+  assist: string | null;
 };
 export async function getFixtureGoals(id: number): Promise<FixtureGoal[]> {
   // `type=Goal`: solo goles (lo único que necesita el detalle) y, de paso, una
@@ -416,7 +418,41 @@ export async function getFixtureGoals(id: number): Promise<FixtureGoal[]> {
       teamId: e.team.id,
       player: e.player.name ?? "—",
       detail: e.detail,
+      assist: e.assist?.name ?? null,
     }))
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
+/** Una tarjeta de un partido (amarilla / roja / doble amarilla). */
+export type FixtureCard = {
+  minute: number | null;
+  teamId: number;
+  player: string;
+  /** "Yellow Card" | "Red Card" | "Second Yellow card". */
+  detail: string;
+  /** true si supone expulsión (roja directa o segunda amarilla). */
+  expulsion: boolean;
+};
+export async function getFixtureCards(id: number): Promise<FixtureCard[]> {
+  // `type=Card`: solo tarjetas, con caché propia corta (igual que los goles) y
+  // clave distinta de la del agregado de goleadores.
+  const r = await get<FixtureEvent>(
+    "/fixtures/events",
+    { fixture: id, type: "Card" },
+    600,
+  );
+  return r.response
+    .filter((e) => e.type === "Card")
+    .map((e) => {
+      const d = e.detail || "";
+      return {
+        minute: e.time.elapsed,
+        teamId: e.team.id,
+        player: e.player.name ?? "—",
+        detail: d,
+        expulsion: /red|second yellow/i.test(d),
+      };
+    })
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
