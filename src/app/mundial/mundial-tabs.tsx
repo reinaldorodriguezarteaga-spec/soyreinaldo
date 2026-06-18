@@ -16,7 +16,11 @@ import {
   pendingFixtures,
   type LiveGroup,
 } from "@/lib/sports/live-standings";
-import type { WcFixture, WidgetData } from "@/lib/sports/widget-data";
+import type {
+  FixtureEvents,
+  WcFixture,
+  WidgetData,
+} from "@/lib/sports/widget-data";
 import MatchCardEvents from "@/components/MatchCardEvents";
 import type { MundialData, XgLeader } from "./page";
 
@@ -568,6 +572,32 @@ function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
   );
 
+  // Goles/expulsiones de la jornada que se está viendo, bajo demanda (no se
+  // cargan los 100+ finalizados en cada render). Se cachean en el cliente.
+  const [eventsById, setEventsById] = useState<Record<number, FixtureEvents>>({});
+  const evRef = useRef(eventsById);
+  evRef.current = eventsById;
+  const activeIds = list.map((fx) => fx.fixture.id).join(",");
+
+  useEffect(() => {
+    const ids = activeIds
+      .split(",")
+      .filter(Boolean)
+      .map(Number)
+      .filter((id) => !(id in evRef.current));
+    if (ids.length === 0) return;
+    let cancelled = false;
+    fetch(`/api/sports/match-events?ids=${ids.join(",")}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: Record<number, FixtureEvents>) => {
+        if (!cancelled) setEventsById((prev) => ({ ...prev, ...data }));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activeIds]);
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap gap-2">
@@ -587,14 +617,18 @@ function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
       </div>
       <div className="grid2">
         {list.map((fx) => (
-          <FinishedCard key={fx.fixture.id} fx={fx} />
+          <FinishedCard
+            key={fx.fixture.id}
+            fx={fx}
+            ev={eventsById[fx.fixture.id] ?? null}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function FinishedCard({ fx }: { fx: Fixture }) {
+function FinishedCard({ fx, ev }: { fx: Fixture; ev: FixtureEvents | null }) {
   return (
     <Link
       href={`/mundial/partido/${fx.fixture.id}`}
@@ -636,6 +670,11 @@ function FinishedCard({ fx }: { fx: Fixture }) {
           <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
         </span>
       </div>
+      <MatchCardEvents
+        ev={ev}
+        homeId={fx.teams.home.id}
+        awayId={fx.teams.away.id}
+      />
       <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
         <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
         <span className="match__when" style={{ color: "var(--accent)" }}>
