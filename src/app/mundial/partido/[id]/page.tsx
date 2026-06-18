@@ -5,10 +5,12 @@ import {
   getFixtureById,
   getFixtureCards,
   getFixtureGoals,
+  getFixturePlayers,
   getFixtureStatistics,
   isFinal,
   isLive,
   type FixtureGoal,
+  type PlayerRating,
 } from "@/lib/sports/api-football";
 
 export const metadata = {
@@ -66,11 +68,12 @@ export default async function PartidoPage({
   const fixtureId = Number(id);
   if (!Number.isFinite(fixtureId)) notFound();
 
-  const [fx, goals, cards, stats] = await Promise.all([
+  const [fx, goals, cards, stats, players] = await Promise.all([
     getFixtureById(fixtureId),
     getFixtureGoals(fixtureId),
     getFixtureCards(fixtureId),
     getFixtureStatistics(fixtureId),
+    getFixturePlayers(fixtureId),
   ]);
   if (!fx) notFound();
 
@@ -130,6 +133,12 @@ export default async function PartidoPage({
     home: val(homeStats, r.type),
     away: val(awayStats, r.type),
   })).filter((r) => r.home != null || r.away != null);
+
+  const homePlayers =
+    players.find((t) => t.team.id === home.id)?.players ?? [];
+  const awayPlayers =
+    players.find((t) => t.team.id === away.id)?.players ?? [];
+  const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
 
   return (
     <main className="page">
@@ -238,9 +247,105 @@ export default async function PartidoPage({
                 : "Las estadísticas estarán disponibles cuando se juegue el partido."}
             </div>
           )}
+
+          {hasRatings && (
+            <div style={{ marginTop: 28 }}>
+              <div className="shead">
+                <h2>Valoraciones</h2>
+                <span className="sh-note">nota por jugador · mejor primero</span>
+              </div>
+              <div className="grid2" style={{ alignItems: "start" }}>
+                <RatingsCol team={home} players={homePlayers} />
+                <RatingsCol team={away} players={awayPlayers} />
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>
+  );
+}
+
+const POS_ES: Record<string, string> = {
+  G: "POR",
+  D: "DEF",
+  M: "MED",
+  F: "DEL",
+};
+
+function ratingColor(r: number): string {
+  if (r >= 7.5) return "#4ade80";
+  if (r >= 6.5) return "var(--text)";
+  return "#ff8a8a";
+}
+
+function RatingsCol({
+  team,
+  players,
+}: {
+  team: { name: string; logo: string };
+  players: PlayerRating[];
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 10,
+        }}
+      >
+        <Image src={team.logo} alt="" width={22} height={22} unoptimized />
+        <b>{team.name}</b>
+      </div>
+      <div className="panel" style={{ overflow: "hidden" }}>
+        {players.map((p, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "9px 14px",
+              borderBottom:
+                i < players.length - 1 ? "1px solid var(--line)" : undefined,
+            }}
+          >
+            <span
+              className="mono"
+              style={{ width: 34, fontSize: "0.64rem", color: "var(--text-dim)" }}
+            >
+              {p.position ? (POS_ES[p.position] ?? p.position) : ""}
+            </span>
+            <span
+              style={{
+                flex: 1,
+                minWidth: 0,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {p.name}
+              {p.goals > 0 ? <span> {"⚽".repeat(p.goals)}</span> : null}
+              {p.assists > 0 ? (
+                <span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
+                  {" "}
+                  · {p.assists}A
+                </span>
+              ) : null}
+            </span>
+            <b
+              className="tabular-nums"
+              style={{ color: ratingColor(p.rating ?? 0), fontSize: "0.95rem" }}
+            >
+              {p.rating?.toFixed(1)}
+            </b>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

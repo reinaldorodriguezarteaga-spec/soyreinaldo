@@ -456,6 +456,66 @@ export async function getFixtureCards(id: number): Promise<FixtureCard[]> {
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
+/** Valoración (y datos básicos) de un jugador en un partido. */
+export type PlayerRating = {
+  name: string;
+  rating: number | null;
+  /** Código del API: G / D / M / F. */
+  position: string | null;
+  minutes: number | null;
+  goals: number;
+  assists: number;
+};
+export type TeamPlayers = {
+  team: { id: number; name: string; logo: string };
+  players: PlayerRating[];
+};
+
+type FixturePlayersResponse = {
+  team: { id: number; name: string; logo: string };
+  players: Array<{
+    player: { id: number; name: string };
+    statistics: Array<{
+      games: {
+        minutes: number | null;
+        position: string | null;
+        rating: string | null;
+      };
+      goals: { total: number | null; assists: number | null };
+    }>;
+  }>;
+};
+
+/**
+ * Valoraciones de los jugadores de un partido (las dos alineaciones), con
+ * nota, posición y minutos. Solo los que jugaron (tienen nota). Caché 600s.
+ */
+export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
+  const r = await get<FixturePlayersResponse>(
+    "/fixtures/players",
+    { fixture: id },
+    600,
+  );
+  return r.response.map((t) => ({
+    team: t.team,
+    players: t.players
+      .map((p) => {
+        const s = p.statistics[0];
+        const rating = s?.games.rating ? parseFloat(s.games.rating) : null;
+        return {
+          name: p.player.name,
+          rating: rating != null && !Number.isNaN(rating) ? rating : null,
+          position: s?.games.position ?? null,
+          minutes: s?.games.minutes ?? null,
+          goals: s?.goals.total ?? 0,
+          assists: s?.goals.assists ?? 0,
+        };
+      })
+      .filter((p) => p.rating != null)
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+  }));
+}
+
 /**
  * Goleadores y asistidores del Mundial calculados a partir de los EVENTOS de
  * cada partido (goles y asistencias), que se publican casi en vivo — a
