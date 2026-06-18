@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isFinal, isLive, type Fixture } from "@/lib/sports/api-football";
-import type { WidgetData } from "@/lib/sports/widget-data";
+import type { WcFixture, WidgetData } from "@/lib/sports/widget-data";
+import MatchCardEvents from "@/components/MatchCardEvents";
 
 const MADRID_TZ = "Europe/Madrid";
 const POLL_MS = 30_000;
@@ -60,13 +61,14 @@ function LiveBadge({ fx }: { fx: Fixture }) {
   );
 }
 
-function WidgetMatchCard({ fx }: { fx: Fixture }) {
+function WidgetMatchCard({ fx }: { fx: WcFixture }) {
   const live = isLive(fx);
   const final = isFinal(fx);
   const showScore = live || final;
+  const played = live || final;
   const roundLabel = formatRound(fx.league?.round);
-  return (
-    <div className="match">
+  const inner = (
+    <>
       <div className="match__meta">
         <span className="match__grp">{roundLabel ?? "Mundial 2026"}</span>
         {live ? (
@@ -114,8 +116,29 @@ function WidgetMatchCard({ fx }: { fx: Fixture }) {
           <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
         </span>
       </div>
-    </div>
+      <MatchCardEvents ev={fx.ev} homeId={fx.teams.home.id} awayId={fx.teams.away.id} />
+      {played && (
+        <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+          <span />
+          <span className="match__when" style={{ color: "var(--accent)" }}>
+            Ver estadísticas →
+          </span>
+        </div>
+      )}
+    </>
   );
+  if (played) {
+    return (
+      <Link
+        href={`/mundial/partido/${fx.fixture.id}`}
+        className="match"
+        style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="match">{inner}</div>;
 }
 
 /**

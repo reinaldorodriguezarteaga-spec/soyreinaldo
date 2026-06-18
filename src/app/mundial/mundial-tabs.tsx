@@ -16,7 +16,8 @@ import {
   pendingFixtures,
   type LiveGroup,
 } from "@/lib/sports/live-standings";
-import type { WidgetData } from "@/lib/sports/widget-data";
+import type { WcFixture, WidgetData } from "@/lib/sports/widget-data";
+import MatchCardEvents from "@/components/MatchCardEvents";
 import type { MundialData, XgLeader } from "./page";
 
 export type Tab = "envivo" | "partidos" | "finalizados" | "grupos" | "stats";
@@ -120,7 +121,7 @@ function shouldKeepPolling(fixtures: Fixture[]): boolean {
 }
 
 function EnVivoView({ data }: { data: MundialData }) {
-  const [fixtures, setFixtures] = useState<Fixture[]>(data.today);
+  const [fixtures, setFixtures] = useState<WcFixture[]>(data.today);
   // Partidos que han estado en juego con la página abierta: su resultado no
   // está en el snapshot de la clasificación oficial, así que se les sigue
   // sumando aunque terminen (hasta recargar).
@@ -253,7 +254,7 @@ function EnVivoView({ data }: { data: MundialData }) {
   );
 }
 
-function LiveMatchCard({ fx }: { fx: Fixture }) {
+function LiveMatchCard({ fx }: { fx: WcFixture }) {
   const live = isLive(fx);
   const final = isFinal(fx);
   const showScore = live || final;
@@ -314,6 +315,11 @@ function LiveMatchCard({ fx }: { fx: Fixture }) {
           <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
         </span>
       </div>
+      <MatchCardEvents
+        ev={fx.ev}
+        homeId={fx.teams.home.id}
+        awayId={fx.teams.away.id}
+      />
       {played && (
         <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
           <span />

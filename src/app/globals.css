@@ -1020,6 +1020,12 @@ select.field { appearance: none; }
 .gamecard__foot { margin-top: 12px; min-height: 1rem; text-align: right; font-size: 0.7rem; color: var(--text-dim); }
 .livepulse { width: 6px; height: 6px; border-radius: 50%; background: #ff5a5a; animation: pulse 1.6s infinite; display: inline-block; }
 
+/* Goles/expulsiones bajo los equipos en las tarjetas de marcador */
+.match__ev { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.match__ev > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 48%; }
+.match__ev > div.right { align-items: flex-end; text-align: right; }
+.match__ev span { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
 /* Valoraciones: fila de jugador (botón) + modal de detalle */
 .prowbtn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: transparent; border: 0; border-bottom: 1px solid var(--line); color: inherit; font: inherit; cursor: pointer; }
 .prowbtn:last-child { border-bottom: none; }

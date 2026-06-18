@@ -1,18 +1,28 @@
 import {
   TEAM_IDS,
+  getFixtureCards,
+  getFixtureGoals,
   getRelevantFixtureForTeam,
   getWorldCupFixturesWindow,
   isFinal,
   isLive,
   isWorldCupActive,
   type Fixture,
+  type FixtureCard,
+  type FixtureGoal,
 } from "./api-football";
 
 export type WidgetMode = "wc" | "clubs";
 
+/** Goles y expulsiones de un partido, para pintarlos en la tarjeta. */
+export type FixtureEvents = { goals: FixtureGoal[]; reds: FixtureCard[] };
+
+/** Un fixture con sus eventos adjuntos (null si no está en juego ni terminado). */
+export type WcFixture = Fixture & { ev: FixtureEvents | null };
+
 export type WidgetData = {
   mode: WidgetMode;
-  fixtures: Fixture[];
+  fixtures: WcFixture[];
   /** True if some fixture is live or starts within ~30 min — gate cliente para polling. */
   needsPolling: boolean;
 };
@@ -38,9 +48,34 @@ function orderForDisplay(fixtures: Fixture[]): Fixture[] {
   });
 }
 
+/**
+ * Adjunta goles y expulsiones a los partidos en juego/terminados. Los demás
+ * (próximos) van con `ev: null`. Caché corta para los live (25s), larga para
+ * los terminados (600s).
+ */
+export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
+  return Promise.all(
+    fixtures.map(async (f): Promise<WcFixture> => {
+      if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
+      const rv = isLive(f) ? 25 : 600;
+      try {
+        const [goals, cards] = await Promise.all([
+          getFixtureGoals(f.fixture.id, rv),
+          getFixtureCards(f.fixture.id, rv),
+        ]);
+        return { ...f, ev: { goals, reds: cards.filter((c) => c.expulsion) } };
+      } catch {
+        return { ...f, ev: null };
+      }
+    }),
+  );
+}
+
 export async function getWidgetData(): Promise<WidgetData> {
   if (isWorldCupActive()) {
-    const fixtures = orderForDisplay(await getWorldCupFixturesWindow());
+    const fixtures = await attachEvents(
+      orderForDisplay(await getWorldCupFixturesWindow()),
+    );
     return { mode: "wc", fixtures, needsPolling: shouldPoll(fixtures) };
   }
 
@@ -52,12 +87,13 @@ export async function getWidgetData(): Promise<WidgetData> {
   // Si Barça y Madrid juegan el mismo partido (Clásico), evitamos pintarlo dos
   // veces.
   const seen = new Set<number>();
-  const fixtures: Fixture[] = [];
+  const base: Fixture[] = [];
   for (const f of [barca, madrid]) {
     if (!f) continue;
     if (seen.has(f.fixture.id)) continue;
     seen.add(f.fixture.id);
-    fixtures.push(f);
+    base.push(f);
   }
+  const fixtures = await attachEvents(base);
   return { mode: "clubs", fixtures, needsPolling: shouldPoll(fixtures) };
 }

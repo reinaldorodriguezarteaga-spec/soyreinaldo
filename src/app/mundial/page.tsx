@@ -13,6 +13,7 @@ import {
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
+import { attachEvents, type WcFixture } from "@/lib/sports/widget-data";
 import MundialTabs, { type Tab } from "./mundial-tabs";
 
 export const metadata = {
@@ -27,8 +28,9 @@ export type MundialData = {
   fixtures: Fixture[];
   finished: Fixture[];
   groups: WcGroup[];
-  /** Partidos de la jornada de hoy (en juego, recientes y próximos). */
-  today: Fixture[];
+  /** Partidos de la jornada de hoy (en juego, recientes y próximos) con sus
+   * goles/expulsiones adjuntos. */
+  today: WcFixture[];
   /** Ids de partidos en juego en el render — la pestaña "en vivo" los sigue
    * aplicando a la tabla provisional si terminan con la página abierta. */
   carryIds: number[];
@@ -58,7 +60,7 @@ export default async function MundialPage({
   let fixtures: Fixture[] = [];
   let finished: Fixture[] = [];
   let groups: WcGroup[] = [];
-  let today: Fixture[] = [];
+  let today: WcFixture[] = [];
   let players: {
     scorers: PlayerStatLeader[];
     assists: PlayerStatLeader[];
@@ -71,7 +73,7 @@ export default async function MundialPage({
       getWorldCupUpcomingFixtures(12),
       getWorldCupFinishedFixtures(),
       getWorldCupStandings(),
-      getWorldCupFixturesWindow(),
+      getWorldCupFixturesWindow().then(attachEvents),
       getWorldCupPlayerStats(10),
       getWorldCupTopXg(),
     ]);
