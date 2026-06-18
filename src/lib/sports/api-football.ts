@@ -467,40 +467,6 @@ export async function getFixtureCards(
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
-/**
- * Goles + expulsiones derivados de los eventos COMPLETOS del partido
- * (`/fixtures/events?fixture=X`, sin filtro de tipo) — la MISMA URL/caché que ya
- * usa el agregado de goleadores, así que no añade llamadas a la API: rellena con
- * datos que normalmente ya están en caché. Para tarjetas de marcador.
- */
-export async function getFixtureGoalsAndCards(
-  id: number,
-  finished = true,
-): Promise<{ goals: FixtureGoal[]; reds: FixtureCard[] }> {
-  const events = await getFixtureEvents(id, finished);
-  const goals: FixtureGoal[] = events
-    .filter((e) => e.type === "Goal" && e.detail !== "Missed Penalty")
-    .map((e) => ({
-      minute: e.time.elapsed,
-      teamId: e.team.id,
-      player: e.player.name ?? "—",
-      detail: e.detail,
-      assist: e.assist?.name ?? null,
-    }))
-    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
-  const reds: FixtureCard[] = events
-    .filter((e) => e.type === "Card" && /red|second yellow/i.test(e.detail || ""))
-    .map((e) => ({
-      minute: e.time.elapsed,
-      teamId: e.team.id,
-      player: e.player.name ?? "—",
-      detail: e.detail || "",
-      expulsion: true,
-    }))
-    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
-  return { goals, reds };
-}
-
 /** Estadística detallada de un jugador en un partido (nulos = no registrado). */
 export type PlayerMatchStats = {
   shotsTotal: number | null;
