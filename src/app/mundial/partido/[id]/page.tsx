@@ -13,6 +13,7 @@ import {
   type FixtureGoal,
 } from "@/lib/sports/api-football";
 import PlayerRatings from "./player-ratings";
+import LiveRefresh from "./live-refresh";
 
 export const metadata = {
   title: "Estadísticas del partido | Mundial 2026 | Soy Reinaldo",
@@ -69,15 +70,20 @@ export default async function PartidoPage({
   const fixtureId = Number(id);
   if (!Number.isFinite(fixtureId)) notFound();
 
-  const [fx, goals, cards, stats, players, lineups] = await Promise.all([
-    getFixtureById(fixtureId),
-    getFixtureGoals(fixtureId),
-    getFixtureCards(fixtureId),
-    getFixtureStatistics(fixtureId),
-    getFixturePlayers(fixtureId),
-    getFixtureLineups(fixtureId),
-  ]);
+  // Primero el partido (caché corta) para saber si está en juego; si lo está,
+  // el resto se pide con caché corta y se auto-refresca la página.
+  const fx = await getFixtureById(fixtureId, 30);
   if (!fx) notFound();
+  const liveNow = isLive(fx);
+  const rv = liveNow ? 25 : undefined; // undefined = caché por defecto del fetcher
+
+  const [goals, cards, stats, players, lineups] = await Promise.all([
+    getFixtureGoals(fixtureId, rv),
+    getFixtureCards(fixtureId, rv),
+    getFixtureStatistics(fixtureId, rv),
+    getFixturePlayers(fixtureId, rv),
+    getFixtureLineups(fixtureId, rv),
+  ]);
 
   const home = fx.teams.home;
   const away = fx.teams.away;
@@ -146,6 +152,7 @@ export default async function PartidoPage({
 
   return (
     <main className="page">
+      {liveNow && <LiveRefresh />}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link

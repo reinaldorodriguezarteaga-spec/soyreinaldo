@@ -257,8 +257,9 @@ function LiveMatchCard({ fx }: { fx: Fixture }) {
   const live = isLive(fx);
   const final = isFinal(fx);
   const showScore = live || final;
-  return (
-    <div className="match">
+  const played = live || final;
+  const inner = (
+    <>
       <div className="match__meta">
         <span className="match__grp">{fx.league.round}</span>
         {live ? (
@@ -313,8 +314,28 @@ function LiveMatchCard({ fx }: { fx: Fixture }) {
           <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
         </span>
       </div>
-    </div>
+      {played && (
+        <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+          <span />
+          <span className="match__when" style={{ color: "var(--accent)" }}>
+            Ver estadísticas →
+          </span>
+        </div>
+      )}
+    </>
   );
+  if (played) {
+    return (
+      <Link
+        href={`/mundial/partido/${fx.fixture.id}`}
+        className="match"
+        style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="match">{inner}</div>;
 }
 
 function LiveGroupTable({ group }: { group: LiveGroup }) {

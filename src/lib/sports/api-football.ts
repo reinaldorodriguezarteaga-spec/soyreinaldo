@@ -369,8 +369,11 @@ async function getFixtureEvents(
 }
 
 /** Un único partido por id (para la página de detalle). null si no existe. */
-export async function getFixtureById(id: number): Promise<Fixture | null> {
-  const r = await get<Fixture>("/fixtures", { id }, 300);
+export async function getFixtureById(
+  id: number,
+  revalidate = 300,
+): Promise<Fixture | null> {
+  const r = await get<Fixture>("/fixtures", { id }, revalidate);
   return r.response[0] ?? null;
 }
 
@@ -381,11 +384,12 @@ export type TeamStatistics = {
 };
 export async function getFixtureStatistics(
   id: number,
+  revalidate = 300,
 ): Promise<TeamStatistics[]> {
   const r = await get<TeamStatistics>(
     "/fixtures/statistics",
     { fixture: id },
-    300,
+    revalidate,
   );
   return r.response;
 }
@@ -401,15 +405,19 @@ export type FixtureGoal = {
   /** Asistente del gol, si lo hay. */
   assist: string | null;
 };
-export async function getFixtureGoals(id: number): Promise<FixtureGoal[]> {
+export async function getFixtureGoals(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureGoal[]> {
   // `type=Goal`: solo goles (lo único que necesita el detalle) y, de paso, una
   // clave de caché DISTINTA de la del agregado de goleadores (que cachea todos
-  // los eventos 1 día). Con 600s, un partido recién terminado muestra sus goles
-  // en ~10 min, sin tocar esa caché larga que /mundial usa para no ralentizarse.
+  // los eventos 1 día). Caché propia (600s, o más corta en directo) para que un
+  // partido en curso o recién terminado muestre sus goles sin tocar esa caché
+  // larga que /mundial usa para no ralentizarse.
   const r = await get<FixtureEvent>(
     "/fixtures/events",
     { fixture: id, type: "Goal" },
-    600,
+    revalidate,
   );
   return r.response
     .filter((e) => e.type === "Goal" && e.detail !== "Missed Penalty")
@@ -433,13 +441,16 @@ export type FixtureCard = {
   /** true si supone expulsión (roja directa o segunda amarilla). */
   expulsion: boolean;
 };
-export async function getFixtureCards(id: number): Promise<FixtureCard[]> {
-  // `type=Card`: solo tarjetas, con caché propia corta (igual que los goles) y
-  // clave distinta de la del agregado de goleadores.
+export async function getFixtureCards(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureCard[]> {
+  // `type=Card`: solo tarjetas, con caché propia (600s, o más corta en directo)
+  // y clave distinta de la del agregado de goleadores.
   const r = await get<FixtureEvent>(
     "/fixtures/events",
     { fixture: id, type: "Card" },
-    600,
+    revalidate,
   );
   return r.response
     .filter((e) => e.type === "Card")
@@ -536,11 +547,14 @@ function numOrNull(v: number | string | null | undefined): number | null {
  * Valoraciones + estadística detallada de los jugadores de un partido (las dos
  * alineaciones). Solo los que jugaron (tienen nota). Caché 600s.
  */
-export async function getFixturePlayers(id: number): Promise<TeamPlayers[]> {
+export async function getFixturePlayers(
+  id: number,
+  revalidate = 600,
+): Promise<TeamPlayers[]> {
   const r = await get<FixturePlayersResponse>(
     "/fixtures/players",
     { fixture: id },
-    600,
+    revalidate,
   );
   return r.response.map((t) => ({
     team: t.team,
@@ -617,8 +631,11 @@ type LineupsResponse = {
 };
 
 /** Alineaciones del partido (formación + rejilla de cada titular). Caché 600s. */
-export async function getFixtureLineups(id: number): Promise<LineupTeam[]> {
-  const r = await get<LineupsResponse>("/fixtures/lineups", { fixture: id }, 600);
+export async function getFixtureLineups(
+  id: number,
+  revalidate = 600,
+): Promise<LineupTeam[]> {
+  const r = await get<LineupsResponse>("/fixtures/lineups", { fixture: id }, revalidate);
   const map = (a: RawLineupEntry[]): LineupPlayer[] =>
     (a ?? []).map((x) => ({
       id: x.player.id,
