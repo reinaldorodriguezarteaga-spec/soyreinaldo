@@ -105,7 +105,7 @@ function RatingBadge({ rating, big }: { rating: number | null; big?: boolean }) 
     <b
       className="tabular-nums"
       style={{
-        color: big ? "var(--on-accent)" : ratingColor(rating ?? 0),
+        color: big ? "#0a1030" : ratingColor(rating ?? 0),
         background: big ? ratingColor(rating ?? 0) : undefined,
         borderRadius: big ? 8 : undefined,
         padding: big ? "2px 8px" : undefined,
