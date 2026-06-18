@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   isFinal,
@@ -568,7 +569,11 @@ function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
 
 function FinishedCard({ fx }: { fx: Fixture }) {
   return (
-    <div className="match">
+    <Link
+      href={`/mundial/partido/${fx.fixture.id}`}
+      className="match"
+      style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+    >
       <div className="match__meta">
         <span className="match__grp">{fx.league.round}</span>
         <span className="badge">Final</span>
@@ -606,9 +611,11 @@ function FinishedCard({ fx }: { fx: Fixture }) {
       </div>
       <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
         <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
-        <span />
+        <span className="match__when" style={{ color: "var(--accent)" }}>
+          Ver estadísticas →
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 

@@ -368,6 +368,58 @@ async function getFixtureEvents(
   return r.response;
 }
 
+/** Un único partido por id (para la página de detalle). null si no existe. */
+export async function getFixtureById(id: number): Promise<Fixture | null> {
+  const r = await get<Fixture>("/fixtures", { id }, 300);
+  return r.response[0] ?? null;
+}
+
+/** Estadísticas por equipo de un partido (posesión, tiros, xG, paradas, …). */
+export type TeamStatistics = {
+  team: { id: number; name: string; logo: string };
+  statistics: { type: string; value: number | string | null }[];
+};
+export async function getFixtureStatistics(
+  id: number,
+): Promise<TeamStatistics[]> {
+  const r = await get<TeamStatistics>(
+    "/fixtures/statistics",
+    { fixture: id },
+    300,
+  );
+  return r.response;
+}
+
+/** Un gol de un partido, derivado de los eventos (orden cronológico). */
+export type FixtureGoal = {
+  minute: number | null;
+  /** Equipo del jugador que ejecuta (en autogol, el que encaja). */
+  teamId: number;
+  player: string;
+  /** "Normal Goal" | "Penalty" | "Own Goal". */
+  detail: string;
+};
+export async function getFixtureGoals(id: number): Promise<FixtureGoal[]> {
+  // `type=Goal`: solo goles (lo único que necesita el detalle) y, de paso, una
+  // clave de caché DISTINTA de la del agregado de goleadores (que cachea todos
+  // los eventos 1 día). Con 600s, un partido recién terminado muestra sus goles
+  // en ~10 min, sin tocar esa caché larga que /mundial usa para no ralentizarse.
+  const r = await get<FixtureEvent>(
+    "/fixtures/events",
+    { fixture: id, type: "Goal" },
+    600,
+  );
+  return r.response
+    .filter((e) => e.type === "Goal" && e.detail !== "Missed Penalty")
+    .map((e) => ({
+      minute: e.time.elapsed,
+      teamId: e.team.id,
+      player: e.player.name ?? "—",
+      detail: e.detail,
+    }))
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
 /**
  * Goleadores y asistidores del Mundial calculados a partir de los EVENTOS de
  * cada partido (goles y asistencias), que se publican casi en vivo — a
