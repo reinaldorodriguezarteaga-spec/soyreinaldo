@@ -352,22 +352,6 @@ export async function getWorldCupAllFixtures(): Promise<Fixture[]> {
   return r.response;
 }
 
-/**
- * Eventos de un partido. Un partido terminado no cambia → caché de 1 día;
- * uno en juego → caché corta (30s) para ir casi en vivo.
- */
-async function getFixtureEvents(
-  fixtureId: number,
-  finished: boolean,
-): Promise<FixtureEvent[]> {
-  const r = await get<FixtureEvent>(
-    "/fixtures/events",
-    { fixture: fixtureId },
-    finished ? 86400 : 30,
-  );
-  return r.response;
-}
-
 /** Un único partido por id (para la página de detalle). null si no existe. */
 export async function getFixtureById(
   id: number,
@@ -762,114 +746,30 @@ export async function getFixtureLineups(
 }
 
 /**
- * Goleadores y asistidores del Mundial calculados a partir de los EVENTOS de
- * cada partido (goles y asistencias), que se publican casi en vivo — a
- * diferencia del agregado /players/topscorers, que API-Football tarda horas en
- * consolidar al inicio del torneo. Se enriquece con metadatos (foto, PJ,
- * minutos) del agregado cuando ya existen; la valoración media (ratings) se
- * toma del agregado, que es la única fuente.
+ * Goleadores, asistidores y valoraciones del Mundial desde el agregado OFICIAL
+ * de API-Football (`/players/topscorers` + `/players/topassists`). Es el ranking
+ * canónico y fiable: a mitad de torneo consolida en pocas horas.
+ *
+ * (Antes se calculaba desde los EVENTOS de cada partido para tenerlo casi en
+ * vivo, pero dependía de la caché larga de eventos completos y dejaba fuera
+ * goles de partidos recientes — p. ej. un hat-trick no aparecía al día
+ * siguiente. Se descartó por fiabilidad; la frescura en vivo ya la dan la
+ * pestaña "Marcador en vivo" y el detalle de partido.)
  */
 export async function getWorldCupPlayerStats(n = 10): Promise<{
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
 }> {
-  const fixtures = await getWorldCupAllFixtures();
-  const relevant = fixtures.filter((f) => isFinal(f) || isLive(f));
-
-  // Eventos de cada partido relevante, en lotes para no saturar el rate limit.
-  const eventsByFixture: FixtureEvent[][] = [];
-  const BATCH = 8;
-  for (let i = 0; i < relevant.length; i += BATCH) {
-    const chunk = relevant.slice(i, i + BATCH);
-    const res = await Promise.all(
-      chunk.map((f) => getFixtureEvents(f.fixture.id, isFinal(f))),
-    );
-    eventsByFixture.push(...res);
-  }
-
-  type Tally = {
-    player: { id: number; name: string };
-    team: { id: number; name: string; logo: string };
-    goals: number;
-    assists: number;
-  };
-  const tally = new Map<number, Tally>();
-  const bump = (
-    id: number | null,
-    name: string | null,
-    team: FixtureEvent["team"],
-    kind: "goals" | "assists",
-  ) => {
-    if (id == null) return;
-    let t = tally.get(id);
-    if (!t) {
-      t = { player: { id, name: name ?? "—" }, team, goals: 0, assists: 0 };
-      tally.set(id, t);
-    }
-    t[kind] += 1;
-  };
-
-  for (const events of eventsByFixture) {
-    for (const e of events) {
-      if (e.type !== "Goal") continue;
-      // El autogol no acredita al ejecutor; la penalti fallada no es gol.
-      if (e.detail === "Own Goal" || e.detail === "Missed Penalty") continue;
-      bump(e.player.id, e.player.name, e.team, "goals");
-      if (e.assist && e.assist.id != null) {
-        bump(e.assist.id, e.assist.name, e.team, "assists");
-      }
-    }
-  }
-
-  // Metadatos del agregado (foto, PJ, minutos, valoración) cuando existan.
-  const [aggScorers, aggAssists] = await Promise.all([
-    getWorldCupTopScorers(50),
-    getWorldCupTopAssists(50),
+  const [scorersAll, assistsAll] = await Promise.all([
+    getWorldCupTopScorers(40),
+    getWorldCupTopAssists(40),
   ]);
-  const meta = new Map<number, PlayerStatLeader>();
-  for (const p of [...aggScorers, ...aggAssists]) {
-    if (!meta.has(p.player.id)) meta.set(p.player.id, p);
-  }
-
-  const toLeader = (t: Tally): PlayerStatLeader => {
-    const ms = meta.get(t.player.id)?.statistics[0];
-    const mp = meta.get(t.player.id)?.player;
-    return {
-      player: {
-        id: t.player.id,
-        name: mp?.name ?? t.player.name,
-        photo: mp?.photo ?? "",
-        nationality: mp?.nationality ?? null,
-      },
-      statistics: [
-        {
-          team: ms?.team ?? t.team,
-          goals: { total: t.goals, assists: t.assists },
-          games: {
-            appearences: ms?.games.appearences ?? null,
-            minutes: ms?.games.minutes ?? null,
-            rating: ms?.games.rating ?? null,
-          },
-        },
-      ],
-    };
+  return {
+    scorers: scorersAll.slice(0, n),
+    assists: assistsAll.slice(0, n),
+    ratings: ratingLeaders(scorersAll, assistsAll, n),
   };
-
-  const all = [...tally.values()];
-  const scorers = all
-    .filter((t) => t.goals > 0)
-    .sort((a, b) => b.goals - a.goals || b.assists - a.assists)
-    .slice(0, n)
-    .map(toLeader);
-  const assists = all
-    .filter((t) => t.assists > 0)
-    .sort((a, b) => b.assists - a.assists || b.goals - a.goals)
-    .slice(0, n)
-    .map(toLeader);
-
-  const ratings = ratingLeaders(aggScorers, aggAssists, n);
-  return { scorers, assists, ratings };
 }
 
 /**
