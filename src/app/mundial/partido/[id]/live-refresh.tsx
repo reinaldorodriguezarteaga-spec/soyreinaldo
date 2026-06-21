@@ -8,7 +8,7 @@ import { useEffect } from "react";
  * juego, para que marcador, goles y estadísticas se actualicen casi en vivo.
  * Pausa cuando la pestaña está oculta.
  */
-export default function LiveRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
+export default function LiveRefresh({ intervalMs = 90000 }: { intervalMs?: number }) {
   const router = useRouter();
   useEffect(() => {
     const tick = () => {

@@ -111,7 +111,7 @@ export default function MundialTabs({
 
 /* ---------- Marcador en vivo ---------- */
 
-const POLL_MS = 30_000;
+const POLL_MS = 60_000;
 const POLL_LEAD_MS = 30 * 60 * 1000;
 
 /** Hay que seguir poleando si algo está en juego o arranca en <30 min. */

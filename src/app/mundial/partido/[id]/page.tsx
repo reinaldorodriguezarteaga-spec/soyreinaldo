@@ -75,7 +75,7 @@ export default async function PartidoPage({
   const fx = await getFixtureById(fixtureId, 30);
   if (!fx) notFound();
   const liveNow = isLive(fx);
-  const rv = liveNow ? 25 : undefined; // undefined = caché por defecto del fetcher
+  const rv = liveNow ? 60 : undefined; // undefined = caché por defecto del fetcher
 
   const [goals, cards, stats, players, lineups] = await Promise.all([
     getFixtureGoals(fixtureId, rv),

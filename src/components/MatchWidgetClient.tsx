@@ -8,7 +8,7 @@ import type { WcFixture, WidgetData } from "@/lib/sports/widget-data";
 import MatchCardEvents from "@/components/MatchCardEvents";
 
 const MADRID_TZ = "Europe/Madrid";
-const POLL_MS = 30_000;
+const POLL_MS = 60_000;
 
 function formatKickoff(iso: string) {
   return new Intl.DateTimeFormat("es-ES", {
