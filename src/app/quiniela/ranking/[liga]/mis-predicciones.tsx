@@ -53,10 +53,8 @@ function computePoints(
 
 export default function MisPrediccionesView({
   rows,
-  totalMatches,
 }: {
   rows: MiPrediccion[];
-  totalMatches: number;
 }) {
   if (rows.length === 0) {
     return (
@@ -69,7 +67,9 @@ export default function MisPrediccionesView({
           color: "var(--text-dim)",
         }}
       >
-        <p style={{ margin: 0 }}>Aún no has pronosticado ningún partido.</p>
+        <p style={{ margin: 0 }}>
+          Todavía no hay partidos jugados que hayas pronosticado.
+        </p>
         <p className="hint" style={{ marginTop: 8 }}>
           <Link href="/quiniela/partidos" style={{ color: "var(--accent)" }}>
             Ir a Pronósticos →
@@ -98,8 +98,8 @@ export default function MisPrediccionesView({
       <div className="shead" style={{ marginBottom: 14 }}>
         <h2>Mis predicciones</h2>
         <span className="sh-note">
-          {rows.length}/{totalMatches} pronosticados · {earned} pts en{" "}
-          {scored} jugado{scored === 1 ? "" : "s"}
+          {rows.length} partido{rows.length === 1 ? "" : "s"} · {earned} pts en{" "}
+          {scored} terminado{scored === 1 ? "" : "s"}
         </span>
       </div>
       <div className="panel" style={{ overflowX: "auto" }}>
@@ -135,9 +135,7 @@ export default function MisPrediccionesView({
                       style={{ fontSize: "0.72rem", display: "block" }}
                     >
                       {labelForKey(r.phase)}
-                      {!r.live && !r.finished
-                        ? ` · ${formatKickoff(r.kickoffAt)}`
-                        : ""}
+                      {!r.live ? ` · ${formatKickoff(r.kickoffAt)}` : ""}
                       {r.live && (
                         <span
                           className="badge badge--danger"
