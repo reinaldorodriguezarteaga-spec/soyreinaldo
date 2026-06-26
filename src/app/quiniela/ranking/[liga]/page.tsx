@@ -3,9 +3,35 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CopyInviteIcon from "@/components/CopyInviteIcon";
 import { leaveLeague } from "@/app/quiniela/actions";
+import LiveRefresher from "@/app/quiniela/partidos/live-refresher";
+import SeleccionesView, {
+  type SeleccionMatch,
+  type SeleccionMember,
+} from "./selecciones";
+import type { PhaseKey } from "@/lib/quiniela/phases";
 
 export const metadata = {
   title: "Ranking | Quiniela | Soy Reinaldo",
+};
+
+const LIVE_STATUSES = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"];
+
+type VistaSlug = "clasificacion" | "selecciones";
+
+type MatchPickRow = {
+  id: number;
+  phase: PhaseKey;
+  group_letter: string | null;
+  kickoff_at: string;
+  score_home: number | null;
+  score_away: number | null;
+  finished: boolean;
+  status: string | null;
+  live_minute: number | null;
+  team_home_placeholder: string | null;
+  team_away_placeholder: string | null;
+  home: { name: string; flag_emoji: string | null } | null;
+  away: { name: string; flag_emoji: string | null } | null;
 };
 
 type LeagueRow = {
@@ -35,11 +61,13 @@ export default async function RankingPage({
   searchParams,
 }: {
   params: Promise<{ liga: string }>;
-  searchParams: Promise<{ bienvenida?: string }>;
+  searchParams: Promise<{ bienvenida?: string; vista?: string }>;
 }) {
   const { liga: leagueId } = await params;
-  const { bienvenida } = await searchParams;
+  const { bienvenida, vista: vistaParam } = await searchParams;
   const justJoined = bienvenida === "1";
+  const vista: VistaSlug =
+    vistaParam === "selecciones" ? "selecciones" : "clasificacion";
   const supabase = await createClient();
 
   const {
@@ -79,6 +107,91 @@ export default async function RankingPage({
     p_league_id: leagueId,
   });
   const leaderboard = (rows ?? []) as LeaderboardRow[];
+
+  // --- Datos de la pestaña "Selecciones" (partidos en vivo / ya empezados) ---
+  let seleccionMatches: SeleccionMatch[] = [];
+  let hasLiveMatch = false;
+  const members: SeleccionMember[] = leaderboard.map((r) => ({
+    userId: r.user_id,
+    displayName: r.display_name,
+  }));
+
+  if (vista === "selecciones" && members.length > 0) {
+    const nowIso = new Date().toISOString();
+    // Solo partidos ya empezados: la RLS de predictions exige kickoff <= now
+    // para ver los picks de otros. Live primero, luego los más recientes (cap 30).
+    const { data: matchesData } = await supabase
+      .from("matches")
+      .select(
+        `id, phase, group_letter, kickoff_at,
+         score_home, score_away, finished, status, live_minute,
+         team_home_placeholder, team_away_placeholder,
+         home:team_home(name, flag_emoji), away:team_away(name, flag_emoji)`,
+      )
+      .lte("kickoff_at", nowIso)
+      .order("kickoff_at", { ascending: false })
+      .returns<MatchPickRow[]>();
+
+    const allStarted = matchesData ?? [];
+    const isLive = (s: string | null) => !!s && LIVE_STATUSES.includes(s);
+    const live = allStarted.filter((m) => isLive(m.status));
+    const rest = allStarted.filter((m) => !isLive(m.status)).slice(0, 30);
+    // Live arriba (el que antes empezó primero); luego el resto, más reciente primero.
+    const display = [
+      ...live.sort(
+        (a, b) =>
+          new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime(),
+      ),
+      ...rest,
+    ];
+    hasLiveMatch = live.length > 0;
+
+    const matchIds = display.map((m) => m.id);
+    const memberIds = members.map((m) => m.userId);
+    const picksByMatch = new Map<
+      number,
+      Map<string, { home: number; away: number }>
+    >();
+    if (matchIds.length > 0) {
+      const { data: preds } = await supabase
+        .from("predictions")
+        .select("match_id, user_id, score_home, score_away")
+        .in("match_id", matchIds)
+        .in("user_id", memberIds)
+        .returns<
+          {
+            match_id: number;
+            user_id: string;
+            score_home: number;
+            score_away: number;
+          }[]
+        >();
+      for (const p of preds ?? []) {
+        if (!picksByMatch.has(p.match_id))
+          picksByMatch.set(p.match_id, new Map());
+        picksByMatch
+          .get(p.match_id)!
+          .set(p.user_id, { home: p.score_home, away: p.score_away });
+      }
+    }
+
+    seleccionMatches = display.map((m) => ({
+      id: m.id,
+      phase: m.phase,
+      groupLetter: m.group_letter,
+      kickoffAt: m.kickoff_at,
+      homeName: m.home?.name ?? m.team_home_placeholder ?? "TBD",
+      homeFlag: m.home?.flag_emoji ?? "",
+      awayName: m.away?.name ?? m.team_away_placeholder ?? "TBD",
+      awayFlag: m.away?.flag_emoji ?? "",
+      scoreHome: m.score_home,
+      scoreAway: m.score_away,
+      finished: m.finished,
+      live: isLive(m.status),
+      minute: m.live_minute,
+      picks: picksByMatch.get(m.id) ?? new Map(),
+    }));
+  }
 
   return (
     <main className="page">
@@ -137,11 +250,25 @@ export default async function RankingPage({
 
       <section className="section" style={{ paddingTop: 32 }}>
         <div className="wrap">
-          {leaderboard.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <Leaderboard rows={leaderboard} currentUserId={user.id} />
+          {vista === "selecciones" && hasLiveMatch && (
+            <LiveRefresher intervalMs={30000} />
           )}
+
+          <VistaTabs leagueId={league.id} active={vista} />
+
+          <div style={{ marginTop: 24 }}>
+            {vista === "selecciones" ? (
+              <SeleccionesView
+                matches={seleccionMatches}
+                members={members}
+                currentUserId={user.id}
+              />
+            ) : leaderboard.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <Leaderboard rows={leaderboard} currentUserId={user.id} />
+            )}
+          </div>
 
           <p
             className="hint"
@@ -155,6 +282,49 @@ export default async function RankingPage({
         </div>
       </section>
     </main>
+  );
+}
+
+function VistaTabs({
+  leagueId,
+  active,
+}: {
+  leagueId: string;
+  active: VistaSlug;
+}) {
+  const tabs: { slug: VistaSlug; label: string; href: string }[] = [
+    {
+      slug: "clasificacion",
+      label: "🏆 Clasificación",
+      href: `/quiniela/ranking/${leagueId}`,
+    },
+    {
+      slug: "selecciones",
+      label: "👀 Selecciones",
+      href: `/quiniela/ranking/${leagueId}?vista=selecciones`,
+    },
+  ];
+  return (
+    <nav
+      aria-label="Vistas de la liga"
+      className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0"
+    >
+      <ul
+        className="flex min-w-max gap-2"
+        style={{ listStyle: "none", padding: 0, margin: 0 }}
+      >
+        {tabs.map((t) => (
+          <li key={t.slug}>
+            <Link
+              href={t.href}
+              className={`chip-pill${t.slug === active ? " on" : ""}`}
+            >
+              {t.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
