@@ -200,13 +200,7 @@ export default async function RankingPage({
 
   // --- Datos de la pestaña "Mis predicciones" (solo del usuario actual) ---
   let misPredicciones: MiPrediccion[] = [];
-  let misTotalMatches = 0;
   if (vista === "mias") {
-    const { count } = await supabase
-      .from("matches")
-      .select("*", { count: "exact", head: true });
-    misTotalMatches = count ?? 0;
-
     const { data: misData } = await supabase
       .from("predictions")
       .select(
@@ -226,20 +220,18 @@ export default async function RankingPage({
       >();
 
     const isLive = (s: string | null) => !!s && LIVE_STATUSES.includes(s);
-    const rank = (m: MatchPickRow) =>
-      isLive(m.status) ? 0 : m.finished ? 2 : 1;
+    const nowMs = new Date().getTime();
 
-    const valid = (misData ?? []).filter((p) => p.match);
-    // En vivo arriba; luego próximos (más cercano primero); terminados al
-    // fondo (más reciente primero).
-    valid.sort((a, b) => {
-      const ra = rank(a.match!);
-      const rb = rank(b.match!);
-      if (ra !== rb) return ra - rb;
-      const ta = new Date(a.match!.kickoff_at).getTime();
-      const tb = new Date(b.match!.kickoff_at).getTime();
-      return ra === 2 ? tb - ta : ta - tb;
-    });
+    // Solo partidos ya empezados (en vivo o jugados); los futuros se omiten.
+    // Orden: el más reciente arriba (lo que acaba de pasar) → el más antiguo.
+    const valid = (misData ?? []).filter(
+      (p) => p.match && new Date(p.match.kickoff_at).getTime() <= nowMs,
+    );
+    valid.sort(
+      (a, b) =>
+        new Date(b.match!.kickoff_at).getTime() -
+        new Date(a.match!.kickoff_at).getTime(),
+    );
 
     misPredicciones = valid.map((p) => {
       const m = p.match!;
@@ -334,10 +326,7 @@ export default async function RankingPage({
                 currentUserId={user.id}
               />
             ) : vista === "mias" ? (
-              <MisPrediccionesView
-                rows={misPredicciones}
-                totalMatches={misTotalMatches}
-              />
+              <MisPrediccionesView rows={misPredicciones} />
             ) : leaderboard.length === 0 ? (
               <EmptyState />
             ) : (
