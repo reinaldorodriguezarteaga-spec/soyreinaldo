@@ -80,18 +80,22 @@ export default function SeleccionesView({
     );
   }
 
+  const anyLive = matches.some((m) => m.live);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <p className="hint" style={{ marginTop: 0 }}>
-        Lo que eligió cada uno en los partidos en vivo y ya jugados. Los que aún
-        no han empezado se mantienen ocultos hasta el inicio.
+        Lo que eligió cada uno en los partidos en vivo y ya jugados. Toca un
+        partido para desplegarlo. Los que aún no han empezado se mantienen
+        ocultos hasta el inicio.
       </p>
-      {matches.map((m) => (
+      {matches.map((m, i) => (
         <MatchBlock
           key={m.id}
           match={m}
           members={members}
           currentUserId={currentUserId}
+          defaultOpen={m.live || (!anyLive && i === 0)}
         />
       ))}
     </div>
@@ -102,10 +106,12 @@ function MatchBlock({
   match,
   members,
   currentUserId,
+  defaultOpen,
 }: {
   match: SeleccionMatch;
   members: SeleccionMember[];
   currentUserId: string;
+  defaultOpen: boolean;
 }) {
   const hasScore = match.scoreHome != null && match.scoreAway != null;
 
@@ -139,12 +145,15 @@ function MatchBlock({
   const predictedCount = ordered.filter((o) => o.pick).length;
 
   return (
-    <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
-      <header
+    <details
+      className="panel disclosure"
+      open={defaultOpen}
+      style={{ padding: 0, overflow: "hidden" }}
+    >
+      <summary
         className="flex items-center justify-between gap-3"
         style={{
           padding: "14px 16px",
-          borderBottom: "1px solid var(--line, #27272a)",
           background: "rgba(255,255,255,0.02)",
         }}
       >
@@ -180,7 +189,7 @@ function MatchBlock({
             </span>
           </div>
         </div>
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {match.live ? (
             <span className="badge badge--danger">
               <span className="livepulse" />
@@ -189,9 +198,31 @@ function MatchBlock({
           ) : match.finished ? (
             <span className="badge">Final</span>
           ) : null}
+          <span
+            className="hint tabular-nums"
+            style={{ fontSize: "0.72rem" }}
+            title="Pronósticos en este partido"
+          >
+            {predictedCount}👤
+          </span>
+          <svg
+            className="chev"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </div>
-      </header>
+      </summary>
 
+      <div style={{ borderTop: "1px solid var(--line, #27272a)" }}>
       {predictedCount === 0 ? (
         <p
           className="hint"
@@ -263,7 +294,8 @@ function MatchBlock({
           })}
         </ul>
       )}
-    </div>
+      </div>
+    </details>
   );
 }
 
