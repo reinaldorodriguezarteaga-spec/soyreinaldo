@@ -8,6 +8,7 @@ import SeleccionesView, {
   type SeleccionMatch,
   type SeleccionMember,
 } from "./selecciones";
+import MisPrediccionesView, { type MiPrediccion } from "./mis-predicciones";
 import type { PhaseKey } from "@/lib/quiniela/phases";
 
 export const metadata = {
@@ -16,7 +17,7 @@ export const metadata = {
 
 const LIVE_STATUSES = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"];
 
-type VistaSlug = "clasificacion" | "selecciones";
+type VistaSlug = "clasificacion" | "selecciones" | "mias";
 
 type MatchPickRow = {
   id: number;
@@ -67,7 +68,11 @@ export default async function RankingPage({
   const { bienvenida, vista: vistaParam } = await searchParams;
   const justJoined = bienvenida === "1";
   const vista: VistaSlug =
-    vistaParam === "selecciones" ? "selecciones" : "clasificacion";
+    vistaParam === "selecciones"
+      ? "selecciones"
+      : vistaParam === "mias"
+        ? "mias"
+        : "clasificacion";
   const supabase = await createClient();
 
   const {
@@ -193,6 +198,70 @@ export default async function RankingPage({
     }));
   }
 
+  // --- Datos de la pestaña "Mis predicciones" (solo del usuario actual) ---
+  let misPredicciones: MiPrediccion[] = [];
+  let misTotalMatches = 0;
+  if (vista === "mias") {
+    const { count } = await supabase
+      .from("matches")
+      .select("*", { count: "exact", head: true });
+    misTotalMatches = count ?? 0;
+
+    const { data: misData } = await supabase
+      .from("predictions")
+      .select(
+        `score_home, score_away,
+         match:matches(id, phase, kickoff_at, score_home, score_away,
+           finished, status, live_minute,
+           team_home_placeholder, team_away_placeholder,
+           home:team_home(name, flag_emoji), away:team_away(name, flag_emoji))`,
+      )
+      .eq("user_id", user.id)
+      .returns<
+        {
+          score_home: number;
+          score_away: number;
+          match: MatchPickRow | null;
+        }[]
+      >();
+
+    const isLive = (s: string | null) => !!s && LIVE_STATUSES.includes(s);
+    const rank = (m: MatchPickRow) =>
+      isLive(m.status) ? 0 : m.finished ? 2 : 1;
+
+    const valid = (misData ?? []).filter((p) => p.match);
+    // En vivo arriba; luego próximos (más cercano primero); terminados al
+    // fondo (más reciente primero).
+    valid.sort((a, b) => {
+      const ra = rank(a.match!);
+      const rb = rank(b.match!);
+      if (ra !== rb) return ra - rb;
+      const ta = new Date(a.match!.kickoff_at).getTime();
+      const tb = new Date(b.match!.kickoff_at).getTime();
+      return ra === 2 ? tb - ta : ta - tb;
+    });
+
+    misPredicciones = valid.map((p) => {
+      const m = p.match!;
+      return {
+        matchId: m.id,
+        phase: m.phase,
+        kickoffAt: m.kickoff_at,
+        homeName: m.home?.name ?? m.team_home_placeholder ?? "TBD",
+        homeFlag: m.home?.flag_emoji ?? "",
+        awayName: m.away?.name ?? m.team_away_placeholder ?? "TBD",
+        awayFlag: m.away?.flag_emoji ?? "",
+        predHome: p.score_home,
+        predAway: p.score_away,
+        scoreHome: m.score_home,
+        scoreAway: m.score_away,
+        finished: m.finished,
+        live: isLive(m.status),
+        minute: m.live_minute,
+      };
+    });
+  }
+
   return (
     <main className="page">
       <section className="phero" style={{ paddingBottom: 24 }}>
@@ -250,7 +319,8 @@ export default async function RankingPage({
 
       <section className="section" style={{ paddingTop: 32 }}>
         <div className="wrap">
-          {vista === "selecciones" && hasLiveMatch && (
+          {((vista === "selecciones" && hasLiveMatch) ||
+            (vista === "mias" && misPredicciones.some((r) => r.live))) && (
             <LiveRefresher intervalMs={30000} />
           )}
 
@@ -262,6 +332,11 @@ export default async function RankingPage({
                 matches={seleccionMatches}
                 members={members}
                 currentUserId={user.id}
+              />
+            ) : vista === "mias" ? (
+              <MisPrediccionesView
+                rows={misPredicciones}
+                totalMatches={misTotalMatches}
               />
             ) : leaderboard.length === 0 ? (
               <EmptyState />
@@ -302,6 +377,11 @@ function VistaTabs({
       slug: "selecciones",
       label: "👀 Selecciones",
       href: `/quiniela/ranking/${leagueId}?vista=selecciones`,
+    },
+    {
+      slug: "mias",
+      label: "📋 Mis predicciones",
+      href: `/quiniela/ranking/${leagueId}?vista=mias`,
     },
   ];
   return (
