@@ -1066,6 +1066,13 @@ select.field { appearance: none; }
 .chip-pill--accent { color: var(--accent); border-color: color-mix(in oklch, var(--accent) 35%, transparent); background: color-mix(in oklch, var(--accent) 10%, transparent); }
 .chip-pill--accent:hover { background: color-mix(in oklch, var(--accent) 16%, transparent); color: var(--accent); }
 
+/* Partido desplegable (vista "Selecciones") */
+.disclosure > summary { list-style: none; cursor: pointer; user-select: none; }
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary:hover { background: rgba(255,255,255,0.04); }
+.disclosure .chev { transition: transform 0.15s ease; color: var(--text-dim); flex-shrink: 0; }
+.disclosure[open] > summary .chev { transform: rotate(90deg); }
+
 @media (max-width: 960px) {
   .hero__bgphoto { width: 100%; opacity: 0.55; }
   .hero__scrim {
