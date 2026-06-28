@@ -35,6 +35,9 @@ type ApiFixture = {
     status: { short: string; elapsed: number | null };
   };
   goals: { home: number | null; away: number | null };
+  score?: {
+    penalty?: { home: number | null; away: number | null };
+  };
 };
 
 export async function GET(request: Request) {
@@ -124,6 +127,8 @@ export async function GET(request: Request) {
     const minute = isLive ? fx.fixture.status.elapsed ?? null : null;
     const scoreHome = fx.goals.home;
     const scoreAway = fx.goals.away;
+    const penHome = fx.score?.penalty?.home ?? null;
+    const penAway = fx.score?.penalty?.away ?? null;
 
     const update: Record<string, unknown> = {
       status,
@@ -132,6 +137,10 @@ export async function GET(request: Request) {
     };
     if (scoreHome != null) update.score_home = scoreHome;
     if (scoreAway != null) update.score_away = scoreAway;
+    // Tanda de penaltis (KO empatados): el trigger propagate_ko_result la usa
+    // como desempate para propagar el ganador al cruce siguiente.
+    if (penHome != null) update.penalty_home = penHome;
+    if (penAway != null) update.penalty_away = penAway;
     if (isFinal) update.finished = true;
 
     const { error: upError } = await supabase
