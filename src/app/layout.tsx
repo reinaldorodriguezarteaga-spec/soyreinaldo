@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Saira_Condensed, Archivo, Space_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -77,6 +78,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Header initialUser={user} userLeagues={userLeagues} />
+        <BackButton />
         {children}
         <Footer />
       </body>
