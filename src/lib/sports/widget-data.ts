@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 import {
   TEAM_IDS,
   getFixtureCards,
@@ -17,8 +19,19 @@ export type WidgetMode = "wc" | "clubs";
 /** Goles y expulsiones de un partido, para pintarlos en la tarjeta. */
 export type FixtureEvents = { goals: FixtureGoal[]; reds: FixtureCard[] };
 
-/** Un fixture con sus eventos adjuntos (null si no está en juego ni terminado). */
-export type WcFixture = Fixture & { ev: FixtureEvents | null };
+/** Nombre en español + bandera de un equipo (de nuestra tabla `teams`). */
+export type TeamEs = { name: string; flag: string | null };
+export type FixtureEs = { home: TeamEs; away: TeamEs };
+
+/**
+ * Un fixture con sus eventos adjuntos (null si no está en juego ni terminado)
+ * y, si lo conocemos, los nombres en español + banderas (`es`). API-Football
+ * devuelve los nombres en inglés; `es` los traduce vía nuestra tabla `teams`.
+ */
+export type WcFixture = Fixture & {
+  ev: FixtureEvents | null;
+  es?: FixtureEs;
+};
 
 export type WidgetData = {
   mode: WidgetMode;
@@ -71,10 +84,62 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
   );
 }
 
+/**
+ * Mapa fixtureId → nombres ES + banderas, cruzando `matches.api_football_fixture_id`
+ * con `teams`. Cacheado 30 min (los equipos cambian poco; al resolverse un
+ * cruce de eliminatoria tarda como mucho eso en reflejarse el nombre ES).
+ * Es un par de queries baratas (teams = 48 filas) → coste de CPU ínfimo.
+ */
+const loadEsMap = unstable_cache(
+  async (fixtureIds: number[]): Promise<Record<number, FixtureEs>> => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key || fixtureIds.length === 0) return {};
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const [matchesRes, teamsRes] = await Promise.all([
+      supabase
+        .from("matches")
+        .select("api_football_fixture_id, team_home, team_away")
+        .in("api_football_fixture_id", fixtureIds),
+      supabase.from("teams").select("id, name, flag_emoji"),
+    ]);
+    const matches = matchesRes.data;
+    const teams = teamsRes.data;
+    if (!matches || !teams) return {};
+    const byId = new Map<string, TeamEs>(
+      teams.map((t) => [t.id, { name: t.name, flag: t.flag_emoji ?? null }]),
+    );
+    const out: Record<number, FixtureEs> = {};
+    for (const m of matches) {
+      const fid = m.api_football_fixture_id;
+      if (fid == null) continue;
+      const home = m.team_home ? byId.get(m.team_home) : undefined;
+      const away = m.team_away ? byId.get(m.team_away) : undefined;
+      if (home && away) out[fid] = { home, away };
+    }
+    return out;
+  },
+  ["widget-es-names"],
+  { revalidate: 1800 },
+);
+
+/** Adjunta los nombres en español (si los tenemos) a cada fixture. */
+async function attachEsNames(fixtures: WcFixture[]): Promise<WcFixture[]> {
+  try {
+    const map = await loadEsMap(fixtures.map((f) => f.fixture.id));
+    return fixtures.map((f) => {
+      const es = map[f.fixture.id];
+      return es ? { ...f, es } : f;
+    });
+  } catch {
+    return fixtures;
+  }
+}
+
 export async function getWidgetData(): Promise<WidgetData> {
   if (isWorldCupActive()) {
-    const fixtures = await attachEvents(
-      orderForDisplay(await getWorldCupFixturesWindow()),
+    const fixtures = await attachEsNames(
+      await attachEvents(orderForDisplay(await getWorldCupFixturesWindow())),
     );
     return { mode: "wc", fixtures, needsPolling: shouldPoll(fixtures) };
   }
