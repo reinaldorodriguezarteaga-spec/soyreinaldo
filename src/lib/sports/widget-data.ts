@@ -6,6 +6,7 @@ import {
   getFixtureGoals,
   getRelevantFixtureForTeam,
   getWorldCupFixturesWindow,
+  getWorldCupUpcomingFixtures,
   isFinal,
   isLive,
   isWorldCupActive,
@@ -33,9 +34,19 @@ export type WcFixture = Fixture & {
   es?: FixtureEs;
 };
 
+/** Partido próximo, en versión ligera para la lista del widget grande. */
+export type WidgetNextFixture = {
+  id: number;
+  ts: number; // kickoff en segundos epoch
+  home: { name: string; logo: string };
+  away: { name: string; logo: string };
+};
+
 export type WidgetData = {
   mode: WidgetMode;
   fixtures: WcFixture[];
+  /** Próximos partidos (para el widget grande de la app). Solo en modo "wc". */
+  next?: WidgetNextFixture[];
   /** True if some fixture is live or starts within ~30 min — gate cliente para polling. */
   needsPolling: boolean;
 };
@@ -136,12 +147,34 @@ async function attachEsNames(fixtures: WcFixture[]): Promise<WcFixture[]> {
   }
 }
 
+/** Próximos N partidos del Mundial en versión ligera (nombre ES + escudo + hora). */
+async function buildNext(): Promise<WidgetNextFixture[]> {
+  try {
+    const upcoming = await getWorldCupUpcomingFixtures(6);
+    const esMap = await loadEsMap(upcoming.map((f) => f.fixture.id));
+    return upcoming.map((f) => {
+      const es = esMap[f.fixture.id];
+      return {
+        id: f.fixture.id,
+        ts: Math.floor(new Date(f.fixture.date).getTime() / 1000),
+        home: { name: es?.home.name ?? f.teams.home.name, logo: f.teams.home.logo },
+        away: { name: es?.away.name ?? f.teams.away.name, logo: f.teams.away.logo },
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getWidgetData(): Promise<WidgetData> {
   if (isWorldCupActive()) {
-    const fixtures = await attachEsNames(
-      await attachEvents(orderForDisplay(await getWorldCupFixturesWindow())),
-    );
-    return { mode: "wc", fixtures, needsPolling: shouldPoll(fixtures) };
+    const [fixtures, next] = await Promise.all([
+      attachEsNames(
+        await attachEvents(orderForDisplay(await getWorldCupFixturesWindow())),
+      ),
+      buildNext(),
+    ]);
+    return { mode: "wc", fixtures, next, needsPolling: shouldPoll(fixtures) };
   }
 
   const [barca, madrid] = await Promise.all([
