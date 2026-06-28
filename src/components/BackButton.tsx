@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 /**
  * Botón físico de "Atrás" presente en todas las páginas menos el inicio.
@@ -11,6 +12,25 @@ import { usePathname, useRouter } from "next/navigation";
 export default function BackButton() {
   const pathname = usePathname();
   const router = useRouter();
+
+  // La barra "Atrás" es sticky y debe pegarse JUSTO debajo del header sticky
+  // (.nav). Su altura varía (fuentes, breakpoint), así que la medimos y la
+  // exponemos en --nav-h para el `top` del CSS. Se re-mide al cambiar de ruta
+  // y al redimensionar.
+  useEffect(() => {
+    if (pathname === "/") return;
+    const measure = () => {
+      const nav = document.querySelector<HTMLElement>(".nav");
+      if (nav) {
+        document.documentElement.style.setProperty("--nav-h", `${nav.offsetHeight}px`);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    // Re-medir cuando las fuentes web terminen de cargar (cambian la altura).
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => window.removeEventListener("resize", measure);
+  }, [pathname]);
 
   // En el inicio no se muestra (ya es la raíz).
   if (pathname === "/") return null;

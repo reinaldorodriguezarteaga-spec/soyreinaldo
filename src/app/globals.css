@@ -1067,7 +1067,15 @@ select.field { appearance: none; }
 .chip-pill--accent:hover { background: color-mix(in oklch, var(--accent) 16%, transparent); color: var(--accent); }
 
 /* Botón físico "Atrás" (global, bajo el header) */
-.backbar { padding: 14px 0 0; }
+.backbar {
+  position: sticky;
+  top: var(--nav-h, 64px);
+  z-index: 39;
+  padding: 10px 0;
+  background: color-mix(in oklch, var(--bg) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
 .backbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-dim); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
 .backbtn:hover { border-color: var(--accent); color: var(--text); }
 .backbtn:active { transform: translateY(1px); }
