@@ -1,8 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type ProfileState = {
   status: "idle" | "success" | "error";
@@ -158,6 +160,56 @@ export async function setReminders(formData: FormData) {
     .update({ wants_reminders: next })
     .eq("id", user.id);
   revalidatePath("/perfil");
+}
+
+export type DeleteState = {
+  status: "idle" | "error";
+  message?: string;
+};
+
+/**
+ * Borra la cuenta del usuario y TODOS sus datos personales (self-service, como
+ * exigen App Store y Play Store). El `ON DELETE CASCADE` sobre auth.users
+ * elimina profiles, predictions, user_picks, league_members y point_adjustments;
+ * donations/consultations quedan anonimizadas (SET NULL) por motivos contables;
+ * las ligas creadas no se destruyen para el resto de miembros (created_by → NULL).
+ */
+export async function deleteAccount(
+  _prev: DeleteState,
+  _formData: FormData,
+): Promise<DeleteState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { status: "error", message: "Sesión expirada. Vuelve a entrar." };
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    return {
+      status: "error",
+      message:
+        "No se pudo completar el borrado. Escribe a hola@soyreinaldo.com y lo hago a mano.",
+    };
+  }
+
+  const admin = createAdminClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) {
+    return {
+      status: "error",
+      message: "No se pudo borrar la cuenta: " + error.message,
+    };
+  }
+
+  // Limpia la sesión local (cookies) tras eliminar el usuario.
+  await supabase.auth.signOut();
+  redirect("/?cuenta=eliminada");
 }
 
 export async function updateEmail(

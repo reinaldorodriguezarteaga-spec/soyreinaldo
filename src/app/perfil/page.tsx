@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import EmailForm from "./email-form";
 import PasswordForm from "./password-form";
 import ProfileForm from "./profile-form";
+import DeleteAccount from "./delete-account";
 import { setReminders } from "./actions";
 
 export const metadata = {
@@ -154,6 +155,11 @@ export default async function PerfilPage() {
 
             <div className="acard">
               <PasswordForm hasPassword={hasPassword} />
+            </div>
+
+            <div className="acard" style={{ borderColor: "rgba(163,38,31,0.5)" }}>
+              <h2>Eliminar cuenta</h2>
+              <DeleteAccount />
             </div>
           </div>
 
