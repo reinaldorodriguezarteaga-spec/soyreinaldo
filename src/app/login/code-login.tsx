@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { signInWithMagicLink, verifyEmailCode, type AuthState } from "./actions";
+import { sendEmailCode, verifyEmailCode, type AuthState } from "./actions";
 
 const initial: AuthState = { status: "idle" };
 
@@ -14,7 +14,7 @@ const initial: AuthState = { status: "idle" };
 export default function CodeLogin({ redirect }: { redirect: string }) {
   const [email, setEmail] = useState("");
   const [sendState, sendAction, sending] = useActionState(
-    signInWithMagicLink,
+    sendEmailCode,
     initial,
   );
   const [verifyState, verifyAction, verifying] = useActionState(
