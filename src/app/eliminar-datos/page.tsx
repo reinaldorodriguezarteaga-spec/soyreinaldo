@@ -28,24 +28,27 @@ export default function EliminarDatosPage() {
         <div className="wrap" style={{ maxWidth: 760 }}>
           <div className="legal">
             <section>
-              <h2>Cómo solicitarlo</h2>
-              <ol>
-                <li>
-                  Envía un email a{" "}
-                  <a href={MAILTO}>
-                    <strong>hola@soyreinaldo.com</strong>
-                  </a>{" "}
-                  con el asunto <strong>&quot;Eliminar mi cuenta&quot;</strong>.
-                </li>
-                <li>
-                  Indica el <strong>email con el que te registraste</strong> en
-                  la web (si te registraste con Google o Facebook, indica el
-                  email asociado a esa cuenta).
-                </li>
-                <li>
-                  Te confirmaré por email cuando haya completado el borrado.
-                </li>
-              </ol>
+              <h2>Opción 1 — Bórrala tú mismo (al instante)</h2>
+              <p>
+                Entra en tu cuenta y ve a{" "}
+                <a href="/perfil">
+                  <strong>Perfil → Eliminar cuenta</strong>
+                </a>
+                . Confirmas y se borra todo al momento, sin esperar a nadie.
+              </p>
+            </section>
+
+            <section>
+              <h2>Opción 2 — Pídemelo por email</h2>
+              <p>
+                Si no puedes entrar a tu cuenta, envía un email a{" "}
+                <a href={MAILTO}>
+                  <strong>hola@soyreinaldo.com</strong>
+                </a>{" "}
+                con el asunto <strong>&quot;Eliminar mi cuenta&quot;</strong> e
+                indica el <strong>email con el que te registraste</strong>. Te
+                confirmaré cuando haya completado el borrado.
+              </p>
             </section>
 
             <section>
@@ -107,17 +110,19 @@ export default function EliminarDatosPage() {
               className="phero__lede"
               style={{ marginTop: 12, fontSize: "0.95rem" }}
             >
-              Pulsa el botón y se abrirá tu cliente de email con el mensaje
-              pre-redactado. Solo tienes que añadir tu email de registro y
-              enviar.
+              Si tienes la sesión iniciada, bórrala tú mismo al instante desde tu
+              perfil. ¿No puedes entrar? Pídemelo por email.
             </p>
-            <a
-              href={MAILTO}
-              className="btn btn--accent"
-              style={{ marginTop: 20 }}
+            <div
+              style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 20 }}
             >
-              Solicitar eliminación por email <span className="arr">→</span>
-            </a>
+              <a href="/perfil" className="btn btn--accent">
+                Eliminar mi cuenta ahora <span className="arr">→</span>
+              </a>
+              <a href={MAILTO} className="btn btn--ghost">
+                Solicitar por email
+              </a>
+            </div>
           </div>
         </div>
       </section>
