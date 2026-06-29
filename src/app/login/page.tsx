@@ -1,4 +1,5 @@
 import LoginForm from "./login-form";
+import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Entrar | Soy Reinaldo",
@@ -13,6 +14,7 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const redirect = params.redirect ?? "/quiniela";
+  const inApp = await isAppRequest();
 
   return (
     <main className="wrap auth-wrap">
@@ -24,7 +26,7 @@ export default async function LoginPage({
         <div className="auth__card">
           <h1>Entra a la comunidad</h1>
           <p className="sub">Pronostica, compite y debate con el resto de culés.</p>
-          <LoginForm redirect={redirect} />
+          <LoginForm redirect={redirect} inApp={inApp} />
         </div>
       </div>
     </main>

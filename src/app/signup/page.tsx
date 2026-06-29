@@ -1,4 +1,5 @@
 import SignupForm from "./signup-form";
+import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Crear cuenta | Soy Reinaldo",
@@ -12,6 +13,7 @@ export default async function SignupPage({
 }) {
   const params = await searchParams;
   const redirect = params.redirect ?? "/quiniela";
+  const inApp = await isAppRequest();
 
   return (
     <main className="wrap auth-wrap">
@@ -23,7 +25,7 @@ export default async function SignupPage({
         <div className="auth__card">
           <h1>Crea tu cuenta</h1>
           <p className="sub">Únete a la quiniela del Mundial 2026 con la comunidad culé.</p>
-          <SignupForm redirect={redirect} />
+          <SignupForm redirect={redirect} inApp={inApp} />
         </div>
       </div>
     </main>

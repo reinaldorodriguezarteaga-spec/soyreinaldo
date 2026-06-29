@@ -4,6 +4,7 @@ import DonationBlock from "@/components/DonationBlock";
 import MatchWidget from "@/components/MatchWidget";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
+import { isAppRequest } from "@/lib/is-app";
 
 const MARQUEE = [
   "Culé",
@@ -16,6 +17,7 @@ const MARQUEE = [
 
 export default async function Home() {
   const stats = await getSocialStats();
+  const inApp = await isAppRequest();
 
   return (
     <main className="page">
@@ -221,7 +223,7 @@ export default async function Home() {
                 contenido. Sin obligaciones — lo que tú quieras.
               </p>
             </div>
-            <DonationBlock />
+            {!inApp && <DonationBlock />}
           </div>
         </div>
       </section>

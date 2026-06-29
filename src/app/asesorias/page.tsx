@@ -1,5 +1,6 @@
 import AsesoriaCheckoutButton from "@/components/AsesoriaCheckoutButton";
 import Link from "next/link";
+import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Asesoría 1:1 con Reinaldo | Soy Reinaldo",
@@ -49,7 +50,8 @@ const faqs = [
   },
 ];
 
-export default function AsesoriasPage() {
+export default async function AsesoriasPage() {
+  const inApp = await isAppRequest();
   return (
     <main className="page">
       <section className="phero">
@@ -86,9 +88,11 @@ export default function AsesoriasPage() {
               Pago único. Tras el pago eliges fecha y hora en mi calendario,
               según mis huecos disponibles.
             </p>
-            <div style={{ marginTop: 22 }}>
-              <AsesoriaCheckoutButton />
-            </div>
+            {!inApp && (
+              <div style={{ marginTop: 22 }}>
+                <AsesoriaCheckoutButton />
+              </div>
+            )}
           </div>
 
           <div className="shead" style={{ marginTop: 56 }}>
