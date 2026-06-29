@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -52,7 +54,67 @@ export async function signInWithMagicLink(
 }
 
 /**
- * Verifica el código de 6 dígitos del email (flujo OTP para la APP, donde el
+ * Envía un CÓDIGO de acceso por email (para la app). Genera el OTP por el lado
+ * servidor (admin.generateLink, que NO manda email) y lo envía con un correo
+ * propio vía Resend — así no dependemos de que la plantilla de Supabase incluya
+ * {{ .Token }}. Anti-enumeración: responde igual aunque la cuenta no exista.
+ */
+export async function sendEmailCode(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Introduce un email válido." };
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!url || !serviceKey || !resendKey) {
+    return { status: "error", message: "No se pudo enviar el código ahora mismo." };
+  }
+
+  const genericOk: AuthState = {
+    status: "success",
+    message: "Si esa cuenta existe, te enviamos un código. Revisa tu email (y spam).",
+  };
+
+  const admin = createAdminClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+  const code = data?.properties?.email_otp;
+  if (error || !code) return genericOk; // cuenta inexistente → no revelamos
+
+  const resend = new Resend(resendKey);
+  try {
+    await resend.emails.send({
+      from: "Reinaldo <hola@soyreinaldo.com>",
+      to: email,
+      subject: "Tu código para entrar a Soy Reinaldo",
+      html: `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:32px;border-radius:16px;max-width:420px;margin:auto">
+  <h2 style="margin:0 0 8px;font-size:20px">Tu código de acceso</h2>
+  <p style="color:#8a93b8;margin:0 0 20px;font-size:14px">Escríbelo en la app para entrar. Caduca en unos minutos.</p>
+  <p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#2c8fff;margin:0">${code}</p>
+  <p style="color:#8a93b8;margin:24px 0 0;font-size:12px">Si no fuiste tú, ignora este correo.</p>
+</div>`,
+    });
+  } catch {
+    return { status: "error", message: "No se pudo enviar el código. Inténtalo de nuevo." };
+  }
+
+  return {
+    status: "success",
+    message: "Te enviamos un código. Revisa tu email (y spam).",
+  };
+}
+
+/**
+ * Verifica el código del email (flujo OTP para la APP, donde el
  * enlace mágico se abriría en Safari y no en el webview). Funciona para
  * cualquier usuario existente —incluidos los que se registraron con Google—
  * porque Supabase identifica por email. Requiere que la plantilla de email de
