@@ -14,7 +14,13 @@ const initialState: AuthState = { status: "idle" };
 
 type Tab = "password" | "magic";
 
-export default function LoginForm({ redirect }: { redirect: string }) {
+export default function LoginForm({
+  redirect,
+  inApp = false,
+}: {
+  redirect: string;
+  inApp?: boolean;
+}) {
   const [tab, setTab] = useState<Tab>("password");
   const [pwState, pwAction, pwPending] = useActionState(
     signInWithPassword,
@@ -32,12 +38,15 @@ export default function LoginForm({ redirect }: { redirect: string }) {
 
   return (
     <div>
-      <ContextWarning />
-      <div className="oauth">
-        <OAuthButton provider="google" redirect={redirect} />
-      </div>
-
-      <div className="divider">o con tu email</div>
+      {!inApp && (
+        <>
+          <ContextWarning />
+          <div className="oauth">
+            <OAuthButton provider="google" redirect={redirect} />
+          </div>
+          <div className="divider">o con tu email</div>
+        </>
+      )}
 
       <div className="tabs" style={{ marginBottom: 18 }}>
         <button

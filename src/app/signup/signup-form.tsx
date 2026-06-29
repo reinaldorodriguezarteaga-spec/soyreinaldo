@@ -10,8 +10,10 @@ const initialState: SignupState = { status: "idle" };
 
 export default function SignupForm({
   redirect = "/quiniela",
+  inApp = false,
 }: {
   redirect?: string;
+  inApp?: boolean;
 }) {
   const [state, action, pending] = useActionState(signUp, initialState);
   const loginHref =
@@ -21,16 +23,19 @@ export default function SignupForm({
 
   return (
     <div>
-      <ContextWarning />
-      <div className="oauth">
-        <OAuthButton
-          provider="google"
-          redirect={redirect}
-          label="Registrarme con Google"
-        />
-      </div>
-
-      <div className="divider">o con tu email</div>
+      {!inApp && (
+        <>
+          <ContextWarning />
+          <div className="oauth">
+            <OAuthButton
+              provider="google"
+              redirect={redirect}
+              label="Registrarme con Google"
+            />
+          </div>
+          <div className="divider">o con tu email</div>
+        </>
+      )}
 
       <form action={action}>
         <input type="hidden" name="redirect" value={redirect} />
