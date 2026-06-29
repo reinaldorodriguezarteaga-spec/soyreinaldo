@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import OAuthButton from "@/components/OAuthButton";
+import CodeLogin from "./code-login";
 import ContextWarning from "./context-warning";
 import {
   signInWithMagicLink,
@@ -61,7 +62,7 @@ export default function LoginForm({
           className={tab === "magic" ? "on" : ""}
           onClick={() => setTab("magic")}
         >
-          Enlace mágico
+          {inApp ? "Código por email" : "Enlace mágico"}
         </button>
       </div>
 
@@ -99,6 +100,8 @@ export default function LoginForm({
             <ErrorBox message={pwState.message} />
           )}
         </form>
+      ) : inApp ? (
+        <CodeLogin redirect={redirect} />
       ) : (
         <form action={mlAction}>
           <input type="hidden" name="redirect" value={redirect} />

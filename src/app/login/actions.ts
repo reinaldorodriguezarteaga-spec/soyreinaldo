@@ -51,6 +51,48 @@ export async function signInWithMagicLink(
   };
 }
 
+/**
+ * Verifica el código de 6 dígitos del email (flujo OTP para la APP, donde el
+ * enlace mágico se abriría en Safari y no en el webview). Funciona para
+ * cualquier usuario existente —incluidos los que se registraron con Google—
+ * porque Supabase identifica por email. Requiere que la plantilla de email de
+ * Supabase incluya {{ .Token }}.
+ */
+export async function verifyEmailCode(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  const token = (formData.get("token") as string | null)?.replace(/\D/g, "") ?? "";
+  const redirectTarget =
+    (formData.get("redirect") as string | null) ?? "/quiniela";
+
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Falta el email. Vuelve a empezar." };
+  }
+  if (!/^\d{6,10}$/.test(token)) {
+    return {
+      status: "error",
+      message: "Escribe el código numérico que te llegó por email.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error) {
+    return {
+      status: "error",
+      message: "Código incorrecto o caducado. Pide uno nuevo.",
+    };
+  }
+
+  redirect(redirectTarget);
+}
+
 export async function signInWithPassword(
   _prev: AuthState,
   formData: FormData,
