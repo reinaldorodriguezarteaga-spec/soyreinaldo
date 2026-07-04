@@ -504,7 +504,12 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
               </span>
               <span className="tn">{fx.teams.home.name}</span>
             </Link>
-            <div className="score">
+            <Link
+              href={`/mundial/partido/${fx.fixture.id}`}
+              className="score"
+              style={{ color: "inherit", textDecoration: "none" }}
+              title={showScore ? "Ver estadísticas" : "Ver cuenta atrás"}
+            >
               {showScore ? (
                 <>
                   <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.3rem" }}>
@@ -518,7 +523,7 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
               ) : (
                 <span className="vs">VS</span>
               )}
-            </div>
+            </Link>
             <Link
               href={`/mundial/equipo/${fx.teams.away.id}`}
               className="team right"
@@ -535,6 +540,16 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                 />
               </span>
             </Link>
+            <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+              <span />
+              <Link
+                href={`/mundial/partido/${fx.fixture.id}`}
+                className="match__when"
+                style={{ color: "var(--accent)", textDecoration: "none" }}
+              >
+                {showScore ? "Ver estadísticas →" : "⏱ Cuenta atrás →"}
+              </Link>
+            </div>
           </div>
         );
       })}
