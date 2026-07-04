@@ -403,7 +403,11 @@ function LiveGroupTable({ group }: { group: LiveGroup }) {
                 </span>
               </td>
               <td>
-                <span className="club">
+                <Link
+                  href={`/mundial/equipo/${r.team.id}`}
+                  className="club"
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
                   <Image
                     className="crest"
                     src={r.team.logo}
@@ -414,7 +418,7 @@ function LiveGroupTable({ group }: { group: LiveGroup }) {
                   />
                   <b>{r.team.name}</b>
                   {r.isPlaying && <span className="livepulse" />}
-                </span>
+                </Link>
               </td>
               <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
                 {r.all.played}
@@ -484,7 +488,11 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                 </span>
               )}
             </div>
-            <div className="team">
+            <Link
+              href={`/mundial/equipo/${fx.teams.home.id}`}
+              className="team"
+              style={{ color: "inherit", textDecoration: "none" }}
+            >
               <span className="flag">
                 <Image
                   src={fx.teams.home.logo}
@@ -495,7 +503,7 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                 />
               </span>
               <span className="tn">{fx.teams.home.name}</span>
-            </div>
+            </Link>
             <div className="score">
               {showScore ? (
                 <>
@@ -511,7 +519,11 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                 <span className="vs">VS</span>
               )}
             </div>
-            <div className="team right">
+            <Link
+              href={`/mundial/equipo/${fx.teams.away.id}`}
+              className="team right"
+              style={{ color: "inherit", textDecoration: "none" }}
+            >
               <span className="tn">{fx.teams.away.name}</span>
               <span className="flag">
                 <Image
@@ -522,7 +534,7 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                   unoptimized
                 />
               </span>
-            </div>
+            </Link>
           </div>
         );
       })}
@@ -732,7 +744,11 @@ function GroupTable({ group }: { group: WcGroup }) {
                 <RankPill rank={r.rank} />
               </td>
               <td>
-                <span className="club">
+                <Link
+                  href={`/mundial/equipo/${r.team.id}`}
+                  className="club"
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
                   <Image
                     className="crest"
                     src={r.team.logo}
@@ -742,7 +758,7 @@ function GroupTable({ group }: { group: WcGroup }) {
                     unoptimized
                   />
                   <b>{r.team.name}</b>
-                </span>
+                </Link>
               </td>
               <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
                 {r.all.played}
@@ -940,12 +956,23 @@ function PlayerTable({
                   </span>
                 </td>
                 <td>
-                  <span className="flex items-center gap-2" style={{ color: "var(--text-dim)" }}>
-                    {st?.team.logo && (
-                      <Image src={st.team.logo} alt="" width={18} height={18} unoptimized />
-                    )}
-                    {st?.team.name}
-                  </span>
+                  {st?.team.id ? (
+                    <Link
+                      href={`/mundial/equipo/${st.team.id}`}
+                      className="flex items-center gap-2"
+                      style={{ color: "var(--text-dim)", textDecoration: "none" }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {st.team.logo && (
+                        <Image src={st.team.logo} alt="" width={18} height={18} unoptimized />
+                      )}
+                      {st.team.name}
+                    </Link>
+                  ) : (
+                    <span className="flex items-center gap-2" style={{ color: "var(--text-dim)" }}>
+                      {st?.team.name}
+                    </span>
+                  )}
                 </td>
                 <td
                   className="hidden text-right tabular-nums sm:table-cell"
@@ -1195,7 +1222,11 @@ function TeamMiniTable({
             <tr key={r.team.id}>
               <td className="pos">{i + 1}</td>
               <td className="who">
-                <span className="flex items-center gap-2">
+                <Link
+                  href={`/mundial/equipo/${r.team.id}`}
+                  className="flex items-center gap-2"
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
                   <Image
                     src={r.team.logo}
                     alt=""
@@ -1204,7 +1235,7 @@ function TeamMiniTable({
                     unoptimized
                   />
                   {r.team.name}
-                </span>
+                </Link>
               </td>
               <td
                 className="hidden text-right tabular-nums sm:table-cell"

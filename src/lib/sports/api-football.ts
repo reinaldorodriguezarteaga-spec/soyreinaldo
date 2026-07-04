@@ -352,6 +352,56 @@ export async function getWorldCupAllFixtures(): Promise<Fixture[]> {
   return r.response;
 }
 
+/**
+ * Historial de un equipo: sus últimos N partidos jugados y los próximos M
+ * (cualquier competición — amistosos, Mundial, etc., como en la ficha de la
+ * selección). Deriva el nombre/escudo del equipo de las propias fixturas para
+ * no gastar una llamada extra a `/teams`. Caché alta (30 min) — un equipo juega
+ * cada varios días, así que no hace falta refrescar seguido y ahorra quota.
+ */
+export async function getTeamFixtures(
+  teamId: number,
+  opts: { last?: number; next?: number; revalidate?: number } = {},
+): Promise<{
+  team: { id: number; name: string; logo: string } | null;
+  recent: Fixture[];
+  upcoming: Fixture[];
+}> {
+  const last = opts.last ?? 20;
+  const next = opts.next ?? 5;
+  const rv = opts.revalidate ?? 1800;
+
+  const [lastR, nextR] = await Promise.all([
+    get<Fixture>("/fixtures", { team: teamId, last }, rv),
+    get<Fixture>("/fixtures", { team: teamId, next }, rv),
+  ]);
+
+  const recent = lastR.response.sort(
+    (a, b) =>
+      new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
+  );
+  const upcoming = nextR.response.sort(
+    (a, b) =>
+      new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+  );
+
+  let team: { id: number; name: string; logo: string } | null = null;
+  for (const f of [...recent, ...upcoming]) {
+    const side =
+      f.teams.home.id === teamId
+        ? f.teams.home
+        : f.teams.away.id === teamId
+          ? f.teams.away
+          : null;
+    if (side) {
+      team = { id: teamId, name: side.name, logo: side.logo };
+      break;
+    }
+  }
+
+  return { team, recent, upcoming };
+}
+
 /** Un único partido por id (para la página de detalle). null si no existe. */
 export async function getFixtureById(
   id: number,
