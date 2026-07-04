@@ -14,6 +14,7 @@ import {
 } from "@/lib/sports/api-football";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
+import Countdown from "./countdown";
 
 export const metadata = {
   title: "Estadísticas del partido | Mundial 2026 | Soy Reinaldo",
@@ -156,11 +157,11 @@ export default async function PartidoPage({
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
-            href="/mundial?v=finalizados"
+            href={played ? "/mundial?v=finalizados" : "/mundial?v=partidos"}
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
-            ← Resultados
+            ← {played ? "Resultados" : "Próximos partidos"}
           </Link>
 
           <div className="panel" style={{ marginTop: 16, padding: "24px 20px" }}>
@@ -216,11 +217,28 @@ export default async function PartidoPage({
               </div>
             </div>
 
+            {!played && (
+              <div style={{ marginTop: 18 }}>
+                <p
+                  className="mono"
+                  style={{
+                    textAlign: "center",
+                    color: "var(--text-dim)",
+                    fontSize: "0.6rem",
+                    marginBottom: 8,
+                  }}
+                >
+                  Empieza en
+                </p>
+                <Countdown kickoff={fx.fixture.date} />
+              </div>
+            )}
+
             <p
               className="match__when"
               style={{
                 textAlign: "center",
-                marginTop: hasLines ? 18 : 16,
+                marginTop: hasLines || !played ? 18 : 16,
                 paddingTop: 14,
                 borderTop: "1px solid var(--line)",
               }}
