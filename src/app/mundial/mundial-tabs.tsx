@@ -262,79 +262,29 @@ function EnVivoView({ data }: { data: MundialData }) {
 function LiveMatchCard({ fx }: { fx: WcFixture }) {
   const live = isLive(fx);
   const final = isFinal(fx);
-  const showScore = live || final;
   const played = live || final;
-  const inner = (
-    <>
-      <div className="match__meta">
-        <span className="match__grp">{fx.league.round}</span>
-        {live ? (
-          <span className="badge badge--danger">
-            <span className="livepulse" />
-            {fx.fixture.status.short === "HT"
-              ? "DESCANSO"
-              : fx.fixture.status.elapsed != null
-                ? `${fx.fixture.status.elapsed}'`
-                : "EN VIVO"}
-          </span>
-        ) : final ? (
-          <span className="badge">Final</span>
-        ) : (
-          <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
-        )}
-      </div>
-      <div className="team">
-        <span className="flag">
-          <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+
+  const meta = (
+    <div className="match__meta">
+      <span className="match__grp">{fx.league.round}</span>
+      {live ? (
+        <span className="badge badge--danger">
+          <span className="livepulse" />
+          {fx.fixture.status.short === "HT"
+            ? "DESCANSO"
+            : fx.fixture.status.elapsed != null
+              ? `${fx.fixture.status.elapsed}'`
+              : "EN VIVO"}
         </span>
-        <span
-          className="tn"
-          style={final && !fx.teams.home.winner ? { color: "var(--text-dim)" } : undefined}
-        >
-          {fx.teams.home.name}
-        </span>
-      </div>
-      <div className="score">
-        {showScore ? (
-          <>
-            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
-              {fx.goals.home ?? 0}
-            </b>
-            <span className="vs">–</span>
-            <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
-              {fx.goals.away ?? 0}
-            </b>
-          </>
-        ) : (
-          <span className="vs">VS</span>
-        )}
-      </div>
-      <div className="team right">
-        <span
-          className="tn"
-          style={final && !fx.teams.away.winner ? { color: "var(--text-dim)" } : undefined}
-        >
-          {fx.teams.away.name}
-        </span>
-        <span className="flag">
-          <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
-        </span>
-      </div>
-      <MatchCardEvents
-        ev={fx.ev}
-        homeId={fx.teams.home.id}
-        awayId={fx.teams.away.id}
-      />
-      {played && (
-        <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
-          <span />
-          <span className="match__when" style={{ color: "var(--accent)" }}>
-            Ver estadísticas →
-          </span>
-        </div>
+      ) : final ? (
+        <span className="badge">Final</span>
+      ) : (
+        <span className="match__when">{formatKickoff(fx.fixture.date)}</span>
       )}
-    </>
+    </div>
   );
+
+  // Jugado / en vivo: toda la tarjeta lleva al detalle con estadísticas.
   if (played) {
     return (
       <Link
@@ -342,11 +292,93 @@ function LiveMatchCard({ fx }: { fx: WcFixture }) {
         className="match"
         style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
       >
-        {inner}
+        {meta}
+        <div className="team">
+          <span className="flag">
+            <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+          </span>
+          <span
+            className="tn"
+            style={final && !fx.teams.home.winner ? { color: "var(--text-dim)" } : undefined}
+          >
+            {fx.teams.home.name}
+          </span>
+        </div>
+        <div className="score">
+          <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+            {fx.goals.home ?? 0}
+          </b>
+          <span className="vs">–</span>
+          <b style={{ fontFamily: "var(--font-display-stack)", fontSize: "1.4rem" }}>
+            {fx.goals.away ?? 0}
+          </b>
+        </div>
+        <div className="team right">
+          <span
+            className="tn"
+            style={final && !fx.teams.away.winner ? { color: "var(--text-dim)" } : undefined}
+          >
+            {fx.teams.away.name}
+          </span>
+          <span className="flag">
+            <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
+          </span>
+        </div>
+        <MatchCardEvents ev={fx.ev} homeId={fx.teams.home.id} awayId={fx.teams.away.id} />
+        <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+          <span />
+          <span className="match__when" style={{ color: "var(--accent)" }}>
+            Ver estadísticas →
+          </span>
+        </div>
       </Link>
     );
   }
-  return <div className="match">{inner}</div>;
+
+  // Por jugarse: equipos → historial; centro y pie → detalle (cuenta atrás).
+  return (
+    <div className="match">
+      {meta}
+      <Link
+        href={`/mundial/equipo/${fx.teams.home.id}`}
+        className="team"
+        style={{ color: "inherit", textDecoration: "none" }}
+      >
+        <span className="flag">
+          <Image src={fx.teams.home.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+        <span className="tn">{fx.teams.home.name}</span>
+      </Link>
+      <Link
+        href={`/mundial/partido/${fx.fixture.id}`}
+        className="score"
+        style={{ color: "inherit", textDecoration: "none" }}
+        title="Ver cuenta atrás"
+      >
+        <span className="vs">VS</span>
+      </Link>
+      <Link
+        href={`/mundial/equipo/${fx.teams.away.id}`}
+        className="team right"
+        style={{ color: "inherit", textDecoration: "none" }}
+      >
+        <span className="tn">{fx.teams.away.name}</span>
+        <span className="flag">
+          <Image src={fx.teams.away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </Link>
+      <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+        <span />
+        <Link
+          href={`/mundial/partido/${fx.fixture.id}`}
+          className="match__when"
+          style={{ color: "var(--accent)", textDecoration: "none" }}
+        >
+          ⏱ Cuenta atrás →
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 function LiveGroupTable({ group }: { group: LiveGroup }) {

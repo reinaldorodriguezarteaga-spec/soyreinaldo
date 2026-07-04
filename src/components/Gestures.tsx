@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * Gestos táctiles básicos, SOLO en modo app/PWA (display-mode: standalone).
- * En un navegador normal el móvil ya trae estos gestos de forma nativa, así que
- * activarlos aquí los duplicaría.
+ * Gestos táctiles básicos en cualquier dispositivo táctil (móvil/app):
  *
  *  - Deslizar desde el borde izquierdo → derecha  = atrás.
  *  - Deslizar desde el borde derecho  → izquierda = adelante.
  *  - Tirar hacia abajo estando arriba del todo    = recargar.
+ *
+ * Se activan sobre punteros "coarse" (táctiles). En Safari/Chrome del móvil, el
+ * gesto del borde lo intercepta el navegador de forma nativa (nuestro handler no
+ * llega a dispararse), y dentro de la app instalada —donde no hay gesto nativo—
+ * sí actúa el nuestro. Así funciona en la app sin duplicarse en el navegador.
  */
 
 const EDGE = 28; // ancho de la zona de borde (px)
@@ -29,11 +32,10 @@ export default function Gestures() {
   const busy = useRef(false);
 
   useEffect(() => {
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches === true ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone ===
-        true;
-    if (!standalone) return;
+    // Solo en dispositivos táctiles (móvil / app instalada). En escritorio no
+    // tiene sentido y podría interferir con el ratón/trackpad.
+    const touch = window.matchMedia?.("(pointer: coarse)").matches === true;
+    if (!touch) return;
 
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1 || busy.current) {
