@@ -1094,7 +1094,43 @@ select.field { appearance: none; }
   margin-top: 4px;
 }
 
+/* Indicador de "tirar para recargar" (gestos en modo app) */
+.ptr {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 60;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.ptr--spin svg {
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Botón físico "Atrás" (global, bajo el header) */
+.backbar__row { display: flex; align-items: center; gap: 8px; }
+.backbtn--accent {
+  color: var(--accent);
+  border-color: color-mix(in oklch, var(--accent) 35%, transparent);
+  background: color-mix(in oklch, var(--accent) 10%, transparent);
+  text-decoration: none;
+}
+.backbtn--accent:hover {
+  background: color-mix(in oklch, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
 .backbar {
   position: sticky;
   top: var(--nav-h, 64px);
