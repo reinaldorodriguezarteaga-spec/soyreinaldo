@@ -281,24 +281,28 @@ function TeamHead({
   team,
   winner,
 }: {
-  team: { name: string; logo: string };
+  team: { id: number; name: string; logo: string };
   winner: boolean | null;
 }) {
   return (
-    <div
+    <Link
+      href={`/mundial/equipo/${team.id}`}
+      title={`Ver el historial de ${team.name}`}
       style={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 8,
         opacity: winner === false ? 0.6 : 1,
+        textDecoration: "none",
+        color: "inherit",
       }}
     >
       <Image src={team.logo} alt="" width={48} height={48} unoptimized />
       <span style={{ fontWeight: 700, textAlign: "center", fontSize: "0.95rem" }}>
         {team.name}
       </span>
-    </div>
+    </Link>
   );
 }
 
