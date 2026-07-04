@@ -15,18 +15,6 @@ export type PendingMatch = {
   away_flag: string;
 };
 
-const PHASE_LABEL: Record<string, string> = {
-  group_md1: "Fecha 1",
-  group_md2: "Fecha 2",
-  group_md3: "Fecha 3",
-  r32: "Dieciseisavos",
-  r16: "Octavos",
-  qf: "Cuartos",
-  sf: "Semis",
-  third_place: "Tercer puesto",
-  final: "Final",
-};
-
 const MADRID_DAY = new Intl.DateTimeFormat("es-ES", {
   weekday: "short",
   day: "numeric",
