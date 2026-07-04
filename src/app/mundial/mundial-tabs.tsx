@@ -574,30 +574,23 @@ function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
 
   // Por defecto, la última ronda con resultados (la jornada más avanzada).
   const [sel, setSel] = useState<string>(() => rounds[rounds.length - 1] ?? "");
-
-  if (done.length === 0) {
-    return <Empty>Aún no hay partidos finalizados — el primero cae pronto.</Empty>;
-  }
+  const [eventsById, setEventsById] = useState<Record<number, FixtureEvents>>({});
 
   const active = byRound.has(sel) ? sel : rounds[rounds.length - 1];
   const list = [...(byRound.get(active) ?? [])].sort(
     (a, b) =>
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
   );
+  const activeIds = list.map((fx) => fx.fixture.id).join(",");
 
   // Goles/expulsiones de la jornada que se está viendo, bajo demanda (no se
   // cargan los 100+ finalizados en cada render). Se cachean en el cliente.
-  const [eventsById, setEventsById] = useState<Record<number, FixtureEvents>>({});
-  const evRef = useRef(eventsById);
-  evRef.current = eventsById;
-  const activeIds = list.map((fx) => fx.fixture.id).join(",");
-
   useEffect(() => {
     const ids = activeIds
       .split(",")
       .filter(Boolean)
       .map(Number)
-      .filter((id) => !(id in evRef.current));
+      .filter((id) => !(id in eventsById));
     if (ids.length === 0) return;
     let cancelled = false;
     fetch(`/api/sports/match-events?ids=${ids.join(",")}`)
@@ -609,7 +602,12 @@ function FinalizadosView({ fixtures }: { fixtures: Fixture[] }) {
     return () => {
       cancelled = true;
     };
-  }, [activeIds]);
+  }, [activeIds, eventsById]);
+
+  // Estado vacío DESPUÉS de declarar todos los hooks (reglas de hooks).
+  if (done.length === 0) {
+    return <Empty>Aún no hay partidos finalizados — el primero cae pronto.</Empty>;
+  }
 
   return (
     <div>
