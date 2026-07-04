@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -43,9 +44,14 @@ export default function BackButton() {
     }
   };
 
+  // Atajo a la quiniela cuando estás viendo predicciones/resultados/ranking.
+  const showQuiniela =
+    (pathname.startsWith("/quiniela") && pathname !== "/quiniela") ||
+    pathname.startsWith("/mundial");
+
   return (
     <div className="backbar">
-      <div className="wrap">
+      <div className="wrap backbar__row">
         <button
           type="button"
           onClick={goBack}
@@ -67,6 +73,12 @@ export default function BackButton() {
           </svg>
           Atrás
         </button>
+
+        {showQuiniela && (
+          <Link href="/quiniela" className="backbtn backbtn--accent">
+            🏆 Quiniela
+          </Link>
+        )}
       </div>
     </div>
   );
