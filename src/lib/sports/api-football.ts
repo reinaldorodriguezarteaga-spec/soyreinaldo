@@ -402,6 +402,27 @@ export async function getTeamFixtures(
   return { team, recent, upcoming };
 }
 
+/**
+ * Enfrentamientos históricos (head-to-head) entre dos equipos, el más reciente
+ * primero. Cachea 1 día — el historial solo cambia cuando vuelven a jugar.
+ */
+export async function getHeadToHead(
+  teamA: number,
+  teamB: number,
+  opts: { last?: number; revalidate?: number } = {},
+): Promise<Fixture[]> {
+  const last = opts.last ?? 20;
+  const r = await get<Fixture>(
+    "/fixtures/headtohead",
+    { h2h: `${teamA}-${teamB}`, last },
+    opts.revalidate ?? 86400,
+  );
+  return r.response.sort(
+    (a, b) =>
+      new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
+  );
+}
+
 /** Un único partido por id (para la página de detalle). null si no existe. */
 export async function getFixtureById(
   id: number,

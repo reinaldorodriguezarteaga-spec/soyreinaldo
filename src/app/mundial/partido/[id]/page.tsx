@@ -15,6 +15,7 @@ import {
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
+import MatchTabs from "./match-tabs";
 
 export const metadata = {
   title: "Estadísticas del partido | Mundial 2026 | Soy Reinaldo",
@@ -252,6 +253,12 @@ export default async function PartidoPage({
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap">
+          <MatchTabs
+            homeId={home.id}
+            awayId={away.id}
+            homeName={home.name}
+            awayName={away.name}
+          >
           <div className="shead">
             <h2>Estadísticas</h2>
           </div>
@@ -289,6 +296,7 @@ export default async function PartidoPage({
               />
             </div>
           )}
+          </MatchTabs>
         </div>
       </section>
     </main>
