@@ -11,6 +11,7 @@ import {
   getFixtureStatistics,
   isFinal,
   isLive,
+  reconcileGoals,
   type FixtureGoal,
 } from "@/lib/sports/api-football";
 import { loadEsMap } from "@/lib/sports/widget-data";
@@ -123,7 +124,7 @@ export default async function PartidoPage({
   const liveNow = isLive(fx);
   const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
-  const [goals, cards, stats, players, lineups, esMap] = await Promise.all([
+  const [rawGoals, cards, stats, players, lineups, esMap] = await Promise.all([
     getFixtureGoals(fixtureId, rv),
     getFixtureCards(fixtureId, rv),
     getFixtureStatistics(fixtureId, rv),
@@ -131,6 +132,14 @@ export default async function PartidoPage({
     getFixtureLineups(fixtureId, rv),
     loadEsMap([fixtureId]),
   ]);
+
+  // Descarta goles anulados/fantasma reconciliando con el marcador real.
+  const goals = reconcileGoals(rawGoals, {
+    homeId: fx.teams.home.id,
+    awayId: fx.teams.away.id,
+    scoreHome: fx.goals.home,
+    scoreAway: fx.goals.away,
+  });
 
   // Nombres en español (mismo mapa que usa el resto del sitio); fallback al EN.
   const es = esMap[fixtureId] ?? null;

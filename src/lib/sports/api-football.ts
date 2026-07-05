@@ -538,6 +538,45 @@ export async function getFixtureGoals(
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
+/**
+ * Descarta "goles fantasma": un gol anulado por VAR que el proveedor todavía
+ * lista como evento, o eventos y marcador desincronizados en directo. Reconcilia
+ * contra el marcador REAL (`goals.home/away`, la fuente autoritativa): si un
+ * equipo tiene más goles-evento que goles en el marcador, se quitan los más
+ * recientes hasta cuadrar. El autogol cuenta para el equipo rival.
+ */
+export function reconcileGoals(
+  goals: FixtureGoal[],
+  opts: {
+    homeId: number;
+    awayId: number;
+    scoreHome: number | null;
+    scoreAway: number | null;
+  },
+): FixtureGoal[] {
+  const { homeId, awayId, scoreHome, scoreAway } = opts;
+  if (scoreHome == null || scoreAway == null) return goals;
+
+  const benef = (g: FixtureGoal): number =>
+    g.detail === "Own Goal" ? (g.teamId === homeId ? awayId : homeId) : g.teamId;
+  const limit: Record<number, number> = { [homeId]: scoreHome, [awayId]: scoreAway };
+  const count: Record<number, number> = { [homeId]: 0, [awayId]: 0 };
+
+  // De más antiguo a más nuevo: conserva hasta 'limit' por equipo beneficiado;
+  // así el gol anulado (normalmente el más reciente) es el que se descarta.
+  const kept = new Set<FixtureGoal>();
+  for (const g of [...goals].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))) {
+    const t = benef(g);
+    if (limit[t] == null) {
+      kept.add(g); // equipo inesperado: no lo tocamos
+    } else if (count[t] < limit[t]) {
+      count[t]++;
+      kept.add(g);
+    }
+  }
+  return goals.filter((g) => kept.has(g));
+}
+
 /** Una tarjeta de un partido (amarilla / roja / doble amarilla). */
 export type FixtureCard = {
   minute: number | null;

@@ -10,6 +10,7 @@ import {
   isFinal,
   isLive,
   isWorldCupActive,
+  reconcileGoals,
   type Fixture,
   type FixtureCard,
   type FixtureGoal,
@@ -83,10 +84,17 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
       if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
       const rv = isLive(f) ? 15 : 600;
       try {
-        const [goals, cards] = await Promise.all([
+        const [rawGoals, cards] = await Promise.all([
           getFixtureGoals(f.fixture.id, rv),
           getFixtureCards(f.fixture.id, rv),
         ]);
+        // Descarta goles anulados/fantasma reconciliando con el marcador real.
+        const goals = reconcileGoals(rawGoals, {
+          homeId: f.teams.home.id,
+          awayId: f.teams.away.id,
+          scoreHome: f.goals.home,
+          scoreAway: f.goals.away,
+        });
         return { ...f, ev: { goals, reds: cards.filter((c) => c.expulsion) } };
       } catch {
         return { ...f, ev: null };
