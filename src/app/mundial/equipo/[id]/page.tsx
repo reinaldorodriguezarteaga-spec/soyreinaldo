@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,9 +9,25 @@ import {
   type Fixture,
 } from "@/lib/sports/api-football";
 
-export const metadata = {
-  title: "Equipo | Mundial 2026 | Soy Reinaldo",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { team } = await getTeamFixtures(Number(id), { last: 1, next: 0 }).catch(
+    () => ({ team: null }) as { team: null },
+  );
+  if (!team) return { title: "Selección · Mundial 2026 | Soy Reinaldo" };
+  const title = `${team.name} · Historial · Mundial 2026`;
+  const description = `Partidos, resultados y calendario de ${team.name} en el Mundial 2026.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 const MADRID_TZ = "Europe/Madrid";
 

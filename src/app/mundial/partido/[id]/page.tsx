@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,9 +19,51 @@ import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
 import MatchTabs from "./match-tabs";
 
-export const metadata = {
-  title: "Estadísticas del partido | Mundial 2026 | Soy Reinaldo",
-};
+function roundLabelEs(round: string | null): string {
+  if (!round) return "Mundial 2026";
+  const map: Record<string, string> = {
+    "Round of 32": "Dieciseisavos",
+    "Round of 16": "Octavos",
+    "Quarter-finals": "Cuartos",
+    "Semi-finals": "Semifinales",
+    "3rd Place Final": "Tercer puesto",
+    Final: "Final",
+  };
+  if (map[round]) return map[round];
+  const g = round.match(/Group Stage\s*-\s*(\d+)/i);
+  if (g) return `Jornada ${g[1]}`;
+  if (/^Group/i.test(round)) return "Fase de grupos";
+  return round;
+}
+
+// Título + descripción dinámicos (para pestaña del navegador, SEO y el texto
+// de la tarjeta al compartir). La imagen la aporta `opengraph-image.tsx`.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const fixtureId = Number(id);
+  const fx = await getFixtureById(fixtureId, 60).catch(() => null);
+  if (!fx) return { title: "Partido · Mundial 2026 | Soy Reinaldo" };
+  const es = (await loadEsMap([fixtureId]))[fixtureId] ?? null;
+  const home = es?.home.name ?? fx.teams.home.name;
+  const away = es?.away.name ?? fx.teams.away.name;
+  const played = isLive(fx) || isFinal(fx);
+  const middle = played ? `${fx.goals.home ?? 0}–${fx.goals.away ?? 0}` : "vs";
+  const round = roundLabelEs(fx.league.round);
+  const title = `${home} ${middle} ${away} · ${round} · Mundial 2026`;
+  const description = played
+    ? `Marcador, estadísticas, alineaciones y valoraciones de ${home} contra ${away} (${round}) en el Mundial 2026.`
+    : `Previa, probabilidades y cuenta atrás de ${home} contra ${away} (${round}) en el Mundial 2026.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 const MADRID_TZ = "Europe/Madrid";
 
