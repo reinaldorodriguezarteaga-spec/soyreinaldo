@@ -7,6 +7,7 @@ import {
   getFixtureCards,
   getFixtureGoals,
   getFixtureLineups,
+  getFixtureNotes,
   getFixturePlayers,
   getFixtureStatistics,
   isFinal,
@@ -99,13 +100,15 @@ function toNum(v: number | string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Un evento bajo el equipo (gol o expulsión). */
+/** Un evento bajo el equipo (gol, expulsión, pen. fallado, gol anulado…). */
 type Ev = {
   icon: string;
   minute: number | null;
   player: string;
   tag: string;
   assist: string | null;
+  /** true para eventos que NO cuentan (pen. fallado, gol anulado) → atenuados. */
+  muted?: boolean;
 };
 
 export default async function PartidoPage({
@@ -124,14 +127,16 @@ export default async function PartidoPage({
   const liveNow = isLive(fx);
   const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
-  const [rawGoals, cards, stats, players, lineups, esMap] = await Promise.all([
-    getFixtureGoals(fixtureId, rv),
-    getFixtureCards(fixtureId, rv),
-    getFixtureStatistics(fixtureId, rv),
-    getFixturePlayers(fixtureId, rv),
-    getFixtureLineups(fixtureId, rv),
-    loadEsMap([fixtureId]),
-  ]);
+  const [rawGoals, cards, stats, players, lineups, notes, esMap] =
+    await Promise.all([
+      getFixtureGoals(fixtureId, rv),
+      getFixtureCards(fixtureId, rv),
+      getFixtureStatistics(fixtureId, rv),
+      getFixturePlayers(fixtureId, rv),
+      getFixtureLineups(fixtureId, rv),
+      getFixtureNotes(fixtureId, rv),
+      loadEsMap([fixtureId]),
+    ]);
 
   // Descarta goles anulados/fantasma reconciliando con el marcador real.
   const goals = reconcileGoals(rawGoals, {
@@ -180,7 +185,20 @@ export default async function PartidoPage({
         tag: /second/i.test(c.detail) ? "(2ª am.)" : "",
         assist: null,
       }));
-    return [...gs, ...rs].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+    // Eventos que NO cuentan al marcador: penalti fallado / gol anulado (VAR).
+    const ns: Ev[] = notes
+      .filter((n) => n.teamId === teamId)
+      .map((n) => ({
+        icon: n.kind === "missed_penalty" ? "❌" : "🚫",
+        minute: n.minute,
+        player: n.player,
+        tag: n.kind === "missed_penalty" ? "(pen. fallado)" : "(gol anulado)",
+        assist: null,
+        muted: true,
+      }));
+    return [...gs, ...rs, ...ns].sort(
+      (a, b) => (a.minute ?? 0) - (b.minute ?? 0),
+    );
   };
   const homeLines = linesFor(home.id);
   const awayLines = linesFor(away.id);
@@ -403,6 +421,7 @@ function EvList({ lines, align }: { lines: Ev[]; align: "left" | "right" }) {
             flexWrap: "wrap",
             fontSize: "0.84rem",
             textAlign: right ? "right" : "left",
+            opacity: e.muted ? 0.6 : 1,
           }}
         >
           {right ? (

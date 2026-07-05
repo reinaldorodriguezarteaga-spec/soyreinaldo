@@ -613,6 +613,50 @@ export async function getFixtureCards(
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
+/** Evento notable que NO cuenta en el marcador: penalti fallado o gol anulado. */
+export type FixtureNote = {
+  minute: number | null;
+  teamId: number;
+  player: string;
+  kind: "missed_penalty" | "disallowed_goal";
+};
+
+/**
+ * Eventos "de más" que conviene mostrar aunque no sumen al marcador: penaltis
+ * fallados (type=Goal, detail "Missed Penalty") y goles anulados por VAR
+ * (type=Var, detail con "disallowed"/"cancelled"). Una llamada a
+ * /fixtures/events (todos los tipos), con clave de caché propia. Vacío si no hay.
+ */
+export async function getFixtureNotes(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureNote[]> {
+  const r = await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate);
+  const notes: FixtureNote[] = [];
+  for (const e of r.response) {
+    const d = (e.detail || "").toLowerCase();
+    if (e.type === "Goal" && d === "missed penalty") {
+      notes.push({
+        minute: e.time.elapsed,
+        teamId: e.team.id,
+        player: e.player.name ?? "—",
+        kind: "missed_penalty",
+      });
+    } else if (
+      e.type === "Var" &&
+      (d.includes("disallow") || d.includes("cancel"))
+    ) {
+      notes.push({
+        minute: e.time.elapsed,
+        teamId: e.team.id,
+        player: e.player.name ?? "—",
+        kind: "disallowed_goal",
+      });
+    }
+  }
+  return notes.sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
 /** Estadística detallada de un jugador en un partido (nulos = no registrado). */
 export type PlayerMatchStats = {
   shotsTotal: number | null;
