@@ -144,3 +144,96 @@ los intervalos altos y reutiliza caché; no reintroduzcas polling agresivo.
 - Push a la rama → PR → merge a `main` → Vercel despliega.
 - Cron de recordatorios configurado en `vercel.json`.
 - Rama de trabajo actual del agente: `claude/youthful-babbage-u80jvw`.
+- Flujo de trabajo del agente: rama → PR **draft** → esperar preview de Vercel →
+  el usuario dice "merge" → squash-merge a `main`. Los PR se mergean con **squash**,
+  así que al seguir trabajando hay que **rebasar la rama sobre `origin/main`**
+  (`git rebase --onto origin/main <prev-head>`) para no arrastrar commits ya
+  mergeados y evitar conflictos.
+
+---
+
+# Bitácora — sesión julio 2026 (features + incidente de quota)
+
+## Features añadidas esta sesión (todas en prod)
+
+- **Ranking de liga con pestañas** (`/quiniela/ranking/[liga]`, `?vista=`):
+  - **Clasificación** (tabla de siempre).
+  - **👀 Selecciones** (`?vista=selecciones`, `selecciones.tsx`): por cada partido
+    en vivo/jugado, el pick de **cada miembro** + puntos provisionales. Cada partido
+    es **desplegable** (`<details>`; abiertos los en vivo). Auto-refresco con
+    `LiveRefresher`. RLS: solo se ven picks de partidos ya empezados.
+  - **📋 Mis predicciones** (`?vista=mias`, `mis-predicciones.tsx`): lista personal,
+    **solo partidos jugados/en vivo**, del más reciente al más antiguo, con puntos.
+- **Detalle de partido con pestañas** (`/mundial/partido/[id]`, `match-tabs.tsx`):
+  **Estadísticas** + **Cara a cara** (H2H). H2H vía `getHeadToHead` (API `/fixtures/headtohead`,
+  caché 1 día) servido bajo demanda por `/api/sports/h2h`. Falta **Noticias**
+  (acordado: Google News RSS, gratis) — pendiente.
+- **Ficha de equipo** (`/mundial/equipo/[id]`, `getTeamFixtures`): historial de
+  partidos. Los equipos son **tappables** desde el detalle, grupos, tablas de stats,
+  próximos, etc.
+- **Cuenta atrás** en partidos por jugarse (`countdown.tsx`): al tocar el partido
+  (portada, Próximos, Marcador en vivo) se abre el detalle con temporizador.
+- **Botón físico "← Atrás"** global (`BackButton.tsx`, sticky bajo el header, en
+  todas las páginas menos `/`) + botón **"🏆 Quiniela"** al lado en páginas de
+  quiniela/mundial.
+- **Gestos táctiles** (`Gestures.tsx`, montado en `layout.tsx`): en dispositivos
+  táctiles (`pointer: coarse`) — deslizar borde izq→der = atrás, der→izq = adelante,
+  tirar hacia abajo arriba del todo = recargar. En navegador el gesto del borde lo
+  intercepta el nativo; dentro de la app instalada actúa el nuestro.
+
+## Marcadores en vivo — cómo funciona (importante)
+
+- La **quiniela** (Selecciones/Mis predicciones) lee marcador/estado de la tabla
+  `matches` de Supabase (NO de API-Football directo). Esa tabla la actualiza la
+  ingesta.
+- **Ingesta** (`/api/sports/ingest`): la dispara un **cron EXTERNO (cron-job.org)**
+  cada minuto con `Authorization: Bearer CRON_SECRET` (NO está en `vercel.json`).
+  Selecciona partidos con la RPC `matches_pending_ingest` (requiere
+  `api_football_fixture_id IS NOT NULL` y ventana de tiempo). Hace 1 llamada a
+  API-Football por tick (`/fixtures?ids=...`, `no-store`).
+- ⚠️ **Los partidos de eliminatoria nacen SIN `api_football_fixture_id`** (eran
+  placeholders hasta resolver el bracket). Sin ese id, la ingesta NO los ve → sin
+  marcador en vivo ni registro del resultado. La ingesta ahora **se auto-repara**
+  (`backfillMissingFixtureIds`): busca partidos con equipos asignados pero sin id
+  (ventana [-6h,+26h]) y lo rellena casando por hora/equipo local contra
+  `/fixtures?league=1&season=2026` (misma lógica que `scripts/backfill-fixture-ids.mjs`).
+  Si un cruce futuro se queda sin datos en vivo, revisar esto primero.
+
+## Incidente de quota API-Football (5 jul 2026) — LEER
+
+- **Qué pasó:** la web se quedó **sin datos del Mundial** (todo vacío) porque
+  API-Football llegó al **Plan Limit** (~7.500 del plan Pro). El tráfico web era
+  bajo y **no había bot** en las páginas nuevas (verificado en logs de Vercel), así
+  que fue **consumo acumulado del torneo**, no un bug ni ataque.
+- **Solución del usuario:** subió a **plan Ultra (75.000/día)**. Resuelto.
+- **Fallback a BD** (`wc-fallback.ts` + `mundial-fallback.tsx`): si API-Football
+  devuelve TODO vacío, `/mundial` muestra calendario/resultados/grupos desde la BD
+  (con banderas, sin escudos ni stats en vivo) en vez de quedarse en blanco. Se
+  activa solo cuando la API falla.
+- **Instrumentación** (`api-football.ts` `get()` y el backfill de la ingesta):
+  cada llamada loguea `[apif] <endpoint> status=<n> remaining=<quota>` en los
+  runtime logs de Vercel. Para investigar consumo: **Vercel → Runtime Logs →
+  buscar `[apif]`**.
+- **PISTA abierta (por confirmar):** en la 1ª lectura de logs, la **portada `/`**
+  hace 2 llamadas a API-Football por hit (`/fixtures?...from-to` y `?next=6`, vía
+  `getWidgetData`/MatchWidget) y `remaining` **baja en cada hit** → esas llamadas
+  **NO parecen cachearse** como deberían. Además hay **peticiones `HEAD /`** (bots/
+  monitores) que también las disparan. Sospecha: un bot/monitor pegando a `/` quema
+  quota. **Pendiente:** confirmar por qué no cachea `getWorldCupFixturesWindow`
+  (revalidate 60) en la portada y, si procede, cachear/gating de bots.
+- **Seguimiento acordado:** revisar `[apif]` a las ~2h y **mañana 10:00** para ver
+  si a la franja del pico de ayer (≈04-06h) se repite. (Los recordatorios por cron
+  son solo de esta sesión; si se pierde la sesión, retomar esto manualmente.)
+
+## Operaciones manuales en BD hechas esta sesión (para el registro)
+
+- Metí a Conos (`CONOS2026`, id `95641710-...`) a 8 usuarios que habían pronosticado
+  sin unirse a ninguna liga (huérfanos): freibyse, pedromagirena, andreslameda12,
+  odnamra1, manuelbideau95, josesitobaut2007, leimanazael1991, unitedjairo29.
+  **Causa raíz sin arreglar:** la app deja pronosticar sin liga → quedan huérfanos.
+- **Marcos87** (`garciamarcos3087@gmail.com`) → metido a **Intentos de Padel**
+  (`4a2ceaef-...`). Tenía cuenta duplicada `marcos87garcia87@gmail.com` ("Marcos"):
+  **dupliqué todo** (predicciones+picks+ligas) al de Marcos87 y **borré** la antigua.
+- `ransesd24` → inserté a mano su pick Canadá 1–Marruecos 2 (partido 90) saltando el
+  bloqueo de 30 min (por service-role).
+- Backfill manual de `api_football_fixture_id` de los 8 octavos (ids 89–96).
