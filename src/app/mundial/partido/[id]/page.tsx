@@ -467,6 +467,38 @@ function Name({ e }: { e: Ev }) {
   );
 }
 
+const AWAY_COLOR = "#ff5b8a";
+
+function StatPill({
+  value,
+  lead,
+  side,
+}: {
+  value: string;
+  lead: boolean;
+  side: "home" | "away";
+}) {
+  const color = side === "home" ? "var(--accent)" : AWAY_COLOR;
+  return (
+    <span
+      className="tabular-nums"
+      style={{
+        minWidth: 52,
+        textAlign: "center",
+        padding: "6px 12px",
+        borderRadius: 999,
+        fontWeight: 800,
+        fontSize: "0.95rem",
+        background: lead ? color : "var(--surface-2)",
+        color: lead ? "#0a1030" : "var(--text-dim)",
+        border: lead ? "none" : "1px solid var(--line)",
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
 function StatRow({
   row,
 }: {
@@ -481,47 +513,92 @@ function StatRow({
   const aRaw = row.away ?? (row.pct ? "0%" : 0);
   const h = toNum(row.home);
   const a = toNum(row.away);
-  const total = h + a;
-  const hPct = total > 0 ? (h / total) * 100 : 50;
-  return (
-    <div style={{ padding: "10px 0" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 6,
-          fontSize: "0.9rem",
-        }}
-      >
-        <b className="tabular-nums">{String(hRaw)}</b>
-        <span
+
+  // Posesión (y cualquier %): barra grande partida con el valor a cada lado.
+  if (row.pct) {
+    const total = h + a;
+    const hPct = total > 0 ? (h / total) * 100 : 50;
+    return (
+      <div style={{ padding: "12px 0" }}>
+        <p
           className="mono"
           style={{
+            textAlign: "center",
             color: "var(--text-dim)",
-            fontSize: "0.72rem",
+            fontSize: "0.66rem",
             textTransform: "uppercase",
-            letterSpacing: "0.08em",
+            letterSpacing: "0.1em",
+            marginBottom: 8,
           }}
         >
           {row.label}
-        </span>
-        <b className="tabular-nums">{String(aRaw)}</b>
+        </p>
+        <div
+          className="tabular-nums"
+          style={{
+            display: "flex",
+            height: 30,
+            borderRadius: 8,
+            overflow: "hidden",
+            fontWeight: 800,
+            fontSize: "0.9rem",
+            color: "#0a1030",
+          }}
+        >
+          <div
+            style={{
+              width: `${hPct}%`,
+              minWidth: 44,
+              background: "var(--accent)",
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: 12,
+            }}
+          >
+            {String(hRaw)}
+          </div>
+          <div
+            style={{
+              width: `${100 - hPct}%`,
+              minWidth: 44,
+              background: AWAY_COLOR,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              paddingRight: 12,
+            }}
+          >
+            {String(aRaw)}
+          </div>
+        </div>
       </div>
-      <div
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "9px 0",
+      }}
+    >
+      <StatPill value={String(hRaw)} lead={h >= a} side="home" />
+      <span
+        className="mono"
         style={{
-          display: "flex",
-          height: 5,
-          borderRadius: 3,
-          overflow: "hidden",
-          background: "var(--surface-2)",
+          flex: 1,
+          textAlign: "center",
+          color: "var(--text-dim)",
+          fontSize: "0.72rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
         }}
       >
-        <span style={{ width: `${hPct}%`, background: "var(--accent)" }} />
-        <span
-          style={{ width: `${100 - hPct}%`, background: "var(--line-strong)" }}
-        />
-      </div>
+        {row.label}
+      </span>
+      <StatPill value={String(aRaw)} lead={a >= h} side="away" />
     </div>
   );
 }
