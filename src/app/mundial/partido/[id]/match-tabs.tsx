@@ -4,6 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { H2HData } from "@/app/api/sports/h2h/route";
+import type { PreviewData } from "@/app/api/sports/preview/route";
+import type {
+  Injury,
+  LineupTeam,
+  MatchOdds,
+  MatchPrediction,
+} from "@/lib/sports/api-football";
 
 const DATE_FMT = new Intl.DateTimeFormat("es-ES", {
   day: "numeric",
@@ -11,37 +18,48 @@ const DATE_FMT = new Intl.DateTimeFormat("es-ES", {
   year: "numeric",
 });
 
+type Team = { id: number; name: string; logo: string };
+
 /**
- * Pestañas del detalle de partido: "Estadísticas" (contenido ya renderizado en
- * el servidor, pasado como children) y "Cara a cara" (historial de
- * enfrentamientos, cargado bajo demanda al abrir la pestaña para no gastar
- * quota en cada visita).
+ * Pestañas del detalle de partido: "Estadísticas" (server, como children),
+ * "Previa" (probabilidades / bajas / alineaciones / cuotas) y "Cara a cara"
+ * (historial). Previa y H2H se cargan BAJO DEMANDA al abrir su pestaña, para no
+ * gastar quota en cada visita.
  */
 export default function MatchTabs({
-  homeId,
-  awayId,
-  homeName,
-  awayName,
+  fixtureId,
+  home,
+  away,
   children,
 }: {
-  homeId: number;
-  awayId: number;
-  homeName: string;
-  awayName: string;
+  fixtureId: number;
+  home: Team;
+  away: Team;
   children: React.ReactNode;
 }) {
-  const [tab, setTab] = useState<"stats" | "h2h">("stats");
+  const [tab, setTab] = useState<"stats" | "preview" | "h2h">("stats");
+  const [previewOpened, setPreviewOpened] = useState(false);
   const [h2hOpened, setH2hOpened] = useState(false);
 
   return (
     <>
-      <div className="tabs" style={{ marginBottom: 24, maxWidth: 520 }}>
+      <div className="tabs" style={{ marginBottom: 24, maxWidth: 640 }}>
         <button
           type="button"
           className={tab === "stats" ? "on" : ""}
           onClick={() => setTab("stats")}
         >
           Estadísticas
+        </button>
+        <button
+          type="button"
+          className={tab === "preview" ? "on" : ""}
+          onClick={() => {
+            setTab("preview");
+            setPreviewOpened(true);
+          }}
+        >
+          Previa
         </button>
         <button
           type="button"
@@ -57,13 +75,19 @@ export default function MatchTabs({
 
       <div hidden={tab !== "stats"}>{children}</div>
 
+      {previewOpened && (
+        <div hidden={tab !== "preview"}>
+          <PreviewPanel fixtureId={fixtureId} home={home} away={away} />
+        </div>
+      )}
+
       {h2hOpened && (
         <div hidden={tab !== "h2h"}>
           <H2HPanel
-            homeId={homeId}
-            awayId={awayId}
-            homeName={homeName}
-            awayName={awayName}
+            homeId={home.id}
+            awayId={away.id}
+            homeName={home.name}
+            awayName={away.name}
           />
         </div>
       )}
@@ -262,6 +286,419 @@ function Tally({
       >
         {label}
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------ Previa ------------------------------ */
+
+function PreviewPanel({
+  fixtureId,
+  home,
+  away,
+}: {
+  fixtureId: number;
+  home: Team;
+  away: Team;
+}) {
+  const [data, setData] = useState<PreviewData | null | "loading">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/sports/preview?fixture=${fixtureId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: PreviewData | null) => {
+        if (!cancelled) setData(d ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fixtureId]);
+
+  if (data === "loading") {
+    return (
+      <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
+        Cargando previa…
+      </p>
+    );
+  }
+
+  const pred = data?.prediction ?? null;
+  const injuries = data?.injuries ?? [];
+  const lineups = data?.lineups ?? [];
+  const odds = data?.odds ?? null;
+  const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
+  const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
+  const hasLineups =
+    (homeLineup?.startXI.length ?? 0) + (awayLineup?.startXI.length ?? 0) > 0;
+
+  if (!pred && injuries.length === 0 && !hasLineups && !odds) {
+    return (
+      <div
+        className="panel"
+        style={{
+          padding: 28,
+          textAlign: "center",
+          borderStyle: "dashed",
+          color: "var(--text-dim)",
+        }}
+      >
+        La previa (probabilidades, bajas y alineaciones) aparece cuando el
+        proveedor la publica, normalmente en los días u horas previas al partido.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {pred && <PredictionCard pred={pred} home={home} away={away} />}
+      {hasLineups && (
+        <LineupCard
+          home={home}
+          away={away}
+          homeLineup={homeLineup}
+          awayLineup={awayLineup}
+        />
+      )}
+      {injuries.length > 0 && (
+        <InjuriesCard
+          home={home}
+          away={away}
+          homeInj={injuries.filter((i) => i.teamId === home.id)}
+          awayInj={injuries.filter((i) => i.teamId === away.id)}
+        />
+      )}
+      {odds && <OddsCard odds={odds} home={home} away={away} />}
+    </div>
+  );
+}
+
+function PredictionCard({
+  pred,
+  home,
+  away,
+}: {
+  pred: MatchPrediction;
+  home: Team;
+  away: Team;
+}) {
+  const { home: h, draw: d, away: a } = pred.percent;
+  const total = h + d + a || 1;
+  const seg = (v: number) => `${(v / total) * 100}%`;
+  return (
+    <div className="panel" style={{ padding: "18px 20px" }}>
+      <div className="shead" style={{ marginBottom: 14 }}>
+        <h2>Probabilidades</h2>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 8,
+          fontSize: "0.8rem",
+          marginBottom: 4,
+        }}
+      >
+        <span className="truncate" style={{ fontWeight: 700, maxWidth: "40%" }}>
+          {home.name}
+        </span>
+        <span className="mono" style={{ color: "var(--text-dim)" }}>
+          Empate
+        </span>
+        <span
+          className="truncate"
+          style={{ fontWeight: 700, maxWidth: "40%", textAlign: "right" }}
+        >
+          {away.name}
+        </span>
+      </div>
+      <div
+        className="tabular-nums"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "1.15rem",
+          fontWeight: 800,
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ color: "var(--accent)" }}>{h}%</span>
+        <span style={{ color: "var(--text-dim)" }}>{d}%</span>
+        <span style={{ color: "#ff5b8a" }}>{a}%</span>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          height: 8,
+          borderRadius: 4,
+          overflow: "hidden",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span style={{ width: seg(h), background: "var(--accent)" }} />
+        <span style={{ width: seg(d), background: "var(--line-strong)" }} />
+        <span style={{ width: seg(a), background: "#ff5b8a" }} />
+      </div>
+      {pred.form && (
+        <p
+          className="mono"
+          style={{
+            color: "var(--text-dim)",
+            fontSize: "0.66rem",
+            marginTop: 12,
+            textAlign: "center",
+          }}
+        >
+          Forma reciente · {home.name} {pred.form.home}% — {pred.form.away}%{" "}
+          {away.name}
+        </p>
+      )}
+      {pred.advice && (
+        <p style={{ marginTop: 12, fontSize: "0.85rem", lineHeight: 1.5 }}>
+          <span
+            className="mono"
+            style={{
+              display: "block",
+              color: "var(--text-dim)",
+              fontSize: "0.6rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 3,
+            }}
+          >
+            Consejo del análisis
+          </span>
+          {pred.advice}
+        </p>
+      )}
+      <p
+        className="mono"
+        style={{ color: "var(--text-dim)", fontSize: "0.58rem", marginTop: 12 }}
+      >
+        Estimación estadística de API-Football, no una certeza.
+      </p>
+    </div>
+  );
+}
+
+function LineupCard({
+  home,
+  away,
+  homeLineup,
+  awayLineup,
+}: {
+  home: Team;
+  away: Team;
+  homeLineup: LineupTeam | null;
+  awayLineup: LineupTeam | null;
+}) {
+  return (
+    <div className="panel" style={{ padding: "18px 20px" }}>
+      <div className="shead" style={{ marginBottom: 14 }}>
+        <h2>Alineaciones</h2>
+      </div>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <TeamLineup team={home} lineup={homeLineup} />
+        <TeamLineup team={away} lineup={awayLineup} />
+      </div>
+    </div>
+  );
+}
+
+function TeamLineup({ team, lineup }: { team: Team; lineup: LineupTeam | null }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
+        <Image src={team.logo} alt="" width={22} height={22} unoptimized />
+        <b className="truncate" style={{ fontSize: "0.9rem" }}>
+          {team.name}
+        </b>
+        {lineup?.formation && (
+          <span
+            className="mono"
+            style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.72rem" }}
+          >
+            {lineup.formation}
+          </span>
+        )}
+      </div>
+      {lineup && lineup.startXI.length > 0 ? (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {lineup.startXI.map((p) => (
+            <li
+              key={p.id}
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "baseline",
+                padding: "4px 0",
+                fontSize: "0.84rem",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+              }}
+            >
+              <span
+                className="mono tabular-nums"
+                style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
+              >
+                {p.number ?? "–"}
+              </span>
+              <span className="truncate">{p.name}</span>
+              {p.pos && (
+                <span
+                  className="mono"
+                  style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.68rem" }}
+                >
+                  {p.pos}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="hint" style={{ margin: 0 }}>
+          Aún sin confirmar.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function InjuriesCard({
+  home,
+  away,
+  homeInj,
+  awayInj,
+}: {
+  home: Team;
+  away: Team;
+  homeInj: Injury[];
+  awayInj: Injury[];
+}) {
+  return (
+    <div className="panel" style={{ padding: "18px 20px" }}>
+      <div className="shead" style={{ marginBottom: 14 }}>
+        <h2>Bajas y dudas</h2>
+      </div>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <TeamInjuries team={home} list={homeInj} />
+        <TeamInjuries team={away} list={awayInj} />
+      </div>
+    </div>
+  );
+}
+
+function TeamInjuries({ team, list }: { team: Team; list: Injury[] }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
+        <Image src={team.logo} alt="" width={22} height={22} unoptimized />
+        <b className="truncate" style={{ fontSize: "0.9rem" }}>
+          {team.name}
+        </b>
+      </div>
+      {list.length > 0 ? (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {list.map((i) => (
+            <li
+              key={i.playerId}
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "baseline",
+                padding: "5px 0",
+                fontSize: "0.84rem",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+              }}
+              title={i.type === "Questionable" ? "Duda" : "Baja"}
+            >
+              <span>{i.type === "Questionable" ? "⚠️" : "🚫"}</span>
+              <span className="truncate">{i.player}</span>
+              <span
+                className="mono"
+                style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.68rem" }}
+              >
+                {reasonEs(i.reason)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="hint" style={{ margin: 0 }}>
+          Sin bajas confirmadas.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function reasonEs(r: string | null): string {
+  if (!r) return "";
+  const map: Record<string, string> = {
+    Injury: "Lesión",
+    Suspended: "Sanción",
+    "Red card": "Expulsión",
+    "Yellow cards": "Sanción",
+    "Coach's decision": "Decisión técnica",
+    "National selection": "Otra selección",
+  };
+  return map[r] ?? r;
+}
+
+function OddsCell({ label, val }: { label: string; val: number | null }) {
+  return (
+    <div style={{ textAlign: "center", flex: 1, minWidth: 0 }}>
+      <div
+        className="mono truncate"
+        style={{
+          color: "var(--text-dim)",
+          fontSize: "0.58rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+      <div className="display tabular-nums" style={{ fontSize: "1.4rem" }}>
+        {val != null ? val.toFixed(2) : "—"}
+      </div>
+    </div>
+  );
+}
+
+function OddsCard({
+  odds,
+  home,
+  away,
+}: {
+  odds: MatchOdds;
+  home: Team;
+  away: Team;
+}) {
+  return (
+    <div className="panel" style={{ padding: "18px 20px" }}>
+      <div className="shead" style={{ marginBottom: 14 }}>
+        <h2>Cuotas 1X2</h2>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <OddsCell label={home.name} val={odds.home} />
+        <OddsCell label="Empate" val={odds.draw} />
+        <OddsCell label={away.name} val={odds.away} />
+      </div>
+      <p
+        className="mono"
+        style={{
+          color: "var(--text-dim)",
+          fontSize: "0.58rem",
+          marginTop: 12,
+          textAlign: "center",
+        }}
+      >
+        Cuotas de {odds.bookmaker} · solo informativo (18+).
+      </p>
     </div>
   );
 }
