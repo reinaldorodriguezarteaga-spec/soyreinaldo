@@ -23,6 +23,7 @@ import type {
   WidgetData,
 } from "@/lib/sports/widget-data";
 import MatchCardEvents from "@/components/MatchCardEvents";
+import { SkeletonBar } from "@/components/Skeleton";
 import type { MundialData, XgLeader } from "./page";
 
 export type Tab = "envivo" | "partidos" | "finalizados" | "grupos" | "stats";
@@ -1155,9 +1156,12 @@ function PlayerSeasonModal({
     <div className="pmodal-backdrop" onClick={onClose} role="dialog" aria-modal>
       <div className="pmodal" onClick={(e) => e.stopPropagation()}>
         {p === "loading" ? (
-          <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
-            Cargando…
-          </p>
+          <div className="space-y-3" style={{ padding: "8px 0" }} aria-busy>
+            <SkeletonBar className="h-16 w-16 rounded-full" />
+            <SkeletonBar className="h-5 w-40" />
+            <SkeletonBar className="h-3 w-28" />
+            <SkeletonBar className="h-24 w-full" />
+          </div>
         ) : !p ? (
           <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
             Aún no hay estadísticas de este jugador.

@@ -70,9 +70,11 @@ function Caret() {
 export default function Header({
   initialUser,
   userLeagues = [],
+  hasLiveMatch = false,
 }: {
   initialUser: User | null;
   userLeagues?: League[];
+  hasLiveMatch?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -167,6 +169,18 @@ export default function Header({
               <span className="brand__mark">R</span>
               <span>Soy Reinaldo</span>
             </Link>
+
+            {hasLiveMatch && (
+              <Link
+                href="/mundial?v=envivo"
+                className="navlive"
+                onClick={() => setMobileOpen(false)}
+                title="Hay partido en juego — ver el marcador en vivo"
+              >
+                <span className="livepulse" />
+                EN VIVO
+              </Link>
+            )}
 
             <div className="nav__links" ref={linksRef}>
               {/* Quiniela */}

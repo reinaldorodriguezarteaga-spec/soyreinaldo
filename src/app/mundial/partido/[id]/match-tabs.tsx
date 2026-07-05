@@ -11,6 +11,7 @@ import type {
   MatchOdds,
   MatchPrediction,
 } from "@/lib/sports/api-football";
+import { SkeletonCard } from "@/components/Skeleton";
 
 const DATE_FMT = new Intl.DateTimeFormat("es-ES", {
   day: "numeric",
@@ -125,9 +126,11 @@ function H2HPanel({
 
   if (data === "loading") {
     return (
-      <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
-        Cargando enfrentamientos…
-      </p>
+      <div className="space-y-2" aria-busy>
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
     );
   }
 
@@ -320,9 +323,10 @@ function PreviewPanel({
 
   if (data === "loading") {
     return (
-      <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
-        Cargando previa…
-      </p>
+      <div className="space-y-6" aria-busy>
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
     );
   }
 

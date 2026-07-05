@@ -653,9 +653,37 @@ img {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 16px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
-.match:hover { border-color: var(--line-strong); }
+.match:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Píldora "EN VIVO" del header (aparece si hay partido del Mundial en juego). */
+.navlive {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--live, #ff4d57) 16%, transparent);
+  border: 1px solid color-mix(in oklch, var(--live, #ff4d57) 45%, transparent);
+  color: var(--live, #ff4d57);
+  font-family: var(--font-mono-stack);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.navlive:hover {
+  background: color-mix(in oklch, var(--live, #ff4d57) 26%, transparent);
+  transform: translateY(-1px);
+}
 .match.locked { opacity: 0.55; }
 .match__meta { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .match__when { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }

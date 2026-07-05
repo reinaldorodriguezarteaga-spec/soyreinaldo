@@ -5,6 +5,11 @@ import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getWorldCupFixturesWindow,
+  isLive,
+  isWorldCupActive,
+} from "@/lib/sports/api-football";
 import "./globals.css";
 
 const saira = Saira_Condensed({
@@ -72,13 +77,29 @@ export default async function RootLayout({
       .filter((l): l is { id: string; name: string } => !!l);
   }
 
+  // ¿Hay algún partido del Mundial EN JUEGO? (para el indicador del header).
+  // Solo durante el torneo; la ventana va cacheada (unstable_cache) → coste ~0.
+  let hasLiveMatch = false;
+  if (isWorldCupActive()) {
+    try {
+      const wc = await getWorldCupFixturesWindow();
+      hasLiveMatch = wc.some(isLive);
+    } catch {
+      // best-effort: no romper el layout si la API falla
+    }
+  }
+
   return (
     <html
       lang="es"
       className={`${saira.variable} ${archivo.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header initialUser={user} userLeagues={userLeagues} />
+        <Header
+          initialUser={user}
+          userLeagues={userLeagues}
+          hasLiveMatch={hasLiveMatch}
+        />
         <Gestures />
         <BackButton />
         {children}
