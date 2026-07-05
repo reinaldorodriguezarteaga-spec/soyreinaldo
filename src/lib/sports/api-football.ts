@@ -538,6 +538,45 @@ export async function getFixtureGoals(
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
+/**
+ * Descarta "goles fantasma": un gol anulado por VAR que el proveedor todavía
+ * lista como evento, o eventos y marcador desincronizados en directo. Reconcilia
+ * contra el marcador REAL (`goals.home/away`, la fuente autoritativa): si un
+ * equipo tiene más goles-evento que goles en el marcador, se quitan los más
+ * recientes hasta cuadrar. El autogol cuenta para el equipo rival.
+ */
+export function reconcileGoals(
+  goals: FixtureGoal[],
+  opts: {
+    homeId: number;
+    awayId: number;
+    scoreHome: number | null;
+    scoreAway: number | null;
+  },
+): FixtureGoal[] {
+  const { homeId, awayId, scoreHome, scoreAway } = opts;
+  if (scoreHome == null || scoreAway == null) return goals;
+
+  const benef = (g: FixtureGoal): number =>
+    g.detail === "Own Goal" ? (g.teamId === homeId ? awayId : homeId) : g.teamId;
+  const limit: Record<number, number> = { [homeId]: scoreHome, [awayId]: scoreAway };
+  const count: Record<number, number> = { [homeId]: 0, [awayId]: 0 };
+
+  // De más antiguo a más nuevo: conserva hasta 'limit' por equipo beneficiado;
+  // así el gol anulado (normalmente el más reciente) es el que se descarta.
+  const kept = new Set<FixtureGoal>();
+  for (const g of [...goals].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))) {
+    const t = benef(g);
+    if (limit[t] == null) {
+      kept.add(g); // equipo inesperado: no lo tocamos
+    } else if (count[t] < limit[t]) {
+      count[t]++;
+      kept.add(g);
+    }
+  }
+  return goals.filter((g) => kept.has(g));
+}
+
 /** Una tarjeta de un partido (amarilla / roja / doble amarilla). */
 export type FixtureCard = {
   minute: number | null;
@@ -572,6 +611,50 @@ export async function getFixtureCards(
       };
     })
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
+/** Evento notable que NO cuenta en el marcador: penalti fallado o gol anulado. */
+export type FixtureNote = {
+  minute: number | null;
+  teamId: number;
+  player: string;
+  kind: "missed_penalty" | "disallowed_goal";
+};
+
+/**
+ * Eventos "de más" que conviene mostrar aunque no sumen al marcador: penaltis
+ * fallados (type=Goal, detail "Missed Penalty") y goles anulados por VAR
+ * (type=Var, detail con "disallowed"/"cancelled"). Una llamada a
+ * /fixtures/events (todos los tipos), con clave de caché propia. Vacío si no hay.
+ */
+export async function getFixtureNotes(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureNote[]> {
+  const r = await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate);
+  const notes: FixtureNote[] = [];
+  for (const e of r.response) {
+    const d = (e.detail || "").toLowerCase();
+    if (e.type === "Goal" && d === "missed penalty") {
+      notes.push({
+        minute: e.time.elapsed,
+        teamId: e.team.id,
+        player: e.player.name ?? "—",
+        kind: "missed_penalty",
+      });
+    } else if (
+      e.type === "Var" &&
+      (d.includes("disallow") || d.includes("cancel"))
+    ) {
+      notes.push({
+        minute: e.time.elapsed,
+        teamId: e.team.id,
+        player: e.player.name ?? "—",
+        kind: "disallowed_goal",
+      });
+    }
+  }
+  return notes.sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
 /** Estadística detallada de un jugador en un partido (nulos = no registrado). */
