@@ -331,6 +331,7 @@ export default async function PartidoPage({
             fixtureId={fixtureId}
             home={{ id: home.id, name: home.name, logo: home.logo }}
             away={{ id: away.id, name: away.name, logo: away.logo }}
+            initialTab={played ? "stats" : "preview"}
           >
           <div className="shead">
             <h2>Estadísticas</h2>
