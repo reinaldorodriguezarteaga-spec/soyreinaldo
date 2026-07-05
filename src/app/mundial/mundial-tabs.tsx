@@ -493,6 +493,30 @@ function LiveGroupTable({ group }: { group: LiveGroup }) {
 /* ---------- Próximos partidos ---------- */
 
 function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
+  // Probabilidades 1X2 de los partidos por jugarse, bajo demanda (solo al abrir
+  // esta pestaña) y en un único batch cacheado.
+  const [preds, setPreds] = useState<
+    Record<number, { home: number; draw: number; away: number }>
+  >({});
+  const upcomingKey = fixtures
+    .filter((f) => !isLive(f) && !isFinal(f))
+    .map((f) => f.fixture.id)
+    .join(",");
+
+  useEffect(() => {
+    if (!upcomingKey) return;
+    let cancelled = false;
+    fetch(`/api/sports/predictions?fixtures=${upcomingKey}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((d: Record<number, { home: number; draw: number; away: number }>) => {
+        if (!cancelled) setPreds(d ?? {});
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [upcomingKey]);
+
   if (fixtures.length === 0) {
     return (
       <Empty>No hay partidos próximos en el calendario ahora mismo.</Empty>
@@ -503,6 +527,7 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
       {fixtures.map((fx) => {
         const showScore = isLive(fx) || isFinal(fx);
         const live = isLive(fx);
+        const pred = !showScore ? preds[fx.fixture.id] : undefined;
         return (
           <div className="match" key={fx.fixture.id}>
             <div className="match__meta">
@@ -572,6 +597,7 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
                 />
               </span>
             </Link>
+            {pred && <ProbBar pred={pred} />}
             <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
               <span />
               <Link
@@ -585,6 +611,47 @@ function PartidosView({ fixtures }: { fixtures: Fixture[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** Barra compacta de probabilidad 1X2 para las tarjetas de Próximos. */
+function ProbBar({
+  pred,
+}: {
+  pred: { home: number; draw: number; away: number };
+}) {
+  const total = pred.home + pred.draw + pred.away || 1;
+  const w = (v: number) => `${(v / total) * 100}%`;
+  return (
+    <div style={{ marginTop: 8 }} title="Probabilidad estimada (API-Football)">
+      <div
+        style={{
+          display: "flex",
+          height: 5,
+          borderRadius: 3,
+          overflow: "hidden",
+          background: "var(--surface-2)",
+        }}
+      >
+        <span style={{ width: w(pred.home), background: "var(--accent)" }} />
+        <span style={{ width: w(pred.draw), background: "var(--line-strong)" }} />
+        <span style={{ width: w(pred.away), background: "#ff5b8a" }} />
+      </div>
+      <div
+        className="tabular-nums"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "0.6rem",
+          color: "var(--text-dim)",
+          marginTop: 3,
+        }}
+      >
+        <span>{pred.home}%</span>
+        <span>empate {pred.draw}%</span>
+        <span>{pred.away}%</span>
+      </div>
     </div>
   );
 }

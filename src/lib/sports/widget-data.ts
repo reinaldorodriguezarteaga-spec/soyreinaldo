@@ -101,7 +101,7 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
  * cruce de eliminatoria tarda como mucho eso en reflejarse el nombre ES).
  * Es un par de queries baratas (teams = 48 filas) → coste de CPU ínfimo.
  */
-const loadEsMap = unstable_cache(
+export const loadEsMap = unstable_cache(
   async (fixtureIds: number[]): Promise<Record<number, FixtureEs>> => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -10,8 +10,25 @@ import {
   type MatchOdds,
 } from "@/lib/sports/api-football";
 import { isAppRequest } from "@/lib/is-app";
+import { loadEsMap, type FixtureEs } from "@/lib/sports/widget-data";
 
 export const runtime = "nodejs";
+
+/** Cambia los nombres EN de los equipos por los ES en el advice y el ganador. */
+function localizePrediction(
+  p: MatchPrediction | null,
+  es: FixtureEs | null,
+): MatchPrediction | null {
+  if (!p || !es) return p;
+  const swap = (t: string | null): string | null => {
+    if (!t) return t;
+    let out = t;
+    if (p.teamsEn.home && es.home?.name) out = out.split(p.teamsEn.home).join(es.home.name);
+    if (p.teamsEn.away && es.away?.name) out = out.split(p.teamsEn.away).join(es.away.name);
+    return out;
+  };
+  return { ...p, advice: swap(p.advice), winnerName: swap(p.winnerName) };
+}
 
 /**
  * Previa del partido servida BAJO DEMANDA (al abrir la pestaña "Previa"), para
@@ -38,14 +55,15 @@ export async function GET(req: Request) {
   const inApp = await isAppRequest();
 
   try {
-    const [prediction, injuries, lineups, odds] = await Promise.all([
+    const [prediction, injuries, lineups, odds, esMap] = await Promise.all([
       getFixturePredictions(fixture),
       getFixtureInjuries(fixture),
       getFixtureLineups(fixture),
       inApp ? Promise.resolve(null) : getFixtureOdds(fixture),
+      loadEsMap([fixture]),
     ]);
     return NextResponse.json({
-      prediction,
+      prediction: localizePrediction(prediction, esMap[fixture] ?? null),
       injuries,
       lineups,
       odds,
