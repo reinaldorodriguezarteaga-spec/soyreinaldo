@@ -985,3 +985,128 @@ export function isWorldCupActive(now = new Date()) {
     t < new Date(WORLD_CUP.endUtc).getTime()
   );
 }
+
+// ============================================================================
+//  Previa del partido: predicción, lesiones/bajas y cuotas
+// ============================================================================
+
+function pctToNum(s: string | null | undefined): number {
+  if (!s) return 0;
+  const n = parseFloat(String(s).replace("%", "").trim());
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Probabilidades (0-100) y consejo del partido (endpoint /predictions). */
+export type MatchPrediction = {
+  percent: { home: number; draw: number; away: number };
+  advice: string | null;
+  winnerName: string | null;
+  winnerComment: string | null;
+  /** Forma reciente comparada (0-100) si el API la da. */
+  form: { home: number; away: number } | null;
+};
+
+type PredictionsResponse = {
+  predictions: {
+    winner: { id: number | null; name: string | null; comment: string | null } | null;
+    advice: string | null;
+    percent: { home: string; draw: string; away: string };
+  };
+  comparison?: { form?: { home: string; away: string } };
+};
+
+/** Predicción del partido. Caché 30 min (se afina al acercarse el kickoff). */
+export async function getFixturePredictions(
+  id: number,
+  revalidate = 1800,
+): Promise<MatchPrediction | null> {
+  const r = await get<PredictionsResponse>("/predictions", { fixture: id }, revalidate);
+  const p = r.response[0];
+  if (!p?.predictions?.percent) return null;
+  const pct = p.predictions.percent;
+  const form = p.comparison?.form;
+  return {
+    percent: { home: pctToNum(pct.home), draw: pctToNum(pct.draw), away: pctToNum(pct.away) },
+    advice: p.predictions.advice ?? null,
+    winnerName: p.predictions.winner?.name ?? null,
+    winnerComment: p.predictions.winner?.comment ?? null,
+    form: form ? { home: pctToNum(form.home), away: pctToNum(form.away) } : null,
+  };
+}
+
+/** Una baja (lesión/sanción) de un partido. */
+export type Injury = {
+  playerId: number;
+  player: string;
+  photo: string | null;
+  teamId: number;
+  /** "Missing Fixture" (baja segura) | "Questionable" (duda). */
+  type: string | null;
+  /** "Injury" | "Suspended" | … */
+  reason: string | null;
+};
+
+type InjuriesResponse = {
+  player: { id: number; name: string; photo: string | null; type: string | null; reason: string | null };
+  team: { id: number };
+};
+
+/** Bajas (lesiones/sanciones) del partido. Caché 30 min. */
+export async function getFixtureInjuries(
+  id: number,
+  revalidate = 1800,
+): Promise<Injury[]> {
+  const r = await get<InjuriesResponse>("/injuries", { fixture: id }, revalidate);
+  return r.response.map((x) => ({
+    playerId: x.player.id,
+    player: x.player.name,
+    photo: x.player.photo ?? null,
+    teamId: x.team.id,
+    type: x.player.type ?? null,
+    reason: x.player.reason ?? null,
+  }));
+}
+
+/** Cuota 1X2 (Match Winner) de la primera casa disponible. */
+export type MatchOdds = {
+  bookmaker: string;
+  home: number | null;
+  draw: number | null;
+  away: number | null;
+};
+
+type OddsResponse = {
+  bookmakers: Array<{
+    id: number;
+    name: string;
+    bets: Array<{ id: number; name: string; values: Array<{ value: string; odd: string }> }>;
+  }>;
+};
+
+/**
+ * Cuotas 1X2 del partido (endpoint /odds, solo pre-partido). Toma la primera
+ * casa con el mercado "Match Winner" (bet=1). Caché 30 min. null si no hay.
+ * ⚠️ No mostrar dentro de la app nativa (política "no gambling" de las stores);
+ * el endpoint /api/sports/preview lo omite con isAppRequest().
+ */
+export async function getFixtureOdds(
+  id: number,
+  revalidate = 1800,
+): Promise<MatchOdds | null> {
+  const r = await get<OddsResponse>("/odds", { fixture: id, bet: 1 }, revalidate);
+  const book = r.response[0]?.bookmakers?.[0];
+  if (!book) return null;
+  const mw = book.bets.find((b) => /match winner|1x2/i.test(b.name)) ?? book.bets[0];
+  if (!mw) return null;
+  const pick = (label: RegExp): number | null => {
+    const v = mw.values.find((x) => label.test(x.value));
+    const n = v ? parseFloat(v.odd) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    bookmaker: book.name,
+    home: pick(/^home$|^1$/i),
+    draw: pick(/^draw$|^x$/i),
+    away: pick(/^away$|^2$/i),
+  };
+}

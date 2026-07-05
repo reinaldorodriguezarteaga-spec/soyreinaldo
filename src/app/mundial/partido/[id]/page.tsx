@@ -254,10 +254,9 @@ export default async function PartidoPage({
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap">
           <MatchTabs
-            homeId={home.id}
-            awayId={away.id}
-            homeName={home.name}
-            awayName={away.name}
+            fixtureId={fixtureId}
+            home={{ id: home.id, name: home.name, logo: home.logo }}
+            away={{ id: away.id, name: away.name, logo: away.logo }}
           >
           <div className="shead">
             <h2>Estadísticas</h2>
