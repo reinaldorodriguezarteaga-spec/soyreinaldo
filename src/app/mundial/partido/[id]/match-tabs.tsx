@@ -11,6 +11,7 @@ import type {
   MatchOdds,
   MatchPrediction,
 } from "@/lib/sports/api-football";
+import { subKey } from "@/lib/sports/api-football";
 import { SkeletonCard } from "@/components/Skeleton";
 
 const DATE_FMT = new Intl.DateTimeFormat("es-ES", {
@@ -339,6 +340,8 @@ function PreviewPanel({
   const odds = data?.odds ?? null;
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
+  const cameIn = new Set(data?.subs?.inKeys ?? []);
+  const wentOut = new Set(data?.subs?.outKeys ?? []);
   const hasLineups =
     (homeLineup?.startXI.length ?? 0) + (awayLineup?.startXI.length ?? 0) > 0;
 
@@ -368,6 +371,8 @@ function PreviewPanel({
           away={away}
           homeLineup={homeLineup}
           awayLineup={awayLineup}
+          inKeys={cameIn}
+          outKeys={wentOut}
         />
       )}
       {injuries.length > 0 && (
@@ -496,11 +501,15 @@ function LineupCard({
   away,
   homeLineup,
   awayLineup,
+  inKeys,
+  outKeys,
 }: {
   home: Team;
   away: Team;
   homeLineup: LineupTeam | null;
   awayLineup: LineupTeam | null;
+  inKeys: Set<string>;
+  outKeys: Set<string>;
 }) {
   return (
     <div className="panel" style={{ padding: "18px 20px" }}>
@@ -508,14 +517,40 @@ function LineupCard({
         <h2>Alineaciones</h2>
       </div>
       <div className="grid gap-6 sm:grid-cols-2">
-        <TeamLineup team={home} lineup={homeLineup} />
-        <TeamLineup team={away} lineup={awayLineup} />
+        <TeamLineup team={home} lineup={homeLineup} inKeys={inKeys} outKeys={outKeys} />
+        <TeamLineup team={away} lineup={awayLineup} inKeys={inKeys} outKeys={outKeys} />
       </div>
     </div>
   );
 }
 
-function TeamLineup({ team, lineup }: { team: Team; lineup: LineupTeam | null }) {
+/** Flecha ▲ verde (entró) o ▼ roja (salió). */
+function SubArrow({ dir }: { dir: "in" | "out" }) {
+  return (
+    <span
+      title={dir === "in" ? "Entró" : "Salió"}
+      style={{
+        color: dir === "in" ? "#4ade80" : "#ff5b6a",
+        fontSize: "0.78rem",
+        flex: "none",
+      }}
+    >
+      {dir === "in" ? "▲" : "▼"}
+    </span>
+  );
+}
+
+function TeamLineup({
+  team,
+  lineup,
+  inKeys,
+  outKeys,
+}: {
+  team: Team;
+  lineup: LineupTeam | null;
+  inKeys: Set<string>;
+  outKeys: Set<string>;
+}) {
   return (
     <div>
       <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
@@ -546,6 +581,7 @@ function TeamLineup({ team, lineup }: { team: Team; lineup: LineupTeam | null })
                 borderBottom: "1px solid rgba(255,255,255,0.05)",
               }}
             >
+              {outKeys.has(subKey(p.name)) && <SubArrow dir="out" />}
               <span
                 className="mono tabular-nums"
                 style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
@@ -606,6 +642,7 @@ function TeamLineup({ team, lineup }: { team: Team; lineup: LineupTeam | null })
                 <span className="truncate" style={{ color: "var(--text)" }}>
                   {p.name}
                 </span>
+                {inKeys.has(subKey(p.name)) && <SubArrow dir="in" />}
                 {p.pos && (
                   <span
                     className="mono"

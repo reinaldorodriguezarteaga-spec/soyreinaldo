@@ -4,10 +4,12 @@ import {
   getFixtureInjuries,
   getFixtureLineups,
   getFixtureOdds,
+  getFixtureSubs,
   type MatchPrediction,
   type Injury,
   type LineupTeam,
   type MatchOdds,
+  type FixtureSubs,
 } from "@/lib/sports/api-football";
 import { isAppRequest } from "@/lib/is-app";
 import { loadEsMap, type FixtureEs } from "@/lib/sports/widget-data";
@@ -44,6 +46,7 @@ export type PreviewData = {
   injuries: Injury[];
   lineups: LineupTeam[];
   odds: MatchOdds | null;
+  subs: FixtureSubs;
 };
 
 export async function GET(req: Request) {
@@ -55,11 +58,12 @@ export async function GET(req: Request) {
   const inApp = await isAppRequest();
 
   try {
-    const [prediction, injuries, lineups, odds, esMap] = await Promise.all([
+    const [prediction, injuries, lineups, odds, subs, esMap] = await Promise.all([
       getFixturePredictions(fixture),
       getFixtureInjuries(fixture),
       getFixtureLineups(fixture),
       inApp ? Promise.resolve(null) : getFixtureOdds(fixture),
+      getFixtureSubs(fixture),
       loadEsMap([fixture]),
     ]);
     return NextResponse.json({
@@ -67,6 +71,7 @@ export async function GET(req: Request) {
       injuries,
       lineups,
       odds,
+      subs,
     } satisfies PreviewData);
   } catch {
     return NextResponse.json(
@@ -75,6 +80,7 @@ export async function GET(req: Request) {
         injuries: [],
         lineups: [],
         odds: null,
+        subs: { inKeys: [], outKeys: [] },
       } satisfies PreviewData,
       { status: 200 },
     );

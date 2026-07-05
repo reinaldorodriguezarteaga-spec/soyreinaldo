@@ -10,9 +10,11 @@ import {
   getFixtureNotes,
   getFixturePlayers,
   getFixtureStatistics,
+  getFixtureSubs,
   isFinal,
   isLive,
   reconcileGoals,
+  subKey,
   type FixtureGoal,
 } from "@/lib/sports/api-football";
 import { loadEsMap } from "@/lib/sports/widget-data";
@@ -127,7 +129,7 @@ export default async function PartidoPage({
   const liveNow = isLive(fx);
   const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
-  const [rawGoals, cards, stats, players, lineups, notes, esMap] =
+  const [rawGoals, cards, stats, players, lineups, notes, subs, esMap] =
     await Promise.all([
       getFixtureGoals(fixtureId, rv),
       getFixtureCards(fixtureId, rv),
@@ -135,8 +137,10 @@ export default async function PartidoPage({
       getFixturePlayers(fixtureId, rv),
       getFixtureLineups(fixtureId, rv),
       getFixtureNotes(fixtureId, rv),
+      getFixtureSubs(fixtureId, rv),
       loadEsMap([fixtureId]),
     ]);
+  const cameInKeys = new Set(subs.inKeys);
 
   // Descarta goles anulados/fantasma reconciliando con el marcador real.
   const goals = reconcileGoals(rawGoals, {
@@ -381,8 +385,16 @@ export default async function PartidoPage({
               </div>
               <div className="panel" style={{ padding: "18px 20px" }}>
                 <div className="grid gap-6 sm:grid-cols-2">
-                  <TeamBench team={home} subs={homeLineup?.substitutes ?? []} />
-                  <TeamBench team={away} subs={awayLineup?.substitutes ?? []} />
+                  <TeamBench
+                    team={home}
+                    subs={homeLineup?.substitutes ?? []}
+                    inKeys={cameInKeys}
+                  />
+                  <TeamBench
+                    team={away}
+                    subs={awayLineup?.substitutes ?? []}
+                    inKeys={cameInKeys}
+                  />
                 </div>
               </div>
             </div>
@@ -397,9 +409,11 @@ export default async function PartidoPage({
 function TeamBench({
   team,
   subs,
+  inKeys,
 }: {
   team: { id: number; name: string; logo: string };
   subs: { id: number; number: number | null; name: string; pos: string | null }[];
+  inKeys: Set<string>;
 }) {
   return (
     <div>
@@ -411,35 +425,46 @@ function TeamBench({
       </div>
       {subs.length > 0 ? (
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {subs.map((p) => (
-            <li
-              key={p.id}
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "baseline",
-                padding: "4px 0",
-                fontSize: "0.84rem",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
-              }}
-            >
-              <span
-                className="mono tabular-nums"
-                style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
+          {subs.map((p) => {
+            const cameIn = inKeys.has(subKey(p.name));
+            return (
+              <li
+                key={p.id}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "baseline",
+                  padding: "4px 0",
+                  fontSize: "0.84rem",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                }}
               >
-                {p.number ?? "–"}
-              </span>
-              <span className="truncate">{p.name}</span>
-              {p.pos && (
                 <span
-                  className="mono"
-                  style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.68rem" }}
+                  className="mono tabular-nums"
+                  style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
                 >
-                  {p.pos}
+                  {p.number ?? "–"}
                 </span>
-              )}
-            </li>
-          ))}
+                <span className="truncate">{p.name}</span>
+                {cameIn && (
+                  <span
+                    title="Entró en el partido"
+                    style={{ color: "#4ade80", fontSize: "0.8rem" }}
+                  >
+                    ▲
+                  </span>
+                )}
+                {p.pos && (
+                  <span
+                    className="mono"
+                    style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.68rem" }}
+                  >
+                    {p.pos}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="hint" style={{ margin: 0 }}>

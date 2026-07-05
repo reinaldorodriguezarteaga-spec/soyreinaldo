@@ -657,6 +657,49 @@ export async function getFixtureNotes(
   return notes.sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
 
+/**
+ * Clave para casar un jugador entre /events y /lineups (⚠️ sus IDs de jugador
+ * NO coinciden, y los nombres varían "M. Cunha" vs "Matheus Cunha"): último
+ * apellido, sin tildes, en minúscula.
+ */
+export function subKey(name: string | null): string {
+  if (!name) return "";
+  const clean = name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+  const parts = clean.split(/\s+/);
+  return parts[parts.length - 1] || clean;
+}
+
+/** Claves (apellido) de quienes ENTRARON y SALIERON en los cambios del partido. */
+export type FixtureSubs = { inKeys: string[]; outKeys: string[] };
+
+/**
+ * Cambios del partido (type=subst). ⚠️ En API-Football, `player` es quien SALE
+ * (titular) y `assist` quien ENTRA (del banco). Como los IDs no casan con
+ * /lineups, devolvemos claves por apellido (subKey) para pintar flechas.
+ */
+export async function getFixtureSubs(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureSubs> {
+  const r = await get<FixtureEvent>(
+    "/fixtures/events",
+    { fixture: id, type: "subst" },
+    revalidate,
+  );
+  const inKeys: string[] = [];
+  const outKeys: string[] = [];
+  for (const e of r.response) {
+    if (e.type !== "subst") continue;
+    if (e.assist?.name) inKeys.push(subKey(e.assist.name)); // entra
+    if (e.player?.name) outKeys.push(subKey(e.player.name)); // sale
+  }
+  return { inKeys, outKeys };
+}
+
 /** Estadística detallada de un jugador en un partido (nulos = no registrado). */
 export type PlayerMatchStats = {
   shotsTotal: number | null;
