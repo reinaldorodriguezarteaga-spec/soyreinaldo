@@ -31,15 +31,18 @@ export default function MatchTabs({
   fixtureId,
   home,
   away,
+  initialTab = "stats",
   children,
 }: {
   fixtureId: number;
   home: Team;
   away: Team;
+  /** Pestaña inicial: "preview" para partidos por jugarse (Estadísticas vacía). */
+  initialTab?: "stats" | "preview";
   children: React.ReactNode;
 }) {
-  const [tab, setTab] = useState<"stats" | "preview" | "h2h">("stats");
-  const [previewOpened, setPreviewOpened] = useState(false);
+  const [tab, setTab] = useState<"stats" | "preview" | "h2h">(initialTab);
+  const [previewOpened, setPreviewOpened] = useState(initialTab === "preview");
   const [h2hOpened, setH2hOpened] = useState(false);
 
   return (
@@ -565,6 +568,56 @@ function TeamLineup({ team, lineup }: { team: Team; lineup: LineupTeam | null })
         <p className="hint" style={{ margin: 0 }}>
           Aún sin confirmar.
         </p>
+      )}
+
+      {lineup && lineup.substitutes.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <p
+            className="mono"
+            style={{
+              color: "var(--text-dim)",
+              fontSize: "0.6rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 6,
+            }}
+          >
+            Suplentes
+          </p>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {lineup.substitutes.map((p) => (
+              <li
+                key={p.id}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "baseline",
+                  padding: "3px 0",
+                  fontSize: "0.8rem",
+                  color: "var(--text-dim)",
+                }}
+              >
+                <span
+                  className="mono tabular-nums"
+                  style={{ width: 20, textAlign: "right" }}
+                >
+                  {p.number ?? "–"}
+                </span>
+                <span className="truncate" style={{ color: "var(--text)" }}>
+                  {p.name}
+                </span>
+                {p.pos && (
+                  <span
+                    className="mono"
+                    style={{ marginLeft: "auto", fontSize: "0.66rem" }}
+                  >
+                    {p.pos}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
