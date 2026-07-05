@@ -1029,6 +1029,8 @@ export type MatchPrediction = {
   winnerComment: string | null;
   /** Forma reciente comparada (0-100) si el API la da. */
   form: { home: number; away: number } | null;
+  /** Nombres EN de los equipos (para poder localizarlos en advice/winnerName). */
+  teamsEn: { home: string | null; away: string | null };
 };
 
 type PredictionsResponse = {
@@ -1038,6 +1040,7 @@ type PredictionsResponse = {
     percent: { home: string; draw: string; away: string };
   };
   comparison?: { form?: { home: string; away: string } };
+  teams?: { home?: { name: string }; away?: { name: string } };
 };
 
 /** Predicción del partido. Caché 30 min (se afina al acercarse el kickoff). */
@@ -1056,6 +1059,10 @@ export async function getFixturePredictions(
     winnerName: p.predictions.winner?.name ?? null,
     winnerComment: p.predictions.winner?.comment ?? null,
     form: form ? { home: pctToNum(form.home), away: pctToNum(form.away) } : null,
+    teamsEn: {
+      home: p.teams?.home?.name ?? null,
+      away: p.teams?.away?.name ?? null,
+    },
   };
 }
 

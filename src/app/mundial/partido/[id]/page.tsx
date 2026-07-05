@@ -12,6 +12,7 @@ import {
   isLive,
   type FixtureGoal,
 } from "@/lib/sports/api-football";
+import { loadEsMap } from "@/lib/sports/widget-data";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -79,16 +80,19 @@ export default async function PartidoPage({
   const liveNow = isLive(fx);
   const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
-  const [goals, cards, stats, players, lineups] = await Promise.all([
+  const [goals, cards, stats, players, lineups, esMap] = await Promise.all([
     getFixtureGoals(fixtureId, rv),
     getFixtureCards(fixtureId, rv),
     getFixtureStatistics(fixtureId, rv),
     getFixturePlayers(fixtureId, rv),
     getFixtureLineups(fixtureId, rv),
+    loadEsMap([fixtureId]),
   ]);
 
-  const home = fx.teams.home;
-  const away = fx.teams.away;
+  // Nombres en español (mismo mapa que usa el resto del sitio); fallback al EN.
+  const es = esMap[fixtureId] ?? null;
+  const home = { ...fx.teams.home, name: es?.home.name ?? fx.teams.home.name };
+  const away = { ...fx.teams.away, name: es?.away.name ?? fx.teams.away.name };
   const live = isLive(fx);
   const final = isFinal(fx);
   const played = live || final;
