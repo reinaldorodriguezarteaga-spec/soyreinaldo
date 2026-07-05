@@ -996,6 +996,31 @@ function pctToNum(s: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Traduce el `advice` de /predictions (viene en inglés) a español. Los nombres
+ * de equipo van tal cual los da el API (el detalle de partido también los usa
+ * así), solo se traducen las plantillas. Ej: "Combo Double chance : X or draw
+ * and -3.5 goals" → "Doble oportunidad: X o empate · menos de 3.5 goles".
+ */
+function translateAdvice(advice: string | null): string | null {
+  if (!advice) return null;
+  let s = advice.trim();
+  if (/no (winner )?prediction|no predictions? available/i.test(s)) {
+    return "Sin favorito claro";
+  }
+  s = s.replace(/^Combo\s+/i, "");
+  s = s.replace(/\s+and\s+/gi, " · ");
+  s = s.replace(/Double chance\s*:\s*/i, "Doble oportunidad: ");
+  s = s.replace(/Winner\s*:\s*/i, "Gana ");
+  s = s.replace(/\bor draw\b/gi, "o empate");
+  s = s.replace(
+    /([+-])(\d+(?:\.\d+)?)\s*goals?/gi,
+    (_, sign: string, num: string) =>
+      `${sign === "-" ? "menos" : "más"} de ${num} goles`,
+  );
+  return s;
+}
+
 /** Probabilidades (0-100) y consejo del partido (endpoint /predictions). */
 export type MatchPrediction = {
   percent: { home: number; draw: number; away: number };
@@ -1027,7 +1052,7 @@ export async function getFixturePredictions(
   const form = p.comparison?.form;
   return {
     percent: { home: pctToNum(pct.home), draw: pctToNum(pct.draw), away: pctToNum(pct.away) },
-    advice: p.predictions.advice ?? null,
+    advice: translateAdvice(p.predictions.advice ?? null),
     winnerName: p.predictions.winner?.name ?? null,
     winnerComment: p.predictions.winner?.comment ?? null,
     form: form ? { home: pctToNum(form.home), away: pctToNum(form.away) } : null,
