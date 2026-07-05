@@ -98,6 +98,21 @@ async function get<T>(
     next: { revalidate: revalidateSeconds },
   });
 
+  // Instrumentación: registra cada llamada para poder atribuir el consumo de
+  // quota en los logs de Vercel. Busca "[apif]" para ver qué endpoint se dispara
+  // y cuánta quota queda (cabeceras de api-sports). No expone la key.
+  const remaining =
+    res.headers.get("x-ratelimit-requests-remaining") ??
+    res.headers.get("X-RateLimit-Remaining") ??
+    "?";
+  const paramStr = Object.entries(params)
+    .filter(([k]) => k !== "key")
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+  console.log(
+    `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
+  );
+
   if (!res.ok) {
     return { response: [], errors: { httpStatus: res.status } };
   }

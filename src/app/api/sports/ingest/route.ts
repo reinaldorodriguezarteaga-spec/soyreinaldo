@@ -144,6 +144,13 @@ async function backfillMissingFixtureIds(
     "https://v3.football.api-sports.io/fixtures?league=1&season=2026",
     { headers: { "x-apisports-key": apiKey }, cache: "no-store" },
   );
+  const remaining =
+    res.headers.get("x-ratelimit-requests-remaining") ??
+    res.headers.get("X-RateLimit-Remaining") ??
+    "?";
+  console.log(
+    `[apif] BACKFILL /fixtures?league=1&season=2026 missing=${missing.length} status=${res.status} remaining=${remaining}`,
+  );
   if (!res.ok) return 0;
   const { response: fixtures } = (await res.json()) as {
     response: WcListFixture[];
