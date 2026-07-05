@@ -226,7 +226,7 @@ export async function getWorldCupFixturesWindow(): Promise<Fixture[]> {
       from: day(fromMs),
       to: day(toMs),
     },
-    60,
+    20, // frescura en vivo: el marcador de la ventana se refresca cada 20s
   );
   return r.response.filter((f) => {
     if (isLive(f)) return true;

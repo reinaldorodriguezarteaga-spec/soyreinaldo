@@ -74,10 +74,10 @@ export default async function PartidoPage({
 
   // Primero el partido (caché corta) para saber si está en juego; si lo está,
   // el resto se pide con caché corta y se auto-refresca la página.
-  const fx = await getFixtureById(fixtureId, 30);
+  const fx = await getFixtureById(fixtureId, 15);
   if (!fx) notFound();
   const liveNow = isLive(fx);
-  const rv = liveNow ? 60 : undefined; // undefined = caché por defecto del fetcher
+  const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
   const [goals, cards, stats, players, lineups] = await Promise.all([
     getFixtureGoals(fixtureId, rv),
