@@ -14,7 +14,9 @@ import {
   type StandingRow,
 } from "@/lib/sports/api-football";
 import { attachEvents, type WcFixture } from "@/lib/sports/widget-data";
+import { getWcFallbackData } from "@/lib/sports/wc-fallback";
 import MundialTabs, { type Tab } from "./mundial-tabs";
+import MundialFallback from "./mundial-fallback";
 
 export const metadata = {
   title: "Mundial 2026 | Soy Reinaldo",
@@ -89,6 +91,15 @@ export default async function MundialPage({
   // Sin ?v= explícito, abrir en "Marcador en vivo" si hay partido en juego.
   const view = normalizeView(v) ?? (carryIds.length > 0 ? "envivo" : "partidos");
 
+  // Si API-Football no devolvió NADA (p. ej. quota agotada), caemos a los datos
+  // guardados en nuestra BD para no dejar la web vacía.
+  const apiDown =
+    fixtures.length === 0 &&
+    finished.length === 0 &&
+    groups.length === 0 &&
+    today.length === 0;
+  const fallback = apiDown ? await getWcFallbackData() : null;
+
   const data: MundialData = {
     fixtures,
     finished,
@@ -119,7 +130,11 @@ export default async function MundialPage({
         </div>
       </section>
 
-      <MundialTabs data={data} view={view} />
+      {fallback ? (
+        <MundialFallback data={fallback} />
+      ) : (
+        <MundialTabs data={data} view={view} />
+      )}
     </main>
   );
 }
