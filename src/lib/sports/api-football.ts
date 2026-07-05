@@ -2,9 +2,12 @@
  * Cliente delgado para api-sports.io (API-Football).
  *
  * Solo se usa en server components / route handlers — la key vive en
- * `API_FOOTBALL_KEY` y nunca debe exponerse al cliente. Cada llamada usa
- * el caché HTTP de Next.js (`next.revalidate`) para no quemar quota.
+ * `API_FOOTBALL_KEY` y nunca debe exponerse al cliente. Cada llamada se cachea
+ * con `unstable_cache` (⚠️ en Next 16 `fetch` + `next.revalidate` ya NO cachea,
+ * así que sin esto cada render pegaba a API-Football y quemaba la quota).
  */
+
+import { unstable_cache } from "next/cache";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -82,41 +85,75 @@ export function isFinal(f: Fixture) {
   return FINAL_STATES.includes(f.fixture.status.short);
 }
 
+/**
+ * Llamada CRUDA a API-Football (una sola por cache-miss). Loguea `[apif]` solo
+ * cuando de verdad sale a la red, así el volumen de esas líneas en los logs de
+ * Vercel mide directamente la eficacia del caché. Lanza en error de red/HTTP o
+ * cuando la API responde 200 con `errors` (p.ej. quota agotada) → así
+ * `unstable_cache` NO cachea el fallo y se recupera en cuanto la API vuelve.
+ */
+async function rawGet<T>(
+  url: string,
+  path: string,
+  paramStr: string,
+): Promise<{ response: T[]; errors: unknown }> {
+  const key = process.env.API_FOOTBALL_KEY;
+  if (!key) throw new Error("API_FOOTBALL_KEY missing");
+
+  const res = await fetch(url, {
+    headers: { "x-apisports-key": key },
+    cache: "no-store", // el único caché es unstable_cache (capa de abajo)
+  });
+
+  const remaining =
+    res.headers.get("x-ratelimit-requests-remaining") ??
+    res.headers.get("X-RateLimit-Remaining") ??
+    "?";
+  console.log(
+    `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
+  );
+
+  if (!res.ok) throw new Error(`apif http ${res.status} ${path}`);
+
+  const json = (await res.json()) as { response: T[]; errors: unknown };
+  const errs = json.errors;
+  const hasErr = Array.isArray(errs)
+    ? errs.length > 0
+    : !!errs && typeof errs === "object" && Object.keys(errs).length > 0;
+  if (hasErr) throw new Error(`apif errors ${path}: ${JSON.stringify(errs)}`);
+
+  return json;
+}
+
 async function get<T>(
   path: string,
   params: Record<string, string | number>,
   revalidateSeconds: number,
 ): Promise<{ response: T[]; errors: unknown }> {
-  const key = process.env.API_FOOTBALL_KEY;
-  if (!key) throw new Error("API_FOOTBALL_KEY missing");
-
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
-
-  const res = await fetch(url.toString(), {
-    headers: { "x-apisports-key": key },
-    next: { revalidate: revalidateSeconds },
-  });
-
-  // Instrumentación: registra cada llamada para poder atribuir el consumo de
-  // quota en los logs de Vercel. Busca "[apif]" para ver qué endpoint se dispara
-  // y cuánta quota queda (cabeceras de api-sports). No expone la key.
-  const remaining =
-    res.headers.get("x-ratelimit-requests-remaining") ??
-    res.headers.get("X-RateLimit-Remaining") ??
-    "?";
+  const urlStr = url.toString();
   const paramStr = Object.entries(params)
     .filter(([k]) => k !== "key")
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
-  console.log(
-    `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
+
+  // Caché REAL por URL. La clave incluye la URL completa (endpoint + params) y
+  // el TTL = revalidateSeconds de cada llamada. unstable_cache SÍ cachea aunque
+  // la ruta sea dinámica (a diferencia de fetch+next.revalidate en Next 16).
+  const cached = unstable_cache(
+    () => rawGet<T>(urlStr, path, paramStr),
+    ["apif", urlStr],
+    { revalidate: revalidateSeconds },
   );
 
-  if (!res.ok) {
-    return { response: [], errors: { httpStatus: res.status } };
+  try {
+    return await cached();
+  } catch {
+    // Red caída / HTTP != 2xx / API con error (quota) → vacío sin cachear.
+    // Lo maneja el fallback a BD de /mundial (wc-fallback.ts).
+    return { response: [], errors: { failed: true } };
   }
-  return res.json();
 }
 
 /**
