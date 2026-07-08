@@ -359,11 +359,17 @@ export type PlayerStatLeader = {
       /** Valoración media del torneo, p. ej. "7.43". */
       rating: string | null;
     };
+    /** Solo presente en los rankings de tarjetas. */
+    cards?: { yellow: number | null; yellowred: number | null; red: number | null };
   }>;
 };
 
 async function topPlayers(
-  path: "/players/topscorers" | "/players/topassists",
+  path:
+    | "/players/topscorers"
+    | "/players/topassists"
+    | "/players/topyellowcards"
+    | "/players/topredcards",
   n: number,
 ): Promise<PlayerStatLeader[]> {
   const r = await get<PlayerStatLeader>(
@@ -382,6 +388,11 @@ export function getWorldCupTopScorers(n = 10): Promise<PlayerStatLeader[]> {
 /** Máximos asistidores del Mundial (vacío hasta que empiece el torneo). */
 export function getWorldCupTopAssists(n = 10): Promise<PlayerStatLeader[]> {
   return topPlayers("/players/topassists", n);
+}
+
+/** Jugadores con más tarjetas amarillas del Mundial ("el tarjetero"). */
+export function getWorldCupTopYellowCards(n = 10): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topyellowcards", n);
 }
 
 /** Evento de un partido. Solo nos interesan los goles (type === "Goal"). */
@@ -1014,6 +1025,74 @@ export async function getPlayerSeasonStats(
   };
 }
 
+/** Palmarés, fichajes y lesiones/sanciones de un jugador (ficha ampliada). */
+export type PlayerTrophy = {
+  league: string;
+  country: string | null;
+  season: string;
+  place: string;
+};
+export type PlayerTransfer = {
+  date: string | null;
+  type: string | null;
+  teamIn: { name: string; logo: string } | null;
+  teamOut: { name: string; logo: string } | null;
+};
+export type PlayerSidelined = { type: string; start: string | null; end: string | null };
+export type PlayerExtras = {
+  trophies: PlayerTrophy[];
+  transfers: PlayerTransfer[];
+  sidelined: PlayerSidelined[];
+};
+
+type TrophyResp = { league: string; country: string; season: string; place: string };
+type TransferResp = {
+  transfers: Array<{
+    date: string | null;
+    type: string | null;
+    teams: {
+      in: { name: string; logo: string } | null;
+      out: { name: string; logo: string } | null;
+    };
+  }>;
+};
+type SidelinedResp = { type: string; start: string | null; end: string | null };
+
+/**
+ * Datos de carrera de un jugador: palmarés (títulos primero), últimos fichajes
+ * e historial de lesiones/sanciones. Tres endpoints en paralelo, cada uno
+ * tolerante a fallo. Caché 1 día — son datos históricos que cambian poco.
+ */
+export async function getPlayerExtras(id: number): Promise<PlayerExtras> {
+  const rv = 86400;
+  const [tro, tra, sid] = await Promise.all([
+    get<TrophyResp>("/trophies", { player: id }, rv).catch(() => ({ response: [] as TrophyResp[] })),
+    get<TransferResp>("/transfers", { player: id }, rv).catch(() => ({ response: [] as TransferResp[] })),
+    get<SidelinedResp>("/sidelined", { player: id }, rv).catch(() => ({ response: [] as SidelinedResp[] })),
+  ]);
+
+  const trophies: PlayerTrophy[] = (tro.response ?? [])
+    .filter((t) => /winner/i.test(t.place))
+    .map((t) => ({ league: t.league, country: t.country ?? null, season: t.season, place: t.place }))
+    .slice(0, 10);
+
+  const transfers: PlayerTransfer[] = ((tra.response?.[0] as TransferResp | undefined)?.transfers ?? [])
+    .slice(0, 5)
+    .map((t) => ({
+      date: t.date,
+      type: t.type,
+      teamIn: t.teams?.in ? { name: t.teams.in.name, logo: t.teams.in.logo } : null,
+      teamOut: t.teams?.out ? { name: t.teams.out.name, logo: t.teams.out.logo } : null,
+    }));
+
+  const sidelined: PlayerSidelined[] = (sid.response ?? [])
+    .slice(-6)
+    .reverse()
+    .map((s) => ({ type: s.type, start: s.start, end: s.end }));
+
+  return { trophies, transfers, sidelined };
+}
+
 /** Un jugador en la alineación (con su posición en la rejilla "fila:columna"). */
 export type LineupPlayer = {
   id: number;
@@ -1083,15 +1162,18 @@ export async function getWorldCupPlayerStats(n = 10): Promise<{
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
+  cards: PlayerStatLeader[];
 }> {
-  const [scorersAll, assistsAll] = await Promise.all([
+  const [scorersAll, assistsAll, cardsAll] = await Promise.all([
     getWorldCupTopScorers(40),
     getWorldCupTopAssists(40),
+    getWorldCupTopYellowCards(n).catch(() => [] as PlayerStatLeader[]),
   ]);
   return {
     scorers: scorersAll.slice(0, n),
     assists: assistsAll.slice(0, n),
     ratings: ratingLeaders(scorersAll, assistsAll, n),
+    cards: cardsAll.slice(0, n),
   };
 }
 
@@ -1137,6 +1219,67 @@ export function teamAttackDefense(groups: WcGroup[]): {
     .sort((a, b) => b.all.goals.for - a.all.goals.for)
     .slice(0, 5);
   const defense = [...played]
+    .sort((a, b) => a.all.goals.against - b.all.goals.against)
+    .slice(0, 5);
+  return { attack, defense };
+}
+
+/**
+ * Mejor ataque / mejor defensa del torneo COMPLETO (grupos + eliminatorias),
+ * agregando goles a favor/en contra de todos los partidos TERMINADOS. La
+ * clasificación (`/standings`) solo cubre la fase de grupos, así que en cuanto
+ * empiezan las eliminatorias hay que derivarlo de los fixtures para no dar
+ * cifras congeladas en la fase de grupos. Los penaltis (tanda) no cuentan:
+ * `goals` es el marcador al final de la prórroga.
+ */
+export function teamAttackDefenseFromFixtures(fixtures: Fixture[]): {
+  attack: StandingRow[];
+  defense: StandingRow[];
+} {
+  type Agg = {
+    team: { id: number; name: string; logo: string };
+    played: number;
+    gf: number;
+    ga: number;
+  };
+  const map = new Map<number, Agg>();
+  const bump = (
+    team: { id: number; name: string; logo: string },
+    gf: number,
+    ga: number,
+  ) => {
+    const a =
+      map.get(team.id) ??
+      { team: { id: team.id, name: team.name, logo: team.logo }, played: 0, gf: 0, ga: 0 };
+    a.played += 1;
+    a.gf += gf;
+    a.ga += ga;
+    map.set(team.id, a);
+  };
+  for (const f of fixtures) {
+    if (!isFinal(f)) continue;
+    const hg = f.goals.home ?? 0;
+    const ag = f.goals.away ?? 0;
+    bump(f.teams.home, hg, ag);
+    bump(f.teams.away, ag, hg);
+  }
+  const rows: StandingRow[] = [...map.values()].map((a) => ({
+    rank: 0,
+    team: a.team,
+    points: 0,
+    goalsDiff: a.gf - a.ga,
+    all: {
+      played: a.played,
+      win: 0,
+      draw: 0,
+      lose: 0,
+      goals: { for: a.gf, against: a.ga },
+    },
+    form: null,
+  }));
+  if (rows.length === 0) return { attack: [], defense: [] };
+  const attack = [...rows].sort((a, b) => b.all.goals.for - a.all.goals.for).slice(0, 5);
+  const defense = [...rows]
     .sort((a, b) => a.all.goals.against - b.all.goals.against)
     .slice(0, 5);
   return { attack, defense };

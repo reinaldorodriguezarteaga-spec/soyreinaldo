@@ -5,7 +5,7 @@ import {
   getWorldCupFixturesWindow,
   getWorldCupPlayerStats,
   getWorldCupTopXg,
-  teamAttackDefense,
+  teamAttackDefenseFromFixtures,
   isWorldCupActive,
   isLive,
   type Fixture,
@@ -39,6 +39,7 @@ export type MundialData = {
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
+  cards: PlayerStatLeader[];
   attackDefense: { attack: StandingRow[]; defense: StandingRow[] };
   xg: XgLeader | null;
   active: boolean;
@@ -67,7 +68,8 @@ export default async function MundialPage({
     scorers: PlayerStatLeader[];
     assists: PlayerStatLeader[];
     ratings: PlayerStatLeader[];
-  } = { scorers: [], assists: [], ratings: [] };
+    cards: PlayerStatLeader[];
+  } = { scorers: [], assists: [], ratings: [], cards: [] };
   let xg: XgLeader | null = null;
 
   try {
@@ -83,8 +85,8 @@ export default async function MundialPage({
     // estados vacíos en cada vista
   }
 
-  const { scorers, assists, ratings } = players;
-  const attackDefense = teamAttackDefense(groups);
+  const { scorers, assists, ratings, cards } = players;
+  const attackDefense = teamAttackDefenseFromFixtures(finished);
   const active = isWorldCupActive();
   const carryIds = today.filter(isLive).map((f) => f.fixture.id);
 
@@ -109,6 +111,7 @@ export default async function MundialPage({
     scorers,
     assists,
     ratings,
+    cards,
     attackDefense,
     xg,
     active,

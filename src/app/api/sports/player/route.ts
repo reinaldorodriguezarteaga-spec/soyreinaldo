@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getPlayerSeasonStats } from "@/lib/sports/api-football";
+import { getPlayerExtras, getPlayerSeasonStats } from "@/lib/sports/api-football";
 
 export const runtime = "nodejs";
 
 /**
- * Estadísticas agregadas de un jugador en el Mundial:
- *   GET /api/sports/player?id=154  → PlayerSeason | null
- * Usado por las tablas de Estadísticas al pulsar un jugador.
+ * Ficha de un jugador en el Mundial + datos de carrera:
+ *   GET /api/sports/player?id=154  → { season: PlayerSeason | null, extras }
+ * Usado por el modal de Estadísticas al pulsar un jugador.
  */
 export async function GET(req: Request) {
   const id = parseInt(new URL(req.url).searchParams.get("id") ?? "", 10);
@@ -14,7 +14,11 @@ export async function GET(req: Request) {
     return NextResponse.json(null, { status: 400 });
   }
   try {
-    return NextResponse.json(await getPlayerSeasonStats(id));
+    const [season, extras] = await Promise.all([
+      getPlayerSeasonStats(id),
+      getPlayerExtras(id).catch(() => ({ trophies: [], transfers: [], sidelined: [] })),
+    ]);
+    return NextResponse.json({ season, extras });
   } catch {
     return NextResponse.json(null, { status: 200 });
   }

@@ -9,6 +9,7 @@ import {
   type Fixture,
   type WcGroup,
   type PlayerSeason,
+  type PlayerExtras,
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
@@ -970,7 +971,7 @@ function RankPill({ rank }: { rank: number }) {
 /* ---------- Estadísticas ---------- */
 
 function StatsView({ data }: { data: MundialData }) {
-  const { scorers, assists, ratings, attackDefense, xg, active } = data;
+  const { scorers, assists, ratings, cards, attackDefense, xg, active } = data;
   const noPlayerData = scorers.length === 0 && assists.length === 0;
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -978,6 +979,37 @@ function StatsView({ data }: { data: MundialData }) {
     <div className="space-y-8">
       {openId != null && (
         <PlayerSeasonModal id={openId} onClose={() => setOpenId(null)} />
+      )}
+      {active && (
+        <Link
+          href="/mundial/comparar"
+          className="panel"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "14px 18px",
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          <span>
+            <b>Comparador de selecciones</b>
+            <span
+              className="mono"
+              style={{
+                display: "block",
+                color: "var(--text-dim)",
+                fontSize: "0.66rem",
+                marginTop: 2,
+              }}
+            >
+              Enfrenta dos equipos estadística a estadística
+            </span>
+          </span>
+          <span style={{ color: "var(--accent)" }}>Comparar →</span>
+        </Link>
       )}
       {xg && (
         <div className="grid3">
@@ -1049,6 +1081,16 @@ function StatsView({ data }: { data: MundialData }) {
           </Empty>
         )}
       </div>
+
+      {cards.length > 0 && (
+        <div>
+          <div className="shead">
+            <h2>Tarjetas</h2>
+            <span className="sh-note">los más amonestados del torneo</span>
+          </div>
+          <PlayerTable players={cards} metric="cards" onPick={setOpenId} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1059,11 +1101,17 @@ function PlayerTable({
   onPick,
 }: {
   players: PlayerStatLeader[];
-  metric: "goals" | "assists" | "rating";
+  metric: "goals" | "assists" | "rating" | "cards";
   onPick: (id: number) => void;
 }) {
   const label =
-    metric === "goals" ? "Goles" : metric === "assists" ? "Asist." : "Nota";
+    metric === "goals"
+      ? "Goles"
+      : metric === "assists"
+        ? "Asist."
+        : metric === "cards"
+          ? "Tarjetas"
+          : "Nota";
   return (
     <div className="panel" style={{ overflowX: "auto" }}>
       <table className="board">
@@ -1080,14 +1128,18 @@ function PlayerTable({
         <tbody>
           {players.map((p, i) => {
             const st = p.statistics[0];
+            const yellow = st?.cards?.yellow ?? 0;
+            const red = (st?.cards?.red ?? 0) + (st?.cards?.yellowred ?? 0);
             const value =
               metric === "goals"
                 ? (st?.goals.total ?? 0)
                 : metric === "assists"
                   ? (st?.goals.assists ?? 0)
-                  : st?.games.rating
-                    ? parseFloat(st.games.rating).toFixed(2)
-                    : "—";
+                  : metric === "cards"
+                    ? `${yellow}🟨${red > 0 ? ` ${red}🟥` : ""}`
+                    : st?.games.rating
+                      ? parseFloat(st.games.rating).toFixed(2)
+                      : "—";
             return (
               <tr
                 key={p.player.id}
@@ -1172,7 +1224,8 @@ function PlayerSeasonModal({
   id: number;
   onClose: () => void;
 }) {
-  const [p, setP] = useState<PlayerSeason | null | "loading">("loading");
+  type Payload = { season: PlayerSeason | null; extras: PlayerExtras };
+  const [p, setP] = useState<Payload | null | "loading">("loading");
   useEffect(() => {
     let cancelled = false;
     document.body.style.overflow = "hidden";
@@ -1182,7 +1235,7 @@ function PlayerSeasonModal({
     document.addEventListener("keydown", onKey);
     fetch(`/api/sports/player?id=${id}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: PlayerSeason | null) => {
+      .then((d: Payload | null) => {
         if (!cancelled) setP(d ?? null);
       })
       .catch(() => {
@@ -1205,12 +1258,15 @@ function PlayerSeasonModal({
             <SkeletonBar className="h-3 w-28" />
             <SkeletonBar className="h-24 w-full" />
           </div>
-        ) : !p ? (
+        ) : !p || (!p.season && p.extras.trophies.length === 0) ? (
           <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-dim)" }}>
             Aún no hay estadísticas de este jugador.
           </p>
         ) : (
-          <SeasonContent p={p} />
+          <>
+            {p.season && <SeasonContent p={p.season} />}
+            <PlayerExtrasView extras={p.extras} />
+          </>
         )}
         <button
           type="button"
@@ -1221,6 +1277,129 @@ function PlayerSeasonModal({
           Hecho
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Año (YYYY) de una fecha ISO, o "" si no se puede. */
+function yearOf(d: string | null): string {
+  if (!d) return "";
+  const m = d.match(/(\d{4})/);
+  return m ? m[1] : "";
+}
+
+/** Palmarés, fichajes e historial de lesiones/sanciones bajo las stats. */
+function PlayerExtrasView({ extras }: { extras: PlayerExtras }) {
+  const { trophies, transfers, sidelined } = extras;
+  if (trophies.length === 0 && transfers.length === 0 && sidelined.length === 0)
+    return null;
+
+  const subhead = (t: string) => (
+    <p
+      className="mono"
+      style={{
+        color: "var(--text-dim)",
+        fontSize: "0.62rem",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        margin: "18px 0 8px",
+      }}
+    >
+      {t}
+    </p>
+  );
+
+  return (
+    <div>
+      {trophies.length > 0 && (
+        <>
+          {subhead("Palmarés")}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {trophies.map((t, i) => (
+              <span
+                key={i}
+                className="chip"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  background: "var(--surface-2)",
+                  fontSize: "0.78rem",
+                }}
+                title={`${t.league}${t.country ? ` · ${t.country}` : ""} ${t.season}`}
+              >
+                🏆 {t.league}
+                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
+                  {t.season}
+                </span>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+
+      {transfers.length > 0 && (
+        <>
+          {subhead("Fichajes recientes")}
+          <div className="panel" style={{ overflow: "hidden" }}>
+            {transfers.map((t, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  padding: "9px 12px",
+                  borderBottom: i < transfers.length - 1 ? "1px solid var(--line)" : undefined,
+                  fontSize: "0.82rem",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                  <span className="truncate">{t.teamOut?.name ?? "—"}</span>
+                  <span style={{ color: "var(--text-dim)" }}>→</span>
+                  <span className="truncate" style={{ fontWeight: 700 }}>
+                    {t.teamIn?.name ?? "—"}
+                  </span>
+                </span>
+                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", flexShrink: 0 }}>
+                  {yearOf(t.date)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {sidelined.length > 0 && (
+        <>
+          {subhead("Lesiones y sanciones")}
+          <div className="panel" style={{ overflow: "hidden" }}>
+            {sidelined.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  padding: "9px 12px",
+                  borderBottom: i < sidelined.length - 1 ? "1px solid var(--line)" : undefined,
+                  fontSize: "0.82rem",
+                }}
+              >
+                <span className="truncate">{s.type}</span>
+                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", flexShrink: 0 }}>
+                  {yearOf(s.start)}
+                  {yearOf(s.end) && yearOf(s.end) !== yearOf(s.start) ? `–${yearOf(s.end)}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
