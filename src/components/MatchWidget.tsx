@@ -9,6 +9,8 @@ export default async function MatchWidget() {
     return null;
   }
 
-  if (initial.fixtures.length === 0) return null;
+  // Nada que enseñar solo si no hay ni partidos de hoy/en vivo ni próximos.
+  if (initial.fixtures.length === 0 && !(initial.next && initial.next.length))
+    return null;
   return <MatchWidgetClient initial={initial} />;
 }

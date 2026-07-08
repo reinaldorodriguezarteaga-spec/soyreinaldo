@@ -37,23 +37,23 @@ export default async function Home() {
 
         <div className="wrap">
           <div className="hero__content">
-            <p className="eyebrow hero__eyebrow">Fútbol con Reinaldo</p>
+            <p className="eyebrow hero__eyebrow">Mundial 2026 · en directo</p>
             <h1 className="hero__title">
-              Soy
+              El fútbol,
               <br />
-              Reinaldo<span className="dot">.</span>
+              en vivo<span className="dot">.</span>
             </h1>
             <p className="hero__lede">
-              Cuento el fútbol desde la pasión culé. Quinielas, debate y
-              comunidad con +{stats.total_followers.replace(/^\+/, "")}{" "}
-              siguiéndome entre todas mis redes.
+              Marcadores minuto a minuto, estadísticas, alineaciones y la
+              quiniela culé — contado desde la pasión de{" "}
+              <strong style={{ color: "var(--text)" }}>@SoyReinaldoR</strong>.
             </p>
             <div className="hero__actions">
-              <Link href="/quiniela" className="btn btn--accent">
-                Entrar a la Quiniela <span className="arr">→</span>
+              <Link href="/mundial?v=envivo" className="btn btn--accent">
+                Ver el Mundial <span className="arr">→</span>
               </Link>
-              <Link href="/redes" className="btn btn--ghost">
-                Ver mis redes <span className="arr">→</span>
+              <Link href="/quiniela" className="btn btn--ghost">
+                Entrar a la quiniela <span className="arr">→</span>
               </Link>
             </div>
 
@@ -79,6 +79,10 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* MARCADOR EN VIVO (protagonista: justo bajo el hero, solo cuando hay
+          partidos que enseñar) */}
+      <MatchWidget />
+
       {/* MARQUEE */}
       <div className="marquee" aria-hidden>
         <div className="marquee__track">
@@ -87,9 +91,6 @@ export default async function Home() {
           ))}
         </div>
       </div>
-
-      {/* MARCADOR EN VIVO (solo cuando hay partidos que enseñar) */}
-      <MatchWidget />
 
       {/* FEATURES */}
       <section className="section" id="quiniela">
