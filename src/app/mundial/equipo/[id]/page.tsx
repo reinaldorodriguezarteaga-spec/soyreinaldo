@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getTeamFixtures,
+  getTeamStatistics,
   isFinal,
   isLive,
   type Fixture,
 } from "@/lib/sports/api-football";
+import TeamStats from "./team-stats";
 
 export async function generateMetadata({
   params,
@@ -53,10 +55,10 @@ export default async function EquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const { team, recent, upcoming } = await getTeamFixtures(teamId, {
-    last: 20,
-    next: 5,
-  });
+  const [{ team, recent, upcoming }, stats] = await Promise.all([
+    getTeamFixtures(teamId, { last: 20, next: 5 }),
+    getTeamStatistics(teamId).catch(() => null),
+  ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
 
@@ -111,6 +113,8 @@ export default async function EquipoPage({
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap space-y-8">
+          {stats && <TeamStats stats={stats} />}
+
           {live.length > 0 && (
             <div>
               <div className="shead">
