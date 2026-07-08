@@ -1233,6 +1233,72 @@ export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
     });
 }
 
+/** Un jugador del listado global (todas las plantillas del Mundial). */
+export type AllPlayer = {
+  id: number;
+  name: string;
+  photo: string | null;
+  position: string | null;
+  team: { name: string; logo: string } | null;
+};
+
+function mapAllPlayers(rows: PlayerSeasonResponse[]): AllPlayer[] {
+  return rows.map((p) => {
+    const s = p.statistics?.[0];
+    return {
+      id: p.player.id,
+      name: p.player.name,
+      photo: p.player.photo ?? null,
+      position: s?.games?.position ?? null,
+      team: s?.team ? { name: s.team.name, logo: s.team.logo } : null,
+    };
+  });
+}
+
+/**
+ * Todos los jugadores del Mundial (los que tienen ficha en el torneo),
+ * ordenados alfabéticamente. Pagina `/players?league=1&season=2026`: la 1ª
+ * página da el total, el resto se piden en paralelo (tope 40 páginas). Cada
+ * página cacheada 1h por URL.
+ */
+export async function getAllWorldCupPlayers(): Promise<AllPlayer[]> {
+  const params = (page: number) => ({
+    league: WORLD_CUP.leagueId,
+    season: WORLD_CUP.season,
+    page,
+  });
+  const first = await get<PlayerSeasonResponse>("/players", params(1), 3600);
+  const totalPages = Math.min(
+    (first as { paging?: { total?: number } }).paging?.total ?? 1,
+    70,
+  );
+
+  // Por lotes de 6 para no chocar con el rate-limit por segundo de la API
+  // (39+ peticiones en paralelo devolvían páginas vacías).
+  const pages: PlayerSeasonResponse[][] = [first.response];
+  const BATCH = 6;
+  for (let start = 2; start <= totalPages; start += BATCH) {
+    const nums: number[] = [];
+    for (let pg = start; pg < start + BATCH && pg <= totalPages; pg++) nums.push(pg);
+    const batch = await Promise.all(
+      nums.map((pg) =>
+        get<PlayerSeasonResponse>("/players", params(pg), 3600).then((r) => r.response),
+      ),
+    );
+    pages.push(...batch);
+  }
+
+  const all = pages.flat();
+  const seen = new Set<number>();
+  const out: AllPlayer[] = [];
+  for (const p of mapAllPlayers(all)) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
+
 /** Un jugador en la alineación (con su posición en la rejilla "fila:columna"). */
 export type LineupPlayer = {
   id: number;

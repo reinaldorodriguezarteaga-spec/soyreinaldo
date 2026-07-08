@@ -60,31 +60,32 @@ export default function PlayerExtras({ extras }: { extras: Extras }) {
               <div
                 key={t.league}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
                   padding: "10px 14px",
                   borderBottom:
                     i < shownTrophies.length - 1 ? "1px solid var(--line)" : undefined,
-                  fontSize: "0.86rem",
                 }}
               >
-                <span style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span aria-hidden>🏆</span>
-                  <span className="truncate">
-                    {t.league}
-                    {t.seasons.length > 1 && (
-                      <span style={{ color: "var(--text-dim)" }}> ×{t.seasons.length}</span>
-                    )}
-                  </span>
-                </span>
-                <span
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.86rem" }}>
+                  <span aria-hidden style={{ flexShrink: 0 }}>🏆</span>
+                  <b style={{ minWidth: 0 }}>{t.league}</b>
+                  {t.seasons.length > 1 && (
+                    <span style={{ color: "var(--text-dim)", flexShrink: 0 }}>
+                      ×{t.seasons.length}
+                    </span>
+                  )}
+                </div>
+                <div
                   className="mono tabular-nums"
-                  style={{ color: "var(--text-dim)", fontSize: "0.68rem", flexShrink: 0, textAlign: "right" }}
+                  style={{
+                    color: "var(--text-dim)",
+                    fontSize: "0.66rem",
+                    marginTop: 4,
+                    paddingLeft: 26,
+                    lineHeight: 1.5,
+                  }}
                 >
                   {t.seasons.join(", ")}
-                </span>
+                </div>
               </div>
             ))}
           </div>

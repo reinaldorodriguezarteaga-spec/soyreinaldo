@@ -49,6 +49,8 @@ export type MundialData = {
 function normalizeView(v: string | undefined): Tab | null {
   if (v === "envivo" || v === "live" || v === "marcador") return "envivo";
   if (v === "grupos") return "grupos";
+  if (v === "selecciones" || v === "equipos") return "selecciones";
+  if (v === "jugadores" || v === "players") return "jugadores";
   if (v === "stats" || v === "estadisticas") return "stats";
   if (v === "finalizados" || v === "resultados") return "finalizados";
   return v ? "partidos" : null;

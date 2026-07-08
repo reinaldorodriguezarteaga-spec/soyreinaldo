@@ -37,8 +37,10 @@ const MUNDIAL_LINKS = [
   { href: "/mundial", label: "Próximos partidos" },
   { href: "/mundial?v=finalizados", label: "Resultados" },
   { href: "/mundial?v=grupos", label: "Grupos" },
+  { href: "/mundial?v=selecciones", label: "Selecciones" },
+  { href: "/mundial?v=jugadores", label: "Jugadores" },
   { href: "/mundial?v=stats", label: "Estadísticas" },
-  { href: "/quiniela/bracket", label: "Bracket" },
+  { href: "/mundial/bracket", label: "Eliminatorias" },
 ];
 
 const NAV_LINKS = [
@@ -300,6 +302,17 @@ export default function Header({
             </div>
 
             <div className="nav__cta">
+              <Link
+                href="/mundial/buscar"
+                aria-label="Buscar selección o jugador"
+                title="Buscar selección o jugador"
+                className="grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <circle cx="11" cy="11" r="7" />
+                  <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
+                </svg>
+              </Link>
               {initialUser ? (
                 <UserMenu initialUser={initialUser} />
               ) : (

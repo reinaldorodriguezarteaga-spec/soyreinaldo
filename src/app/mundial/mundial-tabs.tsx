@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   isFinal,
   isLive,
@@ -12,6 +12,7 @@ import {
   type PlayerExtras,
   type PlayerStatLeader,
   type StandingRow,
+  type AllPlayer,
 } from "@/lib/sports/api-football";
 import {
   mergeLiveStandings,
@@ -28,7 +29,14 @@ import { SkeletonBar } from "@/components/Skeleton";
 import PlayerExtrasBlock from "@/components/PlayerExtras";
 import type { MundialData, XgLeader } from "./page";
 
-export type Tab = "envivo" | "partidos" | "finalizados" | "grupos" | "stats";
+export type Tab =
+  | "envivo"
+  | "partidos"
+  | "finalizados"
+  | "grupos"
+  | "selecciones"
+  | "jugadores"
+  | "stats";
 
 const MADRID_TZ = "Europe/Madrid";
 
@@ -95,6 +103,20 @@ export default function MundialTabs({
           </button>
           <button
             type="button"
+            className={tab === "selecciones" ? "on" : ""}
+            onClick={() => setTab("selecciones")}
+          >
+            Selecciones
+          </button>
+          <button
+            type="button"
+            className={tab === "jugadores" ? "on" : ""}
+            onClick={() => setTab("jugadores")}
+          >
+            Jugadores
+          </button>
+          <button
+            type="button"
             className={tab === "stats" ? "on" : ""}
             onClick={() => setTab("stats")}
           >
@@ -106,6 +128,8 @@ export default function MundialTabs({
         {tab === "partidos" && <PartidosView fixtures={data.fixtures} />}
         {tab === "finalizados" && <FinalizadosView fixtures={data.finished} />}
         {tab === "grupos" && <GruposView groups={data.groups} />}
+        {tab === "selecciones" && <SeleccionesView groups={data.groups} />}
+        {tab === "jugadores" && <JugadoresView />}
         {tab === "stats" && <StatsView data={data} />}
       </div>
     </section>
@@ -966,6 +990,215 @@ function RankPill({ rank }: { rank: number }) {
     >
       {rank}
     </span>
+  );
+}
+
+/* ---------- Selecciones ---------- */
+
+/** Input de búsqueda reutilizable para filtrar una lista. */
+function ListSearch({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <input
+      type="search"
+      className="field"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ width: "100%", marginBottom: 16 }}
+      aria-label={placeholder}
+    />
+  );
+}
+
+/** Las 48 selecciones con sus datos del torneo, buscables y alfabéticas. */
+function SeleccionesView({ groups }: { groups: WcGroup[] }) {
+  const [q, setQ] = useState("");
+  const teams = useMemo(() => {
+    const byId = new Map<number, StandingRow>();
+    for (const g of groups) for (const r of g.rows) if (!byId.has(r.team.id)) byId.set(r.team.id, r);
+    return [...byId.values()].sort((a, b) => a.team.name.localeCompare(b.team.name, "es"));
+  }, [groups]);
+
+  const term = q.trim().toLowerCase();
+  const shown = term
+    ? teams.filter((r) => r.team.name.toLowerCase().includes(term))
+    : teams;
+
+  if (teams.length === 0) {
+    return <Empty>Las selecciones aparecen al arrancar el Mundial.</Empty>;
+  }
+
+  return (
+    <div>
+      <ListSearch value={q} onChange={setQ} placeholder="Buscar selección…" />
+      <div className="grid2" style={{ alignItems: "start" }}>
+        {shown.map((r) => (
+          <Link
+            key={r.team.id}
+            href={`/mundial/equipo/${r.team.id}`}
+            className="panel"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "12px 14px",
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            <Image src={r.team.logo} alt="" width={30} height={30} unoptimized />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <b className="truncate" style={{ display: "block" }}>{r.team.name}</b>
+              <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.64rem" }}>
+                {r.all.played} PJ · {r.points} pts · {r.goalsDiff > 0 ? "+" : ""}
+                {r.goalsDiff} DG
+              </span>
+            </div>
+            {r.form && <FormMini form={r.form} />}
+          </Link>
+        ))}
+        {shown.length === 0 && <Empty>Sin selecciones para “{q.trim()}”.</Empty>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Jugadores ---------- */
+
+/**
+ * Todos los jugadores del Mundial: lista alfabética para navegar y, al escribir
+ * (≥3 letras), búsqueda EN VIVO contra la API (encuentra a cualquiera, aunque
+ * no esté en la lista pre-cargada). Cada jugador lleva a su ficha.
+ */
+function JugadoresView() {
+  const [players, setPlayers] = useState<AllPlayer[] | null>(null);
+  const [q, setQ] = useState("");
+  const [live, setLive] = useState<AllPlayer[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/sports/all-players")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: AllPlayer[]) => {
+        if (!cancelled) setPlayers(Array.isArray(d) ? d : []);
+      })
+      .catch(() => {
+        if (!cancelled) setPlayers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const term = q.trim();
+  const liveMode = term.length >= 3;
+
+  // Búsqueda en vivo con debounce cuando hay ≥3 letras.
+  useEffect(() => {
+    if (!liveMode) {
+      setLive([]);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const id = setTimeout(() => {
+      fetch(`/api/sports/search-players?q=${encodeURIComponent(term)}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d: AllPlayer[]) => {
+          if (!cancelled) setLive(Array.isArray(d) ? d : []);
+        })
+        .catch(() => {
+          if (!cancelled) setLive([]);
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [term, liveMode]);
+
+  if (players === null) {
+    return (
+      <div className="space-y-2" aria-busy>
+        <SkeletonBar className="h-10 w-full" />
+        <SkeletonBar className="h-12 w-full" />
+        <SkeletonBar className="h-12 w-full" />
+        <SkeletonBar className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  const browse = (players ?? []).slice(0, 300);
+  const shown = liveMode ? live : browse;
+
+  return (
+    <div>
+      <ListSearch value={q} onChange={setQ} placeholder="Buscar jugador…" />
+      {liveMode ? (
+        searching && live.length === 0 ? (
+          <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", padding: "6px 2px" }}>
+            Buscando…
+          </p>
+        ) : live.length === 0 ? (
+          <Empty>Sin jugadores para “{term}”.</Empty>
+        ) : null
+      ) : (
+        <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", margin: "0 0 12px" }}>
+          {players.length} jugadores en la lista · escribe un nombre para buscar en todo el Mundial
+        </p>
+      )}
+
+      {shown.length > 0 && (
+        <div className="panel" style={{ overflow: "hidden" }}>
+          {shown.map((p, i) => (
+            <Link
+              key={p.id}
+              href={`/mundial/jugador/${p.id}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 14px",
+                borderBottom: i < shown.length - 1 ? "1px solid var(--line)" : undefined,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <span style={{ fontWeight: 600, minWidth: 0, flex: 1 }} className="truncate">
+                {p.name}
+              </span>
+              {p.team && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                  <Image src={p.team.logo} alt="" width={18} height={18} unoptimized />
+                  <span className="mono truncate" style={{ color: "var(--text-dim)", fontSize: "0.66rem", maxWidth: 110 }}>
+                    {p.team.name}
+                  </span>
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!liveMode && players.length > 300 && (
+        <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", marginTop: 10, textAlign: "center" }}>
+          Escribe un nombre para buscar entre todos los jugadores del Mundial.
+        </p>
+      )}
+    </div>
   );
 }
 
