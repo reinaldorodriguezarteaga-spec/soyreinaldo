@@ -1299,12 +1299,23 @@ export async function getFixtureInjuries(
   }));
 }
 
-/** Cuota 1X2 (Match Winner) de la primera casa disponible. */
+/** Cuotas de varios mercados de la primera casa disponible. */
 export type MatchOdds = {
   bookmaker: string;
+  /** 1X2 (Match Winner). */
   home: number | null;
   draw: number | null;
   away: number | null;
+  /** Más/menos 2.5 goles. null si la casa no lo ofrece. */
+  overUnder: { over: number | null; under: number | null } | null;
+  /** Ambos equipos marcan (sí/no). */
+  btts: { yes: number | null; no: number | null } | null;
+  /** Doble oportunidad (1X / 12 / X2). */
+  doubleChance: {
+    homeOrDraw: number | null;
+    homeOrAway: number | null;
+    drawOrAway: number | null;
+  } | null;
 };
 
 type OddsResponse = {
@@ -1325,20 +1336,48 @@ export async function getFixtureOdds(
   id: number,
   revalidate = 1800,
 ): Promise<MatchOdds | null> {
-  const r = await get<OddsResponse>("/odds", { fixture: id, bet: 1 }, revalidate);
+  // Sin `bet` → la casa devuelve todos sus mercados; extraemos los que usamos.
+  const r = await get<OddsResponse>("/odds", { fixture: id }, revalidate);
   const book = r.response[0]?.bookmakers?.[0];
   if (!book) return null;
-  const mw = book.bets.find((b) => /match winner|1x2/i.test(b.name)) ?? book.bets[0];
-  if (!mw) return null;
-  const pick = (label: RegExp): number | null => {
-    const v = mw.values.find((x) => label.test(x.value));
+
+  type Bet = OddsResponse["bookmakers"][number]["bets"][number];
+  const betBy = (re: RegExp): Bet | undefined => book.bets.find((b) => re.test(b.name));
+  const oddOf = (bet: Bet | undefined, label: RegExp): number | null => {
+    const v = bet?.values.find((x) => label.test(x.value.trim()));
     const n = v ? parseFloat(v.odd) : NaN;
     return Number.isFinite(n) ? n : null;
   };
+
+  const mw = betBy(/match winner|full time result|1x2/i);
+  if (!mw) return null; // sin 1X2 no montamos el panel
+
+  const ou = betBy(/goals over\/under|^over\/under$/i);
+  const btts = betBy(/both teams (to )?score/i);
+  const dc = betBy(/double chance/i);
+
+  const overUnder =
+    ou && (oddOf(ou, /^over 2\.5$/i) != null || oddOf(ou, /^under 2\.5$/i) != null)
+      ? { over: oddOf(ou, /^over 2\.5$/i), under: oddOf(ou, /^under 2\.5$/i) }
+      : null;
+  const bttsOdds = btts
+    ? { yes: oddOf(btts, /^yes$/i), no: oddOf(btts, /^no$/i) }
+    : null;
+  const doubleChance = dc
+    ? {
+        homeOrDraw: oddOf(dc, /home\/draw|^1x$/i),
+        homeOrAway: oddOf(dc, /home\/away|^12$/i),
+        drawOrAway: oddOf(dc, /draw\/away|^x2$/i),
+      }
+    : null;
+
   return {
     bookmaker: book.name,
-    home: pick(/^home$|^1$/i),
-    draw: pick(/^draw$|^x$/i),
-    away: pick(/^away$|^2$/i),
+    home: oddOf(mw, /^home$|^1$/i),
+    draw: oddOf(mw, /^draw$|^x$/i),
+    away: oddOf(mw, /^away$|^2$/i),
+    overUnder,
+    btts: bttsOdds && (bttsOdds.yes != null || bttsOdds.no != null) ? bttsOdds : null,
+    doubleChance,
   };
 }

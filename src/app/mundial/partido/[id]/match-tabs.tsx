@@ -772,27 +772,75 @@ function OddsCard({
   home: Team;
   away: Team;
 }) {
+  const dc = odds.doubleChance;
+  const hasDc =
+    !!dc && (dc.homeOrDraw != null || dc.homeOrAway != null || dc.drawOrAway != null);
   return (
     <div className="panel" style={{ padding: "18px 20px" }}>
       <div className="shead" style={{ marginBottom: 14 }}>
-        <h2>Cuotas 1X2</h2>
+        <h2>Cuotas</h2>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+
+      <OddsRow label="Ganador (1X2)">
         <OddsCell label={home.name} val={odds.home} />
         <OddsCell label="Empate" val={odds.draw} />
         <OddsCell label={away.name} val={odds.away} />
-      </div>
+      </OddsRow>
+
+      {odds.overUnder && (
+        <OddsRow label="Goles (2.5)">
+          <OddsCell label="Más de 2.5" val={odds.overUnder.over} />
+          <OddsCell label="Menos de 2.5" val={odds.overUnder.under} />
+        </OddsRow>
+      )}
+
+      {odds.btts && (
+        <OddsRow label="Ambos marcan">
+          <OddsCell label="Sí" val={odds.btts.yes} />
+          <OddsCell label="No" val={odds.btts.no} />
+        </OddsRow>
+      )}
+
+      {hasDc && (
+        <OddsRow label="Doble oportunidad">
+          <OddsCell label={`${home.name} o empate`} val={dc!.homeOrDraw} />
+          <OddsCell label="Sin empate" val={dc!.homeOrAway} />
+          <OddsCell label={`${away.name} o empate`} val={dc!.drawOrAway} />
+        </OddsRow>
+      )}
+
       <p
         className="mono"
         style={{
           color: "var(--text-dim)",
           fontSize: "0.58rem",
-          marginTop: 12,
+          marginTop: 14,
           textAlign: "center",
         }}
       >
         Cuotas de {odds.bookmaker} · solo informativo (18+).
       </p>
+    </div>
+  );
+}
+
+/** Una fila de mercado de cuotas: etiqueta + celdas de opciones. */
+function OddsRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div
+        className="mono"
+        style={{
+          color: "var(--text-dim)",
+          fontSize: "0.58rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>{children}</div>
     </div>
   );
 }
