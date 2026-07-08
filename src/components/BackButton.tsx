@@ -49,6 +49,11 @@ export default function BackButton() {
     (pathname.startsWith("/quiniela") && pathname !== "/quiniela") ||
     pathname.startsWith("/mundial");
 
+  // Atajo al Mundial (lista de partidos) desde la quiniela y desde el detalle
+  // de un partido/equipo. En el propio hub /mundial no hace falta.
+  const showMundial =
+    pathname.startsWith("/quiniela") || pathname.startsWith("/mundial/");
+
   return (
     <div className="backbar">
       <div className="wrap backbar__row">
@@ -73,6 +78,12 @@ export default function BackButton() {
           </svg>
           Atrás
         </button>
+
+        {showMundial && (
+          <Link href="/mundial?v=partidos" className="backbtn">
+            ⚽ Mundial
+          </Link>
+        )}
 
         {showQuiniela && (
           <Link href="/quiniela" className="backbtn backbtn--accent">

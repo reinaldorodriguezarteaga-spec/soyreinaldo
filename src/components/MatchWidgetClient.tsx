@@ -178,11 +178,51 @@ function WidgetMatchCard({ fx }: { fx: WcFixture }) {
   );
 }
 
+/** Tarjeta compacta de un próximo partido (reserva cuando no hay nada en vivo/hoy). */
+function UpcomingCard({ fx }: { fx: NonNullable<WidgetData["next"]>[number] }) {
+  return (
+    <Link
+      href={`/mundial/partido/${fx.id}`}
+      className="match"
+      style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+    >
+      <div className="match__meta">
+        <span className="match__grp">Mundial 2026</span>
+        <span className="match__when">
+          {formatKickoff(new Date(fx.ts * 1000).toISOString())}
+        </span>
+      </div>
+      <div className="team">
+        <span className="flag">
+          <Image src={fx.home.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+        <span className="tn">{fx.home.name}</span>
+      </div>
+      <div className="score">
+        <span className="vs">VS</span>
+      </div>
+      <div className="team right">
+        <span className="tn">{fx.away.name}</span>
+        <span className="flag">
+          <Image src={fx.away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </div>
+      <div className="match__meta" style={{ marginBottom: 0, marginTop: 4 }}>
+        <span />
+        <span className="match__when" style={{ color: "var(--accent)" }}>
+          ⏱ Cuenta atrás →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 /**
  * Franja de marcadores para la portada: los partidos del Mundial de hoy
  * (o el partido relevante de Barça/Madrid fuera del torneo). Se actualiza
- * sola cada 30s mientras haya partido en juego o a punto de empezar, y
- * desaparece cuando no hay nada que mostrar.
+ * sola cada 30s mientras haya partido en juego o a punto de empezar. Cuando
+ * no hay nada en vivo/hoy, cae en los "próximos partidos" para que el fútbol
+ * siga siendo protagonista incluso en días de descanso.
  */
 export default function MatchWidgetClient({ initial }: { initial: WidgetData }) {
   const [data, setData] = useState<WidgetData>(initial);
@@ -217,14 +257,20 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
     };
   }, [data.needsPolling]);
 
-  if (data.fixtures.length === 0) return null;
+  const upcoming = data.next ?? [];
+  // Sin partidos de hoy/en vivo: mostramos los próximos (reserva) para que el
+  // fútbol siga presente. Solo desaparece si tampoco hay próximos.
+  const showUpcoming = data.fixtures.length === 0;
+  if (showUpcoming && upcoming.length === 0) return null;
 
   const anyLive = data.fixtures.some(isLive);
-  const heading = anyLive
-    ? "Marcador en vivo"
-    : data.mode === "wc"
-      ? "El Mundial hoy"
-      : "Marcador";
+  const heading = showUpcoming
+    ? "Próximos partidos"
+    : anyLive
+      ? "Marcador en vivo"
+      : data.mode === "wc"
+        ? "El Mundial hoy"
+        : "Marcador";
 
   return (
     <section
@@ -243,14 +289,19 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
               {heading}.
             </h2>
           </div>
-          <Link href="/mundial?v=envivo" className="btn btn--ghost">
+          <Link
+            href={anyLive ? "/mundial?v=envivo" : "/mundial?v=partidos"}
+            className="btn btn--ghost"
+          >
             Ver el Mundial <span className="arr">→</span>
           </Link>
         </div>
         <div className="grid2">
-          {data.fixtures.map((fx) => (
-            <WidgetMatchCard key={fx.fixture.id} fx={fx} />
-          ))}
+          {showUpcoming
+            ? upcoming.slice(0, 4).map((fx) => <UpcomingCard key={fx.id} fx={fx} />)
+            : data.fixtures.map((fx) => (
+                <WidgetMatchCard key={fx.fixture.id} fx={fx} />
+              ))}
         </div>
       </div>
     </section>
