@@ -131,9 +131,12 @@ export default async function MundialPage({
             Próximos partidos, los 12 grupos y las estadísticas del torneo —
             goleadores, asistencias y más, en vivo durante el Mundial.
           </p>
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link href="/mundial/buscar" className="btn btn--ghost">
               🔍 Buscar selección o jugador
+            </Link>
+            <Link href="/mundial/bracket" className="btn btn--ghost">
+              🏆 Eliminatorias
             </Link>
           </div>
         </div>

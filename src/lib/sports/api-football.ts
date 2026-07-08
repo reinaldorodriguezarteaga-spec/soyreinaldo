@@ -415,6 +415,43 @@ export async function getWorldCupAllFixtures(): Promise<Fixture[]> {
   return r.response;
 }
 
+/** Una ronda del cuadro de eliminatorias. */
+export type BracketRound = {
+  label: string;
+  fixtures: Fixture[];
+  /** Nº de cruces "por definir" cuando la ronda aún no tiene fixtures. */
+  placeholders: number;
+};
+
+/** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
+const KO_STRUCTURE: { label: string; re: RegExp; slots: number }[] = [
+  { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
+  { label: "Octavos", re: /Round of 16/i, slots: 8 },
+  { label: "Cuartos", re: /Quarter/i, slots: 4 },
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+/**
+ * Cuadro de eliminatorias a partir de todos los fixtures del torneo. Siempre
+ * devuelve las 5 rondas: las que ya tienen partidos con sus fixtures, y las
+ * futuras (aún sin sorteo) con `placeholders` = nº de cruces "por definir".
+ */
+export function knockoutBracket(fixtures: Fixture[]): BracketRound[] {
+  const byKickoff = (a: Fixture, b: Fixture) =>
+    new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime();
+  return KO_STRUCTURE.map(({ label, re, slots }) => {
+    const fx = fixtures
+      .filter((f) => re.test((f.league.round ?? "").trim()))
+      .sort(byKickoff);
+    return {
+      label,
+      fixtures: fx,
+      placeholders: fx.length === 0 ? slots : 0,
+    };
+  });
+}
+
 /**
  * Historial de un equipo: sus últimos N partidos jugados y los próximos M
  * (cualquier competición — amistosos, Mundial, etc., como en la ficha de la
