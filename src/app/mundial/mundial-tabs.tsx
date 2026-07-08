@@ -25,6 +25,7 @@ import type {
 } from "@/lib/sports/widget-data";
 import MatchCardEvents from "@/components/MatchCardEvents";
 import { SkeletonBar } from "@/components/Skeleton";
+import PlayerExtrasBlock from "@/components/PlayerExtras";
 import type { MundialData, XgLeader } from "./page";
 
 export type Tab = "envivo" | "partidos" | "finalizados" | "grupos" | "stats";
@@ -1265,7 +1266,7 @@ function PlayerSeasonModal({
         ) : (
           <>
             {p.season && <SeasonContent p={p.season} />}
-            <PlayerExtrasView extras={p.extras} />
+            <PlayerExtrasBlock extras={p.extras} />
           </>
         )}
         <button
@@ -1277,129 +1278,6 @@ function PlayerSeasonModal({
           Hecho
         </button>
       </div>
-    </div>
-  );
-}
-
-/** Año (YYYY) de una fecha ISO, o "" si no se puede. */
-function yearOf(d: string | null): string {
-  if (!d) return "";
-  const m = d.match(/(\d{4})/);
-  return m ? m[1] : "";
-}
-
-/** Palmarés, fichajes e historial de lesiones/sanciones bajo las stats. */
-function PlayerExtrasView({ extras }: { extras: PlayerExtras }) {
-  const { trophies, transfers, sidelined } = extras;
-  if (trophies.length === 0 && transfers.length === 0 && sidelined.length === 0)
-    return null;
-
-  const subhead = (t: string) => (
-    <p
-      className="mono"
-      style={{
-        color: "var(--text-dim)",
-        fontSize: "0.62rem",
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        margin: "18px 0 8px",
-      }}
-    >
-      {t}
-    </p>
-  );
-
-  return (
-    <div>
-      {trophies.length > 0 && (
-        <>
-          {subhead("Palmarés")}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {trophies.map((t, i) => (
-              <span
-                key={i}
-                className="chip"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: "var(--surface-2)",
-                  fontSize: "0.78rem",
-                }}
-                title={`${t.league}${t.country ? ` · ${t.country}` : ""} ${t.season}`}
-              >
-                🏆 {t.league}
-                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
-                  {t.season}
-                </span>
-              </span>
-            ))}
-          </div>
-        </>
-      )}
-
-      {transfers.length > 0 && (
-        <>
-          {subhead("Fichajes recientes")}
-          <div className="panel" style={{ overflow: "hidden" }}>
-            {transfers.map((t, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  padding: "9px 12px",
-                  borderBottom: i < transfers.length - 1 ? "1px solid var(--line)" : undefined,
-                  fontSize: "0.82rem",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                  <span className="truncate">{t.teamOut?.name ?? "—"}</span>
-                  <span style={{ color: "var(--text-dim)" }}>→</span>
-                  <span className="truncate" style={{ fontWeight: 700 }}>
-                    {t.teamIn?.name ?? "—"}
-                  </span>
-                </span>
-                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", flexShrink: 0 }}>
-                  {yearOf(t.date)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {sidelined.length > 0 && (
-        <>
-          {subhead("Lesiones y sanciones")}
-          <div className="panel" style={{ overflow: "hidden" }}>
-            {sidelined.map((s, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  padding: "9px 12px",
-                  borderBottom: i < sidelined.length - 1 ? "1px solid var(--line)" : undefined,
-                  fontSize: "0.82rem",
-                }}
-              >
-                <span className="truncate">{s.type}</span>
-                <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", flexShrink: 0 }}>
-                  {yearOf(s.start)}
-                  {yearOf(s.end) && yearOf(s.end) !== yearOf(s.start) ? `–${yearOf(s.end)}` : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }

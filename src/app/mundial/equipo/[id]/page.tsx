@@ -4,12 +4,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getTeamFixtures,
+  getTeamSquad,
   getTeamStatistics,
   isFinal,
   isLive,
   type Fixture,
+  type SquadPlayer,
 } from "@/lib/sports/api-football";
 import TeamStats from "./team-stats";
+import TeamTabs from "./team-tabs";
 
 export async function generateMetadata({
   params,
@@ -55,9 +58,10 @@ export default async function EquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const [{ team, recent, upcoming }, stats] = await Promise.all([
+  const [{ team, recent, upcoming }, stats, squad] = await Promise.all([
     getTeamFixtures(teamId, { last: 20, next: 5 }),
     getTeamStatistics(teamId).catch(() => null),
+    getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
   ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
@@ -115,6 +119,11 @@ export default async function EquipoPage({
         <div className="wrap space-y-8">
           {stats && <TeamStats stats={stats} />}
 
+          <TeamTabs
+            hasSquad={squad.length > 0}
+            jugadores={<SquadList squad={squad} />}
+            partidos={
+              <div className="space-y-8">
           {live.length > 0 && (
             <div>
               <div className="shead">
@@ -172,9 +181,100 @@ export default async function EquipoPage({
               </div>
             )}
           </div>
+              </div>
+            }
+          />
         </div>
       </section>
     </main>
+  );
+}
+
+/** Plantilla de la selección, agrupada por posición; cada jugador es tappable. */
+function SquadList({ squad }: { squad: SquadPlayer[] }) {
+  const POS_ES: Record<string, string> = {
+    Goalkeeper: "Porteros",
+    Defender: "Defensas",
+    Midfielder: "Centrocampistas",
+    Attacker: "Delanteros",
+  };
+  const order = ["Goalkeeper", "Defender", "Midfielder", "Attacker"];
+  const groups = order
+    .map((pos) => ({ pos, players: squad.filter((p) => p.position === pos) }))
+    .filter((g) => g.players.length > 0);
+  const others = squad.filter((p) => !order.includes(p.position ?? ""));
+  if (others.length > 0) groups.push({ pos: "Otros", players: others });
+
+  return (
+    <div className="space-y-8">
+      {groups.map((g) => (
+        <div key={g.pos}>
+          <div className="shead">
+            <h2>{POS_ES[g.pos] ?? "Otros"}</h2>
+            <span className="sh-note">{g.players.length}</span>
+          </div>
+          <div className="panel" style={{ overflow: "hidden" }}>
+            {g.players.map((p, i) => (
+              <Link
+                key={p.id}
+                href={`/mundial/jugador/${p.id}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 14px",
+                  borderBottom:
+                    i < g.players.length - 1 ? "1px solid var(--line)" : undefined,
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
+                <span
+                  className="mono tabular-nums"
+                  style={{ width: 26, color: "var(--text-dim)", fontSize: "0.8rem" }}
+                >
+                  {p.number ?? "–"}
+                </span>
+                {p.photo ? (
+                  <Image
+                    src={p.photo}
+                    alt=""
+                    width={30}
+                    height={30}
+                    unoptimized
+                    style={{ borderRadius: "50%", background: "var(--surface-2)" }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: "var(--surface-2)",
+                    }}
+                  />
+                )}
+                <span style={{ fontWeight: 600, minWidth: 0 }} className="truncate">
+                  {p.name}
+                </span>
+                {p.age != null && (
+                  <span
+                    className="mono"
+                    style={{
+                      marginLeft: "auto",
+                      color: "var(--text-dim)",
+                      fontSize: "0.72rem",
+                    }}
+                  >
+                    {p.age} años
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

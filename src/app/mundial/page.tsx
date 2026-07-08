@@ -13,6 +13,7 @@ import {
   type PlayerStatLeader,
   type StandingRow,
 } from "@/lib/sports/api-football";
+import Link from "next/link";
 import { attachEvents, type WcFixture } from "@/lib/sports/widget-data";
 import { getWcFallbackData } from "@/lib/sports/wc-fallback";
 import MundialTabs, { type Tab } from "./mundial-tabs";
@@ -130,6 +131,11 @@ export default async function MundialPage({
             Próximos partidos, los 12 grupos y las estadísticas del torneo —
             goleadores, asistencias y más, en vivo durante el Mundial.
           </p>
+          <div style={{ marginTop: 18 }}>
+            <Link href="/mundial/buscar" className="btn btn--ghost">
+              🔍 Buscar selección o jugador
+            </Link>
+          </div>
         </div>
       </section>
 

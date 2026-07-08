@@ -1026,24 +1026,32 @@ export async function getPlayerSeasonStats(
 }
 
 /** Palmarés, fichajes y lesiones/sanciones de un jugador (ficha ampliada). */
-export type PlayerTrophy = {
+export type PlayerTrophyGroup = {
   league: string;
   country: string | null;
-  season: string;
-  place: string;
+  /** Años ganados, del más reciente al más antiguo. */
+  seasons: string[];
 };
 export type PlayerTransfer = {
   date: string | null;
+  /** Monto o tipo tal cual lo da el API: "€ 45M", "Loan", "Free", "N/A". */
   type: string | null;
   teamIn: { name: string; logo: string } | null;
   teamOut: { name: string; logo: string } | null;
 };
 export type PlayerSidelined = { type: string; start: string | null; end: string | null };
 export type PlayerExtras = {
-  trophies: PlayerTrophy[];
+  trophies: PlayerTrophyGroup[];
   transfers: PlayerTransfer[];
   sidelined: PlayerSidelined[];
 };
+
+/** Año "ganado" de una temporada: "2014/2015" → "2015", "2024" → "2024". */
+function seasonYear(season: string | null | undefined): string {
+  if (!season || typeof season !== "string") return "";
+  const years = season.match(/\d{4}/g);
+  return years ? years[years.length - 1] : season;
+}
 
 type TrophyResp = { league: string; country: string; season: string; place: string };
 type TransferResp = {
@@ -1071,10 +1079,21 @@ export async function getPlayerExtras(id: number): Promise<PlayerExtras> {
     get<SidelinedResp>("/sidelined", { player: id }, rv).catch(() => ({ response: [] as SidelinedResp[] })),
   ]);
 
-  const trophies: PlayerTrophy[] = (tro.response ?? [])
-    .filter((t) => /winner/i.test(t.place))
-    .map((t) => ({ league: t.league, country: t.country ?? null, season: t.season, place: t.place }))
-    .slice(0, 10);
+  // Agrupamos los títulos por competición: en vez de repetir "Champions League"
+  // por cada año, una entrada con todos los años ganados entre paréntesis.
+  const byLeague = new Map<string, PlayerTrophyGroup>();
+  for (const t of tro.response ?? []) {
+    if (!/winner/i.test(t.place)) continue;
+    const g =
+      byLeague.get(t.league) ??
+      { league: t.league, country: t.country ?? null, seasons: [] as string[] };
+    const yr = seasonYear(t.season);
+    if (yr && !g.seasons.includes(yr)) g.seasons.push(yr);
+    byLeague.set(t.league, g);
+  }
+  const trophies: PlayerTrophyGroup[] = [...byLeague.values()]
+    .map((g) => ({ ...g, seasons: g.seasons.sort((a, b) => b.localeCompare(a)) }))
+    .sort((a, b) => b.seasons.length - a.seasons.length);
 
   const transfers: PlayerTransfer[] = ((tra.response?.[0] as TransferResp | undefined)?.transfers ?? [])
     .slice(0, 5)
@@ -1091,6 +1110,90 @@ export async function getPlayerExtras(id: number): Promise<PlayerExtras> {
     .map((s) => ({ type: s.type, start: s.start, end: s.end }));
 
   return { trophies, transfers, sidelined };
+}
+
+/** Resultado de búsqueda de jugador (nombre + escudo de su selección). */
+export type PlayerSearchResult = {
+  id: number;
+  name: string;
+  photo: string | null;
+  team: { name: string; logo: string } | null;
+};
+
+/**
+ * Busca jugadores en el Mundial por nombre (endpoint `/players?search=`).
+ * Requiere ≥3 caracteres. Caché 1h — el índice de jugadores cambia poco.
+ */
+export async function searchWorldCupPlayers(
+  query: string,
+  n = 15,
+): Promise<PlayerSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  const r = await get<PlayerSeasonResponse>(
+    "/players",
+    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season, search: q },
+    3600,
+  );
+  return r.response.slice(0, n).map((p) => {
+    const t = p.statistics?.[0]?.team;
+    return {
+      id: p.player.id,
+      name: p.player.name,
+      photo: p.player.photo ?? null,
+      team: t ? { name: t.name, logo: t.logo } : null,
+    };
+  });
+}
+
+/** Un jugador de la plantilla de una selección. */
+export type SquadPlayer = {
+  id: number;
+  name: string;
+  photo: string | null;
+  number: number | null;
+  position: string | null;
+  age: number | null;
+};
+
+type SquadResponse = {
+  players: Array<{
+    id: number;
+    name: string;
+    age: number | null;
+    number: number | null;
+    position: string | null;
+    photo: string | null;
+  }>;
+};
+
+/**
+ * Plantilla de una selección (endpoint `/players/squads`). Ordenada por
+ * posición (POR, DEF, MED, DEL) y dorsal. Caché 1 día. Vacío si no hay datos.
+ */
+export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
+  const r = await get<SquadResponse>("/players/squads", { team: teamId }, 86400);
+  const players = r.response[0]?.players ?? [];
+  const order: Record<string, number> = {
+    Goalkeeper: 0,
+    Defender: 1,
+    Midfielder: 2,
+    Attacker: 3,
+  };
+  return players
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      photo: p.photo ?? null,
+      number: p.number ?? null,
+      position: p.position ?? null,
+      age: p.age ?? null,
+    }))
+    .sort((a, b) => {
+      const po = (order[a.position ?? ""] ?? 9) - (order[b.position ?? ""] ?? 9);
+      if (po !== 0) return po;
+      return (a.number ?? 99) - (b.number ?? 99);
+    });
 }
 
 /** Un jugador en la alineación (con su posición en la rejilla "fila:columna"). */
