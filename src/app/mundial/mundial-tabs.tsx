@@ -382,6 +382,47 @@ function LiveMatchCard({ fx }: { fx: WcFixture }) {
   );
 }
 
+/** Forma reciente (últimos partidos) como puntos V/E/D. */
+function FormMini({ form }: { form: string }) {
+  const map: Record<string, { bg: string; fg: string; label: string }> = {
+    W: { bg: "#4ade80", fg: "#0a1030", label: "V" },
+    D: { bg: "var(--line-strong)", fg: "var(--text)", label: "E" },
+    L: { bg: "#ff8a8a", fg: "#0a1030", label: "D" },
+  };
+  const chars = form.replace(/[^WDL]/g, "").slice(-5).split("");
+  if (chars.length === 0) return null;
+  return (
+    <span
+      style={{ display: "inline-flex", gap: 3, marginTop: 4 }}
+      title={`Forma: ${chars.join("")}`}
+      aria-label={`Forma reciente ${chars.join("")}`}
+    >
+      {chars.map((c, i) => {
+        const s = map[c] ?? { bg: "var(--line-strong)", fg: "var(--text)", label: c };
+        return (
+          <span
+            key={i}
+            style={{
+              width: 13,
+              height: 13,
+              borderRadius: 3,
+              background: s.bg,
+              color: s.fg,
+              fontSize: "0.5rem",
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {s.label}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function LiveGroupTable({ group }: { group: LiveGroup }) {
   return (
     <section className="panel" style={{ overflow: "hidden" }}>
@@ -452,6 +493,7 @@ function LiveGroupTable({ group }: { group: LiveGroup }) {
                   <b>{r.team.name}</b>
                   {r.isPlaying && <span className="livepulse" />}
                 </Link>
+                {r.form && <FormMini form={r.form} />}
               </td>
               <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
                 {r.all.played}
@@ -872,6 +914,7 @@ function GroupTable({ group }: { group: WcGroup }) {
                   />
                   <b>{r.team.name}</b>
                 </Link>
+                {r.form && <FormMini form={r.form} />}
               </td>
               <td className="tabular-nums" style={{ color: "var(--text-dim)" }}>
                 {r.all.played}
