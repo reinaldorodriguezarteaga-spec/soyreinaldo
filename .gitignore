@@ -42,3 +42,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .claude/
+
+# Copias de conflicto del sync (iCloud/Dropbox): "archivo 2.tsx"
+* [0-9].*
+*\ [0-9].*
