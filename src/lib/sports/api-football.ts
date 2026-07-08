@@ -454,6 +454,80 @@ export async function getTeamFixtures(
   return { team, recent, upcoming };
 }
 
+/** Un tramo de minutos (p. ej. "46-60") con total y % de goles/tarjetas. */
+export type MinuteBucket = { total: number | null; percentage: string | null };
+export type MinuteMap = Record<string, MinuteBucket>;
+
+/**
+ * Perfil de temporada de un equipo (endpoint `/teams/statistics`): forma,
+ * balance, goles a favor/en contra por tramos de minutos, vallas invictas,
+ * mayor racha, formación más usada, penaltis y tarjetas.
+ */
+export type TeamSeasonStats = {
+  league: { id: number; name: string; season: number; logo: string };
+  team: { id: number; name: string; logo: string };
+  form: string | null;
+  fixtures: {
+    played: { home: number; away: number; total: number };
+    wins: { home: number; away: number; total: number };
+    draws: { home: number; away: number; total: number };
+    loses: { home: number; away: number; total: number };
+  };
+  goals: {
+    for: {
+      total: { home: number; away: number; total: number };
+      average: { home: string; away: string; total: string };
+      minute: MinuteMap;
+    };
+    against: {
+      total: { home: number; away: number; total: number };
+      average: { home: string; away: string; total: string };
+      minute: MinuteMap;
+    };
+  };
+  biggest: {
+    streak: { wins: number; draws: number; loses: number };
+    wins: { home: string | null; away: string | null };
+    loses: { home: string | null; away: string | null };
+    goals: {
+      for: { home: number; away: number };
+      against: { home: number; away: number };
+    };
+  };
+  clean_sheet: { home: number; away: number; total: number };
+  failed_to_score: { home: number; away: number; total: number };
+  penalty: {
+    scored: { total: number; percentage: string | null };
+    missed: { total: number; percentage: string | null };
+    total: number;
+  };
+  lineups: { formation: string; played: number }[];
+  cards: { yellow: MinuteMap; red: MinuteMap };
+};
+
+/**
+ * Estadísticas de temporada de un equipo. Por defecto, del Mundial 2026.
+ * `/teams/statistics` devuelve un OBJETO (no un array), así que distinguimos
+ * éxito (objeto) de fallo/vacío (`get` devuelve `[]`) → null. Caché 30 min:
+ * cambia como mucho tras cada partido de la selección.
+ */
+export async function getTeamStatistics(
+  teamId: number,
+  opts: { league?: number; season?: number; revalidate?: number } = {},
+): Promise<TeamSeasonStats | null> {
+  const league = opts.league ?? WORLD_CUP.leagueId;
+  const season = opts.season ?? WORLD_CUP.season;
+  const rv = opts.revalidate ?? 1800;
+  const r = await get<TeamSeasonStats>(
+    "/teams/statistics",
+    { league, season, team: teamId },
+    rv,
+  );
+  const resp = r.response as unknown;
+  if (!resp || Array.isArray(resp)) return null;
+  return resp as TeamSeasonStats;
+}
+
 /**
  * Enfrentamientos históricos (head-to-head) entre dos equipos, el más reciente
  * primero. Cachea 1 día — el historial solo cambia cuando vuelven a jugar.
