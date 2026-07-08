@@ -289,7 +289,10 @@ export default function MatchWidgetClient({ initial }: { initial: WidgetData }) 
               {heading}.
             </h2>
           </div>
-          <Link href="/mundial?v=envivo" className="btn btn--ghost">
+          <Link
+            href={anyLive ? "/mundial?v=envivo" : "/mundial?v=partidos"}
+            className="btn btn--ghost"
+          >
             Ver el Mundial <span className="arr">→</span>
           </Link>
         </div>

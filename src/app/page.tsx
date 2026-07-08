@@ -49,7 +49,7 @@ export default async function Home() {
               <strong style={{ color: "var(--text)" }}>@SoyReinaldoR</strong>.
             </p>
             <div className="hero__actions">
-              <Link href="/mundial?v=envivo" className="btn btn--accent">
+              <Link href="/mundial?v=partidos" className="btn btn--accent">
                 Ver el Mundial <span className="arr">→</span>
               </Link>
               <Link href="/quiniela" className="btn btn--ghost">
