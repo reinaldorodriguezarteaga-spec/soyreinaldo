@@ -1491,6 +1491,64 @@ export function teamAttackDefenseFromFixtures(fixtures: Fixture[]): {
   return { attack, defense };
 }
 
+/** Récords agregados del torneo, derivados de los partidos ya jugados. */
+export type TournamentRecords = {
+  /** Partido con mayor diferencia de goles (la mayor goleada). */
+  biggestWin: Fixture | null;
+  /** Partido con más goles en total. */
+  mostGoals: Fixture | null;
+  totalGoals: number;
+  matchesPlayed: number;
+  /** Media de goles por partido (2 decimales al mostrar). */
+  avgGoals: number;
+  /** Nº de partidos resueltos en tanda de penaltis. */
+  penShootouts: number;
+  /** Nº de partidos sin goles (0-0 al final del tiempo reglamentario/prórroga). */
+  scorelessDraws: number;
+};
+
+/**
+ * Récords del Mundial a partir de los partidos TERMINADOS: mayor goleada,
+ * partido con más goles, total y media, tandas de penaltis. Cero llamadas
+ * extra — solo agrega los fixtures que ya tenemos.
+ */
+export function tournamentRecords(finished: Fixture[]): TournamentRecords {
+  let biggestWin: Fixture | null = null;
+  let mostGoals: Fixture | null = null;
+  let totalGoals = 0;
+  let penShootouts = 0;
+  let scorelessDraws = 0;
+  let maxMargin = -1;
+  let maxTotal = -1;
+  for (const f of finished) {
+    const h = f.goals.home ?? 0;
+    const a = f.goals.away ?? 0;
+    const total = h + a;
+    totalGoals += total;
+    if (f.fixture.status.short === "PEN") penShootouts++;
+    if (total === 0) scorelessDraws++;
+    const margin = Math.abs(h - a);
+    if (margin > maxMargin) {
+      maxMargin = margin;
+      biggestWin = f;
+    }
+    if (total > maxTotal) {
+      maxTotal = total;
+      mostGoals = f;
+    }
+  }
+  const matchesPlayed = finished.length;
+  return {
+    biggestWin: maxMargin > 0 ? biggestWin : null,
+    mostGoals: maxTotal > 0 ? mostGoals : null,
+    totalGoals,
+    matchesPlayed,
+    avgGoals: matchesPlayed ? totalGoals / matchesPlayed : 0,
+    penShootouts,
+    scorelessDraws,
+  };
+}
+
 /**
  * Equipo más goleador y más goleado, derivados de la clasificación de grupos.
  * Devuelve null cuando aún no se ha marcado ningún gol (pre-torneo) para que

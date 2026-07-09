@@ -13,6 +13,8 @@ import {
   type PlayerStatLeader,
   type StandingRow,
   type AllPlayer,
+  tournamentRecords,
+  type TournamentRecords,
 } from "@/lib/sports/api-football";
 import {
   mergeLiveStandings,
@@ -1202,18 +1204,113 @@ function JugadoresView() {
   );
 }
 
+/* ---------- Récords del torneo ---------- */
+
+/** Fila compacta de un partido-récord (equipos + marcador), clicable al detalle. */
+function RecordMatch({ fx, tag }: { fx: Fixture; tag: string }) {
+  const { home, away } = fx.teams;
+  return (
+    <Link
+      href={`/mundial/partido/${fx.fixture.id}`}
+      className="panel"
+      style={{ display: "block", padding: "12px 14px", textDecoration: "none", color: "inherit" }}
+    >
+      <p
+        className="mono"
+        style={{
+          color: "var(--accent)",
+          fontSize: "0.6rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          margin: "0 0 8px",
+        }}
+      >
+        {tag}
+      </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+          <Image src={home.logo} alt="" width={20} height={20} unoptimized />
+          <span className="truncate" style={{ fontWeight: home.winner ? 700 : 500 }}>{home.name}</span>
+        </span>
+        <b className="tabular-nums" style={{ fontSize: "1.1rem", flexShrink: 0 }}>
+          {fx.goals.home ?? 0}–{fx.goals.away ?? 0}
+        </b>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, justifyContent: "flex-end" }}>
+          <span className="truncate" style={{ fontWeight: away.winner ? 700 : 500, textAlign: "right" }}>{away.name}</span>
+          <Image src={away.logo} alt="" width={20} height={20} unoptimized />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function RecordsPanel({ records }: { records: TournamentRecords }) {
+  const metric = (value: string | number, label: string, accent?: boolean) => (
+    <div style={{ background: "var(--surface-2)", borderRadius: "var(--radius)", padding: "12px 14px" }}>
+      <div
+        className="tabular-nums"
+        style={{
+          fontFamily: "var(--font-display-stack)",
+          fontWeight: 900,
+          fontSize: "1.5rem",
+          lineHeight: 1,
+          color: accent ? "var(--accent)" : "var(--text)",
+        }}
+      >
+        {value}
+      </div>
+      <div
+        className="mono"
+        style={{ marginTop: 6, fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-dim)" }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="shead">
+        <h2>Récords del torneo</h2>
+        <span className="sh-note">{records.matchesPlayed} partidos jugados</span>
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        {metric(records.totalGoals, "Goles totales", true)}
+        {metric(records.avgGoals.toFixed(2), "Media por partido")}
+        {metric(records.penShootouts, "Tandas de penaltis")}
+        {metric(records.scorelessDraws, "Partidos sin goles")}
+      </div>
+      {(records.biggestWin || records.mostGoals) && (
+        <div className="grid2" style={{ alignItems: "start" }}>
+          {records.biggestWin && <RecordMatch fx={records.biggestWin} tag="Mayor goleada" />}
+          {records.mostGoals && <RecordMatch fx={records.mostGoals} tag="Más goles en un partido" />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Estadísticas ---------- */
 
 function StatsView({ data }: { data: MundialData }) {
-  const { scorers, assists, ratings, cards, attackDefense, xg, active } = data;
+  const { scorers, assists, ratings, cards, attackDefense, xg, active, finished } = data;
   const noPlayerData = scorers.length === 0 && assists.length === 0;
   const [openId, setOpenId] = useState<number | null>(null);
+  const records = useMemo(() => tournamentRecords(finished), [finished]);
 
   return (
     <div className="space-y-8">
       {openId != null && (
         <PlayerSeasonModal id={openId} onClose={() => setOpenId(null)} />
       )}
+      {records.matchesPlayed > 0 && <RecordsPanel records={records} />}
       {active && (
         <Link
           href="/mundial/comparar"
