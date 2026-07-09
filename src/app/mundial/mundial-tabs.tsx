@@ -15,6 +15,7 @@ import {
   type AllPlayer,
   tournamentRecords,
   type TournamentRecords,
+  type GameRecords,
 } from "@/lib/sports/api-football";
 import {
   mergeLiveStandings,
@@ -1244,6 +1245,89 @@ function RecordMatch({ fx, tag }: { fx: Fixture; tag: string }) {
   );
 }
 
+/** Fila de un récord de juego (posesión/tiros): equipo, valor y rival. */
+function GameRecordRow({
+  rec,
+  label,
+  suffix,
+}: {
+  rec: NonNullable<GameRecords["topPossession"]>;
+  label: string;
+  suffix?: string;
+}) {
+  return (
+    <Link
+      href={`/mundial/partido/${rec.fixtureId}`}
+      className="panel"
+      style={{ display: "block", padding: "11px 14px", textDecoration: "none", color: "inherit" }}
+    >
+      <p
+        className="mono"
+        style={{
+          color: "var(--accent)",
+          fontSize: "0.58rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          margin: "0 0 8px",
+        }}
+      >
+        {label}
+      </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+          <Image src={rec.team.logo} alt="" width={20} height={20} unoptimized />
+          <span className="truncate" style={{ fontWeight: 700 }}>{rec.team.name}</span>
+        </span>
+        <b className="tabular-nums" style={{ fontSize: "1.05rem", flexShrink: 0, color: "var(--accent)" }}>
+          {rec.value}
+          {suffix ?? ""}
+        </b>
+      </div>
+      <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.6rem", margin: "6px 0 0" }}>
+        vs {rec.rival.name} · {rec.score}
+      </p>
+    </Link>
+  );
+}
+
+/** Récords de juego (posesión y tiros), cargados bajo demanda. */
+function GameRecordsSection() {
+  const [gr, setGr] = useState<GameRecords | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/sports/game-records")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: GameRecords | null) => {
+        if (!cancelled) setGr(d);
+      })
+      .catch(() => {
+        if (!cancelled) setGr(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!gr || (!gr.topPossession && !gr.topShots && !gr.topShotsOnTarget)) return null;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: 12,
+        marginTop: 12,
+      }}
+    >
+      {gr.topPossession && <GameRecordRow rec={gr.topPossession} label="Más posesión" suffix="%" />}
+      {gr.topShots && <GameRecordRow rec={gr.topShots} label="Más tiros" />}
+      {gr.topShotsOnTarget && (
+        <GameRecordRow rec={gr.topShotsOnTarget} label="Más tiros a puerta" />
+      )}
+    </div>
+  );
+}
+
 function RecordsPanel({ records }: { records: TournamentRecords }) {
   const metric = (value: string | number, label: string, accent?: boolean) => (
     <div style={{ background: "var(--surface-2)", borderRadius: "var(--radius)", padding: "12px 14px" }}>
@@ -1293,6 +1377,7 @@ function RecordsPanel({ records }: { records: TournamentRecords }) {
           {records.mostGoals && <RecordMatch fx={records.mostGoals} tag="Más goles en un partido" />}
         </div>
       )}
+      <GameRecordsSection />
     </div>
   );
 }

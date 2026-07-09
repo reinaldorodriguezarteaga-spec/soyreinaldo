@@ -3,11 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  getTeamCoach,
   getTeamFixtures,
   getTeamSquad,
   getTeamStatistics,
   isFinal,
   isLive,
+  type Coach,
   type Fixture,
   type SquadPlayer,
 } from "@/lib/sports/api-football";
@@ -58,10 +60,11 @@ export default async function EquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const [{ team, recent, upcoming }, stats, squad] = await Promise.all([
+  const [{ team, recent, upcoming }, stats, squad, coach] = await Promise.all([
     getTeamFixtures(teamId, { last: 20, next: 5 }),
     getTeamStatistics(teamId).catch(() => null),
     getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
+    getTeamCoach(teamId).catch(() => null as Coach | null),
   ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
@@ -106,10 +109,32 @@ export default async function EquipoPage({
               >
                 {team?.name ?? "Selección"}
               </h1>
-              <p className="phero__lede" style={{ marginTop: 6 }}>
-                Historial de partidos — toca cualquiera para ver sus
-                estadísticas.
-              </p>
+              {coach ? (
+                <p
+                  className="phero__lede"
+                  style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  {coach.photo && (
+                    <Image
+                      src={coach.photo}
+                      alt=""
+                      width={24}
+                      height={24}
+                      unoptimized
+                      style={{ borderRadius: "50%", background: "var(--surface-2)" }}
+                    />
+                  )}
+                  <span>
+                    Seleccionador: <b style={{ color: "var(--text)" }}>{coach.name}</b>
+                    {coach.nationality ? ` · ${coach.nationality}` : ""}
+                  </span>
+                </p>
+              ) : (
+                <p className="phero__lede" style={{ marginTop: 6 }}>
+                  Historial de partidos — toca cualquiera para ver sus
+                  estadísticas.
+                </p>
+              )}
             </div>
           </div>
         </div>

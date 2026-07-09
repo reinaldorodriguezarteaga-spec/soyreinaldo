@@ -1233,6 +1233,37 @@ export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
     });
 }
 
+/** Seleccionador / entrenador de un equipo. */
+export type Coach = {
+  id: number;
+  name: string;
+  nationality: string | null;
+  age: number | null;
+  photo: string | null;
+};
+
+type CoachResponse = {
+  id: number;
+  name: string;
+  nationality: string | null;
+  age: number | null;
+  photo: string | null;
+};
+
+/** Entrenador actual de una selección (endpoint `/coachs`). Caché 1 día. */
+export async function getTeamCoach(teamId: number): Promise<Coach | null> {
+  const r = await get<CoachResponse>("/coachs", { team: teamId }, 86400);
+  const c = r.response[0];
+  if (!c) return null;
+  return {
+    id: c.id,
+    name: c.name,
+    nationality: c.nationality ?? null,
+    age: c.age ?? null,
+    photo: c.photo ?? null,
+  };
+}
+
 /** Un jugador del listado global (todas las plantillas del Mundial). */
 export type AllPlayer = {
   id: number;
@@ -1547,6 +1578,92 @@ export function tournamentRecords(finished: Fixture[]): TournamentRecords {
     penShootouts,
     scorelessDraws,
   };
+}
+
+/** Un récord de juego: el mejor registro (posesión, tiros…) y en qué partido. */
+export type GameRecord = {
+  fixtureId: number;
+  team: { name: string; logo: string };
+  rival: { name: string; logo: string };
+  value: number;
+  /** Marcador del partido, p. ej. "3-1". */
+  score: string;
+} | null;
+
+export type GameRecords = {
+  topPossession: GameRecord;
+  topShots: GameRecord;
+  topShotsOnTarget: GameRecord;
+};
+
+/** Lee un número de la lista de estadísticas del partido ("55%", "14"…). */
+function statNum(stats: { type: string; value: number | string | null }[], re: RegExp): number | null {
+  const s = stats.find((x) => re.test(x.type));
+  if (!s || s.value == null) return null;
+  const n = parseFloat(String(s.value).replace("%", ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Récords de juego (más posesión, más tiros, más tiros a puerta por un equipo
+ * en un partido) agregando `/fixtures/statistics` de los partidos TERMINADOS.
+ * Es 1 llamada por partido → se piden POR LOTES de 6 (cacheadas 1 día, porque
+ * las stats de un partido acabado no cambian).
+ */
+export async function getGameRecords(finished: Fixture[]): Promise<GameRecords> {
+  const ids = finished.map((f) => f.fixture.id);
+  const byFixture = new Map(finished.map((f) => [f.fixture.id, f]));
+
+  const statsByFixture: { id: number; stats: TeamStatistics[] }[] = [];
+  const BATCH = 6;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const chunk = ids.slice(i, i + BATCH);
+    const res = await Promise.all(
+      chunk.map((id) =>
+        getFixtureStatistics(id, 86400)
+          .then((stats) => ({ id, stats }))
+          .catch(() => ({ id, stats: [] as TeamStatistics[] })),
+      ),
+    );
+    statsByFixture.push(...res);
+  }
+
+  let topPossession: GameRecord = null;
+  let topShots: GameRecord = null;
+  let topShotsOnTarget: GameRecord = null;
+
+  const consider = (
+    current: GameRecord,
+    fx: Fixture,
+    teamId: number,
+    teamInfo: { name: string; logo: string },
+    value: number | null,
+  ): GameRecord => {
+    if (value == null) return current;
+    if (current && value <= current.value) return current;
+    const isHome = fx.teams.home.id === teamId;
+    const rival = isHome ? fx.teams.away : fx.teams.home;
+    return {
+      fixtureId: fx.fixture.id,
+      team: teamInfo,
+      rival: { name: rival.name, logo: rival.logo },
+      value,
+      score: `${fx.goals.home ?? 0}-${fx.goals.away ?? 0}`,
+    };
+  };
+
+  for (const { id, stats } of statsByFixture) {
+    const fx = byFixture.get(id);
+    if (!fx || stats.length === 0) continue;
+    for (const t of stats) {
+      const info = { name: t.team.name, logo: t.team.logo };
+      topPossession = consider(topPossession, fx, t.team.id, info, statNum(t.statistics, /ball possession/i));
+      topShots = consider(topShots, fx, t.team.id, info, statNum(t.statistics, /^total shots$/i));
+      topShotsOnTarget = consider(topShotsOnTarget, fx, t.team.id, info, statNum(t.statistics, /shots on goal/i));
+    }
+  }
+
+  return { topPossession, topShots, topShotsOnTarget };
 }
 
 /**
