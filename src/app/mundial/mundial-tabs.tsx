@@ -72,7 +72,7 @@ export default function MundialTabs({
   return (
     <section className="section" style={{ paddingTop: 28 }}>
       <div className="wrap">
-        <div className="tabs" style={{ marginBottom: 28, maxWidth: 860 }}>
+        <div className="tabs tabs--scroll" style={{ marginBottom: 28 }}>
           <button
             type="button"
             className={tab === "envivo" ? "on" : ""}
@@ -1144,66 +1144,125 @@ function JugadoresView() {
     );
   }
 
-  const browse = (players ?? []).slice(0, 300);
-  const shown = liveMode ? live : browse;
+  // Navegación: agrupada por selección (colapsable). Búsqueda: lista plana en vivo.
+  const byTeam = groupPlayersByTeam(players);
 
   return (
     <div>
       <ListSearch value={q} onChange={setQ} placeholder="Buscar jugador…" />
+
       {liveMode ? (
-        searching && live.length === 0 ? (
-          <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", padding: "6px 2px" }}>
-            Buscando…
-          </p>
-        ) : live.length === 0 ? (
-          <Empty>Sin jugadores para “{term}”.</Empty>
-        ) : null
+        <>
+          {searching && live.length === 0 ? (
+            <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem", padding: "6px 2px" }}>
+              Buscando…
+            </p>
+          ) : live.length === 0 ? (
+            <Empty>Sin jugadores para “{term}”.</Empty>
+          ) : (
+            <div className="panel" style={{ overflow: "hidden" }}>
+              {live.map((p, i) => (
+                <PlayerRow key={p.id} p={p} last={i === live.length - 1} withTeam />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", margin: "0 0 12px" }}>
-          {players.length} jugadores en la lista · escribe un nombre para buscar en todo el Mundial
-        </p>
-      )}
-
-      {shown.length > 0 && (
-        <div className="panel" style={{ overflow: "hidden" }}>
-          {shown.map((p, i) => (
-            <Link
-              key={p.id}
-              href={`/mundial/jugador/${p.id}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 14px",
-                borderBottom: i < shown.length - 1 ? "1px solid var(--line)" : undefined,
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              <span style={{ fontWeight: 600, minWidth: 0, flex: 1 }} className="truncate">
-                {p.name}
-              </span>
-              {p.team && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  <Image src={p.team.logo} alt="" width={18} height={18} unoptimized />
-                  <span className="mono truncate" style={{ color: "var(--text-dim)", fontSize: "0.66rem", maxWidth: 110 }}>
-                    {p.team.name}
+        <>
+          <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", margin: "0 0 12px" }}>
+            {players.length} jugadores · agrupados por selección · o escribe un nombre para buscar
+          </p>
+          <div className="space-y-2">
+            {byTeam.map((g) => (
+              <details key={g.team.name} className="panel" style={{ overflow: "hidden" }}>
+                <summary
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    listStyle: "none",
+                    userSelect: "none",
+                  }}
+                >
+                  <Image src={g.team.logo} alt="" width={24} height={24} unoptimized />
+                  <b style={{ flex: 1, minWidth: 0 }} className="truncate">{g.team.name}</b>
+                  <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
+                    {g.players.length}
                   </span>
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {!liveMode && players.length > 300 && (
-        <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", marginTop: 10, textAlign: "center" }}>
-          Escribe un nombre para buscar entre todos los jugadores del Mundial.
-        </p>
+                </summary>
+                <div style={{ borderTop: "1px solid var(--line)" }}>
+                  {g.players.map((p, i) => (
+                    <PlayerRow key={p.id} p={p} last={i === g.players.length - 1} />
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
+
+/** Agrupa jugadores por selección, equipos y jugadores en orden alfabético. */
+function groupPlayersByTeam(
+  players: AllPlayer[],
+): { team: { name: string; logo: string }; players: AllPlayer[] }[] {
+  const map = new Map<string, { team: { name: string; logo: string }; players: AllPlayer[] }>();
+  for (const p of players) {
+    if (!p.team) continue;
+    const g = map.get(p.team.name) ?? { team: p.team, players: [] };
+    g.players.push(p);
+    map.set(p.team.name, g);
+  }
+  return [...map.values()]
+    .map((g) => ({ ...g, players: g.players.sort((a, b) => a.name.localeCompare(b.name, "es")) }))
+    .sort((a, b) => a.team.name.localeCompare(b.team.name, "es"));
+}
+
+/** Fila de jugador en la lista, clicable a su ficha. */
+function PlayerRow({ p, last, withTeam }: { p: AllPlayer; last: boolean; withTeam?: boolean }) {
+  return (
+    <Link
+      href={`/mundial/jugador/${p.id}`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 14px",
+        borderBottom: last ? undefined : "1px solid var(--line)",
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      <span style={{ fontWeight: 600, minWidth: 0, flex: 1 }} className="truncate">
+        {p.name}
+      </span>
+      {withTeam && p.team && (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <Image src={p.team.logo} alt="" width={18} height={18} unoptimized />
+          <span className="mono truncate" style={{ color: "var(--text-dim)", fontSize: "0.66rem", maxWidth: 110 }}>
+            {p.team.name}
+          </span>
+        </span>
+      )}
+      {!withTeam && p.position && (
+        <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", flexShrink: 0 }}>
+          {POS_SHORT[p.position] ?? ""}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+const POS_SHORT: Record<string, string> = {
+  Goalkeeper: "POR",
+  Defender: "DEF",
+  Midfielder: "MED",
+  Attacker: "DEL",
+};
 
 /* ---------- Récords del torneo ---------- */
 

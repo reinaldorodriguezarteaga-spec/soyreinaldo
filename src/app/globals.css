@@ -794,6 +794,10 @@ select.field { appearance: none; }
 .tabs { display: flex; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius); padding: 5px; background: var(--surface); flex-wrap: wrap; }
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
+/* Variante en una sola fila con scroll horizontal (para muchas pestañas). */
+.tabs--scroll { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tabs--scroll::-webkit-scrollbar { display: none; }
+.tabs--scroll a, .tabs--scroll button { flex: 0 0 auto; }
 
 /* ============================================================
    LOTE 2 — producto, cuenta, legal

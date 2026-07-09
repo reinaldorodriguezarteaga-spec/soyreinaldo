@@ -10,6 +10,7 @@ import type {
   LineupTeam,
   MatchOdds,
   MatchPrediction,
+  TimelineEvent,
 } from "@/lib/sports/api-football";
 import { subKey } from "@/lib/sports/api-football";
 import { SkeletonCard } from "@/components/Skeleton";
@@ -42,13 +43,17 @@ export default function MatchTabs({
   initialTab?: "stats" | "preview";
   children: React.ReactNode;
 }) {
-  const [tab, setTab] = useState<"stats" | "preview" | "h2h">(initialTab);
+  const [tab, setTab] = useState<"stats" | "timeline" | "preview" | "h2h">(initialTab);
   const [previewOpened, setPreviewOpened] = useState(initialTab === "preview");
   const [h2hOpened, setH2hOpened] = useState(false);
+  const [timelineOpened, setTimelineOpened] = useState(false);
+  // La cronología solo tiene sentido en partidos jugados/en vivo (los que abren
+  // en "Estadísticas"); en los próximos aún no hay eventos.
+  const showTimeline = initialTab === "stats";
 
   return (
     <>
-      <div className="tabs" style={{ marginBottom: 24, maxWidth: 640 }}>
+      <div className="tabs tabs--scroll" style={{ marginBottom: 24, maxWidth: 640 }}>
         <button
           type="button"
           className={tab === "stats" ? "on" : ""}
@@ -56,6 +61,18 @@ export default function MatchTabs({
         >
           Estadísticas
         </button>
+        {showTimeline && (
+          <button
+            type="button"
+            className={tab === "timeline" ? "on" : ""}
+            onClick={() => {
+              setTab("timeline");
+              setTimelineOpened(true);
+            }}
+          >
+            Cronología
+          </button>
+        )}
         <button
           type="button"
           className={tab === "preview" ? "on" : ""}
@@ -80,6 +97,12 @@ export default function MatchTabs({
 
       <div hidden={tab !== "stats"}>{children}</div>
 
+      {timelineOpened && (
+        <div hidden={tab !== "timeline"}>
+          <TimelinePanel fixtureId={fixtureId} home={home} away={away} />
+        </div>
+      )}
+
       {previewOpened && (
         <div hidden={tab !== "preview"}>
           <PreviewPanel fixtureId={fixtureId} home={home} away={away} />
@@ -97,6 +120,188 @@ export default function MatchTabs({
         </div>
       )}
     </>
+  );
+}
+
+/* ---------- Cronología ---------- */
+
+function TimelinePanel({
+  fixtureId,
+  home,
+  away,
+}: {
+  fixtureId: number;
+  home: Team;
+  away: Team;
+}) {
+  const [events, setEvents] = useState<TimelineEvent[] | null | "loading">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/sports/timeline?fixture=${fixtureId}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: TimelineEvent[]) => {
+        if (!cancelled) setEvents(Array.isArray(d) ? d : []);
+      })
+      .catch(() => {
+        if (!cancelled) setEvents([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fixtureId]);
+
+  if (events === "loading") {
+    return (
+      <div className="space-y-2" aria-busy>
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
+  }
+
+  if (!events || events.length === 0) {
+    return (
+      <div
+        className="panel"
+        style={{ padding: 28, textAlign: "center", borderStyle: "dashed", color: "var(--text-dim)" }}
+      >
+        Sin eventos que mostrar en este partido.
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel" style={{ padding: "18px 14px", maxWidth: 620 }}>
+      <div style={{ position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: "var(--line)",
+            transform: "translateX(-50%)",
+          }}
+        />
+        {events.map((ev, i) => (
+          <TimelineRow key={i} ev={ev} homeId={home.id} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EventIcon({ kind }: { kind: TimelineEvent["kind"] }) {
+  if (kind === "yellow" || kind === "red") {
+    return (
+      <span
+        style={{
+          width: 13,
+          height: 17,
+          borderRadius: 3,
+          flexShrink: 0,
+          background: kind === "red" ? "#ff5b5b" : "#ffd23f",
+        }}
+      />
+    );
+  }
+  const map: Record<string, string> = {
+    goal: "⚽",
+    penalty_goal: "⚽",
+    own_goal: "🥅",
+    missed_penalty: "❌",
+    var_disallowed: "🚫",
+    sub: "🔄",
+  };
+  return <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{map[kind] ?? "•"}</span>;
+}
+
+function eventLabel(ev: TimelineEvent): { title: string; sub: string | null } {
+  switch (ev.kind) {
+    case "goal":
+      return { title: ev.player ?? "Gol", sub: ev.detail ? `asist. ${ev.detail}` : "Gol" };
+    case "penalty_goal":
+      return { title: ev.player ?? "Gol", sub: "Gol de penalti" };
+    case "own_goal":
+      return { title: ev.player ?? "Gol", sub: "En propia puerta" };
+    case "missed_penalty":
+      return { title: ev.player ?? "—", sub: "Penalti fallado" };
+    case "var_disallowed":
+      return { title: ev.player ?? "—", sub: "Gol anulado (VAR)" };
+    case "yellow":
+      return { title: ev.player ?? "—", sub: "Amarilla" };
+    case "red":
+      return { title: ev.player ?? "—", sub: ev.detail ?? "Roja" };
+    case "sub":
+      return { title: ev.player ?? "—", sub: ev.detail ? `por ${ev.detail}` : "Cambio" };
+    default:
+      return { title: ev.player ?? "—", sub: null };
+  }
+}
+
+function TimelineRow({ ev, homeId }: { ev: TimelineEvent; homeId: number }) {
+  const isHome = ev.teamId === homeId;
+  const { title, sub } = eventLabel(ev);
+  const min = ev.minute != null ? `${ev.minute}${ev.extra ? `+${ev.extra}` : ""}'` : "";
+  const card = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexDirection: isHome ? "row-reverse" : "row",
+        textAlign: isHome ? "right" : "left",
+        minWidth: 0,
+      }}
+    >
+      <EventIcon kind={ev.kind} />
+      <span style={{ minWidth: 0 }}>
+        <b style={{ fontSize: "0.9rem", display: "block" }} className="truncate">
+          {title}
+        </b>
+        {sub && (
+          <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{sub}</span>
+        )}
+      </span>
+    </div>
+  );
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 42px 1fr",
+        alignItems: "center",
+        gap: 6,
+        padding: "9px 0",
+      }}
+    >
+      <div style={{ gridColumn: 1 }}>{isHome ? card : null}</div>
+      <div
+        className="mono"
+        style={{
+          gridColumn: 2,
+          justifySelf: "center",
+          zIndex: 1,
+          minWidth: 34,
+          height: 22,
+          borderRadius: 11,
+          background: "var(--surface-2)",
+          border: "0.5px solid var(--line-strong)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "0.6rem",
+          color: "var(--text-dim)",
+          padding: "0 4px",
+        }}
+      >
+        {min}
+      </div>
+      <div style={{ gridColumn: 3 }}>{!isHome ? card : null}</div>
+    </div>
   );
 }
 
@@ -743,20 +948,29 @@ function reasonEs(r: string | null): string {
 
 function OddsCell({ label, val }: { label: string; val: number | null }) {
   return (
-    <div style={{ textAlign: "center", flex: 1, minWidth: 0 }}>
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        textAlign: "center",
+        background: "var(--surface-2)",
+        borderRadius: "var(--radius)",
+        padding: "9px 8px",
+      }}
+    >
       <div
         className="mono truncate"
         style={{
           color: "var(--text-dim)",
-          fontSize: "0.58rem",
+          fontSize: "0.56rem",
           textTransform: "uppercase",
-          letterSpacing: "0.06em",
-          marginBottom: 4,
+          letterSpacing: "0.04em",
+          marginBottom: 5,
         }}
       >
         {label}
       </div>
-      <div className="display tabular-nums" style={{ fontSize: "1.4rem" }}>
+      <div className="display tabular-nums" style={{ fontSize: "1.25rem", lineHeight: 1 }}>
         {val != null ? val.toFixed(2) : "—"}
       </div>
     </div>

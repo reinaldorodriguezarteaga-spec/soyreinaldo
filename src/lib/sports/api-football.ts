@@ -405,6 +405,74 @@ type FixtureEvent = {
   detail: string;
 };
 
+/** Un evento de la cronología del partido (todos los tipos). */
+export type TimelineEvent = {
+  minute: number | null;
+  extra: number | null;
+  teamId: number;
+  kind:
+    | "goal"
+    | "own_goal"
+    | "penalty_goal"
+    | "missed_penalty"
+    | "yellow"
+    | "red"
+    | "sub"
+    | "var_disallowed";
+  /** Protagonista: goleador, amonestado, o el que ENTRA en un cambio. */
+  player: string | null;
+  /** Detalle: asistente (gol), el que SALE (cambio), o motivo (VAR). */
+  detail: string | null;
+};
+
+/**
+ * Cronología completa del partido (goles, tarjetas, cambios, penaltis fallados
+ * y goles anulados por VAR), ordenada por minuto. Una llamada a
+ * `/fixtures/events`. Vacío si el partido aún no ha empezado.
+ */
+export async function getFixtureTimeline(
+  id: number,
+  revalidate = 60,
+): Promise<TimelineEvent[]> {
+  const r = await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate);
+  const out: TimelineEvent[] = [];
+  for (const e of r.response) {
+    const detail = (e.detail || "").toLowerCase();
+    const base = {
+      minute: e.time.elapsed,
+      extra: e.time.extra ?? null,
+      teamId: e.team.id,
+    };
+    if (e.type === "Goal") {
+      if (detail === "missed penalty") {
+        out.push({ ...base, kind: "missed_penalty", player: e.player.name ?? "—", detail: null });
+      } else if (detail === "own goal") {
+        out.push({ ...base, kind: "own_goal", player: e.player.name ?? "—", detail: null });
+      } else if (detail === "penalty") {
+        out.push({ ...base, kind: "penalty_goal", player: e.player.name ?? "—", detail: "de penalti" });
+      } else {
+        out.push({ ...base, kind: "goal", player: e.player.name ?? "—", detail: e.assist.name ?? null });
+      }
+    } else if (e.type === "Card") {
+      if (detail.includes("red")) {
+        out.push({ ...base, kind: "red", player: e.player.name ?? "—", detail: null });
+      } else if (detail.includes("second yellow")) {
+        out.push({ ...base, kind: "red", player: e.player.name ?? "—", detail: "doble amarilla" });
+      } else {
+        out.push({ ...base, kind: "yellow", player: e.player.name ?? "—", detail: null });
+      }
+    } else if (e.type === "subst") {
+      // En /fixtures/events: `player` = entra, `assist` = sale.
+      out.push({ ...base, kind: "sub", player: e.player.name ?? "—", detail: e.assist.name ?? null });
+    } else if (e.type === "Var" && (detail.includes("disallow") || detail.includes("cancel"))) {
+      out.push({ ...base, kind: "var_disallowed", player: e.player.name ?? "—", detail: null });
+    }
+  }
+  return out.sort(
+    (a, b) => (a.minute ?? 0) - (b.minute ?? 0) || (a.extra ?? 0) - (b.extra ?? 0),
+  );
+}
+
 /** Todos los partidos del Mundial (los 104), con su estado. Cachea 5 min. */
 export async function getWorldCupAllFixtures(): Promise<Fixture[]> {
   const r = await get<Fixture>(
