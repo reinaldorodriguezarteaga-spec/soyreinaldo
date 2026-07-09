@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
  *     de error pintado por una capa intermedia con status 200).
  */
 export async function GET() {
+  // `start` mide la latencia de la comprobación y se devuelve como `ms`.
   const start = Date.now();
   try {
     const supabase = await createClient();
