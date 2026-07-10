@@ -67,12 +67,30 @@ export default function MundialTabs({
   // Sincroniza con la URL (?v=) cuando se navega desde el desplegable del nav.
   useEffect(() => setTab(view), [view]);
 
+  // Pista de scroll: si quedan pestañas a la derecha, mostramos un degradado.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [moreRight, setMoreRight] = useState(false);
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const update = () =>
+      setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const anyLive = data.today.some(isLive);
 
   return (
     <section className="section" style={{ paddingTop: 28 }}>
       <div className="wrap">
-        <div className="tabs tabs--scroll" style={{ marginBottom: 28 }}>
+        <div style={{ position: "relative", marginBottom: 28 }}>
+        <div ref={tabsRef} className="tabs tabs--scroll">
           <button
             type="button"
             className={tab === "envivo" ? "on" : ""}
@@ -125,6 +143,28 @@ export default function MundialTabs({
           >
             Estadísticas
           </button>
+        </div>
+        {moreRight && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: 5,
+              bottom: 5,
+              right: 5,
+              width: 54,
+              pointerEvents: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              paddingRight: 8,
+              borderRadius: "var(--radius)",
+              background: "linear-gradient(to right, transparent, var(--surface) 68%)",
+            }}
+          >
+            <span style={{ color: "var(--text-dim)", fontSize: "1.1rem", lineHeight: 1 }}>›</span>
+          </div>
+        )}
         </div>
 
         {tab === "envivo" && <EnVivoView data={data} />}

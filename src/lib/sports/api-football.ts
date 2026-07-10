@@ -1341,59 +1341,55 @@ export type AllPlayer = {
   team: { name: string; logo: string } | null;
 };
 
-function mapAllPlayers(rows: PlayerSeasonResponse[]): AllPlayer[] {
-  return rows.map((p) => {
-    const s = p.statistics?.[0];
-    return {
-      id: p.player.id,
-      name: p.player.name,
-      photo: p.player.photo ?? null,
-      position: s?.games?.position ?? null,
-      team: s?.team ? { name: s.team.name, logo: s.team.logo } : null,
-    };
-  });
-}
-
 /**
- * Todos los jugadores del Mundial (los que tienen ficha en el torneo),
- * ordenados alfabéticamente. Pagina `/players?league=1&season=2026`: la 1ª
- * página da el total, el resto se piden en paralelo (tope 40 páginas). Cada
- * página cacheada 1h por URL.
+ * Todos los jugadores del Mundial agregando las PLANTILLAS completas de las 48
+ * selecciones (`/players/squads` → 26 por equipo, a diferencia de `/players`
+ * que solo trae a los que ya jugaron). Los squads se piden POR LOTES de 6 para
+ * no chocar con el rate-limit (48 en paralelo devolvían plantillas vacías).
+ * Cada squad va cacheado 1 día.
  */
 export async function getAllWorldCupPlayers(): Promise<AllPlayer[]> {
-  const params = (page: number) => ({
-    league: WORLD_CUP.leagueId,
-    season: WORLD_CUP.season,
-    page,
-  });
-  const first = await get<PlayerSeasonResponse>("/players", params(1), 3600);
-  const totalPages = Math.min(
-    (first as { paging?: { total?: number } }).paging?.total ?? 1,
-    70,
-  );
+  const groups = await getWorldCupStandings();
+  const teams = new Map<number, { name: string; logo: string }>();
+  for (const g of groups)
+    for (const r of g.rows)
+      if (!teams.has(r.team.id)) teams.set(r.team.id, { name: r.team.name, logo: r.team.logo });
 
-  // Por lotes de 6 para no chocar con el rate-limit por segundo de la API
-  // (39+ peticiones en paralelo devolvían páginas vacías).
-  const pages: PlayerSeasonResponse[][] = [first.response];
-  const BATCH = 6;
-  for (let start = 2; start <= totalPages; start += BATCH) {
-    const nums: number[] = [];
-    for (let pg = start; pg < start + BATCH && pg <= totalPages; pg++) nums.push(pg);
-    const batch = await Promise.all(
-      nums.map((pg) =>
-        get<PlayerSeasonResponse>("/players", params(pg), 3600).then((r) => r.response),
-      ),
-    );
-    pages.push(...batch);
-  }
+  const ids = [...teams.keys()];
+  const result = new Map<number, SquadPlayer[]>();
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const all = pages.flat();
+  // Pide las plantillas en lotes pequeños con un respiro entre ellos para no
+  // saturar el rate-limit por segundo. Solo guardamos las no vacías.
+  const runBatches = async (batchIds: number[], size: number, gap: number) => {
+    for (let i = 0; i < batchIds.length; i += size) {
+      const chunk = batchIds.slice(i, i + size);
+      const res = await Promise.all(
+        chunk.map((id) =>
+          getTeamSquad(id)
+            .then((sq) => ({ id, sq }))
+            .catch(() => ({ id, sq: [] as SquadPlayer[] })),
+        ),
+      );
+      for (const { id, sq } of res) if (sq.length) result.set(id, sq);
+      if (i + size < batchIds.length) await sleep(gap);
+    }
+  };
+
+  await runBatches(ids, 5, 150);
+  // Reintento de las selecciones que volvieron vacías (rate-limit transitorio).
+  const missing = ids.filter((id) => !result.has(id));
+  if (missing.length) await runBatches(missing, 3, 250);
+
   const seen = new Set<number>();
   const out: AllPlayer[] = [];
-  for (const p of mapAllPlayers(all)) {
-    if (seen.has(p.id)) continue;
-    seen.add(p.id);
-    out.push(p);
+  for (const [id, sq] of result) {
+    const team = teams.get(id) ?? null;
+    for (const p of sq) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      out.push({ id: p.id, name: p.name, photo: p.photo, position: p.position, team });
+    }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name, "es"));
 }

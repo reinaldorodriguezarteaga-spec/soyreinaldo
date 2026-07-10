@@ -172,6 +172,31 @@ function TimelinePanel({
     );
   }
 
+  // Añadido de cada tiempo, derivado de eventos justo en el 45' / 90'.
+  const addedIn = (min: number) =>
+    events
+      .filter((e) => e.minute === min && e.extra != null)
+      .reduce((mx, e) => Math.max(mx, e.extra ?? 0), 0) || null;
+  const added1 = addedIn(45);
+  const added2 = addedIn(90);
+  const hasExtraTime = events.some((e) => (e.minute ?? 0) > 90);
+
+  // Interleaved: Inicio → 1ª parte → Descanso → 2ª parte → Final.
+  type Node = { divider: string } | { ev: TimelineEvent };
+  const nodes: Node[] = [{ divider: "Inicio del partido" }];
+  let halfDone = false;
+  for (const ev of events) {
+    if (!halfDone && (ev.minute ?? 0) > 45) {
+      nodes.push({ divider: added1 ? `Descanso · 45+${added1}'` : "Descanso" });
+      halfDone = true;
+    }
+    nodes.push({ ev });
+  }
+  if (!halfDone) nodes.push({ divider: added1 ? `Descanso · 45+${added1}'` : "Descanso" });
+  nodes.push({
+    divider: added2 && !hasExtraTime ? `Final · 90+${added2}'` : "Final",
+  });
+
   return (
     <div className="panel" style={{ padding: "18px 14px", maxWidth: 620 }}>
       <div style={{ position: "relative" }}>
@@ -186,10 +211,37 @@ function TimelinePanel({
             transform: "translateX(-50%)",
           }}
         />
-        {events.map((ev, i) => (
-          <TimelineRow key={i} ev={ev} homeId={home.id} />
-        ))}
+        {nodes.map((n, i) =>
+          "divider" in n ? (
+            <TimelineDivider key={i} label={n.divider} />
+          ) : (
+            <TimelineRow key={i} ev={n.ev} homeId={home.id} />
+          ),
+        )}
       </div>
+    </div>
+  );
+}
+
+/** Hito del partido (inicio, descanso, final) sobre la línea central. */
+function TimelineDivider({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "10px 0", position: "relative", zIndex: 1 }}>
+      <span
+        className="mono"
+        style={{
+          background: "var(--surface-2)",
+          border: "0.5px solid var(--line-strong)",
+          borderRadius: 999,
+          padding: "3px 12px",
+          fontSize: "0.58rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "var(--text-dim)",
+        }}
+      >
+        {label}
+      </span>
     </div>
   );
 }
