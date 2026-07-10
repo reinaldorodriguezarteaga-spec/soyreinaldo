@@ -462,8 +462,9 @@ export async function getFixtureTimeline(
         out.push({ ...base, kind: "yellow", player: e.player.name ?? "—", detail: null });
       }
     } else if (e.type === "subst") {
-      // En /fixtures/events: `player` = entra, `assist` = sale.
-      out.push({ ...base, kind: "sub", player: e.player.name ?? "—", detail: e.assist.name ?? null });
+      // En /fixtures/events de un cambio: `assist` = entra, `player` = sale.
+      // Mostramos al que ENTRA como protagonista y al que sale como detalle.
+      out.push({ ...base, kind: "sub", player: e.assist.name ?? "—", detail: e.player.name ?? null });
     } else if (e.type === "Var" && (detail.includes("disallow") || detail.includes("cancel"))) {
       out.push({ ...base, kind: "var_disallowed", player: e.player.name ?? "—", detail: null });
     }

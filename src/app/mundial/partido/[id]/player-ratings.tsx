@@ -2,10 +2,35 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { LineupTeam, PlayerRating } from "@/lib/sports/api-football";
+import { subKey, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
 
 type Team = { id: number; name: string; logo: string };
 type Entry = { p: PlayerRating; team: Team };
+
+/** Flecha de cambio: roja hacia abajo = salió, verde hacia arriba = entró. */
+function SubArrow({ dir }: { dir: "out" | "in" }) {
+  const out = dir === "out";
+  return (
+    <span
+      aria-label={out ? "Sustituido" : "Entró de cambio"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 15,
+        height: 15,
+        borderRadius: "50%",
+        background: out ? "#e24b4a" : "#3fb950",
+        color: "#fff",
+        fontSize: "0.62rem",
+        lineHeight: 1,
+        fontWeight: 700,
+      }}
+    >
+      {out ? "↓" : "↑"}
+    </span>
+  );
+}
 
 const POS_ES: Record<string, string> = { G: "POR", D: "DEF", M: "MED", F: "DEL" };
 
@@ -180,12 +205,14 @@ function PitchNode({
   x,
   y,
   onPick,
+  subbedOut,
 }: {
   lp: { id: number; number: number | null; name: string };
   pr: PlayerRating | undefined;
   x: number;
   y: number;
   onPick: (id: number) => void;
+  subbedOut?: boolean;
 }) {
   const rating = pr?.rating ?? null;
   const mark = playerMark(pr);
@@ -206,6 +233,29 @@ function PitchNode({
         {rating != null && (
           <span className="prbadge" style={{ background: ratingColor(rating) }}>
             {rating.toFixed(1)}
+          </span>
+        )}
+        {subbedOut && (
+          <span
+            style={{
+              position: "absolute",
+              top: -4,
+              left: -4,
+              zIndex: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "#e24b4a",
+              color: "#fff",
+              fontSize: "0.66rem",
+              fontWeight: 700,
+              border: "1.5px solid var(--bg)",
+            }}
+          >
+            ↓
           </span>
         )}
         {mark && <span className="pmk">{mark}</span>}
@@ -244,11 +294,13 @@ function SubsRow({
   subs,
   byId,
   onPick,
+  inKeySet,
 }: {
   team: Team;
   subs: { id: number; number: number | null; name: string }[];
   byId: Map<number, PlayerRating>;
   onPick: (id: number) => void;
+  inKeySet: Set<string>;
 }) {
   const played = subs
     .map((s) => byId.get(s.id))
@@ -263,6 +315,7 @@ function SubsRow({
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {played.map((p) => (
           <button key={p.id} className="subschip" type="button" onClick={() => onPick(p.id)}>
+            {inKeySet.has(subKey(p.name)) && <SubArrow dir="in" />}
             <Avatar photo={p.photo} n={p.number} size={20} />
             <span>{shortName(p.name)}</span>
             <b className="tabular-nums" style={{ color: ratingColor(p.rating ?? 0) }}>
@@ -283,6 +336,8 @@ function PitchView({
   byId,
   onPick,
   horizontal,
+  inKeySet,
+  outKeySet,
 }: {
   home: Team;
   away: Team;
@@ -291,6 +346,8 @@ function PitchView({
   byId: Map<number, PlayerRating>;
   onPick: (id: number) => void;
   horizontal: boolean;
+  inKeySet: Set<string>;
+  outKeySet: Set<string>;
 }) {
   const homeNodes = teamNodes(homeLineup, "home", horizontal);
   const awayNodes = teamNodes(awayLineup, "away", horizontal);
@@ -325,10 +382,26 @@ function PitchView({
           </>
         )}
         {homeNodes.map((n) => (
-          <PitchNode key={n.p.id} lp={n.p} pr={byId.get(n.p.id)} x={n.x} y={n.y} onPick={onPick} />
+          <PitchNode
+            key={n.p.id}
+            lp={n.p}
+            pr={byId.get(n.p.id)}
+            x={n.x}
+            y={n.y}
+            onPick={onPick}
+            subbedOut={outKeySet.has(subKey(n.p.name))}
+          />
         ))}
         {awayNodes.map((n) => (
-          <PitchNode key={n.p.id} lp={n.p} pr={byId.get(n.p.id)} x={n.x} y={n.y} onPick={onPick} />
+          <PitchNode
+            key={n.p.id}
+            lp={n.p}
+            pr={byId.get(n.p.id)}
+            x={n.x}
+            y={n.y}
+            onPick={onPick}
+            subbedOut={outKeySet.has(subKey(n.p.name))}
+          />
         ))}
       </div>
       {!horizontal && (
@@ -336,8 +409,8 @@ function PitchView({
           <TeamCaption team={away} formation={awayLineup.formation} align="right" />
         </div>
       )}
-      <SubsRow team={home} subs={homeLineup.substitutes} byId={byId} onPick={onPick} />
-      <SubsRow team={away} subs={awayLineup.substitutes} byId={byId} onPick={onPick} />
+      <SubsRow team={home} subs={homeLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} />
+      <SubsRow team={away} subs={awayLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} />
     </div>
   );
 }
@@ -402,6 +475,8 @@ export default function PlayerRatings({
   awayPlayers,
   homeLineup,
   awayLineup,
+  inKeys = [],
+  outKeys = [],
 }: {
   home: Team;
   away: Team;
@@ -409,7 +484,11 @@ export default function PlayerRatings({
   awayPlayers: PlayerRating[];
   homeLineup: LineupTeam | null;
   awayLineup: LineupTeam | null;
+  inKeys?: string[];
+  outKeys?: string[];
 }) {
+  const inKeySet = new Set(inKeys);
+  const outKeySet = new Set(outKeys);
   const entries: Entry[] = [
     ...homePlayers.map((p) => ({ p, team: home })),
     ...awayPlayers.map((p) => ({ p, team: away })),
@@ -482,6 +561,8 @@ export default function PlayerRatings({
           byId={byId}
           onPick={pickById}
           horizontal={horizontal}
+          inKeySet={inKeySet}
+          outKeySet={outKeySet}
         />
       ) : (
         <ListView

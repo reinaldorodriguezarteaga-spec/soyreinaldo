@@ -371,6 +371,8 @@ export default async function PartidoPage({
                 awayPlayers={awayPlayers}
                 homeLineup={homeLineup}
                 awayLineup={awayLineup}
+                inKeys={subs.inKeys}
+                outKeys={subs.outKeys}
               />
             </div>
           )}
