@@ -196,12 +196,14 @@ export default async function PartidosPage({
 
   const now = new Date();
   // Las predicciones se cierran 30 MINUTOS antes del kickoff (mismo límite que
-  // la RLS de la BD, para que UI y backend coincidan).
+  // la RLS de la BD, para que UI y backend coincidan). Excepción puntual:
+  // partido 103 (3er lugar, 18-jul) se bloquea al empezar (migración 027).
   const LOCK_LEAD_MS = 30 * 60 * 1000;
 
   const cards: MatchCardData[] = matches.map((m) => {
     const kickoff = new Date(m.kickoff_at);
-    const locked = kickoff.getTime() - LOCK_LEAD_MS <= now.getTime();
+    const lockLeadMs = m.id === 103 ? 0 : LOCK_LEAD_MS;
+    const locked = kickoff.getTime() - lockLeadMs <= now.getTime();
     const home: MatchCardData["home"] = m.home
       ? {
           code: m.home.id,
