@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import PicksForm, { type Team, type ExistingPicks } from "./picks-form";
+import PicksForm, {
+  type Team,
+  type ExistingPicks,
+  type TournamentResults,
+} from "./picks-form";
 
 export const metadata = {
   title: "Picks especiales | Quiniela | Soy Reinaldo",
@@ -35,6 +39,15 @@ export default async function PicksPage() {
     .eq("user_id", user.id)
     .maybeSingle<ExistingPicks>();
 
+  // Resultado real del torneo (para mostrar puntos ganados por cada pick)
+  const { data: tournamentResults } = await supabase
+    .from("tournament_results")
+    .select(
+      "champion_team, runner_up_team, tercer_lugar, top_scoring_team, pichichi_name, pichichi_actual_goals, final_scorer_names, balon_oro, guante_oro, jugador_revelacion, max_asistidor",
+    )
+    .eq("id", 1)
+    .maybeSingle<TournamentResults>();
+
   // ¿Ya empezó el torneo?
   const { data: lockData } = await supabase.rpc("tournament_started");
   const locked = lockData === true;
@@ -64,7 +77,12 @@ export default async function PicksPage() {
             📖 Cómo se puntúa <span>→</span>
           </Link>
 
-          <PicksForm teams={teams} existing={existing ?? null} locked={locked} />
+          <PicksForm
+            teams={teams}
+            existing={existing ?? null}
+            locked={locked}
+            tournamentResults={tournamentResults ?? null}
+          />
         </div>
       </section>
     </main>

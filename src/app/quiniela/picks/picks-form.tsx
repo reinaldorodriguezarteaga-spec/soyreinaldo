@@ -26,14 +26,64 @@ export type ExistingPicks = {
   max_asistidor: string | null;
 };
 
+export type TournamentResults = {
+  champion_team: string | null;
+  runner_up_team: string | null;
+  tercer_lugar: string | null;
+  top_scoring_team: string | null;
+  pichichi_name: string | null;
+  pichichi_actual_goals: number | null;
+  final_scorer_names: string[] | null;
+  balon_oro: string | null;
+  guante_oro: string | null;
+  jugador_revelacion: string | null;
+  max_asistidor: string | null;
+};
+
+// Igual que public.norm_name en la BD: sin acentos, minúsculas, espacios colapsados.
+function normName(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function PickResult({
+  points,
+  real,
+}: {
+  points: number;
+  real: string | null;
+}) {
+  if (!real) return null;
+  return (
+    <div style={{ marginTop: 10 }}>
+      <span className={`badge ${points > 0 ? "badge--ok" : ""}`}>
+        {points > 0 ? `+${points} pts` : "0 pts"}
+      </span>
+      <span
+        className="hint"
+        style={{ display: "inline-block", marginTop: 6 }}
+      >
+        Resultado real: {real}
+      </span>
+    </div>
+  );
+}
+
 export default function PicksForm({
   teams,
   existing,
   locked,
+  tournamentResults,
 }: {
   teams: Team[];
   existing: ExistingPicks | null;
   locked: boolean;
+  tournamentResults: TournamentResults | null;
 }) {
   const [state, action, pending] = useActionState(savePicks, initial);
   const disabled = locked || pending;
@@ -59,6 +109,86 @@ export default function PicksForm({
     existing?.final_scorer_name ?? "",
   );
 
+  const teamById = new Map(teams.map((t) => [t.id, t]));
+  const teamLabel = (code: string | null | undefined) => {
+    if (!code) return null;
+    const t = teamById.get(code);
+    return t ? `${t.flag_emoji ?? ""} ${t.name}`.trim() : code;
+  };
+
+  const tr = tournamentResults;
+  const pichichiNameMatch =
+    !!existing?.pichichi_name &&
+    !!tr?.pichichi_name &&
+    normName(existing.pichichi_name) === normName(tr.pichichi_name);
+  const pichichiGoalsMatch =
+    pichichiNameMatch &&
+    existing?.pichichi_predicted_goals != null &&
+    existing.pichichi_predicted_goals === tr?.pichichi_actual_goals;
+
+  const results = {
+    champion: {
+      points: tr?.champion_team && existing?.champion_team === tr.champion_team ? 20 : 0,
+      real: teamLabel(tr?.champion_team),
+    },
+    runnerUp: {
+      points: tr?.runner_up_team && existing?.runner_up_team === tr.runner_up_team ? 5 : 0,
+      real: teamLabel(tr?.runner_up_team),
+    },
+    tercero: {
+      points: tr?.tercer_lugar && existing?.tercer_lugar === tr.tercer_lugar ? 3 : 0,
+      real: teamLabel(tr?.tercer_lugar),
+    },
+    topScoring: {
+      points: tr?.top_scoring_team && existing?.top_scoring_team === tr.top_scoring_team ? 10 : 0,
+      real: teamLabel(tr?.top_scoring_team),
+    },
+    pichichi: {
+      points: (pichichiNameMatch ? 10 : 0) + (pichichiGoalsMatch ? 5 : 0),
+      real: tr?.pichichi_name
+        ? `${tr.pichichi_name}${tr.pichichi_actual_goals != null ? ` (${tr.pichichi_actual_goals} goles)` : ""}`
+        : null,
+    },
+    balonOro: {
+      points:
+        tr?.balon_oro && normName(existing?.balon_oro) === normName(tr.balon_oro) && !!existing?.balon_oro
+          ? 10
+          : 0,
+      real: tr?.balon_oro ?? null,
+    },
+    guanteOro: {
+      points:
+        tr?.guante_oro && normName(existing?.guante_oro) === normName(tr.guante_oro) && !!existing?.guante_oro
+          ? 7
+          : 0,
+      real: tr?.guante_oro ?? null,
+    },
+    revelacion: {
+      points:
+        tr?.jugador_revelacion &&
+        normName(existing?.jugador_revelacion) === normName(tr.jugador_revelacion) &&
+        !!existing?.jugador_revelacion
+          ? 7
+          : 0,
+      real: tr?.jugador_revelacion ?? null,
+    },
+    asistidor: {
+      points:
+        tr?.max_asistidor && normName(existing?.max_asistidor) === normName(tr.max_asistidor) && !!existing?.max_asistidor
+          ? 5
+          : 0,
+      real: tr?.max_asistidor ?? null,
+    },
+    finalScorer: {
+      points:
+        existing?.final_scorer_name &&
+        tr?.final_scorer_names?.some((n) => normName(n) === normName(existing.final_scorer_name))
+          ? 8
+          : 0,
+      real: tr?.final_scorer_names?.length ? tr.final_scorer_names.join(", ") : null,
+    },
+  };
+
   return (
     <form action={action} className="space-y-8">
       {locked && (
@@ -77,6 +207,9 @@ export default function PicksForm({
           <TeamSelect label="Subcampeón" name="runner_up" teams={teams} value={runnerUp} onChange={setRunnerUp} disabled={disabled} />
           <TeamSelect label="Tercer lugar" name="tercer_lugar" teams={teams} value={tercero} onChange={setTercero} disabled={disabled} />
         </div>
+        <PickResult points={results.champion.points} real={results.champion.real ? `Campeón: ${results.champion.real}` : null} />
+        <PickResult points={results.runnerUp.points} real={results.runnerUp.real ? `Subcampeón: ${results.runnerUp.real}` : null} />
+        <PickResult points={results.tercero.points} real={results.tercero.real ? `Tercer lugar: ${results.tercero.real}` : null} />
       </Section>
 
       {/* Equipo más goleador */}
@@ -85,6 +218,7 @@ export default function PicksForm({
         subtitle="10 puntos por acertar la selección que más goles marca en el torneo"
       >
         <TeamSelect label="Selección" name="top_scoring_team" teams={teams} value={topScoring} onChange={setTopScoring} disabled={disabled} />
+        <PickResult points={results.topScoring.points} real={results.topScoring.real} />
       </Section>
 
       {/* Pichichi */}
@@ -100,6 +234,7 @@ export default function PicksForm({
           Escribe el nombre como tú lo digas — luego se compara con el oficial
           ignorando tildes y mayúsculas.
         </p>
+        <PickResult points={results.pichichi.points} real={results.pichichi.real} />
       </Section>
 
       {/* Premios individuales */}
@@ -113,6 +248,10 @@ export default function PicksForm({
           <TextField label="Jugador revelación" name="jugador_revelacion" value={revelacion} onChange={setRevelacion} placeholder="Ej. Estêvão" disabled={disabled} maxLength={80} />
           <TextField label="Máximo asistidor" name="max_asistidor" value={asistidor} onChange={setAsistidor} placeholder="Ej. De Bruyne" disabled={disabled} maxLength={80} />
         </div>
+        <PickResult points={results.balonOro.points} real={results.balonOro.real ? `Balón de oro: ${results.balonOro.real}` : null} />
+        <PickResult points={results.guanteOro.points} real={results.guanteOro.real ? `Guante de oro: ${results.guanteOro.real}` : null} />
+        <PickResult points={results.revelacion.points} real={results.revelacion.real ? `Revelación: ${results.revelacion.real}` : null} />
+        <PickResult points={results.asistidor.points} real={results.asistidor.real ? `Asistidor: ${results.asistidor.real}` : null} />
       </Section>
 
       {/* Goleador en la final */}
@@ -121,6 +260,7 @@ export default function PicksForm({
         subtitle="8 puntos si tu jugador marca al menos un gol en la final"
       >
         <TextField label="Jugador" name="final_scorer_name" value={finalScorer} onChange={setFinalScorer} placeholder="Ej. Mbappé" disabled={disabled} maxLength={80} />
+        <PickResult points={results.finalScorer.points} real={results.finalScorer.real} />
       </Section>
 
       {!locked && (
