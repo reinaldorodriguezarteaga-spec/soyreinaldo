@@ -1393,17 +1393,32 @@ export type AllPlayer = {
   team: { name: string; logo: string } | null;
 };
 
-/** Enumera los equipos de una competición a partir de su tabla (plana o por grupos). */
+/**
+ * Enumera los equipos de una competición a partir de su tabla (plana o por
+ * grupos). Si no tiene tabla (`standingsMode: "none"`, torneos de puro KO
+ * como Copa del Rey/FA Cup/Supercopa), los deriva de todos los fixtures
+ * (equipos local/visitante) en su lugar — sin esto, esas competiciones se
+ * quedarían sin pestaña "Jugadores" (sin equipos que enumerar).
+ */
 async function getCompetitionTeamRefs(
   competition: Competition,
 ): Promise<{ id: number; name: string; logo: string }[]> {
   const standings = await getCompetitionStandings(competition);
-  if (!standings) return [];
+  const map = new Map<number, { id: number; name: string; logo: string }>();
+
+  if (!standings) {
+    const fixtures = await getCompetitionAllFixtures(competition);
+    for (const f of fixtures) {
+      if (!map.has(f.teams.home.id)) map.set(f.teams.home.id, f.teams.home);
+      if (!map.has(f.teams.away.id)) map.set(f.teams.away.id, f.teams.away);
+    }
+    return [...map.values()];
+  }
+
   const rows: StandingRow[] =
     competition.standingsMode === "groups"
       ? (standings as WcGroup[]).flatMap((g) => g.rows)
       : (standings as StandingRow[]);
-  const map = new Map<number, { id: number; name: string; logo: string }>();
   for (const row of rows) if (!map.has(row.team.id)) map.set(row.team.id, row.team);
   return [...map.values()];
 }

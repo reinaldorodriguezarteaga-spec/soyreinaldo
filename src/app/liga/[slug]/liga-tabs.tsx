@@ -20,10 +20,12 @@ export type { LigaTab };
  * Shell de pestañas de /liga/[slug] (equivalente a mundial-tabs.tsx, pero
  * genérico): compone las vistas compartidas de `tab-views.tsx` +
  * `StandingsTableView`. Sin pestañas "Grupos"/"Selecciones" (exclusivas del
- * formato Mundial) — "Tabla" las sustituye para competiciones de tabla plana.
- * Sin pestaña "Bracket": aunque la ruta /liga/[slug]/bracket existe y
- * funciona por URL directa, esta competición (LaLiga) no tiene
- * `koStructure`, así que no tiene sentido apuntar a ella desde aquí.
+ * formato Mundial) — "Tabla" las sustituye para competiciones de tabla plana
+ * (se OCULTA si `standingsMode === "none"`, torneos de puro KO como Copa del
+ * Rey/FA Cup/Supercopa). Sin pestaña "Bracket" tampoco: aunque la ruta
+ * /liga/[slug]/bracket existe y funciona por URL directa para las
+ * competiciones con `koStructure`, no hay hueco en esta barra para todas
+ * las pestañas de todas las competiciones sin que se vuelva inmanejable.
  */
 export default function LigaTabs({
   competition,
@@ -84,13 +86,15 @@ export default function LigaTabs({
             >
               Finalizados
             </button>
-            <button
-              type="button"
-              className={tab === "tabla" ? "on" : ""}
-              onClick={() => setTab("tabla")}
-            >
-              Tabla
-            </button>
+            {competition.standingsMode !== "none" && (
+              <button
+                type="button"
+                className={tab === "tabla" ? "on" : ""}
+                onClick={() => setTab("tabla")}
+              >
+                Tabla
+              </button>
+            )}
             <button
               type="button"
               className={tab === "jugadores" ? "on" : ""}

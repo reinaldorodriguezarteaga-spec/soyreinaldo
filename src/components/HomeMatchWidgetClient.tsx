@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isFinal, isLive } from "@/lib/sports/api-football";
-import type { HomeFixture, HomeWidgetData } from "@/lib/sports/widget-data";
+import type {
+  CompetitionGroup,
+  HomeFixture,
+  HomeWidgetData,
+} from "@/lib/sports/widget-data";
 import MatchCardEvents from "@/components/MatchCardEvents";
 
 const MADRID_TZ = "Europe/Madrid";
@@ -29,10 +33,10 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
       className="mono"
       style={{
         color: "var(--text-dim)",
-        fontSize: "0.68rem",
+        fontSize: "0.64rem",
         letterSpacing: "0.12em",
         textTransform: "uppercase",
-        margin: "0 0 14px",
+        margin: "0 0 10px",
       }}
     >
       {children}
@@ -41,21 +45,18 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Tarjeta de partido de la portada — igual de forma que `LiveMatchCard`
- * (`tab-views.tsx`) / `WidgetMatchCard` (`MatchWidgetClient.tsx`), pero con
- * la competición en el slot de `.match__grp` (aquí hay LaLiga y Champions
- * mezclados, así que el nombre de la competición sustituye a la ronda) y los
- * enlaces apuntando a `/liga/${competition.slug}/...`.
+ * Tarjeta de partido — misma forma que `LiveMatchCard` (`tab-views.tsx`),
+ * pero sin el slot de ronda (aquí ya está claro de qué competición es, por
+ * el desplegable que la contiene) y con los enlaces a `/liga/${slug}/...`.
  */
-function HomeMatchCard({ fx }: { fx: HomeFixture }) {
-  const base = `/liga/${fx.competition.slug}`;
+function HomeMatchCard({ fx, slug }: { fx: HomeFixture; slug: string }) {
+  const base = `/liga/${slug}`;
   const live = isLive(fx);
   const final = isFinal(fx);
   const played = live || final;
 
   const meta = (
     <div className="match__meta">
-      <span className="match__grp">{fx.competition.name}</span>
       {live ? (
         <span className="badge badge--danger">
           <span className="livepulse" />
@@ -156,9 +157,92 @@ function HomeMatchCard({ fx }: { fx: HomeFixture }) {
 }
 
 /**
- * Franja de marcadores de la portada: en vivo → hoy (no en vivo) → resultados
- * recientes, cruzando LaLiga y Champions League. Se actualiza sola cada 20s
- * mientras haya algo en juego o a punto de empezar (`needsPolling`), contra
+ * Desplegable de una competición: resumen (nombre + nº de partidos + pulso
+ * si hay algo en vivo) y, dentro, en vivo → hoy → resultados recientes.
+ * Abierto por defecto si tiene algo en juego; si no, solo la primera.
+ */
+function CompetitionAccordion({
+  group,
+  defaultOpen,
+}: {
+  group: CompetitionGroup;
+  defaultOpen: boolean;
+}) {
+  const { competition, live, today, recentResults } = group;
+  const todayNonLive = today.filter((f) => !isLive(f));
+  const total = live.length + todayNonLive.length + recentResults.length;
+  const anyLive = live.length > 0;
+
+  return (
+    <details className="panel" open={defaultOpen} style={{ overflow: "hidden" }}>
+      <summary
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "14px 16px",
+          cursor: "pointer",
+          listStyle: "none",
+          userSelect: "none",
+        }}
+      >
+        {anyLive && <span className="livepulse" />}
+        <b style={{ flex: 1, minWidth: 0 }} className="truncate">
+          {competition.name}
+        </b>
+        <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
+          {total} partido{total === 1 ? "" : "s"}
+        </span>
+        <Link
+          href={`/liga/${competition.slug}`}
+          className="match__when"
+          style={{ color: "var(--accent)", textDecoration: "none" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Ver todo →
+        </Link>
+      </summary>
+      <div style={{ borderTop: "1px solid var(--line)", padding: "16px" }}>
+        {live.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <GroupLabel>En juego</GroupLabel>
+            <div className="grid2">
+              {live.map((fx) => (
+                <HomeMatchCard key={fx.fixture.id} fx={fx} slug={competition.slug} />
+              ))}
+            </div>
+          </div>
+        )}
+        {todayNonLive.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <GroupLabel>{anyLive ? "Más partidos hoy" : "Partidos de hoy"}</GroupLabel>
+            <div className="grid2">
+              {todayNonLive.map((fx) => (
+                <HomeMatchCard key={fx.fixture.id} fx={fx} slug={competition.slug} />
+              ))}
+            </div>
+          </div>
+        )}
+        {recentResults.length > 0 && (
+          <div>
+            <GroupLabel>Resultados recientes</GroupLabel>
+            <div className="grid2">
+              {recentResults.map((fx) => (
+                <HomeMatchCard key={fx.fixture.id} fx={fx} slug={competition.slug} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
+
+/**
+ * Franja de marcadores de la portada: una competición por desplegable (no se
+ * mezclan los partidos de distintas ligas, para evitar confusión con varias
+ * competiciones activas a la vez). Se actualiza sola cada 20s mientras haya
+ * algo en juego o a punto de empezar (`needsPolling`), contra
  * `/api/sports/home-widget` (paralelo a `/api/sports/widget`, exclusivo del
  * Mundial — no se toca).
  */
@@ -195,18 +279,13 @@ export default function HomeMatchWidgetClient({ initial }: { initial: HomeWidget
     };
   }, [data.needsPolling]);
 
-  const live = data.live;
-  const todayNonLive = data.today.filter((f) => !isLive(f));
-  const recent = data.recentResults;
+  const { groups } = data;
+  if (groups.length === 0) return null;
 
-  if (live.length === 0 && todayNonLive.length === 0 && recent.length === 0) return null;
-
-  const anyLive = live.length > 0;
-  const heading = anyLive
-    ? "Marcador en vivo"
-    : todayNonLive.length > 0
-      ? "Fútbol hoy"
-      : "Resultados recientes";
+  const anyLive = groups.some((g) => g.live.length > 0);
+  const heading = anyLive ? "Marcador en vivo" : "Fútbol de hoy";
+  // Abre por defecto las que tienen algo en juego; si ninguna, solo la primera.
+  const firstOpenSlug = anyLive ? null : groups[0]?.competition.slug;
 
   return (
     <section
@@ -219,54 +298,23 @@ export default function HomeMatchWidgetClient({ initial }: { initial: HomeWidget
           <div>
             <p className="eyebrow">
               {anyLive && <span className="livepulse" style={{ marginRight: 8 }} />}
-              LaLiga · Champions League
+              {groups.length} competición{groups.length === 1 ? "" : "es"}
             </p>
             <h2 className="feat__title" style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)" }}>
               {heading}.
             </h2>
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href="/liga/laliga" className="btn btn--ghost">
-              LaLiga <span className="arr">→</span>
-            </Link>
-            <Link href="/liga/champions" className="btn btn--ghost">
-              Champions <span className="arr">→</span>
-            </Link>
-          </div>
         </div>
 
-        {live.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <GroupLabel>En juego</GroupLabel>
-            <div className="grid2">
-              {live.map((fx) => (
-                <HomeMatchCard key={fx.fixture.id} fx={fx} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {todayNonLive.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <GroupLabel>{anyLive ? "Más partidos hoy" : "Partidos de hoy"}</GroupLabel>
-            <div className="grid2">
-              {todayNonLive.map((fx) => (
-                <HomeMatchCard key={fx.fixture.id} fx={fx} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {recent.length > 0 && (
-          <div>
-            <GroupLabel>Resultados recientes</GroupLabel>
-            <div className="grid2">
-              {recent.map((fx) => (
-                <HomeMatchCard key={fx.fixture.id} fx={fx} />
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="space-y-3">
+          {groups.map((g) => (
+            <CompetitionAccordion
+              key={g.competition.slug}
+              group={g}
+              defaultOpen={g.live.length > 0 || g.competition.slug === firstOpenSlug}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

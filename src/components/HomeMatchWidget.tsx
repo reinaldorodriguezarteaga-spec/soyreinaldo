@@ -15,13 +15,7 @@ export default async function HomeMatchWidget() {
     return null;
   }
 
-  // Nada que enseñar solo si no hay ni partidos en vivo/hoy ni resultados recientes.
-  if (
-    initial.live.length === 0 &&
-    initial.today.length === 0 &&
-    initial.recentResults.length === 0
-  ) {
-    return null;
-  }
+  // Nada que enseñar si ninguna competición tiene partidos que mostrar.
+  if (initial.groups.length === 0) return null;
   return <HomeMatchWidgetClient initial={initial} />;
 }

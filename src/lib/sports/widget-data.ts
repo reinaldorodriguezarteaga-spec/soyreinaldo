@@ -219,14 +219,26 @@ export type HomeFixture = WcFixture & {
   competition: { slug: string; name: string };
 };
 
-export type HomeWidgetData = {
-  /** Partidos en juego ahora mismo, cruzando todas las competiciones. */
+/**
+ * Partidos de UNA competición para el widget de portada. Separados por
+ * competición (en vez de una lista única mezclada) para que, con varias
+ * ligas activas a la vez, no se confundan los partidos de una con los de
+ * otra — cada una va en su propio desplegable en la UI.
+ */
+export type CompetitionGroup = {
+  competition: { slug: string; name: string };
+  /** Partidos en juego ahora mismo. */
   live: HomeFixture[];
-  /** Partidos de "hoy" (en juego o próximos en la ventana) — incluye los de `live`. */
+  /** Partidos de "hoy" que no están en vivo (próximos en la ventana). */
   today: HomeFixture[];
-  /** Últimos resultados finalizados, cruzando competiciones, más reciente primero. */
+  /** Últimos resultados finalizados, más reciente primero. */
   recentResults: HomeFixture[];
-  /** True si hay algo en juego o a punto de empezar — gate cliente para polling. */
+};
+
+export type HomeWidgetData = {
+  /** Una entrada por competición con algo que enseñar (se omiten las vacías). */
+  groups: CompetitionGroup[];
+  /** True si alguna competición tiene algo en juego o a punto de empezar. */
   needsPolling: boolean;
 };
 
@@ -253,41 +265,48 @@ function orderHomeForDisplay(fixtures: HomeFixture[]): HomeFixture[] {
 }
 
 /**
- * Datos para el widget de la portada (Step 3, PR6): partidos en vivo/hoy y
- * resultados recientes de todas las `competitions` activas (LaLiga +
- * Champions), fusionados y ordenados. Pasa siempre por las funciones
- * `get()`-wrapped/`unstable_cache`-backed de `api-football.ts` — cero
- * `fetch` crudo nuevo.
+ * Datos para el widget de la portada (PR6, reagrupado tras feedback del
+ * dueño: con varias ligas a la vez, mezclarlas en una sola lista confundía
+ * — ahora una `CompetitionGroup` por competición, cada una con su propio
+ * en vivo/hoy/resultados). Pasa siempre por las funciones `get()`-wrapped/
+ * `unstable_cache`-backed de `api-football.ts` — cero `fetch` crudo nuevo.
  */
 export async function getHomeWidgetData(
   competitions: Competition[],
 ): Promise<HomeWidgetData> {
-  const [windows, resultSets] = await Promise.all([
-    Promise.all(
-      competitions.map(async (c) => tagCompetition(await getCompetitionFixturesWindow(c), c)),
-    ),
-    Promise.all(
-      competitions.map(async (c) => tagCompetition(await getCompetitionFinishedFixtures(c, 4), c)),
-    ),
-  ]);
+  const groups = await Promise.all(
+    competitions.map(async (c): Promise<CompetitionGroup> => {
+      const [windowRaw, resultsRaw] = await Promise.all([
+        getCompetitionFixturesWindow(c),
+        getCompetitionFinishedFixtures(c, 4),
+      ]);
 
-  const mergedWindow = windows.flat();
-  const windowWithEvents = await attachEvents(mergedWindow);
-  const today = orderHomeForDisplay(
-    windowWithEvents.map((f, i) => ({ ...f, competition: mergedWindow[i].competition })),
-  ).filter((f) => !isFinal(f));
-  const live = today.filter(isLive);
+      const windowTagged = tagCompetition(windowRaw, c);
+      const windowWithEvents = await attachEvents(windowTagged);
+      const today = orderHomeForDisplay(
+        windowWithEvents.map((f, i) => ({ ...f, competition: windowTagged[i].competition })),
+      ).filter((f) => !isFinal(f));
+      const live = today.filter(isLive);
 
-  const mergedResults = resultSets
-    .flat()
-    .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())
-    .slice(0, 8);
-  const resultsWithEvents = await attachEvents(mergedResults);
-  const recentResults = resultsWithEvents.map((f, i) => ({
-    ...f,
-    competition: mergedResults[i].competition,
-  }));
+      const resultsTagged = tagCompetition(resultsRaw, c)
+        .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())
+        .slice(0, 4);
+      const resultsWithEvents = await attachEvents(resultsTagged);
+      const recentResults = resultsWithEvents.map((f, i) => ({
+        ...f,
+        competition: resultsTagged[i].competition,
+      }));
 
+      return { competition: { slug: c.slug, name: c.name }, live, today, recentResults };
+    }),
+  );
+
+  // Solo las competiciones con algo real que enseñar.
+  const nonEmpty = groups.filter(
+    (g) => g.live.length + g.today.length + g.recentResults.length > 0,
+  );
   // Reutiliza `shouldPoll` (privada de este mismo archivo, sin tocarla).
-  return { live, today, recentResults, needsPolling: shouldPoll(today) };
+  const needsPolling = nonEmpty.some((g) => shouldPoll(g.today));
+
+  return { groups: nonEmpty, needsPolling };
 }

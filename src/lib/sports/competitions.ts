@@ -65,6 +65,82 @@ export const CHAMPIONS_LEAGUE: Competition = {
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
 };
 
+export const PREMIER_LEAGUE: Competition = {
+  slug: "premier",
+  leagueId: 39,
+  season: 2025,
+  name: "Premier League",
+  // Verificado: solo "Regular Season - 1..38", sin fase de eliminatorias.
+  standingsMode: "table",
+};
+
+/**
+ * FA Cup y Copa del Rey: puro KO, sin tabla. Verificado contra la API real
+ * (season 2025) — ambas tienen muchas rondas previas de clasificación con
+ * clubes no profesionales (Extra Preliminary/Preliminary/1st-3rd Qualifying,
+ * con repeticiones) antes de "Round of 128"/"64" — se ignoran a propósito en
+ * el bracket (ruido para el aficionado medio) y se muestra desde "Round of
+ * 32", igual que el resto de KO_STRUCTURE del sitio.
+ */
+const CUP_KO_STRUCTURE: KoStructureEntry[] = [
+  { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
+  { label: "Octavos", re: /Round of 16/i, slots: 8 },
+  { label: "Cuartos", re: /Quarter/i, slots: 4 },
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+export const FA_CUP: Competition = {
+  slug: "fa-cup",
+  leagueId: 45,
+  season: 2025,
+  name: "FA Cup",
+  standingsMode: "none",
+  koStructure: CUP_KO_STRUCTURE,
+};
+
+export const COPA_DEL_REY: Competition = {
+  slug: "copa-del-rey",
+  leagueId: 143,
+  season: 2025,
+  name: "Copa del Rey",
+  standingsMode: "none",
+  koStructure: CUP_KO_STRUCTURE,
+};
+
+/**
+ * Supercopa de España: mini-torneo de 4 equipos, solo 3 partidos (2 semis +
+ * final) — verificado contra la API real (season 2025, id "Super Cup" 556).
+ */
+const SUPERCOPA_KO_STRUCTURE: KoStructureEntry[] = [
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+export const SUPERCOPA: Competition = {
+  slug: "supercopa",
+  leagueId: 556,
+  season: 2025,
+  name: "Supercopa de España",
+  standingsMode: "none",
+  koStructure: SUPERCOPA_KO_STRUCTURE,
+};
+
+/**
+ * Europa League: mismo formato UEFA nuevo que Champions (fase de liga con
+ * tabla única, sin grupos, + KO desde "Round of 32"). Verificado contra la
+ * API real: /standings da 1 array de 36 filas, mismos strings de ronda que
+ * Champions.
+ */
+export const EUROPA_LEAGUE: Competition = {
+  slug: "europa",
+  leagueId: 3,
+  season: 2025,
+  name: "Europa League",
+  standingsMode: "table",
+  koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+};
+
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
 const WORLD_CUP_KO_STRUCTURE: KoStructureEntry[] = [
   { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
@@ -88,7 +164,15 @@ export const WORLD_CUP_2026: Competition = {
  * Competiciones activas del árbol /liga/[slug]. El Mundial NO va en esta
  * lista: queda congelado en /mundial, fuera de este árbol genérico.
  */
-export const COMPETITIONS: Competition[] = [LALIGA, CHAMPIONS_LEAGUE];
+export const COMPETITIONS: Competition[] = [
+  LALIGA,
+  CHAMPIONS_LEAGUE,
+  PREMIER_LEAGUE,
+  FA_CUP,
+  COPA_DEL_REY,
+  SUPERCOPA,
+  EUROPA_LEAGUE,
+];
 
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
   COMPETITIONS.map((c) => [c.slug, c]),
