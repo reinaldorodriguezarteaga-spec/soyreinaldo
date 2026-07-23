@@ -8,19 +8,13 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { WORLD_CUP_2026, type Competition, type KoStructureEntry } from "./competitions";
 
 const BASE = "https://v3.football.api-sports.io";
 
 export const TEAM_IDS = {
   barcelona: 529,
   realMadrid: 541,
-} as const;
-
-export const LALIGA = {
-  leagueId: 140,
-  // Temporada actual en API-Football se marca por el año de inicio
-  // (la 2025-26 = 2025).
-  season: 2025,
 } as const;
 
 export const WORLD_CUP = {
@@ -188,7 +182,10 @@ export async function getRelevantFixtureForTeam(
 /**
  * Partidos del Mundial 2026 hoy (UTC). Usado durante el torneo.
  */
-export async function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> {
+export async function getCompetitionFixturesForDay(
+  date: Date,
+  competition: Competition,
+): Promise<Fixture[]> {
   const yyyy = date.getUTCFullYear();
   const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(date.getUTCDate()).padStart(2, "0");
@@ -197,8 +194,8 @@ export async function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> 
   const r = await get<Fixture>(
     "/fixtures",
     {
-      league: WORLD_CUP.leagueId,
-      season: WORLD_CUP.season,
+      league: competition.leagueId,
+      season: competition.season,
       from: day,
       to: day,
     },
@@ -207,12 +204,18 @@ export async function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> 
   return r.response;
 }
 
+export function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> {
+  return getCompetitionFixturesForDay(date, WORLD_CUP_2026);
+}
+
 /**
- * Partidos del Mundial alrededor de "hoy": en juego, o con kickoff entre
- * now−12h y now+14h. A diferencia del corte por día UTC, esta ventana no
- * parte la jornada cuando hay partidos de madrugada en husos americanos.
+ * Partidos de la competición alrededor de "hoy": en juego, o con kickoff
+ * entre now−12h y now+14h. A diferencia del corte por día UTC, esta ventana
+ * no parte la jornada cuando hay partidos de madrugada en husos americanos.
  */
-export async function getWorldCupFixturesWindow(): Promise<Fixture[]> {
+export async function getCompetitionFixturesWindow(
+  competition: Competition,
+): Promise<Fixture[]> {
   const now = Date.now();
   const fromMs = now - 12 * 3600_000;
   const toMs = now + 14 * 3600_000;
@@ -221,8 +224,8 @@ export async function getWorldCupFixturesWindow(): Promise<Fixture[]> {
   const r = await get<Fixture>(
     "/fixtures",
     {
-      league: WORLD_CUP.leagueId,
-      season: WORLD_CUP.season,
+      league: competition.leagueId,
+      season: competition.season,
       from: day(fromMs),
       to: day(toMs),
     },
@@ -233,6 +236,10 @@ export async function getWorldCupFixturesWindow(): Promise<Fixture[]> {
     const ko = new Date(f.fixture.date).getTime();
     return ko >= fromMs && ko <= toMs;
   });
+}
+
+export function getWorldCupFixturesWindow(): Promise<Fixture[]> {
+  return getCompetitionFixturesWindow(WORLD_CUP_2026);
 }
 
 export type StandingRow = {
@@ -261,46 +268,30 @@ type StandingsResponse = {
   };
 };
 
-/**
- * Clasificación completa de LaLiga (20 equipos). Cachea 1h porque la tabla
- * solo cambia tras cada jornada.
- */
-export async function getLaligaStandings(): Promise<StandingRow[]> {
-  const r = await get<StandingsResponse>(
-    "/standings",
-    { league: LALIGA.leagueId, season: LALIGA.season },
-    3600,
-  );
-  const groups = r.response[0]?.league.standings ?? [];
-  return groups.flat();
-}
-
-/**
- * Próximas N fixturas de LaLiga (típicamente 10 = una jornada).
- */
-export async function getLaligaUpcomingFixtures(n: number): Promise<Fixture[]> {
-  const r = await get<Fixture>(
-    "/fixtures",
-    { league: LALIGA.leagueId, season: LALIGA.season, next: n },
-    600,
-  );
-  return r.response;
-}
-
-/** Un grupo del Mundial con sus filas de clasificación, en orden. */
+/** Un grupo (torneos con fase de grupos) con sus filas de clasificación, en orden. */
 export type WcGroup = { group: string; rows: StandingRow[] };
 
 /**
- * Clasificación del Mundial 2026 agrupada (Group A..L). Cachea 10 min;
- * durante el torneo el cron de ingesta y este caché mantienen la tabla fresca.
+ * Clasificación de una competición. Devuelve una tabla plana (`standingsMode:
+ * "table"`, ligas normales), por grupos (`"groups"`, Mundial), o `null`
+ * (`"none"`, competiciones sin tabla — puro KO). Cachea 10 min.
  */
-export async function getWorldCupStandings(): Promise<WcGroup[]> {
+export async function getCompetitionStandings(
+  competition: Competition,
+): Promise<StandingRow[] | WcGroup[] | null> {
+  if (competition.standingsMode === "none") return null;
+
   const r = await get<StandingsResponse>(
     "/standings",
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    { league: competition.leagueId, season: competition.season },
     600,
   );
   const groups = r.response[0]?.league.standings ?? [];
+
+  if (competition.standingsMode === "table") {
+    return (groups[0] ?? []).slice().sort((a, b) => a.rank - b.rank);
+  }
+
   return groups
     .map((rows) => ({ group: rows[0]?.group ?? "", rows }))
     .filter((g) => g.rows.length > 0)
@@ -314,25 +305,44 @@ export async function getWorldCupStandings(): Promise<WcGroup[]> {
     .sort((a, b) => a.group.localeCompare(b.group));
 }
 
-/** Próximas N fixturas del Mundial 2026. */
-export async function getWorldCupUpcomingFixtures(n: number): Promise<Fixture[]> {
+/**
+ * Clasificación del Mundial 2026 agrupada (Group A..L). Durante el torneo el
+ * cron de ingesta y este caché mantienen la tabla fresca.
+ */
+export async function getWorldCupStandings(): Promise<WcGroup[]> {
+  return (await getCompetitionStandings(WORLD_CUP_2026)) as WcGroup[];
+}
+
+/** Próximas N fixturas de una competición. */
+export async function getCompetitionUpcomingFixtures(
+  competition: Competition,
+  n: number,
+): Promise<Fixture[]> {
   const r = await get<Fixture>(
     "/fixtures",
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season, next: n },
+    { league: competition.leagueId, season: competition.season, next: n },
     600,
   );
   return r.response;
 }
 
+/** Próximas N fixturas del Mundial 2026. */
+export function getWorldCupUpcomingFixtures(n: number): Promise<Fixture[]> {
+  return getCompetitionUpcomingFixtures(WORLD_CUP_2026, n);
+}
+
 /**
- * Fixturas FINALIZADAS del Mundial 2026, la más reciente primero. Sin `n`
+ * Fixturas FINALIZADAS de una competición, la más reciente primero. Sin `n`
  * devuelve TODAS (no solo las últimas) — se derivan del calendario completo
- * (`getWorldCupAllFixtures`, cacheado y compartido con las stats, así que no
- * gasta cuota extra) en vez del parámetro `last`, que limitaba a N y dejaba
- * fuera los resultados más antiguos.
+ * (`getCompetitionAllFixtures`, cacheado y compartido con las stats, así que
+ * no gasta cuota extra) en vez del parámetro `last`, que limitaba a N y
+ * dejaba fuera los resultados más antiguos.
  */
-export async function getWorldCupFinishedFixtures(n?: number): Promise<Fixture[]> {
-  const all = await getWorldCupAllFixtures();
+export async function getCompetitionFinishedFixtures(
+  competition: Competition,
+  n?: number,
+): Promise<Fixture[]> {
+  const all = await getCompetitionAllFixtures(competition);
   const finished = all
     .filter(isFinal)
     .sort(
@@ -340,6 +350,10 @@ export async function getWorldCupFinishedFixtures(n?: number): Promise<Fixture[]
         new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
     );
   return n != null ? finished.slice(0, n) : finished;
+}
+
+export function getWorldCupFinishedFixtures(n?: number): Promise<Fixture[]> {
+  return getCompetitionFinishedFixtures(WORLD_CUP_2026, n);
 }
 
 /** Líder de una estadística de jugador (goleador / asistidor / valoración). */
@@ -371,28 +385,50 @@ async function topPlayers(
     | "/players/topyellowcards"
     | "/players/topredcards",
   n: number,
+  competition: Competition,
 ): Promise<PlayerStatLeader[]> {
   const r = await get<PlayerStatLeader>(
     path,
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    { league: competition.leagueId, season: competition.season },
     600,
   );
   return r.response.slice(0, n);
 }
 
+export function getCompetitionTopScorers(
+  competition: Competition,
+  n = 10,
+): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topscorers", n, competition);
+}
+
+export function getCompetitionTopAssists(
+  competition: Competition,
+  n = 10,
+): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topassists", n, competition);
+}
+
+export function getCompetitionTopYellowCards(
+  competition: Competition,
+  n = 10,
+): Promise<PlayerStatLeader[]> {
+  return topPlayers("/players/topyellowcards", n, competition);
+}
+
 /** Máximos goleadores del Mundial (vacío hasta que empiece el torneo). */
 export function getWorldCupTopScorers(n = 10): Promise<PlayerStatLeader[]> {
-  return topPlayers("/players/topscorers", n);
+  return topPlayers("/players/topscorers", n, WORLD_CUP_2026);
 }
 
 /** Máximos asistidores del Mundial (vacío hasta que empiece el torneo). */
 export function getWorldCupTopAssists(n = 10): Promise<PlayerStatLeader[]> {
-  return topPlayers("/players/topassists", n);
+  return topPlayers("/players/topassists", n, WORLD_CUP_2026);
 }
 
 /** Jugadores con más tarjetas amarillas del Mundial ("el tarjetero"). */
 export function getWorldCupTopYellowCards(n = 10): Promise<PlayerStatLeader[]> {
-  return topPlayers("/players/topyellowcards", n);
+  return topPlayers("/players/topyellowcards", n, WORLD_CUP_2026);
 }
 
 /** Evento de un partido. Solo nos interesan los goles (type === "Goal"). */
@@ -475,13 +511,19 @@ export async function getFixtureTimeline(
 }
 
 /** Todos los partidos del Mundial (los 104), con su estado. Cachea 5 min. */
-export async function getWorldCupAllFixtures(): Promise<Fixture[]> {
+export async function getCompetitionAllFixtures(
+  competition: Competition,
+): Promise<Fixture[]> {
   const r = await get<Fixture>(
     "/fixtures",
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    { league: competition.leagueId, season: competition.season },
     300,
   );
   return r.response;
+}
+
+export function getWorldCupAllFixtures(): Promise<Fixture[]> {
+  return getCompetitionAllFixtures(WORLD_CUP_2026);
 }
 
 /** Una ronda del cuadro de eliminatorias. */
@@ -492,24 +534,20 @@ export type BracketRound = {
   placeholders: number;
 };
 
-/** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
-const KO_STRUCTURE: { label: string; re: RegExp; slots: number }[] = [
-  { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
-  { label: "Octavos", re: /Round of 16/i, slots: 8 },
-  { label: "Cuartos", re: /Quarter/i, slots: 4 },
-  { label: "Semifinales", re: /Semi/i, slots: 2 },
-  { label: "Final", re: /^Final$/i, slots: 1 },
-];
-
 /**
- * Cuadro de eliminatorias a partir de todos los fixtures del torneo. Siempre
- * devuelve las 5 rondas: las que ya tienen partidos con sus fixtures, y las
- * futuras (aún sin sorteo) con `placeholders` = nº de cruces "por definir".
+ * Cuadro de eliminatorias a partir de todos los fixtures de la competición y
+ * su `KoStructureEntry[]` (distinta por competición — nº de rondas y equipos
+ * varía). Siempre devuelve todas las rondas de la estructura: las que ya
+ * tienen partidos con sus fixtures, y las futuras (aún sin sorteo) con
+ * `placeholders` = nº de cruces "por definir".
  */
-export function knockoutBracket(fixtures: Fixture[]): BracketRound[] {
+export function competitionBracket(
+  fixtures: Fixture[],
+  koStructure: KoStructureEntry[],
+): BracketRound[] {
   const byKickoff = (a: Fixture, b: Fixture) =>
     new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime();
-  return KO_STRUCTURE.map(({ label, re, slots }) => {
+  return koStructure.map(({ label, re, slots }) => {
     const fx = fixtures
       .filter((f) => re.test((f.league.round ?? "").trim()))
       .sort(byKickoff);
@@ -519,6 +557,10 @@ export function knockoutBracket(fixtures: Fixture[]): BracketRound[] {
       placeholders: fx.length === 0 ? slots : 0,
     };
   });
+}
+
+export function knockoutBracket(fixtures: Fixture[]): BracketRound[] {
+  return competitionBracket(fixtures, WORLD_CUP_2026.koStructure!);
 }
 
 /**
@@ -1088,10 +1130,11 @@ type PlayerSeasonResponse = {
 /** Estadísticas agregadas de un jugador en el Mundial 2026. Caché 10 min. */
 export async function getPlayerSeasonStats(
   id: number,
+  competition: Competition = WORLD_CUP_2026,
 ): Promise<PlayerSeason | null> {
   const r = await get<PlayerSeasonResponse>(
     "/players",
-    { id, league: WORLD_CUP.leagueId, season: WORLD_CUP.season },
+    { id, league: competition.leagueId, season: competition.season },
     600,
   );
   const p = r.response[0];
@@ -1230,15 +1273,16 @@ export type PlayerSearchResult = {
  * Busca jugadores en el Mundial por nombre (endpoint `/players?search=`).
  * Requiere ≥3 caracteres. Caché 1h — el índice de jugadores cambia poco.
  */
-export async function searchWorldCupPlayers(
+export async function searchCompetitionPlayers(
   query: string,
+  competition: Competition,
   n = 15,
 ): Promise<PlayerSearchResult[]> {
   const q = query.trim();
   if (q.length < 3) return [];
   const r = await get<PlayerSeasonResponse>(
     "/players",
-    { league: WORLD_CUP.leagueId, season: WORLD_CUP.season, search: q },
+    { league: competition.leagueId, season: competition.season, search: q },
     3600,
   );
   return r.response.slice(0, n).map((p) => {
@@ -1250,6 +1294,13 @@ export async function searchWorldCupPlayers(
       team: t ? { name: t.name, logo: t.logo } : null,
     };
   });
+}
+
+export function searchWorldCupPlayers(
+  query: string,
+  n = 15,
+): Promise<PlayerSearchResult[]> {
+  return searchCompetitionPlayers(query, WORLD_CUP_2026, n);
 }
 
 /** Un jugador de la plantilla de una selección. */
@@ -1342,19 +1393,34 @@ export type AllPlayer = {
   team: { name: string; logo: string } | null;
 };
 
+/** Enumera los equipos de una competición a partir de su tabla (plana o por grupos). */
+async function getCompetitionTeamRefs(
+  competition: Competition,
+): Promise<{ id: number; name: string; logo: string }[]> {
+  const standings = await getCompetitionStandings(competition);
+  if (!standings) return [];
+  const rows: StandingRow[] =
+    competition.standingsMode === "groups"
+      ? (standings as WcGroup[]).flatMap((g) => g.rows)
+      : (standings as StandingRow[]);
+  const map = new Map<number, { id: number; name: string; logo: string }>();
+  for (const row of rows) if (!map.has(row.team.id)) map.set(row.team.id, row.team);
+  return [...map.values()];
+}
+
 /**
- * Todos los jugadores del Mundial agregando las PLANTILLAS completas de las 48
- * selecciones (`/players/squads` → 26 por equipo, a diferencia de `/players`
- * que solo trae a los que ya jugaron). Los squads se piden POR LOTES de 6 para
- * no chocar con el rate-limit (48 en paralelo devolvían plantillas vacías).
- * Cada squad va cacheado 1 día.
+ * Todos los jugadores de una competición agregando las PLANTILLAS completas de
+ * sus equipos (`/players/squads` → hasta 26 por equipo, a diferencia de
+ * `/players` que solo trae a los que ya jugaron). Los squads se piden POR
+ * LOTES de 5 para no chocar con el rate-limit (todos en paralelo devolvían
+ * plantillas vacías). Cada squad va cacheado 1 día.
  */
-export async function getAllWorldCupPlayers(): Promise<AllPlayer[]> {
-  const groups = await getWorldCupStandings();
+export async function getAllCompetitionPlayers(
+  competition: Competition,
+): Promise<AllPlayer[]> {
+  const teamRefs = await getCompetitionTeamRefs(competition);
   const teams = new Map<number, { name: string; logo: string }>();
-  for (const g of groups)
-    for (const r of g.rows)
-      if (!teams.has(r.team.id)) teams.set(r.team.id, { name: r.team.name, logo: r.team.logo });
+  for (const t of teamRefs) teams.set(t.id, { name: t.name, logo: t.logo });
 
   const ids = [...teams.keys()];
   const result = new Map<number, SquadPlayer[]>();
@@ -1393,6 +1459,10 @@ export async function getAllWorldCupPlayers(): Promise<AllPlayer[]> {
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name, "es"));
+}
+
+export function getAllWorldCupPlayers(): Promise<AllPlayer[]> {
+  return getAllCompetitionPlayers(WORLD_CUP_2026);
 }
 
 /** Un jugador en la alineación (con su posición en la rejilla "fila:columna"). */
@@ -1460,16 +1530,19 @@ export async function getFixtureLineups(
  * siguiente. Se descartó por fiabilidad; la frescura en vivo ya la dan la
  * pestaña "Marcador en vivo" y el detalle de partido.)
  */
-export async function getWorldCupPlayerStats(n = 10): Promise<{
+export async function getCompetitionPlayerStats(
+  competition: Competition,
+  n = 10,
+): Promise<{
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
   cards: PlayerStatLeader[];
 }> {
   const [scorersAll, assistsAll, cardsAll] = await Promise.all([
-    getWorldCupTopScorers(40),
-    getWorldCupTopAssists(40),
-    getWorldCupTopYellowCards(n).catch(() => [] as PlayerStatLeader[]),
+    getCompetitionTopScorers(competition, 40),
+    getCompetitionTopAssists(competition, 40),
+    getCompetitionTopYellowCards(competition, n).catch(() => [] as PlayerStatLeader[]),
   ]);
   return {
     scorers: scorersAll.slice(0, n),
@@ -1477,6 +1550,15 @@ export async function getWorldCupPlayerStats(n = 10): Promise<{
     ratings: ratingLeaders(scorersAll, assistsAll, n),
     cards: cardsAll.slice(0, n),
   };
+}
+
+export function getWorldCupPlayerStats(n = 10): Promise<{
+  scorers: PlayerStatLeader[];
+  assists: PlayerStatLeader[];
+  ratings: PlayerStatLeader[];
+  cards: PlayerStatLeader[];
+}> {
+  return getCompetitionPlayerStats(WORLD_CUP_2026, n);
 }
 
 /**
