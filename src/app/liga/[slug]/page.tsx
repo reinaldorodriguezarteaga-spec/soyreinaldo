@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,8 +14,9 @@ import {
   type StandingRow,
 } from "@/lib/sports/api-football";
 import { attachEvents, type WcFixture } from "@/lib/sports/widget-data";
-import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import { COMPETITIONS_BY_SLUG, resolveSeason, type Competition } from "@/lib/sports/competitions";
 import LigaTabs, { type LigaTab } from "./liga-tabs";
+import SeasonSelect from "./season-select";
 
 export async function generateMetadata({
   params,
@@ -56,13 +58,15 @@ export default async function LigaPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; season?: string }>;
 }) {
   const { slug } = await params;
   const competition: Competition | undefined = COMPETITIONS_BY_SLUG[slug];
   if (!competition) notFound();
 
-  const { v } = await searchParams;
+  const { v, season: seasonParam } = await searchParams;
+  const selectedSeason = resolveSeason(competition, seasonParam);
+  const effectiveCompetition: Competition = { ...competition, season: selectedSeason };
 
   let fixtures: Fixture[] = [];
   let finished: Fixture[] = [];
@@ -77,11 +81,11 @@ export default async function LigaPage({
 
   try {
     const [fixturesR, finishedR, standingsR, todayR, playersR] = await Promise.all([
-      getCompetitionUpcomingFixtures(competition, 12),
-      getCompetitionFinishedFixtures(competition),
-      getCompetitionStandings(competition),
-      getCompetitionFixturesWindow(competition).then(attachEvents),
-      getCompetitionPlayerStats(competition, 10),
+      getCompetitionUpcomingFixtures(effectiveCompetition, 12),
+      getCompetitionFinishedFixtures(effectiveCompetition),
+      getCompetitionStandings(effectiveCompetition),
+      getCompetitionFixturesWindow(effectiveCompetition).then(attachEvents),
+      getCompetitionPlayerStats(effectiveCompetition, 10),
     ]);
     fixtures = fixturesR;
     finished = finishedR;
@@ -125,7 +129,7 @@ export default async function LigaPage({
             Próximos partidos, tabla de clasificación y estadísticas de la
             temporada — goleadores, asistencias y más, en vivo.
           </p>
-          <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
             <Link href={`/liga/${competition.slug}/buscar`} className="btn btn--ghost">
               🔍 Buscar equipo o jugador
             </Link>
@@ -134,12 +138,25 @@ export default async function LigaPage({
                 🏆 Eliminatorias
               </Link>
             )}
+            {competition.archivedSeasons?.length ? (
+              <Suspense fallback={null}>
+                <SeasonSelect
+                  currentSeason={competition.season}
+                  archivedSeasons={competition.archivedSeasons}
+                  competitionSlug={competition.slug}
+                />
+              </Suspense>
+            ) : null}
           </div>
         </div>
       </section>
 
       {/* koStructure (con RegExp) no es serializable hacia un Client Component */}
-      <LigaTabs competition={{ ...competition, koStructure: undefined }} data={data} view={view} />
+      <LigaTabs
+        competition={{ ...competition, season: selectedSeason, koStructure: undefined }}
+        data={data}
+        view={view}
+      />
     </main>
   );
 }

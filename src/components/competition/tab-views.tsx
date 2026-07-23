@@ -677,21 +677,33 @@ export function FinalizadosView({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap gap-2">
-        {rounds.map((r) => (
-          <button
-            key={r}
-            type="button"
-            className={`chip-pill${r === active ? " on" : ""}`}
-            onClick={() => setSel(r)}
-          >
-            {roundMeta(r).label}
-            <span style={{ marginLeft: 6, opacity: 0.6 }}>
-              {byRound.get(r)!.length}
-            </span>
-          </button>
-        ))}
-      </div>
+      <label className="mb-6" style={{ display: "block" }}>
+        <span
+          className="mono"
+          style={{
+            display: "block",
+            fontSize: "0.6rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "var(--text-dim)",
+            marginBottom: 6,
+          }}
+        >
+          Jornada
+        </span>
+        <select
+          className="field"
+          value={active}
+          onChange={(e) => setSel(e.target.value)}
+          style={{ maxWidth: 280 }}
+        >
+          {rounds.map((r) => (
+            <option key={r} value={r}>
+              {roundMeta(r).label} ({byRound.get(r)!.length})
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="grid2">
         {list.map((fx) => (
           <FinishedCard

@@ -24,7 +24,28 @@ export type Competition = {
   standingsMode: StandingsMode;
   /** Solo si tiene fase de eliminatorias. */
   koStructure?: KoStructureEntry[];
+  /** Temporadas navegables además de `season` (la actual/por defecto). Por
+   * ahora siempre [season - 1] — la temporada recién terminada. */
+  archivedSeasons?: number[];
 };
+
+/**
+ * Resuelve el `season` efectivo a partir de un searchParam sin confiar en él
+ * ciegamente: solo se acepta si coincide con `competition.season` o está en
+ * `competition.archivedSeasons`; cualquier otro valor (vacío, no numérico,
+ * manipulado, o de otra competición) cae de vuelta a la season por defecto.
+ */
+export function resolveSeason(
+  competition: Competition,
+  raw: string | undefined,
+): number {
+  if (!raw) return competition.season;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return competition.season;
+  if (n === competition.season) return n;
+  if (competition.archivedSeasons?.includes(n)) return n;
+  return competition.season;
+}
 
 export const LALIGA: Competition = {
   slug: "laliga",
@@ -35,6 +56,7 @@ export const LALIGA: Competition = {
   season: 2026,
   name: "LaLiga",
   standingsMode: "table",
+  archivedSeasons: [2025],
 };
 
 /**
@@ -67,6 +89,7 @@ export const CHAMPIONS_LEAGUE: Competition = {
   name: "Champions League",
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+  archivedSeasons: [2025],
 };
 
 export const PREMIER_LEAGUE: Competition = {
@@ -78,6 +101,7 @@ export const PREMIER_LEAGUE: Competition = {
   name: "Premier League",
   // Solo "Regular Season - 1..38", sin fase de eliminatorias.
   standingsMode: "table",
+  archivedSeasons: [2025],
 };
 
 /**
@@ -111,6 +135,7 @@ export const FA_CUP: Competition = {
   name: "FA Cup",
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
+  archivedSeasons: [2024],
 };
 
 export const COPA_DEL_REY: Competition = {
@@ -120,6 +145,7 @@ export const COPA_DEL_REY: Competition = {
   name: "Copa del Rey",
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
+  archivedSeasons: [2024],
 };
 
 /**
@@ -140,6 +166,7 @@ export const SUPERCOPA: Competition = {
   name: "Supercopa de España",
   standingsMode: "none",
   koStructure: SUPERCOPA_KO_STRUCTURE,
+  archivedSeasons: [2025],
 };
 
 /**
@@ -155,6 +182,7 @@ export const EUROPA_LEAGUE: Competition = {
   name: "Europa League",
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+  archivedSeasons: [2025],
 };
 
 /**
@@ -172,6 +200,7 @@ export const CONFERENCE_LEAGUE: Competition = {
   name: "Conference League",
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+  archivedSeasons: [2025],
 };
 
 /**
@@ -184,6 +213,7 @@ export const SERIE_A: Competition = {
   season: 2026,
   name: "Serie A",
   standingsMode: "table",
+  archivedSeasons: [2025],
 };
 
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */

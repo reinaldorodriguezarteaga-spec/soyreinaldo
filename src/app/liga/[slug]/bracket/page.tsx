@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,7 +11,8 @@ import {
   type BracketRound,
   type Fixture,
 } from "@/lib/sports/api-football";
-import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import { COMPETITIONS_BY_SLUG, resolveSeason, type Competition } from "@/lib/sports/competitions";
+import SeasonSelect from "../season-select";
 
 export async function generateMetadata({
   params,
@@ -44,12 +46,18 @@ function shortWhen(iso: string) {
 
 export default async function LigaBracketPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ season?: string }>;
 }) {
   const { slug } = await params;
   const competition: Competition | undefined = COMPETITIONS_BY_SLUG[slug];
   if (!competition) notFound();
+
+  const { season: seasonParam } = await searchParams;
+  const selectedSeason = resolveSeason(competition, seasonParam);
+  const effectiveCompetition: Competition = { ...competition, season: selectedSeason };
 
   const hero = (
     <section className="phero" style={{ paddingBottom: 12 }}>
@@ -68,6 +76,17 @@ export default async function LigaBracketPage({
           Eliminatorias<span className="dot">.</span>
         </h1>
         <p className="phero__lede">El cuadro de eliminatorias de {competition.name}.</p>
+        {competition.archivedSeasons?.length ? (
+          <div style={{ marginTop: 14 }}>
+            <Suspense fallback={null}>
+              <SeasonSelect
+                currentSeason={competition.season}
+                archivedSeasons={competition.archivedSeasons}
+                competitionSlug={competition.slug}
+              />
+            </Suspense>
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -101,7 +120,7 @@ export default async function LigaBracketPage({
   let rounds: BracketRound[] = [];
   try {
     rounds = competitionBracket(
-      await getCompetitionAllFixtures(competition),
+      await getCompetitionAllFixtures(effectiveCompetition),
       competition.koStructure,
     );
   } catch {
