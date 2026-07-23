@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import DonationBlock from "@/components/DonationBlock";
-import HomeMatchWidget from "@/components/HomeMatchWidget";
-import UpcomingCalendar from "@/components/UpcomingCalendar";
+import HomeScoreboard from "@/components/HomeScoreboard";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
 import { isAppRequest } from "@/lib/is-app";
@@ -100,14 +99,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* MARCADOR EN VIVO (protagonista: justo bajo el hero, solo cuando hay
-          partidos que enseñar) */}
-      <HomeMatchWidget />
-
-      {/* CALENDARIO — próximos partidos de las 9 competiciones + amistosos de
-          los equipos destacados, agrupados por día (util sobre todo en
-          pretemporada, con casi todas las ligas paradas). */}
-      <UpcomingCalendar />
+      {/* MARCADOR EN VIVO / CALENDARIO — pestañas, protagonista justo bajo el
+          hero, solo cuando hay algo que enseñar en alguna de las dos. */}
+      <HomeScoreboard />
 
       {/* MARQUEE */}
       <div className="marquee" aria-hidden>

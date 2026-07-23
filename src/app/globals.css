@@ -688,6 +688,35 @@ img {
 .match__meta { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .match__when { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
 .match__grp { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; }
+
+/* Fila de partido de una línea (portada: widget en vivo + calendario) —
+   mucho más densa que `.match`, sin badges de eventos ni CTA. */
+.hmrowlist { display: flex; flex-direction: column; }
+.hmrowlist > .hmrow, .hmrowlist > .hmrow__wrap { border-top: 1px solid var(--line); }
+.hmrowlist > .hmrow:first-child, .hmrowlist > .hmrow__wrap:first-child { border-top: none; }
+.hmrow__wrap { padding: 8px 4px 2px; }
+.hmrow__badge { display: block; font-family: var(--font-mono-stack); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 2px 4px; max-width: 90%; }
+.hmrow__wrap .hmrow { border-top: none; padding-top: 0; }
+.hmrow {
+  display: grid;
+  grid-template-columns: 46px 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: calc(var(--radius) - 4px);
+}
+.hmrow:hover { background: var(--surface-2); }
+.hmrow__time { font-family: var(--font-mono-stack); font-size: 0.64rem; color: var(--text-dim); text-align: center; white-space: nowrap; }
+.hmrow__time--live { display: inline-flex; align-items: center; gap: 5px; color: var(--live, #ff4d57); justify-content: center; width: 100%; }
+.hmrow__team { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.hmrow__team--home { justify-content: flex-end; }
+.hmrow__team--away { justify-content: flex-start; }
+.hmrow__crest { flex: none; object-fit: contain; }
+.hmrow__name { font-size: 0.8rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hmrow__score { font-family: var(--font-display-stack); font-weight: 900; font-size: 0.9rem; white-space: nowrap; min-width: 30px; text-align: center; }
+
 .team { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .team.right { justify-content: flex-end; }
 .team .flag {
