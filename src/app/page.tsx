@@ -11,12 +11,22 @@ import { StandingsTableView } from "@/components/competition/tab-views";
 
 const MARQUEE = [
   "Culé",
-  "Fútbol",
-  "Comunidad",
   "LaLiga",
-  "Champions League",
+  "Champions",
+  "Premier League",
+  "Serie A",
+  "Europa League",
+  "Comunidad",
   "Debate",
 ];
+
+/** Una liga "ha empezado" cuando algún equipo ya ha jugado al menos un
+ * partido. En pretemporada (todas las tablas a cero, arrancan a mediados de
+ * agosto) esto es false y la sección "La tabla, en corto" se oculta en vez
+ * de enseñar tablas llenas de ceros. */
+function hasStarted(standings: StandingRow[]): boolean {
+  return standings.some((r) => r.all.played > 0);
+}
 
 async function getStandingsSnapshot() {
   const competitions = COMPETITIONS.filter((c) => c.standingsMode === "table");
@@ -57,16 +67,18 @@ export default async function Home() {
 
         <div className="wrap">
           <div className="hero__content">
-            <p className="eyebrow hero__eyebrow">LaLiga · Champions League — en directo</p>
+            <p className="eyebrow hero__eyebrow">
+              LaLiga, Champions, Premier y más — en directo
+            </p>
             <h1 className="hero__title">
               El fútbol,
               <br />
               en vivo<span className="dot">.</span>
             </h1>
             <p className="hero__lede">
-              Marcadores minuto a minuto, estadísticas y clasificación de
-              LaLiga y la Champions League — contado desde la pasión de{" "}
-              <strong style={{ color: "var(--text)" }}>@SoyReinaldoR</strong>.
+              Marcadores minuto a minuto, estadísticas y clasificación de las
+              grandes ligas y competiciones europeas — contado desde la pasión
+              de <strong style={{ color: "var(--text)" }}>@SoyReinaldoR</strong>.
             </p>
             <div className="hero__actions">
               <Link href="/liga/laliga" className="btn btn--accent">
@@ -112,8 +124,9 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* TABLA — resumen de las 2 competiciones */}
-      {standingsSnapshot.some((s) => s.standings.length > 0) && (
+      {/* TABLA — resumen de las competiciones que YA han empezado (en
+          pretemporada, con todo a cero, la sección entera se oculta). */}
+      {standingsSnapshot.some((s) => hasStarted(s.standings)) && (
         <section className="section">
           <div className="wrap">
             <div className="shead">
@@ -124,7 +137,7 @@ export default async function Home() {
             </div>
             <div className="grid2" style={{ alignItems: "start" }}>
               {standingsSnapshot.map(({ competition, standings }) =>
-                standings.length > 0 ? (
+                hasStarted(standings) ? (
                   <div key={competition.slug}>
                     <div
                       style={{
