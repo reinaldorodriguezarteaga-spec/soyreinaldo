@@ -274,7 +274,10 @@ export type WcGroup = { group: string; rows: StandingRow[] };
 /**
  * Clasificación de una competición. Devuelve una tabla plana (`standingsMode:
  * "table"`, ligas normales), por grupos (`"groups"`, Mundial), o `null`
- * (`"none"`, competiciones sin tabla — puro KO). Cachea 10 min.
+ * (`"none"`, competiciones sin tabla — puro KO). Cachea 30 min — no cambia
+ * salvo que se juegue un partido, y con 9 competiciones activas el coste de
+ * refrescarla cada 10 min ya provocaba ráfagas de rate-limit (429) contra la
+ * API tras cada deploy (caché en frío).
  */
 export async function getCompetitionStandings(
   competition: Competition,
@@ -284,7 +287,7 @@ export async function getCompetitionStandings(
   const r = await get<StandingsResponse>(
     "/standings",
     { league: competition.leagueId, season: competition.season },
-    600,
+    1800,
   );
   const groups = r.response[0]?.league.standings ?? [];
 
@@ -313,7 +316,11 @@ export async function getWorldCupStandings(): Promise<WcGroup[]> {
   return (await getCompetitionStandings(WORLD_CUP_2026)) as WcGroup[];
 }
 
-/** Próximas N fixturas de una competición. */
+/**
+ * Próximas N fixturas de una competición. Cachea 30 min — el calendario no
+ * cambia salvo aplazamientos puntuales (ver nota de rate-limit en
+ * `getCompetitionStandings`, misma razón).
+ */
 export async function getCompetitionUpcomingFixtures(
   competition: Competition,
   n: number,
@@ -321,7 +328,7 @@ export async function getCompetitionUpcomingFixtures(
   const r = await get<Fixture>(
     "/fixtures",
     { league: competition.leagueId, season: competition.season, next: n },
-    600,
+    1800,
   );
   return r.response;
 }
@@ -387,10 +394,13 @@ async function topPlayers(
   n: number,
   competition: Competition,
 ): Promise<PlayerStatLeader[]> {
+  // 30 min: cada carga de /liga/[slug] dispara 3 de estas (scorers+assists+
+  // cards) — con 9 competiciones activas, 10 min de caché ya generaba
+  // ráfagas de rate-limit (429) contra la API tras cada deploy.
   const r = await get<PlayerStatLeader>(
     path,
     { league: competition.leagueId, season: competition.season },
-    600,
+    1800,
   );
   return r.response.slice(0, n);
 }
@@ -510,14 +520,20 @@ export async function getFixtureTimeline(
   );
 }
 
-/** Todos los partidos del Mundial (los 104), con su estado. Cachea 5 min. */
+/**
+ * Todos los partidos de una competición, con su estado. Cachea 15 min (antes
+ * 5 — con 9 competiciones activas, el calendario completo entero se
+ * recargaba muy seguido para "Finalizados"/bracket sin necesitarlo; los
+ * partidos EN VIVO no pasan por aquí, tienen su propia caché corta en
+ * `getCompetitionFixturesWindow`).
+ */
 export async function getCompetitionAllFixtures(
   competition: Competition,
 ): Promise<Fixture[]> {
   const r = await get<Fixture>(
     "/fixtures",
     { league: competition.leagueId, season: competition.season },
-    300,
+    900,
   );
   return r.response;
 }
