@@ -2,6 +2,8 @@ import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import {
   TEAM_IDS,
+  getCompetitionFinishedFixtures,
+  getCompetitionFixturesWindow,
   getFixtureCards,
   getFixtureGoals,
   getRelevantFixtureForTeam,
@@ -15,6 +17,7 @@ import {
   type FixtureCard,
   type FixtureGoal,
 } from "./api-football";
+import type { Competition } from "./competitions";
 
 export type WidgetMode = "wc" | "clubs";
 
@@ -202,4 +205,89 @@ export async function getWidgetData(): Promise<WidgetData> {
   }
   const fixtures = await attachEvents(base);
   return { mode: "clubs", fixtures, needsPolling: shouldPoll(fixtures) };
+}
+
+/* ---------------------------------------------------------------------- *
+ * Widget de portada multi-competición (PR6). Añadido sin tocar nada de lo
+ * de arriba: getWidgetData()/WidgetData/WidgetMode siguen intactos y los
+ * sigue usando /mundial (vía /api/sports/widget) tal cual.
+ * ---------------------------------------------------------------------- */
+
+/** Un fixture de la portada, con la competición a la que pertenece (para
+ * poder mezclar LaLiga + Champions y aun así saber de cuál es cada uno). */
+export type HomeFixture = WcFixture & {
+  competition: { slug: string; name: string };
+};
+
+export type HomeWidgetData = {
+  /** Partidos en juego ahora mismo, cruzando todas las competiciones. */
+  live: HomeFixture[];
+  /** Partidos de "hoy" (en juego o próximos en la ventana) — incluye los de `live`. */
+  today: HomeFixture[];
+  /** Últimos resultados finalizados, cruzando competiciones, más reciente primero. */
+  recentResults: HomeFixture[];
+  /** True si hay algo en juego o a punto de empezar — gate cliente para polling. */
+  needsPolling: boolean;
+};
+
+function tagCompetition<T extends Fixture>(
+  fixtures: T[],
+  competition: Competition,
+): (T & { competition: { slug: string; name: string } })[] {
+  return fixtures.map((f) => ({
+    ...f,
+    competition: { slug: competition.slug, name: competition.name },
+  }));
+}
+
+/** Mismo criterio que `orderForDisplay` (en vivo primero, luego por kickoff),
+ * reimplementado porque esa función es privada del módulo y esta versión
+ * necesita preservar el campo `competition` en el tipo de salida. */
+function orderHomeForDisplay(fixtures: HomeFixture[]): HomeFixture[] {
+  return [...fixtures].sort((a, b) => {
+    const score = (f: Fixture) => (isLive(f) ? 0 : isFinal(f) ? 2 : 1);
+    const s = score(a) - score(b);
+    if (s !== 0) return s;
+    return new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime();
+  });
+}
+
+/**
+ * Datos para el widget de la portada (Step 3, PR6): partidos en vivo/hoy y
+ * resultados recientes de todas las `competitions` activas (LaLiga +
+ * Champions), fusionados y ordenados. Pasa siempre por las funciones
+ * `get()`-wrapped/`unstable_cache`-backed de `api-football.ts` — cero
+ * `fetch` crudo nuevo.
+ */
+export async function getHomeWidgetData(
+  competitions: Competition[],
+): Promise<HomeWidgetData> {
+  const [windows, resultSets] = await Promise.all([
+    Promise.all(
+      competitions.map(async (c) => tagCompetition(await getCompetitionFixturesWindow(c), c)),
+    ),
+    Promise.all(
+      competitions.map(async (c) => tagCompetition(await getCompetitionFinishedFixtures(c, 4), c)),
+    ),
+  ]);
+
+  const mergedWindow = windows.flat();
+  const windowWithEvents = await attachEvents(mergedWindow);
+  const today = orderHomeForDisplay(
+    windowWithEvents.map((f, i) => ({ ...f, competition: mergedWindow[i].competition })),
+  ).filter((f) => !isFinal(f));
+  const live = today.filter(isLive);
+
+  const mergedResults = resultSets
+    .flat()
+    .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())
+    .slice(0, 8);
+  const resultsWithEvents = await attachEvents(mergedResults);
+  const recentResults = resultsWithEvents.map((f, i) => ({
+    ...f,
+    competition: mergedResults[i].competition,
+  }));
+
+  // Reutiliza `shouldPoll` (privada de este mismo archivo, sin tocarla).
+  return { live, today, recentResults, needsPolling: shouldPoll(today) };
 }

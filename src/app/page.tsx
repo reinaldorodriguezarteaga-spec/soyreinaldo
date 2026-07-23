@@ -1,23 +1,43 @@
 import Image from "next/image";
 import Link from "next/link";
 import DonationBlock from "@/components/DonationBlock";
-import MatchWidget from "@/components/MatchWidget";
+import HomeMatchWidget from "@/components/HomeMatchWidget";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
 import { isAppRequest } from "@/lib/is-app";
+import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
+import { COMPETITIONS } from "@/lib/sports/competitions";
+import { StandingsTableView } from "@/components/competition/tab-views";
 
 const MARQUEE = [
   "Culé",
   "Fútbol",
   "Comunidad",
-  "Quiniela",
-  "Mundial 2026",
+  "LaLiga",
+  "Champions League",
   "Debate",
 ];
 
+async function getStandingsSnapshot() {
+  const competitions = COMPETITIONS.filter((c) => c.standingsMode === "table");
+  return Promise.all(
+    competitions.map(async (competition) => {
+      try {
+        const rows = (await getCompetitionStandings(competition)) as StandingRow[] | null;
+        return { competition, standings: rows ?? [] };
+      } catch {
+        return { competition, standings: [] as StandingRow[] };
+      }
+    }),
+  );
+}
+
 export default async function Home() {
-  const stats = await getSocialStats();
-  const inApp = await isAppRequest();
+  const [stats, inApp, standingsSnapshot] = await Promise.all([
+    getSocialStats(),
+    isAppRequest(),
+    getStandingsSnapshot(),
+  ]);
 
   return (
     <main className="page">
@@ -37,23 +57,23 @@ export default async function Home() {
 
         <div className="wrap">
           <div className="hero__content">
-            <p className="eyebrow hero__eyebrow">Mundial 2026 · en directo</p>
+            <p className="eyebrow hero__eyebrow">LaLiga · Champions League — en directo</p>
             <h1 className="hero__title">
               El fútbol,
               <br />
               en vivo<span className="dot">.</span>
             </h1>
             <p className="hero__lede">
-              Marcadores minuto a minuto, estadísticas, alineaciones y la
-              quiniela culé — contado desde la pasión de{" "}
+              Marcadores minuto a minuto, estadísticas y clasificación de
+              LaLiga y la Champions League — contado desde la pasión de{" "}
               <strong style={{ color: "var(--text)" }}>@SoyReinaldoR</strong>.
             </p>
             <div className="hero__actions">
-              <Link href="/mundial?v=partidos" className="btn btn--accent">
-                Ver el Mundial <span className="arr">→</span>
+              <Link href="/liga/laliga" className="btn btn--accent">
+                Ver LaLiga <span className="arr">→</span>
               </Link>
-              <Link href="/quiniela" className="btn btn--ghost">
-                Entrar a la quiniela <span className="arr">→</span>
+              <Link href="/liga/champions" className="btn btn--ghost">
+                Ver Champions <span className="arr">→</span>
               </Link>
             </div>
 
@@ -81,7 +101,7 @@ export default async function Home() {
 
       {/* MARCADOR EN VIVO (protagonista: justo bajo el hero, solo cuando hay
           partidos que enseñar) */}
-      <MatchWidget />
+      <HomeMatchWidget />
 
       {/* MARQUEE */}
       <div className="marquee" aria-hidden>
@@ -92,8 +112,60 @@ export default async function Home() {
         </div>
       </div>
 
+      {/* TABLA — resumen de las 2 competiciones */}
+      {standingsSnapshot.some((s) => s.standings.length > 0) && (
+        <section className="section">
+          <div className="wrap">
+            <div className="shead">
+              <div>
+                <p className="eyebrow">Clasificación</p>
+                <h2 className="feat__title">La tabla, en corto.</h2>
+              </div>
+            </div>
+            <div className="grid2" style={{ alignItems: "start" }}>
+              {standingsSnapshot.map(({ competition, standings }) =>
+                standings.length > 0 ? (
+                  <div key={competition.slug}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontFamily: "var(--font-display-stack)",
+                          fontWeight: 800,
+                          fontSize: "1.1rem",
+                        }}
+                      >
+                        {competition.name}
+                      </h3>
+                      <Link
+                        href={`/liga/${competition.slug}?v=tabla`}
+                        className="match__when"
+                        style={{ color: "var(--accent)", textDecoration: "none" }}
+                      >
+                        Ver tabla completa →
+                      </Link>
+                    </div>
+                    <StandingsTableView
+                      competition={{ ...competition, koStructure: undefined }}
+                      standings={standings.slice(0, 5)}
+                    />
+                  </div>
+                ) : null,
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FEATURES */}
-      <section className="section" id="quiniela">
+      <section className="section">
         <div className="wrap">
           <div className="feat__head">
             <div>
@@ -101,22 +173,7 @@ export default async function Home() {
               <h2 className="feat__title">Qué hacemos.</h2>
             </div>
           </div>
-          <div className="cards">
-            <Link href="/quiniela" className="card card--accent">
-              <div>
-                <p className="card__tag">Mundial 2026</p>
-                <h3 className="card__h">Quiniela</h3>
-                <p className="card__p">
-                  Pronostica los partidos del Mundial con la comunidad culé y
-                  compite por el primer puesto.
-                </p>
-              </div>
-              <span className="card__go">
-                Entrar <span className="arr">→</span>
-              </span>
-              <span className="card__big">26</span>
-            </Link>
-
+          <div className="cards" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             <Link href="/redes" className="card">
               <div>
                 <p className="card__tag">@SoyReinaldoR</p>
