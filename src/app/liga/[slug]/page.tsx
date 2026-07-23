@@ -138,7 +138,8 @@ export default async function LigaPage({
         </div>
       </section>
 
-      <LigaTabs competition={competition} data={data} view={view} />
+      {/* koStructure (con RegExp) no es serializable hacia un Client Component */}
+      <LigaTabs competition={{ ...competition, koStructure: undefined }} data={data} view={view} />
     </main>
   );
 }

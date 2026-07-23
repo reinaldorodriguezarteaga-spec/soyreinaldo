@@ -68,7 +68,8 @@ export default async function LigaBuscarPage({
 
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap" style={{ maxWidth: 620 }}>
-          <SearchBox competition={competition} teams={teams} />
+          {/* koStructure (con RegExp) no es serializable hacia un Client Component */}
+          <SearchBox competition={{ ...competition, koStructure: undefined }} teams={teams} />
         </div>
       </section>
     </main>

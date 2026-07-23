@@ -96,7 +96,8 @@ export default async function LigaCompararPage({
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap" style={{ maxWidth: 720 }}>
           <div className="panel" style={{ padding: "18px 20px", marginBottom: 24 }}>
-            <TeamPicker competition={competition} teams={teams} a={a} b={b} />
+            {/* koStructure (con RegExp) no es serializable hacia un Client Component */}
+            <TeamPicker competition={{ ...competition, koStructure: undefined }} teams={teams} a={a} b={b} />
           </div>
 
           {statsA && statsB && teamA && teamB ? (
