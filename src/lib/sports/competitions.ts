@@ -29,8 +29,10 @@ export type Competition = {
 export const LALIGA: Competition = {
   slug: "laliga",
   leagueId: 140,
-  // Temporada actual en API-Football se marca por el año de inicio (2025-26 = 2025).
-  season: 2025,
+  // 2025-26 (season 2025) terminó hace ~2 meses (0 fixtures restantes,
+  // verificado). 2026-27 (season 2026) ya tiene calendario real publicado,
+  // arranca 15-ago — se usa esa por delante en vez de la temporada muerta.
+  season: 2026,
   name: "LaLiga",
   standingsMode: "table",
 };
@@ -59,7 +61,9 @@ const CHAMPIONS_LEAGUE_KO_STRUCTURE: KoStructureEntry[] = [
 export const CHAMPIONS_LEAGUE: Competition = {
   slug: "champions",
   leagueId: 2,
-  season: 2025,
+  // 2025-26 (season 2025) terminó — la 2026-27 (season 2026) YA empezó a
+  // jugarse (2ª ronda clasificatoria arranca 28-jul, verificado).
+  season: 2026,
   name: "Champions League",
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
@@ -68,9 +72,11 @@ export const CHAMPIONS_LEAGUE: Competition = {
 export const PREMIER_LEAGUE: Competition = {
   slug: "premier",
   leagueId: 39,
-  season: 2025,
+  // 2025-26 (season 2025) terminó. 2026-27 (season 2026) arranca 21-ago,
+  // calendario ya publicado — verificado.
+  season: 2026,
   name: "Premier League",
-  // Verificado: solo "Regular Season - 1..38", sin fase de eliminatorias.
+  // Solo "Regular Season - 1..38", sin fase de eliminatorias.
   standingsMode: "table",
 };
 
@@ -90,6 +96,14 @@ const CUP_KO_STRUCTURE: KoStructureEntry[] = [
   { label: "Final", re: /^Final$/i, slots: 1 },
 ];
 
+/**
+ * FA Cup y Copa del Rey se quedan en season 2025 (la edición que acaba de
+ * terminar) A PROPÓSITO: verificado que season 2026 todavía tiene 0
+ * fixtures (las copas domésticas empiezan más tarde en el año que las
+ * ligas/competiciones UEFA — su calendario 2026-27 aún no está publicado).
+ * Mostrar el cuadro recién acabado es más útil que una página vacía;
+ * revisar y subir a 2026 cuando la API publique su calendario.
+ */
 export const FA_CUP: Competition = {
   slug: "fa-cup",
   leagueId: 45,
@@ -120,7 +134,9 @@ const SUPERCOPA_KO_STRUCTURE: KoStructureEntry[] = [
 export const SUPERCOPA: Competition = {
   slug: "supercopa",
   leagueId: 556,
-  season: 2025,
+  // season 2026 ya tiene sus semifinales reales programadas (2-feb-2027 —
+  // la Supercopa española se juega a mitad de temporada). Verificado.
+  season: 2026,
   name: "Supercopa de España",
   standingsMode: "none",
   koStructure: SUPERCOPA_KO_STRUCTURE,
@@ -130,15 +146,44 @@ export const SUPERCOPA: Competition = {
  * Europa League: mismo formato UEFA nuevo que Champions (fase de liga con
  * tabla única, sin grupos, + KO desde "Round of 32"). Verificado contra la
  * API real: /standings da 1 array de 36 filas, mismos strings de ronda que
- * Champions.
+ * Champions. 2026-27 ya arrancó (2ª ronda clasificatoria 23-jul).
  */
 export const EUROPA_LEAGUE: Competition = {
   slug: "europa",
   leagueId: 3,
-  season: 2025,
+  season: 2026,
   name: "Europa League",
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+};
+
+/**
+ * Conference League: tercera competición UEFA, mismo formato nuevo que
+ * Champions/Europa (fase de liga = tabla única de 36, sin grupos; luego KO
+ * desde "Round of 32"). Verificado contra la API real (id 848, season 2026):
+ * rondas "1st/2nd/3rd Qualifying Round, Playoff round, League Stage 1-6,
+ * Round of 32, Round of 16, Quarter-finals, Semi-finals, Final" — 2ª ronda
+ * clasificatoria ya arrancó (23-jul).
+ */
+export const CONFERENCE_LEAGUE: Competition = {
+  slug: "conference",
+  leagueId: 848,
+  season: 2026,
+  name: "Conference League",
+  standingsMode: "table",
+  koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+};
+
+/**
+ * Serie A italiana: tabla plana igual que LaLiga/Premier, sin eliminatorias.
+ * Verificado (id 135, season 2026): arranca 22-ago, calendario publicado.
+ */
+export const SERIE_A: Competition = {
+  slug: "serie-a",
+  leagueId: 135,
+  season: 2026,
+  name: "Serie A",
+  standingsMode: "table",
 };
 
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
@@ -172,8 +217,36 @@ export const COMPETITIONS: Competition[] = [
   COPA_DEL_REY,
   SUPERCOPA,
   EUROPA_LEAGUE,
+  CONFERENCE_LEAGUE,
+  SERIE_A,
 ];
 
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
   COMPETITIONS.map((c) => [c.slug, c]),
 );
+
+/**
+ * Equipos destacados para la sección de amistosos de pretemporada: en
+ * verano, con las ligas paradas, la mayoría de sus próximos partidos son
+ * amistosos (liga API-Football "Friendlies Clubs", id 667 — no es una
+ * `Competition` normal, así que estos equipos se tratan aparte por id de
+ * equipo, no por competición). IDs verificados contra la API real. Lista
+ * inicial corta a propósito — fácil de ampliar.
+ */
+export type FeaturedTeam = {
+  id: number;
+  name: string;
+  /** Slug de la Competition doméstica del equipo, para enlazar su ficha
+   * (/liga/[slug]/equipo/[id]) — la ficha de equipo no depende de que el
+   * partido en sí sea de esa competición, solo necesita el fixture id. */
+  homeCompetitionSlug: string;
+};
+
+export const FEATURED_TEAMS: FeaturedTeam[] = [
+  { id: 529, name: "Barcelona", homeCompetitionSlug: "laliga" },
+  { id: 541, name: "Real Madrid", homeCompetitionSlug: "laliga" },
+  { id: 530, name: "Atlético de Madrid", homeCompetitionSlug: "laliga" },
+  { id: 33, name: "Manchester United", homeCompetitionSlug: "premier" },
+  { id: 50, name: "Manchester City", homeCompetitionSlug: "premier" },
+  { id: 40, name: "Liverpool", homeCompetitionSlug: "premier" },
+];

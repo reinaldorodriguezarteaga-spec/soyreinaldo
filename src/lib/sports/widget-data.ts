@@ -4,9 +4,11 @@ import {
   TEAM_IDS,
   getCompetitionFinishedFixtures,
   getCompetitionFixturesWindow,
+  getCompetitionUpcomingFixtures,
   getFixtureCards,
   getFixtureGoals,
   getRelevantFixtureForTeam,
+  getTeamFixtures,
   getWorldCupFixturesWindow,
   getWorldCupUpcomingFixtures,
   isFinal,
@@ -17,7 +19,7 @@ import {
   type FixtureCard,
   type FixtureGoal,
 } from "./api-football";
-import type { Competition } from "./competitions";
+import type { Competition, FeaturedTeam } from "./competitions";
 
 export type WidgetMode = "wc" | "clubs";
 
@@ -309,4 +311,152 @@ export async function getHomeWidgetData(
   const needsPolling = nonEmpty.some((g) => shouldPoll(g.today));
 
   return { groups: nonEmpty, needsPolling };
+}
+
+/* ---------------------------------------------------------------------- *
+ * Calendario de próximos partidos de la portada: combina las próximas
+ * fixturas de las 9 competiciones configuradas CON los amistosos (u otras
+ * competiciones no configuradas) de los equipos destacados, en una única
+ * lista cronológica agrupada por día. Pensado para la pretemporada: cuando
+ * casi todas las competiciones están paradas, el desplegable por competición
+ * de arriba (`getHomeWidgetData`, intacto) no da una buena foto de "qué se
+ * juega pronto" — esto sí. Añadido sin tocar nada de lo de arriba.
+ * ---------------------------------------------------------------------- */
+
+const MADRID_TZ = "Europe/Madrid";
+/** Id de la liga especial "Friendlies Clubs" de API-Football: amistosos de
+ * clubes, cubre a todos los equipos — no es una `Competition` nuestra. */
+const FRIENDLIES_LEAGUE_ID = 667;
+/** Techo de fixturas totales del calendario (across todas las fuentes), para
+ * que la sección no crezca sin límite en temporada alta con las 9 ligas
+ * activas a la vez. */
+const CALENDAR_MAX_FIXTURES = 40;
+
+/** Un fixture del calendario, con la etiqueta de competición a mostrar y el
+ * slug con el que enlazar su detalle (`/liga/${linkSlug}/partido/${id}`). */
+export type CalendarFixture = WcFixture & {
+  /** Nombre a mostrar: el de nuestra `Competition` si el fixture pertenece a
+   * una, o el nombre real que da la API (p. ej. "Amistoso", "Community
+   * Shield") si no. */
+  competitionLabel: string;
+  /** Slug para el link al detalle — SIEMPRE uno de `COMPETITIONS_BY_SLUG`
+   * (la página de detalle hace notFound() si no), nunca el id/nombre crudo
+   * de la liga real del fixture. */
+  linkSlug: string;
+};
+
+/** Partidos de un mismo día calendario (huso Europe/Madrid), ya ordenados. */
+export type CalendarDay = {
+  /** Clave ISO yyyy-mm-dd en huso Europe/Madrid, para agrupar/ordenar. */
+  dateKey: string;
+  /** Etiqueta ya formateada: "Hoy", "Mañana", o "Vie 15 ago". */
+  label: string;
+  fixtures: CalendarFixture[];
+};
+
+function madridDateKey(date: Date): string {
+  // en-CA formatea como yyyy-mm-dd de fábrica — más simple que armarlo a mano
+  // a partir de formatToParts.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: MADRID_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function dayLabel(dateKey: string, todayKey: string, tomorrowKey: string): string {
+  if (dateKey === todayKey) return "Hoy";
+  if (dateKey === tomorrowKey) return "Mañana";
+  // Mediodía UTC del día en cuestión: cae siempre dentro del mismo día
+  // calendario en Europe/Madrid (UTC+1/+2), evita saltos por huso horario.
+  const date = new Date(`${dateKey}T12:00:00Z`);
+  const weekday = new Intl.DateTimeFormat("es-ES", { timeZone: MADRID_TZ, weekday: "short" }).format(date);
+  const day = new Intl.DateTimeFormat("es-ES", { timeZone: MADRID_TZ, day: "numeric" }).format(date);
+  const month = new Intl.DateTimeFormat("es-ES", { timeZone: MADRID_TZ, month: "short" }).format(date);
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
+}
+
+/**
+ * Calendario de próximos partidos combinando competiciones + equipos
+ * destacados. Pasa siempre por las funciones `get()`-wrapped/`unstable_cache`
+ * de `api-football.ts` — cero `fetch` crudo nuevo. Sin `attachEvents()`:
+ * son partidos por jugarse, no hay eventos que adjuntar.
+ */
+export async function getUpcomingCalendar(
+  competitions: Competition[],
+  featuredTeams: FeaturedTeam[],
+): Promise<CalendarDay[]> {
+  // Un Map por fixture id: se llena primero con los de competición (más
+  // fiables/nombre correcto) y luego, solo si falta, con los de equipos
+  // destacados — así un mismo partido (p. ej. un amistoso entre dos
+  // destacados, o el estreno liguero de uno de ellos) no aparece dos veces.
+  const merged = new Map<number, CalendarFixture>();
+
+  const perCompetition = await Promise.all(
+    competitions.map(async (c): Promise<CalendarFixture[]> => {
+      try {
+        const fixtures = await getCompetitionUpcomingFixtures(c, 6);
+        return fixtures.map((f) => ({
+          ...f,
+          ev: null,
+          competitionLabel: c.name,
+          linkSlug: c.slug,
+        }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  for (const list of perCompetition) {
+    for (const fx of list) merged.set(fx.fixture.id, fx);
+  }
+
+  const perTeam = await Promise.all(
+    featuredTeams.map(async (team): Promise<CalendarFixture[]> => {
+      try {
+        const { upcoming } = await getTeamFixtures(team.id, { next: 4 });
+        return upcoming.map((f) => ({
+          ...f,
+          ev: null,
+          competitionLabel:
+            f.league.id === FRIENDLIES_LEAGUE_ID ? "Amistoso" : f.league.name,
+          linkSlug: team.homeCompetitionSlug,
+        }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  for (const list of perTeam) {
+    for (const fx of list) {
+      if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
+    }
+  }
+
+  const all = [...merged.values()]
+    .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())
+    .slice(0, CALENDAR_MAX_FIXTURES);
+
+  if (all.length === 0) return [];
+
+  const now = new Date();
+  const todayKey = madridDateKey(now);
+  const tomorrowKey = madridDateKey(new Date(now.getTime() + 24 * 3600_000));
+
+  const byDay = new Map<string, CalendarFixture[]>();
+  for (const fx of all) {
+    const key = madridDateKey(new Date(fx.fixture.date));
+    const arr = byDay.get(key);
+    if (arr) arr.push(fx);
+    else byDay.set(key, [fx]);
+  }
+
+  return [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dateKey, fixtures]) => ({
+      dateKey,
+      label: dayLabel(dateKey, todayKey, tomorrowKey),
+      fixtures,
+    }));
 }
