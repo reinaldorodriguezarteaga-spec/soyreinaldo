@@ -127,6 +127,7 @@ nuevas: numéralas siguiendo la serie (`025-...sql`) y aplícalas con `db.mjs fi
 ## Convenciones
 
 - Idioma del producto y de los commits: **español**.
+- ⚠️ **Caché en Next 16:** `fetch` + `next.revalidate` NO cachea → usar `unstable_cache` SIEMPRE para cachear llamadas a API-Football (lección del PR #27).
 - Server Components por defecto; Stripe/Supabase service-role/API-Football solo
   server-side — nunca exponer secretos al cliente.
 - `next.config.ts`: redirect permanente `/laliga → /mundial` (LaLiga se reconvirtió
@@ -237,3 +238,25 @@ los intervalos altos y reutiliza caché; no reintroduzcas polling agresivo.
 - `ransesd24` → inserté a mano su pick Canadá 1–Marruecos 2 (partido 90) saltando el
   bloqueo de 30 min (por service-role).
 - Backfill manual de `api_football_fixture_id` de los 8 octavos (ids 89–96).
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships. It's built from AST + local-LLM extraction of the **code only** — nodes are entity labels (file/function/concept names) with typed relations (`references`, `calls`, etc.), not descriptions or prose. Good for structural code questions; useless for narrative/historical ones (it has no field to hold a sentence of context).
+
+Rules:
+- For codebase/structural questions ("qué llama a X", "qué depende de Y", "cómo se relacionan A y B"), first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- **Do NOT use graphify for memory/history/incident questions** ("qué pasó con...", "por qué se decidió...", operaciones manuales pasadas, bitácora). Use `memsearch query "<pregunta>"` instead (see below) — the graph does not and cannot contain that narrative content (tried once, confirmed empty of prose; see incident 14-jul-2026).
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- graphify-out/ is code-only (memory was tried and reverted 14-jul-2026 — see bitácora below). Don't re-merge memory .md files into it; the schema can't store the content that would make it useful.
+
+## memsearch (memoria semántica — MCP propio)
+
+Herramienta propia convertida en **paquete + servidor MCP**: repo local `~/Documents/Claude/memsearch-mcp` (instalado vía `uv tool install`, ejecutables `memsearch` y `memsearch-mcp` en `~/.local/bin`). Registrado en Claude Code a nivel usuario como servidor MCP `memsearch` (tools `memory_search`, `memory_briefing`, `memory_list_projects`, `memory_reindex`, `memory_graph`). Embeddings locales (Ollama, `nomic-embed-text`) de cada bullet/párrafo de `~/.claude/projects/*/memory/*.md` — a diferencia de graphify, devuelve el texto narrativo real.
+
+- **Al arrancar sesión**: llamar `memory_briefing` (MCP) en vez de cargar MEMORY.md completos — resumen multi-proyecto en ~300-800 tokens.
+- **Preguntas de memoria/historial/incidentes**: `memory_search` (MCP) o `memsearch query "<pregunta>"` (CLI). Filtrar con `project` / `--project` (ej. `soyreinaldo`). Reindexa solo archivos cambiados (hash) automáticamente.
+- **Visualización estilo graphify**: `memory_graph` (MCP) o `memsearch graph --open` → HTML interactivo en `~/.claude/memsearch/memory-graph.html` (proyectos→archivos→recuerdos, clic muestra el texto completo, edges punteados = similitud semántica).
+- Cache por carpeta en `<memory-dir>/.memsearch_cache.json` (fuera de cualquier repo git).
+- Requiere Ollama corriendo (`brew services start ollama`) y `nomic-embed-text` (~274MB, instalado 14-jul-2026).
