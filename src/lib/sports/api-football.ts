@@ -229,7 +229,14 @@ export async function getCompetitionFixturesWindow(
       from: day(fromMs),
       to: day(toMs),
     },
-    20, // frescura en vivo: el marcador de la ventana se refresca cada 20s
+    // 45s (antes 20s): el widget de portada polea cada 20s CRUZANDO LAS 9
+    // COMPETICIONES — con TTL=20s el caché caducaba justo antes de cada
+    // poll, así que casi todos los polls de todos los visitantes pegaban
+    // en vivo a la API (causa real de la ráfaga sostenida de 429 del
+    // 23-jul, no solo el caché frío de un deploy). 45s > 20s de margen
+    // para que la mayoría de polls sí acierten en caché; sigue siendo
+    // razonablemente fresco para marcadores en vivo.
+    45,
   );
   return r.response.filter((f) => {
     if (isLive(f)) return true;

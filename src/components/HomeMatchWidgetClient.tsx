@@ -12,7 +12,10 @@ import type {
 import MatchCardEvents from "@/components/MatchCardEvents";
 
 const MADRID_TZ = "Europe/Madrid";
-const POLL_MS = 20_000;
+// >45s (el TTL de getCompetitionFixturesWindow) para que la mayoría de polls
+// acierten en caché en vez de pegar en vivo a la API — este widget cruza
+// las 9 competiciones en cada poll, así que el margen importa el triple.
+const POLL_MS = 30_000;
 
 function formatKickoff(iso: string) {
   return new Intl.DateTimeFormat("es-ES", {

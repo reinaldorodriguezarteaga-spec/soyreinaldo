@@ -219,7 +219,9 @@ export function ProbBar({
 
 /* ---------- Marcador en vivo ---------- */
 
-const POLL_MS = 20_000;
+// >45s (el TTL de getCompetitionFixturesWindow) para que la mayoría de polls
+// acierten en caché en vez de pegar en vivo a la API.
+const POLL_MS = 30_000;
 const POLL_LEAD_MS = 30 * 60 * 1000;
 
 function shouldKeepPolling(fixtures: Fixture[]): boolean {
