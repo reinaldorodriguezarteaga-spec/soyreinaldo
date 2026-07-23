@@ -35,6 +35,36 @@ export const LALIGA: Competition = {
   standingsMode: "table",
 };
 
+/**
+ * Estructura del cuadro de Champions League bajo el formato nuevo de la
+ * UEFA (desde 2024-25): tras la fase de liga (36 equipos, tabla única, sin
+ * grupos) hay una ronda extra "Round of 32" antes de octavos. Verificado
+ * contra `/fixtures?league=2&season=2025` real — strings de ronda exactos:
+ * "1st/2nd/3rd Qualifying Round", "Play-offs", "League Stage - 1..8",
+ * "Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final".
+ */
+const CHAMPIONS_LEAGUE_KO_STRUCTURE: KoStructureEntry[] = [
+  { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
+  { label: "Octavos", re: /Round of 16/i, slots: 8 },
+  { label: "Cuartos", re: /Quarter/i, slots: 4 },
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+/**
+ * Fase de liga = tabla única de 36 equipos (verificado: `/standings` devuelve
+ * un solo array de 36 filas, sin grupos) → standingsMode "table" igual que
+ * LaLiga, no "groups". Las eliminatorias van aparte en `koStructure`.
+ */
+export const CHAMPIONS_LEAGUE: Competition = {
+  slug: "champions",
+  leagueId: 2,
+  season: 2025,
+  name: "Champions League",
+  standingsMode: "table",
+  koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
+};
+
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
 const WORLD_CUP_KO_STRUCTURE: KoStructureEntry[] = [
   { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
@@ -55,13 +85,10 @@ export const WORLD_CUP_2026: Competition = {
 };
 
 /**
- * Competiciones activas del árbol /liga/[slug]. Empieza solo con LaLiga —
- * Champions League se añade en un PR aparte, tras verificar contra la API
- * real los strings de ronda para su propio KO_STRUCTURE (no adivinar).
- * El Mundial NO va en esta lista: queda congelado en /mundial, fuera de
- * este árbol genérico.
+ * Competiciones activas del árbol /liga/[slug]. El Mundial NO va en esta
+ * lista: queda congelado en /mundial, fuera de este árbol genérico.
  */
-export const COMPETITIONS: Competition[] = [LALIGA];
+export const COMPETITIONS: Competition[] = [LALIGA, CHAMPIONS_LEAGUE];
 
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
   COMPETITIONS.map((c) => [c.slug, c]),
