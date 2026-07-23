@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Saira_Condensed, Archivo, Space_Mono } from "next/font/google";
-import Header from "@/components/Header";
+import Header, { type FavoriteNavItem } from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
@@ -73,13 +73,28 @@ export default async function RootLayout({
     // best-effort: no romper el layout si la API falla
   }
 
+  // Favoritos del usuario para el desplegable del header — solo si hay sesión.
+  let favorites: FavoriteNavItem[] = [];
+  if (user) {
+    const { data } = await supabase
+      .from("user_favorites")
+      .select("kind, label, link_path")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+    favorites = (data ?? []).map((row) => ({
+      kind: row.kind as "competition" | "team",
+      label: row.label,
+      linkPath: row.link_path,
+    }));
+  }
+
   return (
     <html
       lang="es"
       className={`${saira.variable} ${archivo.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header initialUser={user} hasLiveMatch={hasLiveMatch} />
+        <Header initialUser={user} hasLiveMatch={hasLiveMatch} favorites={favorites} />
         <Gestures />
         <BackButton />
         {children}

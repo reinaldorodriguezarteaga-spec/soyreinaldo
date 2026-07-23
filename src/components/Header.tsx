@@ -43,19 +43,29 @@ function Caret() {
   );
 }
 
+export type FavoriteNavItem = {
+  kind: "competition" | "team";
+  label: string;
+  linkPath: string;
+};
+
 export default function Header({
   initialUser,
   hasLiveMatch = false,
+  favorites = [],
 }: {
   initialUser: User | null;
   hasLiveMatch?: boolean;
+  favorites?: FavoriteNavItem[];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<"competiciones" | "productos" | null>(
-    null,
-  );
-  const [mAcc, setMAcc] = useState<"competiciones" | "productos" | null>(null);
+  const [openMenu, setOpenMenu] = useState<
+    "favoritos" | "competiciones" | "productos" | null
+  >(null);
+  const [mAcc, setMAcc] = useState<
+    "favoritos" | "competiciones" | "productos" | null
+  >(null);
   const linksRef = useRef<HTMLDivElement>(null);
 
   // Cerrar dropdowns al hacer click fuera
@@ -103,6 +113,36 @@ export default function Header({
             )}
 
             <div className="nav__links" ref={linksRef}>
+              {/* Favoritos — primero, así lo tuyo se ve antes que las 9 competiciones */}
+              {favorites.length > 0 && (
+                <div className="navdrop">
+                  <button
+                    type="button"
+                    className="navdrop__btn"
+                    aria-expanded={openMenu === "favoritos"}
+                    onClick={() =>
+                      setOpenMenu((m) => (m === "favoritos" ? null : "favoritos"))
+                    }
+                  >
+                    Favoritos <Caret />
+                  </button>
+                  {openMenu === "favoritos" && (
+                    <div className="navdrop__menu">
+                      {favorites.map((f) => (
+                        <Link
+                          key={`${f.kind}-${f.linkPath}`}
+                          href={f.linkPath}
+                          className="navdrop__item"
+                        >
+                          {f.label}
+                          <span className="d">{f.kind === "competition" ? "Liga" : "Equipo"}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Competiciones */}
               <div className="navdrop">
                 <button
@@ -203,6 +243,31 @@ export default function Header({
           {mobileOpen && (
             <div className="md:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
+                {/* Favoritos acordeón — primero */}
+                {favorites.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      className="navacc__btn"
+                      aria-expanded={mAcc === "favoritos"}
+                      onClick={() =>
+                        setMAcc((m) => (m === "favoritos" ? null : "favoritos"))
+                      }
+                    >
+                      Favoritos <Caret />
+                    </button>
+                    {mAcc === "favoritos" && (
+                      <div className="navacc__sub">
+                        {favorites.map((f) => (
+                          <Link key={`${f.kind}-${f.linkPath}`} href={f.linkPath}>
+                            {f.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {/* Competiciones acordeón */}
                 <button
                   type="button"

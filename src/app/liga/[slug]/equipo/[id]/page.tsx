@@ -14,6 +14,8 @@ import {
   type SquadPlayer,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import { isFavorited } from "@/app/actions/favorites";
+import FavoriteStar from "@/components/FavoriteStar";
 import TeamStats from "./team-stats";
 import TeamTabs from "./team-tabs";
 
@@ -77,6 +79,8 @@ export default async function LigaEquipoPage({
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
 
+  const favorited = await isFavorited("team", String(teamId));
+
   const live = recent.filter(isLive);
   const played = recent
     .filter((f) => isFinal(f))
@@ -113,12 +117,25 @@ export default async function LigaEquipoPage({
               />
             )}
             <div>
-              <h1
-                className="phero__title"
-                style={{ fontSize: "clamp(2rem,6vw,3.4rem)", margin: 0 }}
-              >
-                {team?.name ?? "Equipo"}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1
+                  className="phero__title"
+                  style={{ fontSize: "clamp(2rem,6vw,3.4rem)", margin: 0 }}
+                >
+                  {team?.name ?? "Equipo"}
+                </h1>
+                {team && (
+                  <FavoriteStar
+                    target={{
+                      kind: "team",
+                      id: teamId,
+                      name: team.name,
+                      homeCompetitionSlug: competition.slug,
+                    }}
+                    initialFavorited={favorited}
+                  />
+                )}
+              </div>
               {coach ? (
                 <p
                   className="phero__lede"

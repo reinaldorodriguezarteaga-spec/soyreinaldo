@@ -15,6 +15,8 @@ import {
 } from "@/lib/sports/api-football";
 import { attachEvents, type WcFixture } from "@/lib/sports/widget-data";
 import { COMPETITIONS_BY_SLUG, resolveSeason, type Competition } from "@/lib/sports/competitions";
+import { isFavorited } from "@/app/actions/favorites";
+import FavoriteStar from "@/components/FavoriteStar";
 import LigaTabs, { type LigaTab } from "./liga-tabs";
 import SeasonSelect from "./season-select";
 
@@ -103,6 +105,7 @@ export default async function LigaPage({
 
   const carryIds = today.filter(isLive).map((f) => f.fixture.id);
   const view = normalizeView(v) ?? (carryIds.length > 0 ? "envivo" : "partidos");
+  const favorited = await isFavorited("competition", competition.slug);
 
   const data: LigaData = {
     fixtures,
@@ -121,10 +124,16 @@ export default async function LigaPage({
       <section className="phero" style={{ paddingBottom: 24 }}>
         <div className="wrap">
           <p className="eyebrow">Fútbol de clubes</p>
-          <h1 className="phero__title">
-            {competition.name}
-            <span className="dot">.</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="phero__title">
+              {competition.name}
+              <span className="dot">.</span>
+            </h1>
+            <FavoriteStar
+              target={{ kind: "competition", slug: competition.slug, name: competition.name }}
+              initialFavorited={favorited}
+            />
+          </div>
           <p className="phero__lede">
             Próximos partidos, tabla de clasificación y estadísticas de la
             temporada — goleadores, asistencias y más, en vivo.
