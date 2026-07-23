@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import UserMenu from "./UserMenu";
-import { WORLD_CUP } from "@/lib/sports/api-football";
-
-type League = { id: string; name: string };
+import { COMPETITIONS } from "@/lib/sports/competitions";
 
 const PRODUCTOS = [
   {
@@ -22,35 +20,11 @@ const PRODUCTOS = [
   },
 ];
 
-const QUINIELA_LINKS = [
-  { href: "/quiniela/partidos", label: "Predicciones" },
-  { href: "/quiniela/picks", label: "Picks especiales" },
-];
-
-const QUINIELA_FOOT = [
-  { href: "/quiniela/puntos", label: "Cómo se puntúa" },
-  { href: "/quiniela", label: "Mi quiniela" },
-];
-
-const MUNDIAL_LINKS = [
-  { href: "/mundial?v=envivo", label: "Marcador en vivo" },
-  { href: "/mundial", label: "Próximos partidos" },
-  { href: "/mundial?v=finalizados", label: "Resultados" },
-  { href: "/mundial?v=grupos", label: "Grupos" },
-  { href: "/mundial?v=selecciones", label: "Selecciones" },
-  { href: "/mundial?v=jugadores", label: "Jugadores" },
-  { href: "/mundial?v=stats", label: "Estadísticas" },
-  { href: "/mundial/bracket", label: "Eliminatorias" },
-];
-
 const NAV_LINKS = [
   { href: "/estadios", label: "Estadios" },
   { href: "/redes", label: "Redes" },
   { href: "/contacto", label: "Contáctame" },
 ];
-
-const KICKOFF_MS = new Date(WORLD_CUP.startUtc).getTime();
-const pad = (n: number) => n.toString().padStart(2, "0");
 
 function Caret() {
   return (
@@ -71,45 +45,18 @@ function Caret() {
 
 export default function Header({
   initialUser,
-  userLeagues = [],
   hasLiveMatch = false,
 }: {
   initialUser: User | null;
-  userLeagues?: League[];
   hasLiveMatch?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<
-    "quiniela" | "mundial" | "productos" | null
-  >(null);
-  const [mAcc, setMAcc] = useState<
-    "quiniela" | "mundial" | "productos" | null
-  >(null);
-  const [left, setLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(
+  const [openMenu, setOpenMenu] = useState<"competiciones" | "productos" | null>(
     null,
   );
+  const [mAcc, setMAcc] = useState<"competiciones" | "productos" | null>(null);
   const linksRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const tick = () => {
-      const ms = KICKOFF_MS - Date.now();
-      if (ms <= 0) {
-        setLeft(null);
-        return;
-      }
-      const t = Math.floor(ms / 1000);
-      setLeft({
-        d: Math.floor(t / 86400),
-        h: Math.floor((t % 86400) / 3600),
-        m: Math.floor((t % 3600) / 60),
-        s: t % 60,
-      });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
 
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
@@ -130,39 +77,10 @@ export default function Header({
     setMAcc(null);
   }, [pathname]);
 
-  const isActive = (href: string) =>
-    href === "/quiniela" ? pathname.startsWith("/quiniela") : pathname === href;
-
-  const hasLeagues = userLeagues.length > 0;
-  const showQuinielaMenu = !!initialUser;
+  const isActive = (href: string) => pathname === href;
 
   return (
     <>
-      {/* Ticker */}
-      <div className="ticker">
-        <div className="wrap">
-          <div className="ticker__in">
-            <span className="ticker__dot" />
-            <span>Mundial 2026</span>
-            {left ? (
-              <span className="ticker__clock">
-                <b>{pad(left.d)}d</b>
-                <span className="ticker__seg">:</span>
-                <b>{pad(left.h)}h</b>
-                <span className="ticker__seg">:</span>
-                <b>{pad(left.m)}m</b>
-                <span className="ticker__seg">:</span>
-                <b suppressHydrationWarning>{pad(left.s)}s</b>
-              </span>
-            ) : (
-              <span className="ticker__clock">
-                <b>EN JUEGO</b>
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Nav */}
       <nav className="nav">
         <div className="wrap">
@@ -174,7 +92,7 @@ export default function Header({
 
             {hasLiveMatch && (
               <Link
-                href="/mundial?v=envivo"
+                href="/"
                 className="navlive"
                 onClick={() => setMobileOpen(false)}
                 title="Hay partido en juego — ver el marcador en vivo"
@@ -185,80 +103,23 @@ export default function Header({
             )}
 
             <div className="nav__links" ref={linksRef}>
-              {/* Quiniela */}
-              {showQuinielaMenu ? (
-                <div className="navdrop">
-                  <button
-                    type="button"
-                    className={`navdrop__btn ${pathname.startsWith("/quiniela") ? "is-active" : ""}`}
-                    aria-expanded={openMenu === "quiniela"}
-                    onClick={() =>
-                      setOpenMenu((m) => (m === "quiniela" ? null : "quiniela"))
-                    }
-                  >
-                    Quiniela <Caret />
-                  </button>
-                  {openMenu === "quiniela" && (
-                    <div className="navdrop__menu">
-                      {QUINIELA_LINKS.map((l) => (
-                        <Link key={l.href} href={l.href} className="navdrop__item">
-                          {l.label}
-                        </Link>
-                      ))}
-                      {hasLeagues && (
-                        <>
-                          <div className="navdrop__sep" />
-                          <p className="navdrop__label">Rankings</p>
-                          {userLeagues.map((l) => (
-                            <Link
-                              key={l.id}
-                              href={`/quiniela/ranking/${l.id}`}
-                              className="navdrop__item"
-                            >
-                              {l.name}
-                            </Link>
-                          ))}
-                        </>
-                      )}
-                      <div className="navdrop__sep" />
-                      {QUINIELA_FOOT.map((l) => (
-                        <Link
-                          key={l.href}
-                          href={l.href}
-                          className="navdrop__item navdrop__item--muted"
-                        >
-                          {l.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  href="/quiniela"
-                  className={isActive("/quiniela") ? "is-active" : ""}
-                >
-                  Quiniela
-                </Link>
-              )}
-
-              {/* Mundial 2026 */}
+              {/* Competiciones */}
               <div className="navdrop">
                 <button
                   type="button"
-                  className={`navdrop__btn ${pathname.startsWith("/mundial") ? "is-active" : ""}`}
-                  aria-expanded={openMenu === "mundial"}
+                  className={`navdrop__btn ${pathname.startsWith("/liga") ? "is-active" : ""}`}
+                  aria-expanded={openMenu === "competiciones"}
                   onClick={() =>
-                    setOpenMenu((m) => (m === "mundial" ? null : "mundial"))
+                    setOpenMenu((m) => (m === "competiciones" ? null : "competiciones"))
                   }
                 >
-                  Mundial 2026 <Caret />
+                  Competiciones <Caret />
                 </button>
-                {openMenu === "mundial" && (
+                {openMenu === "competiciones" && (
                   <div className="navdrop__menu">
-                    {MUNDIAL_LINKS.map((l) => (
-                      <Link key={l.label} href={l.href} className="navdrop__item">
-                        {l.label}
+                    {COMPETITIONS.map((c) => (
+                      <Link key={c.slug} href={`/liga/${c.slug}`} className="navdrop__item">
+                        {c.name}
                       </Link>
                     ))}
                   </div>
@@ -303,9 +164,9 @@ export default function Header({
 
             <div className="nav__cta">
               <Link
-                href="/mundial/buscar"
-                aria-label="Buscar selección o jugador"
-                title="Buscar selección o jugador"
+                href="/liga/laliga/buscar"
+                aria-label="Buscar equipo o jugador"
+                title="Buscar equipo o jugador"
                 className="grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -342,64 +203,22 @@ export default function Header({
           {mobileOpen && (
             <div className="md:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
-                {/* Quiniela acordeón */}
-                {showQuinielaMenu ? (
-                  <>
-                    <button
-                      type="button"
-                      className="navacc__btn"
-                      aria-expanded={mAcc === "quiniela"}
-                      onClick={() =>
-                        setMAcc((m) => (m === "quiniela" ? null : "quiniela"))
-                      }
-                    >
-                      Quiniela <Caret />
-                    </button>
-                    {mAcc === "quiniela" && (
-                      <div className="navacc__sub">
-                        {QUINIELA_LINKS.map((l) => (
-                          <Link key={l.href} href={l.href}>
-                            {l.label}
-                          </Link>
-                        ))}
-                        {hasLeagues && (
-                          <>
-                            <p className="navacc__sublabel">Rankings</p>
-                            {userLeagues.map((l) => (
-                              <Link key={l.id} href={`/quiniela/ranking/${l.id}`}>
-                                {l.name}
-                              </Link>
-                            ))}
-                          </>
-                        )}
-                        {QUINIELA_FOOT.map((l) => (
-                          <Link key={l.href} href={l.href}>
-                            {l.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <MobileLink href="/quiniela">Quiniela</MobileLink>
-                )}
-
-                {/* Mundial 2026 acordeón */}
+                {/* Competiciones acordeón */}
                 <button
                   type="button"
                   className="navacc__btn"
-                  aria-expanded={mAcc === "mundial"}
+                  aria-expanded={mAcc === "competiciones"}
                   onClick={() =>
-                    setMAcc((m) => (m === "mundial" ? null : "mundial"))
+                    setMAcc((m) => (m === "competiciones" ? null : "competiciones"))
                   }
                 >
-                  Mundial 2026 <Caret />
+                  Competiciones <Caret />
                 </button>
-                {mAcc === "mundial" && (
+                {mAcc === "competiciones" && (
                   <div className="navacc__sub">
-                    {MUNDIAL_LINKS.map((l) => (
-                      <Link key={l.label} href={l.href}>
-                        {l.label}
+                    {COMPETITIONS.map((c) => (
+                      <Link key={c.slug} href={`/liga/${c.slug}`}>
+                        {c.name}
                       </Link>
                     ))}
                   </div>
