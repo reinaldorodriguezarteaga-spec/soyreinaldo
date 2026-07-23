@@ -94,7 +94,7 @@ export default async function Image({
             soyreinaldo<span style={{ color: ACCENT }}>.com</span>
           </div>
           <div style={{ display: "flex", fontSize: 24, color: MUTED }}>
-            Quiniela & marcadores en vivo
+            Marcadores y estadísticas en vivo
           </div>
         </div>
       </div>

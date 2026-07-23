@@ -184,7 +184,7 @@ export default async function Image({
             soyreinaldo<span style={{ color: ACCENT }}>.com</span>
           </div>
           <div style={{ display: "flex", fontSize: 24, color: MUTED }}>
-            Mundial 2026 · Quiniela & marcadores
+            Mundial 2026 · Marcadores y estadísticas
           </div>
         </div>
       </div>
