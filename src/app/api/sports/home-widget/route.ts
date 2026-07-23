@@ -17,9 +17,6 @@ export async function GET() {
     const data = await getHomeWidgetData(COMPETITIONS);
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json(
-      { live: [], today: [], recentResults: [], needsPolling: false },
-      { status: 200 },
-    );
+    return NextResponse.json({ groups: [], needsPolling: false }, { status: 200 });
   }
 }

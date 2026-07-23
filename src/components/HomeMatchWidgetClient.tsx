@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { isLive } from "@/lib/sports/api-football";
 import type { CompetitionGroup, HomeWidgetData } from "@/lib/sports/widget-data";
 import CompactMatchRow from "@/components/CompactMatchRow";
 
@@ -38,9 +37,8 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
  * por React: así el toggle manual del usuario no se pisa en cada poll de 30s.
  */
 function CompetitionAccordion({ group }: { group: CompetitionGroup }) {
-  const { competition, live, today, recentResults } = group;
-  const todayNonLive = today.filter((f) => !isLive(f));
-  const total = live.length + todayNonLive.length + recentResults.length;
+  const { competition, live, finishedToday } = group;
+  const total = live.length + finishedToday.length;
   const anyLive = live.length > 0;
   const base = `/liga/${competition.slug}`;
 
@@ -84,21 +82,11 @@ function CompetitionAccordion({ group }: { group: CompetitionGroup }) {
             </div>
           </div>
         )}
-        {todayNonLive.length > 0 && (
+        {finishedToday.length > 0 && (
           <div>
-            <GroupLabel>{anyLive ? "Más partidos hoy" : "Partidos de hoy"}</GroupLabel>
+            <GroupLabel>Finalizados hoy</GroupLabel>
             <div className="hmrowlist">
-              {todayNonLive.map((fx) => (
-                <CompactMatchRow key={fx.fixture.id} fx={fx} href={`${base}/partido/${fx.fixture.id}`} />
-              ))}
-            </div>
-          </div>
-        )}
-        {recentResults.length > 0 && (
-          <div>
-            <GroupLabel>Resultados recientes</GroupLabel>
-            <div className="hmrowlist">
-              {recentResults.map((fx) => (
+              {finishedToday.map((fx) => (
                 <CompactMatchRow key={fx.fixture.id} fx={fx} href={`${base}/partido/${fx.fixture.id}`} />
               ))}
             </div>

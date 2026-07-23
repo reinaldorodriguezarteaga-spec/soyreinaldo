@@ -13,6 +13,10 @@ export type StandingsMode = "table" | "groups" | "none";
 
 export type KoStructureEntry = { label: string; re: RegExp; slots: number };
 
+/** Agrupación del nav "Competiciones": por país, salvo las UEFA (sin país,
+ * "Internacional"). */
+export type CompetitionRegion = "España" | "Inglaterra" | "Italia" | "Internacional";
+
 export type Competition = {
   /** Usado en las rutas /liga/[slug]/... */
   slug: string;
@@ -27,6 +31,8 @@ export type Competition = {
   /** Temporadas navegables además de `season` (la actual/por defecto). Por
    * ahora siempre [season - 1] — la temporada recién terminada. */
   archivedSeasons?: number[];
+  /** País para agrupar el desplegable "Competiciones" del nav. */
+  region: CompetitionRegion;
 };
 
 /**
@@ -57,6 +63,7 @@ export const LALIGA: Competition = {
   name: "LaLiga",
   standingsMode: "table",
   archivedSeasons: [2025],
+  region: "España",
 };
 
 /**
@@ -90,6 +97,7 @@ export const CHAMPIONS_LEAGUE: Competition = {
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
+  region: "Internacional",
 };
 
 export const PREMIER_LEAGUE: Competition = {
@@ -102,6 +110,7 @@ export const PREMIER_LEAGUE: Competition = {
   // Solo "Regular Season - 1..38", sin fase de eliminatorias.
   standingsMode: "table",
   archivedSeasons: [2025],
+  region: "Inglaterra",
 };
 
 /**
@@ -136,6 +145,7 @@ export const FA_CUP: Competition = {
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
   archivedSeasons: [2024],
+  region: "Inglaterra",
 };
 
 export const COPA_DEL_REY: Competition = {
@@ -146,6 +156,7 @@ export const COPA_DEL_REY: Competition = {
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
   archivedSeasons: [2024],
+  region: "España",
 };
 
 /**
@@ -167,6 +178,7 @@ export const SUPERCOPA: Competition = {
   standingsMode: "none",
   koStructure: SUPERCOPA_KO_STRUCTURE,
   archivedSeasons: [2025],
+  region: "España",
 };
 
 /**
@@ -183,6 +195,7 @@ export const EUROPA_LEAGUE: Competition = {
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
+  region: "Internacional",
 };
 
 /**
@@ -201,6 +214,7 @@ export const CONFERENCE_LEAGUE: Competition = {
   standingsMode: "table",
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
+  region: "Internacional",
 };
 
 /**
@@ -214,6 +228,7 @@ export const SERIE_A: Competition = {
   name: "Serie A",
   standingsMode: "table",
   archivedSeasons: [2025],
+  region: "Italia",
 };
 
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
@@ -233,6 +248,7 @@ export const WORLD_CUP_2026: Competition = {
   name: "Mundial 2026",
   standingsMode: "groups",
   koStructure: WORLD_CUP_KO_STRUCTURE,
+  region: "Internacional",
 };
 
 /**
@@ -254,6 +270,21 @@ export const COMPETITIONS: Competition[] = [
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
   COMPETITIONS.map((c) => [c.slug, c]),
 );
+
+/**
+ * `COMPETITIONS` agrupadas por país para el desplegable "Competiciones" del
+ * nav (`Header.tsx`) — dentro de cada país, la liga siempre primero (así
+ * está ordenado `COMPETITIONS` ya: liga antes que sus copas). El orden de
+ * los países es fijo: España, Inglaterra, Italia, y por último Internacional
+ * (las UEFA, sin país propio).
+ */
+const REGION_ORDER: CompetitionRegion[] = ["España", "Inglaterra", "Italia", "Internacional"];
+
+export const COMPETITION_GROUPS: { region: CompetitionRegion; competitions: Competition[] }[] =
+  REGION_ORDER.map((region) => ({
+    region,
+    competitions: COMPETITIONS.filter((c) => c.region === region),
+  })).filter((g) => g.competitions.length > 0);
 
 /**
  * Equipos destacados para la sección de amistosos de pretemporada: en

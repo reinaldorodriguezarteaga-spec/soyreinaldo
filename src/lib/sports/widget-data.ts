@@ -231,10 +231,9 @@ export type CompetitionGroup = {
   competition: { slug: string; name: string };
   /** Partidos en juego ahora mismo. */
   live: HomeFixture[];
-  /** Partidos de "hoy" que no están en vivo (próximos en la ventana). */
-  today: HomeFixture[];
-  /** Últimos resultados finalizados, más reciente primero. */
-  recentResults: HomeFixture[];
+  /** Finalizados HOY (huso Europe/Madrid), más reciente primero. Los
+   * próximos por jugarse ya no van aquí — viven en la pestaña Calendario. */
+  finishedToday: HomeFixture[];
 };
 
 export type HomeWidgetData = {
@@ -269,48 +268,58 @@ function orderHomeForDisplay(fixtures: HomeFixture[]): HomeFixture[] {
 /**
  * Datos para el widget de la portada (PR6, reagrupado tras feedback del
  * dueño: con varias ligas a la vez, mezclarlas en una sola lista confundía
- * — ahora una `CompetitionGroup` por competición, cada una con su propio
- * en vivo/hoy/resultados). Pasa siempre por las funciones `get()`-wrapped/
- * `unstable_cache`-backed de `api-football.ts` — cero `fetch` crudo nuevo.
+ * — ahora una `CompetitionGroup` por competición). Solo en vivo o finalizado
+ * HOY (feedback posterior: con `getCompetitionFinishedFixtures(c, 4)` de
+ * antes, una competición de cadencia lenta —copas, fase de grupos— podía
+ * enseñar resultados de hace semanas; los próximos por jugarse, que antes
+ * también salían aquí, ahora viven solo en la pestaña Calendario, sin
+ * duplicar contenido entre las dos). Pasa siempre por las funciones
+ * `get()`-wrapped/`unstable_cache`-backed de `api-football.ts` — cero
+ * `fetch` crudo nuevo.
  */
 export async function getHomeWidgetData(
   competitions: Competition[],
 ): Promise<HomeWidgetData> {
-  const groups = await Promise.all(
-    competitions.map(async (c): Promise<CompetitionGroup> => {
-      const [windowRaw, resultsRaw] = await Promise.all([
+  const todayKey = madridDateKey(new Date());
+
+  const results = await Promise.all(
+    competitions.map(async (c) => {
+      const [windowRaw, finishedRaw] = await Promise.all([
         getCompetitionFixturesWindow(c),
-        getCompetitionFinishedFixtures(c, 4),
+        getCompetitionFinishedFixtures(c),
       ]);
 
       const windowTagged = tagCompetition(windowRaw, c);
       const windowWithEvents = await attachEvents(windowTagged);
-      const today = orderHomeForDisplay(
+      const windowFull = orderHomeForDisplay(
         windowWithEvents.map((f, i) => ({ ...f, competition: windowTagged[i].competition })),
-      ).filter((f) => !isFinal(f));
-      const live = today.filter(isLive);
+      );
+      const live = windowFull.filter(isLive);
 
-      const resultsTagged = tagCompetition(resultsRaw, c)
-        .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())
-        .slice(0, 4);
-      const resultsWithEvents = await attachEvents(resultsTagged);
-      const recentResults = resultsWithEvents.map((f, i) => ({
+      const finishedTodayRaw = tagCompetition(
+        finishedRaw.filter((f) => madridDateKey(new Date(f.fixture.date)) === todayKey),
+        c,
+      ).sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime());
+      const finishedTodayEvents = await attachEvents(finishedTodayRaw);
+      const finishedToday = finishedTodayEvents.map((f, i) => ({
         ...f,
-        competition: resultsTagged[i].competition,
+        competition: finishedTodayRaw[i].competition,
       }));
 
-      return { competition: { slug: c.slug, name: c.name }, live, today, recentResults };
+      const group: CompetitionGroup = { competition: { slug: c.slug, name: c.name }, live, finishedToday };
+      // Reutiliza `shouldPoll` sobre la ventana COMPLETA (incluye próximos a
+      // punto de empezar, aunque ya no se muestren aquí) — así el widget
+      // arranca a pollear antes de que un partido se ponga en vivo, no
+      // después de perdérselo.
+      return { group, poll: shouldPoll(windowFull) };
     }),
   );
 
   // Solo las competiciones con algo real que enseñar.
-  const nonEmpty = groups.filter(
-    (g) => g.live.length + g.today.length + g.recentResults.length > 0,
-  );
-  // Reutiliza `shouldPoll` (privada de este mismo archivo, sin tocarla).
-  const needsPolling = nonEmpty.some((g) => shouldPoll(g.today));
+  const nonEmpty = results.filter((r) => r.group.live.length + r.group.finishedToday.length > 0);
+  const needsPolling = nonEmpty.some((r) => r.poll);
 
-  return { groups: nonEmpty, needsPolling };
+  return { groups: nonEmpty.map((r) => r.group), needsPolling };
 }
 
 /* ---------------------------------------------------------------------- *

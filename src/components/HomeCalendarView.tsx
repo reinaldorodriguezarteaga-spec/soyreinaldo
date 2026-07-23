@@ -10,10 +10,11 @@ const MAX_DAYS = 7;
  * Contenido de la pestaña "Calendario" (envuelto por `HomeScoreboardTabs`).
  * Combina las próximas fixturas de las 9 competiciones + los amistosos de
  * los equipos destacados en una lista cronológica agrupada por día ("Hoy",
- * "Mañana", "Vie 15 ago"…), cada día en un desplegable cerrado por defecto
- * (mismo criterio que el widget en vivo: con varias competiciones activas un
- * solo día puede traer muchos partidos). Presentacional puro — sin fetch
- * propio, `HomeScoreboard` ya trae los datos.
+ * "Mañana", "Vie 15 ago"…). Cada día se muestra siempre expandido — al
+ * vivir en su propia pestaña (el usuario ya la abrió a propósito) no hace
+ * falta colapsarlo como al widget en vivo, que comparte pantalla con hasta
+ * 9 competiciones a la vez. Presentacional puro — sin fetch propio,
+ * `HomeScoreboard` ya trae los datos.
  */
 export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
   const visible = days.slice(0, MAX_DAYS);
@@ -21,16 +22,13 @@ export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
   return (
     <div className="space-y-3">
       {visible.map((day) => (
-        <details key={day.dateKey} className="panel" style={{ overflow: "hidden" }}>
-          <summary
+        <div key={day.dateKey} className="panel" style={{ overflow: "hidden" }}>
+          <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 10,
               padding: "14px 16px",
-              cursor: "pointer",
-              listStyle: "none",
-              userSelect: "none",
             }}
           >
             <b
@@ -48,7 +46,7 @@ export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
             <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
               {day.fixtures.length} partido{day.fixtures.length === 1 ? "" : "s"}
             </span>
-          </summary>
+          </div>
           <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
             <div className="hmrowlist">
               {day.fixtures.map((fx) => (
@@ -61,7 +59,7 @@ export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
               ))}
             </div>
           </div>
-        </details>
+        </div>
       ))}
     </div>
   );
