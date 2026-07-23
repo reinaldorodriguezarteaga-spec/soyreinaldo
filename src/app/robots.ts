@@ -8,13 +8,26 @@ import type { MetadataRoute } from "next";
  * son del Mundial. Un crawler siguiéndolos barre >1.700 páginas y dispara la
  * quota (fue la causa del pico del 5-jul). No aportan SEO, así que se bloquean.
  * El caché las abarata igualmente; esto es defensa en profundidad.
+ *
+ * `/liga/[slug]/partido/[id]` y `/liga/[slug]/equipo/[id]` son el mismo patrón
+ * (equivalente genérico del Mundial, migración de hoy, 9 competiciones × 2
+ * temporadas cada una = mucha más superficie que barrer) — mismo bloqueo,
+ * mismo motivo. Confirmado el 23-jul: un solo crawler generando cientos de
+ * 429 sostenidos en /liga/[slug]/partido/[id] durante más de una hora.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/mundial/partido/", "/mundial/equipo/", "/api/", "/admin/"],
+      disallow: [
+        "/mundial/partido/",
+        "/mundial/equipo/",
+        "/liga/*/partido/",
+        "/liga/*/equipo/",
+        "/api/",
+        "/admin/",
+      ],
     },
   };
 }
