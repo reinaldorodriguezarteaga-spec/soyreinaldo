@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import UserMenu from "./UserMenu";
-import { COMPETITIONS } from "@/lib/sports/competitions";
+import { COMPETITION_GROUPS } from "@/lib/sports/competitions";
 
 const PRODUCTOS = [
   {
@@ -157,10 +157,15 @@ export default function Header({
                 </button>
                 {openMenu === "competiciones" && (
                   <div className="navdrop__menu">
-                    {COMPETITIONS.map((c) => (
-                      <Link key={c.slug} href={`/liga/${c.slug}`} className="navdrop__item">
-                        {c.name}
-                      </Link>
+                    {COMPETITION_GROUPS.map((g) => (
+                      <div key={g.region}>
+                        <p className="navdrop__label">{g.region}</p>
+                        {g.competitions.map((c) => (
+                          <Link key={c.slug} href={`/liga/${c.slug}`} className="navdrop__item">
+                            {c.name}
+                          </Link>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -281,10 +286,15 @@ export default function Header({
                 </button>
                 {mAcc === "competiciones" && (
                   <div className="navacc__sub">
-                    {COMPETITIONS.map((c) => (
-                      <Link key={c.slug} href={`/liga/${c.slug}`}>
-                        {c.name}
-                      </Link>
+                    {COMPETITION_GROUPS.map((g) => (
+                      <div key={g.region}>
+                        <p className="navacc__sublabel">{g.region}</p>
+                        {g.competitions.map((c) => (
+                          <Link key={c.slug} href={`/liga/${c.slug}`}>
+                            {c.name}
+                          </Link>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 )}

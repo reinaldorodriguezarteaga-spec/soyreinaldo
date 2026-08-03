@@ -884,6 +884,15 @@ const POS_SHORT: Record<string, string> = {
   Attacker: "DEL",
 };
 
+const POS_ES: Record<string, string> = {
+  Goalkeeper: "Porteros",
+  Defender: "Defensas",
+  Midfielder: "Centrocampistas",
+  Attacker: "Delanteros",
+};
+
+const POS_ORDER = ["Goalkeeper", "Defender", "Midfielder", "Attacker"];
+
 function groupPlayersByTeam(
   players: AllPlayer[],
 ): { team: { name: string; logo: string }; players: AllPlayer[] }[] {
@@ -895,8 +904,29 @@ function groupPlayersByTeam(
     map.set(p.team.name, g);
   }
   return [...map.values()]
-    .map((g) => ({ ...g, players: g.players.sort((a, b) => a.name.localeCompare(b.name, "es")) }))
+    .map((g) => ({
+      ...g,
+      players: g.players.sort((a, b) => {
+        const po = POS_ORDER.indexOf(a.position ?? "") - POS_ORDER.indexOf(b.position ?? "");
+        if (po !== 0) return po;
+        return a.name.localeCompare(b.name, "es");
+      }),
+    }))
     .sort((a, b) => a.team.name.localeCompare(b.team.name, "es"));
+}
+
+/** Los jugadores de UN equipo, separados por posición (portero → defensa →
+ * medio → delantero, alfabético dentro de cada una) — `groupPlayersByTeam`
+ * ya los deja en ese orden, esto solo los parte en secciones para pintar un
+ * rótulo por posición. */
+function groupByPosition(players: AllPlayer[]): { pos: string; players: AllPlayer[] }[] {
+  const groups = POS_ORDER.map((pos) => ({
+    pos,
+    players: players.filter((p) => p.position === pos),
+  })).filter((g) => g.players.length > 0);
+  const others = players.filter((p) => !POS_ORDER.includes(p.position ?? ""));
+  if (others.length > 0) groups.push({ pos: "Otros", players: others });
+  return groups;
 }
 
 function PlayerRow({
@@ -1054,8 +1084,25 @@ export function JugadoresView({ competition }: { competition: Competition }) {
                   </span>
                 </summary>
                 <div style={{ borderTop: "1px solid var(--line)" }}>
-                  {g.players.map((p, i) => (
-                    <PlayerRow key={p.id} competition={competition} p={p} last={i === g.players.length - 1} />
+                  {groupByPosition(g.players).map((pg) => (
+                    <div key={pg.pos}>
+                      <p
+                        className="mono"
+                        style={{
+                          color: "var(--text-dim)",
+                          fontSize: "0.6rem",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          margin: 0,
+                          padding: "8px 14px 2px",
+                        }}
+                      >
+                        {POS_ES[pg.pos] ?? "Otros"}
+                      </p>
+                      {pg.players.map((p, i) => (
+                        <PlayerRow key={p.id} competition={competition} p={p} last={i === pg.players.length - 1} />
+                      ))}
+                    </div>
                   ))}
                 </div>
               </details>
