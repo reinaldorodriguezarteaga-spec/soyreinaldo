@@ -1385,19 +1385,51 @@ export type Coach = {
   photo: string | null;
 };
 
+type CoachCareer = {
+  team: { id: number } | null;
+  start: string | null;
+  end: string | null;
+};
+
 type CoachResponse = {
   id: number;
   name: string;
   nationality: string | null;
   age: number | null;
   photo: string | null;
+  career?: CoachCareer[];
 };
 
-/** Entrenador actual de una selección (endpoint `/coachs`). Caché 1 día. */
+/**
+ * Entrenador ACTUAL de un equipo (endpoint `/coachs`). Caché 1 día.
+ *
+ * ⚠️ `/coachs?team=X` devuelve TODOS los entrenadores ligados al club, incluidos
+ * los pasados — `response[0]` NO es necesariamente el actual (por eso salía Xavi
+ * en el Barça en vez de Flick). El actual es aquél cuya etapa en ESTE equipo
+ * sigue abierta (`career[].end === null`). Si ninguno tiene etapa abierta, se
+ * coge el de inicio más reciente en este equipo.
+ */
 export async function getTeamCoach(teamId: number): Promise<Coach | null> {
   const r = await get<CoachResponse>("/coachs", { team: teamId }, 86400);
-  const c = r.response[0];
-  if (!c) return null;
+  const coaches = r.response;
+  if (coaches.length === 0) return null;
+
+  const spellsForTeam = (c: CoachResponse) =>
+    (c.career ?? []).filter((e) => e.team?.id === teamId);
+  const latestStart = (c: CoachResponse) =>
+    spellsForTeam(c)
+      .map((e) => e.start ?? "")
+      .sort()
+      .pop() ?? "";
+
+  // 1º: entrenador con etapa aún abierta en este equipo (el actual).
+  // 2º (fallback): el de inicio más reciente. 3º: el primero que devuelva la API.
+  const current =
+    coaches.find((c) => spellsForTeam(c).some((e) => e.end == null)) ??
+    [...coaches].sort((a, b) => latestStart(b).localeCompare(latestStart(a)))[0] ??
+    coaches[0];
+
+  const c = current;
   return {
     id: c.id,
     name: c.name,
