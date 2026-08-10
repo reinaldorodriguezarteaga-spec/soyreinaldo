@@ -33,7 +33,7 @@ export default async function QuinielaLigaRankingPage() {
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
-            href="/quiniela-liga"
+            href="/quiniela-liga/partidos"
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
