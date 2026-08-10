@@ -1293,8 +1293,14 @@ export type PlayerSearchResult = {
 };
 
 /**
- * Busca jugadores en el Mundial por nombre (endpoint `/players?search=`).
+ * Busca jugadores de una competición por nombre (endpoint `/players?search=`).
  * Requiere ≥3 caracteres. Caché 1h — el índice de jugadores cambia poco.
+ *
+ * ⚠️ `/players?league&season&search` solo devuelve datos de temporadas ya
+ * jugadas: en PRETEMPORADA (p. ej. LaLiga season 2026 antes del 15-ago) está
+ * vacío y el buscador no encontraba a nadie. Por eso probamos la season actual
+ * y, si no hay resultados, caemos a las `archivedSeasons` (la anterior) —
+ * los jugadores son prácticamente los mismos.
  */
 export async function searchCompetitionPlayers(
   query: string,
@@ -1303,20 +1309,26 @@ export async function searchCompetitionPlayers(
 ): Promise<PlayerSearchResult[]> {
   const q = query.trim();
   if (q.length < 3) return [];
-  const r = await get<PlayerSeasonResponse>(
-    "/players",
-    { league: competition.leagueId, season: competition.season, search: q },
-    3600,
-  );
-  return r.response.slice(0, n).map((p) => {
-    const t = p.statistics?.[0]?.team;
-    return {
-      id: p.player.id,
-      name: p.player.name,
-      photo: p.player.photo ?? null,
-      team: t ? { name: t.name, logo: t.logo } : null,
-    };
-  });
+
+  const seasons = [competition.season, ...(competition.archivedSeasons ?? [])];
+  for (const season of seasons) {
+    const r = await get<PlayerSeasonResponse>(
+      "/players",
+      { league: competition.leagueId, season, search: q },
+      3600,
+    );
+    if (r.response.length === 0) continue;
+    return r.response.slice(0, n).map((p) => {
+      const t = p.statistics?.[0]?.team;
+      return {
+        id: p.player.id,
+        name: p.player.name,
+        photo: p.player.photo ?? null,
+        team: t ? { name: t.name, logo: t.logo } : null,
+      };
+    });
+  }
+  return [];
 }
 
 export function searchWorldCupPlayers(
