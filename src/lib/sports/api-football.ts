@@ -1155,46 +1155,52 @@ export async function getPlayerSeasonStats(
   id: number,
   competition: Competition = WORLD_CUP_2026,
 ): Promise<PlayerSeason | null> {
-  const r = await get<PlayerSeasonResponse>(
-    "/players",
-    { id, league: competition.leagueId, season: competition.season },
-    600,
-  );
-  const p = r.response[0];
-  const s = p?.statistics[0];
-  if (!p || !s) return null;
-  return {
-    id: p.player.id,
-    name: p.player.name,
-    photo: p.player.photo ?? null,
-    age: p.player.age ?? null,
-    nationality: p.player.nationality ?? null,
-    team: s.team ? { name: s.team.name, logo: s.team.logo } : null,
-    position: s.games?.position ?? null,
-    appearances: s.games?.appearences ?? null,
-    lineups: s.games?.lineups ?? null,
-    minutes: s.games?.minutes ?? null,
-    rating: numOrNull(s.games?.rating ?? null),
-    goals: s.goals?.total ?? 0,
-    assists: s.goals?.assists ?? 0,
-    shotsTotal: numOrNull(s.shots?.total),
-    shotsOn: numOrNull(s.shots?.on),
-    passesTotal: numOrNull(s.passes?.total),
-    passesKey: numOrNull(s.passes?.key),
-    passesAcc: numOrNull(s.passes?.accuracy),
-    dribblesAttempts: numOrNull(s.dribbles?.attempts),
-    dribblesSuccess: numOrNull(s.dribbles?.success),
-    duelsTotal: numOrNull(s.duels?.total),
-    duelsWon: numOrNull(s.duels?.won),
-    tackles: numOrNull(s.tackles?.total),
-    interceptions: numOrNull(s.tackles?.interceptions),
-    foulsDrawn: numOrNull(s.fouls?.drawn),
-    foulsCommitted: numOrNull(s.fouls?.committed),
-    yellow: s.cards?.yellow ?? 0,
-    red: (s.cards?.red ?? 0) + (s.cards?.yellowred ?? 0),
-    penaltyScored: numOrNull(s.penalty?.scored),
-    penaltyMissed: numOrNull(s.penalty?.missed),
-  };
+  // Igual que el buscador: en pretemporada la season actual está vacía →
+  // caemos a las archivadas para que la ficha muestre datos igualmente.
+  const seasons = [competition.season, ...(competition.archivedSeasons ?? [])];
+  for (const season of seasons) {
+    const r = await get<PlayerSeasonResponse>(
+      "/players",
+      { id, league: competition.leagueId, season },
+      600,
+    );
+    const p = r.response[0];
+    const s = p?.statistics[0];
+    if (!p || !s) continue;
+    return {
+      id: p.player.id,
+      name: p.player.name,
+      photo: p.player.photo ?? null,
+      age: p.player.age ?? null,
+      nationality: p.player.nationality ?? null,
+      team: s.team ? { name: s.team.name, logo: s.team.logo } : null,
+      position: s.games?.position ?? null,
+      appearances: s.games?.appearences ?? null,
+      lineups: s.games?.lineups ?? null,
+      minutes: s.games?.minutes ?? null,
+      rating: numOrNull(s.games?.rating ?? null),
+      goals: s.goals?.total ?? 0,
+      assists: s.goals?.assists ?? 0,
+      shotsTotal: numOrNull(s.shots?.total),
+      shotsOn: numOrNull(s.shots?.on),
+      passesTotal: numOrNull(s.passes?.total),
+      passesKey: numOrNull(s.passes?.key),
+      passesAcc: numOrNull(s.passes?.accuracy),
+      dribblesAttempts: numOrNull(s.dribbles?.attempts),
+      dribblesSuccess: numOrNull(s.dribbles?.success),
+      duelsTotal: numOrNull(s.duels?.total),
+      duelsWon: numOrNull(s.duels?.won),
+      tackles: numOrNull(s.tackles?.total),
+      interceptions: numOrNull(s.tackles?.interceptions),
+      foulsDrawn: numOrNull(s.fouls?.drawn),
+      foulsCommitted: numOrNull(s.fouls?.committed),
+      yellow: s.cards?.yellow ?? 0,
+      red: (s.cards?.red ?? 0) + (s.cards?.yellowred ?? 0),
+      penaltyScored: numOrNull(s.penalty?.scored),
+      penaltyMissed: numOrNull(s.penalty?.missed),
+    };
+  }
+  return null;
 }
 
 /** Palmarés, fichajes y lesiones/sanciones de un jugador (ficha ampliada). */
