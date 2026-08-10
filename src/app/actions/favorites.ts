@@ -14,6 +14,9 @@ export type FavoriteState = {
 
 type CompetitionInput = { slug: string; name: string };
 type TeamInput = { id: number; name: string; homeCompetitionSlug: string };
+type PlayerInput = { id: number; name: string; competitionSlug: string };
+
+export type FavoriteKind = "competition" | "team" | "player";
 
 /**
  * Alta/baja de favorito (toggle simple): si ya existe la fila la borra, si no
@@ -22,7 +25,7 @@ type TeamInput = { id: number; name: string; homeCompetitionSlug: string };
  * no-op en Postgres.
  */
 async function toggleFavorite(
-  kind: "competition" | "team",
+  kind: FavoriteKind,
   refId: string,
   label: string,
   linkPath: string,
@@ -99,9 +102,20 @@ export async function toggleTeamFavorite(team: TeamInput): Promise<FavoriteState
   );
 }
 
+export async function togglePlayerFavorite(
+  player: PlayerInput,
+): Promise<FavoriteState> {
+  return toggleFavorite(
+    "player",
+    String(player.id),
+    player.name,
+    `/liga/${player.competitionSlug}/jugador/${player.id}`,
+  );
+}
+
 /** Para pintar la estrella llena/vacía en el primer render, sin fetch en el cliente. */
 export async function isFavorited(
-  kind: "competition" | "team",
+  kind: FavoriteKind,
   refId: string,
 ): Promise<boolean> {
   const supabase = await createClient();

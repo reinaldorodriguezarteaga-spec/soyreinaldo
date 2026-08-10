@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   toggleCompetitionFavorite,
   toggleTeamFavorite,
+  togglePlayerFavorite,
   type FavoriteState,
 } from "@/app/actions/favorites";
 
@@ -15,26 +16,43 @@ type TeamTarget = {
   name: string;
   homeCompetitionSlug: string;
 };
+type PlayerTarget = {
+  kind: "player";
+  id: number;
+  name: string;
+  competitionSlug: string;
+};
 
-/** Botón de favorito (★/☆) para una competición o un equipo. */
+/** Botón de favorito (★/☆) para una competición, un equipo o un jugador. */
 export default function FavoriteStar({
   target,
   initialFavorited,
 }: {
-  target: CompetitionTarget | TeamTarget;
+  target: CompetitionTarget | TeamTarget | PlayerTarget;
   initialFavorited: boolean;
 }) {
   const router = useRouter();
 
   async function action(_prev: FavoriteState): Promise<FavoriteState> {
-    const result =
-      target.kind === "competition"
-        ? await toggleCompetitionFavorite({ slug: target.slug, name: target.name })
-        : await toggleTeamFavorite({
-            id: target.id,
-            name: target.name,
-            homeCompetitionSlug: target.homeCompetitionSlug,
-          });
+    let result: FavoriteState;
+    if (target.kind === "competition") {
+      result = await toggleCompetitionFavorite({
+        slug: target.slug,
+        name: target.name,
+      });
+    } else if (target.kind === "team") {
+      result = await toggleTeamFavorite({
+        id: target.id,
+        name: target.name,
+        homeCompetitionSlug: target.homeCompetitionSlug,
+      });
+    } else {
+      result = await togglePlayerFavorite({
+        id: target.id,
+        name: target.name,
+        competitionSlug: target.competitionSlug,
+      });
+    }
 
     // Sin sesión: mandamos a iniciar sesión en vez de fallar en silencio.
     if (result.needsLogin) {

@@ -45,7 +45,7 @@ function Caret() {
 }
 
 export type FavoriteNavItem = {
-  kind: "competition" | "team";
+  kind: "competition" | "team" | "player";
   label: string;
   linkPath: string;
 };
@@ -136,7 +136,13 @@ export default function Header({
                           className="navdrop__item"
                         >
                           {f.label}
-                          <span className="d">{f.kind === "competition" ? "Liga" : "Equipo"}</span>
+                          <span className="d">
+                            {f.kind === "competition"
+                              ? "Liga"
+                              : f.kind === "team"
+                                ? "Equipo"
+                                : "Jugador"}
+                          </span>
                         </Link>
                       ))}
                     </div>

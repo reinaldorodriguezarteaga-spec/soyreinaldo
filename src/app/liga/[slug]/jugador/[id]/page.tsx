@@ -10,6 +10,8 @@ import {
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import PlayerExtras from "@/components/PlayerExtras";
+import FavoriteStar from "@/components/FavoriteStar";
+import { isFavorited } from "@/app/actions/favorites";
 
 const POS_ES: Record<string, string> = {
   Goalkeeper: "Portero",
@@ -50,11 +52,12 @@ export default async function LigaJugadorPage({
   const pid = Number(id);
   if (!Number.isFinite(pid)) notFound();
 
-  const [p, extras] = await Promise.all([
+  const [p, extras, favorited] = await Promise.all([
     getPlayerSeasonStats(pid, competition).catch(() => null),
     getPlayerExtras(pid).catch(
       () => ({ trophies: [], transfers: [], sidelined: [] }) as PlayerExtrasData,
     ),
+    isFavorited("player", id),
   ]);
 
   if (!p && extras.trophies.length === 0) notFound();
@@ -82,9 +85,20 @@ export default async function LigaJugadorPage({
               />
             )}
             <div>
-              <h1 className="phero__title" style={{ fontSize: "clamp(1.8rem,5vw,3rem)", margin: 0 }}>
-                {p?.name ?? "Jugador"}
-              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <h1 className="phero__title" style={{ fontSize: "clamp(1.8rem,5vw,3rem)", margin: 0 }}>
+                  {p?.name ?? "Jugador"}
+                </h1>
+                <FavoriteStar
+                  target={{
+                    kind: "player",
+                    id: pid,
+                    name: p?.name ?? "Jugador",
+                    competitionSlug: competition.slug,
+                  }}
+                  initialFavorited={favorited}
+                />
+              </div>
               <p className="phero__lede" style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 {p?.team && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
