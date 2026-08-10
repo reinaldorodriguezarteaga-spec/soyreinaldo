@@ -1422,11 +1422,18 @@ export async function getTeamCoach(teamId: number): Promise<Coach | null> {
       .sort()
       .pop() ?? "";
 
-  // 1º: entrenador con etapa aún abierta en este equipo (el actual).
-  // 2º (fallback): el de inicio más reciente. 3º: el primero que devuelva la API.
+  // ⚠️ API-Football a veces deja VARIAS etapas abiertas (end==null) a la vez
+  // para el mismo club — verificado en el Barça: Xavi (inicio 2021) sigue
+  // "abierta" ADEMÁS de Flick (2024) y R. Sánchez (2023). Por eso coger "el
+  // primero con etapa abierta" devolvía a Xavi. El actual es, entre los que
+  // tienen etapa abierta (o todos si ninguno la tiene), el de INICIO más
+  // reciente en este equipo.
+  const withOpen = coaches.filter((c) =>
+    spellsForTeam(c).some((e) => e.end == null),
+  );
+  const pool = withOpen.length > 0 ? withOpen : coaches;
   const current =
-    coaches.find((c) => spellsForTeam(c).some((e) => e.end == null)) ??
-    [...coaches].sort((a, b) => latestStart(b).localeCompare(latestStart(a)))[0] ??
+    [...pool].sort((a, b) => latestStart(b).localeCompare(latestStart(a)))[0] ??
     coaches[0];
 
   const c = current;
