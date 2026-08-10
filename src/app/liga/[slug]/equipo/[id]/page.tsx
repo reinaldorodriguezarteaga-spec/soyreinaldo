@@ -19,6 +19,7 @@ import FavoriteStar from "@/components/FavoriteStar";
 import TeamStats from "./team-stats";
 import TeamTabs from "./team-tabs";
 import TeamFixturesList from "./fixtures-list";
+import TeamOverview from "./team-overview";
 
 export async function generateMetadata({
   params,
@@ -175,6 +176,7 @@ export default async function LigaEquipoPage({
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap space-y-8">
+          <TeamOverview fixtures={allFixtures} teamId={teamId} slug={competition.slug} />
           {stats && <TeamStats stats={stats} />}
 
           <TeamTabs
