@@ -18,6 +18,7 @@ import { isFavorited } from "@/app/actions/favorites";
 import FavoriteStar from "@/components/FavoriteStar";
 import TeamStats from "./team-stats";
 import TeamTabs from "./team-tabs";
+import TeamFixturesList from "./fixtures-list";
 
 export async function generateMetadata({
   params,
@@ -69,7 +70,7 @@ export default async function LigaEquipoPage({
   if (!Number.isFinite(teamId)) notFound();
 
   const [{ team, recent, upcoming }, stats, squad, coach] = await Promise.all([
-    getTeamFixtures(teamId, { last: 20, next: 5 }),
+    getTeamFixtures(teamId, { last: 40, next: 40 }),
     getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(
       () => null,
     ),
@@ -81,12 +82,17 @@ export default async function LigaEquipoPage({
 
   const favorited = await isFavorited("team", String(teamId));
 
-  const live = recent.filter(isLive);
-  const played = recent
-    .filter((f) => isFinal(f))
+  // Historial + calendario en una sola lista cronológica ascendente (FotMob).
+  const seenIds = new Set<number>();
+  const allFixtures = [...recent, ...upcoming]
+    .filter((f) => {
+      if (seenIds.has(f.fixture.id)) return false;
+      seenIds.add(f.fixture.id);
+      return true;
+    })
     .sort(
       (a, b) =>
-        new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
+        new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
     );
 
   const base = `/liga/${competition.slug}`;
@@ -174,67 +180,7 @@ export default async function LigaEquipoPage({
           <TeamTabs
             hasSquad={squad.length > 0}
             jugadores={<SquadList competition={competition} squad={squad} />}
-            partidos={
-              <div className="space-y-8">
-          {live.length > 0 && (
-            <div>
-              <div className="shead">
-                <h2>En juego</h2>
-                <span className="sh-note">
-                  <span className="livepulse" style={{ marginRight: 7 }} />
-                  ahora mismo
-                </span>
-              </div>
-              <div className="grid2">
-                {live.map((fx) => (
-                  <TeamMatchCard key={fx.fixture.id} competition={competition} fx={fx} teamId={teamId} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {upcoming.length > 0 && (
-            <div>
-              <div className="shead">
-                <h2>Próximos</h2>
-              </div>
-              <div className="grid2">
-                {upcoming.map((fx) => (
-                  <TeamMatchCard key={fx.fixture.id} competition={competition} fx={fx} teamId={teamId} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <div className="shead">
-              <h2>Resultados</h2>
-              {played.length > 0 && (
-                <span className="sh-note">últimos partidos</span>
-              )}
-            </div>
-            {played.length > 0 ? (
-              <div className="grid2">
-                {played.map((fx) => (
-                  <TeamMatchCard key={fx.fixture.id} competition={competition} fx={fx} teamId={teamId} />
-                ))}
-              </div>
-            ) : (
-              <div
-                className="panel"
-                style={{
-                  padding: 28,
-                  textAlign: "center",
-                  borderStyle: "dashed",
-                  color: "var(--text-dim)",
-                }}
-              >
-                Todavía no hay partidos jugados de este equipo.
-              </div>
-            )}
-          </div>
-              </div>
-            }
+            partidos={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}
           />
         </div>
       </section>
