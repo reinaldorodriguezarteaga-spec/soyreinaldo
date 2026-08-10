@@ -115,6 +115,50 @@ export default async function Home() {
           hero, solo cuando hay algo que enseñar en alguna de las dos. */}
       <HomeScoreboard />
 
+      {/* QUINIELA — promo del juego gratuito (la joya nueva). */}
+      <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
+        <div className="wrap">
+          <Link
+            href="/quiniela-liga"
+            className="panel"
+            style={{
+              display: "block",
+              padding: "clamp(24px, 4vw, 36px)",
+              textDecoration: "none",
+              color: "inherit",
+              borderColor: "var(--accent)",
+              background:
+                "linear-gradient(135deg, color-mix(in oklch, var(--accent) 14%, transparent), transparent 60%)",
+            }}
+          >
+            <p className="eyebrow" style={{ color: "var(--accent)" }}>
+              🏆 Nuevo · Gratis
+            </p>
+            <h2
+              className="feat__title"
+              style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
+            >
+              La Quiniela de LaLiga.
+            </h2>
+            <p
+              style={{
+                color: "var(--text-dim)",
+                maxWidth: 560,
+                marginTop: 10,
+                lineHeight: 1.5,
+              }}
+            >
+              Pronostica cada jornada, marcador exacto <b style={{ color: "var(--text)" }}>3 pts</b>,
+              y compite en la clasificación pública. Sin código: entras de un
+              toque y a jugar.
+            </p>
+            <span className="btn btn--accent" style={{ marginTop: 18 }}>
+              Jugar gratis <span className="arr">→</span>
+            </span>
+          </Link>
+        </div>
+      </section>
+
       {/* MARQUEE */}
       <div className="marquee" aria-hidden>
         <div className="marquee__track">
