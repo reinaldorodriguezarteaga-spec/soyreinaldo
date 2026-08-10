@@ -70,3 +70,51 @@ export async function joinQuinielaLiga(): Promise<{ ok: boolean }> {
   });
   return { ok: !error };
 }
+
+export type PicksResult =
+  | { ok: true }
+  | { ok: false; reason: "auth" | "locked" | "error"; message: string };
+
+/**
+ * Guarda las selecciones especiales de temporada (campeón, pichichi, hasta 3
+ * descendidos). La RLS bloquea la escritura una vez arrancada LaLiga. De paso
+ * da de alta al usuario en la liga pública.
+ */
+export async function saveSeasonPicks(
+  championTeam: number | null,
+  pichichiName: string,
+  relegatedTeams: number[],
+): Promise<PicksResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, reason: "auth", message: "Inicia sesión" };
+
+  const rel = [
+    ...new Set(relegatedTeams.filter((n) => Number.isInteger(n) && n > 0)),
+  ].slice(0, 3);
+
+  await supabase.rpc("join_public_league", { p_league_id: PUBLIC_LEAGUE_ID });
+
+  const { error } = await supabase.from("lq_season_picks").upsert({
+    user_id: user.id,
+    competition: "laliga",
+    season: 2026,
+    champion_team: championTeam,
+    pichichi_name: pichichiName.trim() || null,
+    relegated_teams: rel,
+  });
+
+  if (error) {
+    if (/row-level security|policy|violates/i.test(error.message)) {
+      return {
+        ok: false,
+        reason: "locked",
+        message: "Los picks ya están cerrados (LaLiga arrancó)",
+      };
+    }
+    return { ok: false, reason: "error", message: "No se pudo guardar" };
+  }
+  return { ok: true };
+}
