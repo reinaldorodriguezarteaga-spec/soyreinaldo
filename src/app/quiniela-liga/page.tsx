@@ -176,6 +176,12 @@ export default async function QuinielaLigaPage({
         <div className="wrap">
           <JornadaTabs active={jornada} />
 
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Link href="/quiniela-liga/ranking" className="chip-pill chip-pill--accent">
+              🏆 Clasificación <span>→</span>
+            </Link>
+          </div>
+
           <p className="hint" style={{ marginTop: 16 }}>
             Se guarda solo al completar el marcador. Cada partido se cierra 30
             minutos antes del inicio. <b>Marcador exacto 3 pts</b>, acertar el

@@ -212,6 +212,59 @@ export async function GET(request: Request) {
     // no-op: el backfill es best-effort
   }
 
+  // 0.5 QUINIELA DE CLUBES (lq_matches): ingesta en vivo. El id de lq_matches
+  //     ES el fixture id de API-Football (se sembró así) → sin backfill ni casar
+  //     por hora, se piden directos por id. Best-effort e independiente del
+  //     Mundial (que abajo ya casi siempre está vacío: terminó).
+  let lqPolled = 0;
+  let lqUpdated = 0;
+  let lqFinished = 0;
+  try {
+    const { data: lqPending } = await supabase.rpc("lq_matches_pending_ingest");
+    const lqIds = ((lqPending ?? []) as Array<{ id: number }>).map((r) => r.id);
+    if (lqIds.length > 0) {
+      lqPolled = lqIds.length;
+      const lqNow = new Date().toISOString();
+      const lqRes = await fetch(
+        `https://v3.football.api-sports.io/fixtures?ids=${lqIds.join("-")}`,
+        { headers: { "x-apisports-key": apiKey }, cache: "no-store" },
+      );
+      const rem =
+        lqRes.headers.get("x-ratelimit-requests-remaining") ??
+        lqRes.headers.get("X-RateLimit-Remaining") ??
+        "?";
+      console.log(
+        `[apif] LQ /fixtures?ids n=${lqIds.length} status=${lqRes.status} remaining=${rem}`,
+      );
+      if (lqRes.ok) {
+        const lqJson = (await lqRes.json()) as { response: ApiFixture[] };
+        for (const fx of lqJson.response) {
+          const st = fx.fixture.status.short;
+          const isFinal = FINAL_STATUSES.has(st);
+          const isLive = LIVE_STATUSES.has(st);
+          const upd: Record<string, unknown> = {
+            status: st,
+            live_minute: isLive ? fx.fixture.status.elapsed ?? null : null,
+            last_polled_at: lqNow,
+          };
+          if (fx.goals.home != null) upd.score_home = fx.goals.home;
+          if (fx.goals.away != null) upd.score_away = fx.goals.away;
+          if (isFinal) upd.finished = true;
+          const { error: e } = await supabase
+            .from("lq_matches")
+            .update(upd)
+            .eq("id", fx.fixture.id);
+          if (!e) {
+            lqUpdated += 1;
+            if (isFinal) lqFinished += 1;
+          }
+        }
+      }
+    }
+  } catch {
+    // best-effort: no rompe la ingesta del Mundial
+  }
+
   // 1. Partidos candidatos a ingest (ya con los ids recién rellenados)
   const { data: pendingRows, error: rpcError } = await supabase.rpc(
     "matches_pending_ingest",
@@ -235,7 +288,8 @@ export async function GET(request: Request) {
       updated: 0,
       finished: 0,
       backfilled,
-      note: "No matches in ingest window",
+      lq: { polled: lqPolled, updated: lqUpdated, finished: lqFinished },
+      note: "No Mundial matches in ingest window",
     });
   }
 
@@ -307,6 +361,7 @@ export async function GET(request: Request) {
     updated,
     finished: newlyFinished,
     backfilled,
+    lq: { polled: lqPolled, updated: lqUpdated, finished: lqFinished },
     errors: errors.length > 0 ? errors : undefined,
   });
 }
