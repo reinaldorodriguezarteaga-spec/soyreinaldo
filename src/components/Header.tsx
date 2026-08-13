@@ -54,10 +54,12 @@ export default function Header({
   initialUser,
   hasLiveMatch = false,
   favorites = [],
+  isAdmin = false,
 }: {
   initialUser: User | null;
   hasLiveMatch?: boolean;
   favorites?: FavoriteNavItem[];
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -227,7 +229,7 @@ export default function Header({
                 </svg>
               </Link>
               {initialUser ? (
-                <UserMenu initialUser={initialUser} />
+                <UserMenu initialUser={initialUser} isAdmin={isAdmin} />
               ) : (
                 <Link href="/login" className="btn btn--ghost hidden sm:inline-flex">
                   Iniciar sesión

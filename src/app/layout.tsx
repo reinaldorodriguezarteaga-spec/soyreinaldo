@@ -60,6 +60,18 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Para el atajo "Admin" en el menú de usuario — evita que quien no sea
+  // admin vea enlaces a páginas que igualmente le rechazaría /admin/layout.tsx.
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+    isAdmin = !!profile?.is_admin;
+  }
+
   // ¿Hay algún partido EN JUEGO en alguna competición activa? (para el
   // indicador del header). Cada ventana va cacheada (unstable_cache) → coste
   // ~0 aunque se consulten varias competiciones en paralelo.
@@ -94,7 +106,12 @@ export default async function RootLayout({
       className={`${saira.variable} ${archivo.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Header initialUser={user} hasLiveMatch={hasLiveMatch} favorites={favorites} />
+        <Header
+          initialUser={user}
+          hasLiveMatch={hasLiveMatch}
+          favorites={favorites}
+          isAdmin={isAdmin}
+        />
         <Gestures />
         <BackButton />
         {children}
