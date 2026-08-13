@@ -118,3 +118,49 @@ export async function saveSeasonPicks(
   }
   return { ok: true };
 }
+
+/**
+ * Guarda los picks especiales "de mitad de temporada" (Zamora, máximo
+ * asistidor, MVP, equipo menos goleado, equipo más goleador). A diferencia
+ * de `saveSeasonPicks`, la RLS de `lq_midseason_picks` los bloquea al
+ * arrancar la jornada 6, no la 1 — dan más margen porque se deciden mejor
+ * tras ver algo de forma.
+ */
+export async function saveMidseasonPicks(
+  bestGk: string,
+  bestAssist: string,
+  bestDefenseTeam: number | null,
+  bestAttackTeam: number | null,
+  mvp: string,
+): Promise<PicksResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, reason: "auth", message: "Inicia sesión" };
+
+  await supabase.rpc("join_public_league", { p_league_id: PUBLIC_LEAGUE_ID });
+
+  const { error } = await supabase.from("lq_midseason_picks").upsert({
+    user_id: user.id,
+    competition: "laliga",
+    season: 2026,
+    best_gk_name: bestGk.trim() || null,
+    best_assist_name: bestAssist.trim() || null,
+    best_defense_team: bestDefenseTeam,
+    best_attack_team: bestAttackTeam,
+    mvp_name: mvp.trim() || null,
+  });
+
+  if (error) {
+    if (/row-level security|policy|violates/i.test(error.message)) {
+      return {
+        ok: false,
+        reason: "locked",
+        message: "Estos picks ya están cerrados (empezó la jornada 6)",
+      };
+    }
+    return { ok: false, reason: "error", message: "No se pudo guardar" };
+  }
+  return { ok: true };
+}

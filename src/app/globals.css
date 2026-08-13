@@ -1274,8 +1274,13 @@ select.field { appearance: none; }
   .match { gap: 8px; padding: 16px; }
   .team .tn { font-size: 0.95rem; }
   .score input { width: 40px; height: 40px; font-size: 1.2rem; }
-  .standings .hidem { display: none; }
+  /* Genérico (no solo .standings): oculta columnas secundarias de tablas
+     en móvil para que la métrica que importa (puntos, posición...) no se
+     salga de pantalla y obligue a scroll horizontal. */
+  .hidem { display: none; }
   .field-row { grid-template-columns: 1fr; }
+  .board th, .board td { padding: 11px 10px; }
+  .board .pts { padding-right: 4px; }
 
   /* Hero compacto: en pantallas de móvil el objetivo es llegar cuanto antes
      al marcador/calendario, no llenar el primer scroll con la presentación

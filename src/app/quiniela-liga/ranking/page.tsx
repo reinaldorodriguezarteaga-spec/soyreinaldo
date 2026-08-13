@@ -76,7 +76,7 @@ export default async function QuinielaLigaRankingPage() {
                     <th className="pos">#</th>
                     <th>Jugador</th>
                     <th style={{ textAlign: "right" }}>Exactos</th>
-                    <th style={{ textAlign: "right" }}>Aciertos</th>
+                    <th className="hidem" style={{ textAlign: "right" }}>Aciertos</th>
                     <th className="pts">Pts</th>
                   </tr>
                 </thead>
@@ -86,7 +86,7 @@ export default async function QuinielaLigaRankingPage() {
                       <td className={`pos${i < 3 ? " top" : ""}`}>{i + 1}</td>
                       <td className="who">{r.display_name}</td>
                       <td style={{ textAlign: "right" }}>{r.exact_count}</td>
-                      <td style={{ textAlign: "right" }}>{r.partial_count}</td>
+                      <td className="hidem" style={{ textAlign: "right" }}>{r.partial_count}</td>
                       <td className="pts">{r.total_points}</td>
                     </tr>
                   ))}
