@@ -135,8 +135,24 @@ async function get<T>(
   // Caché REAL por URL. La clave incluye la URL completa (endpoint + params) y
   // el TTL = revalidateSeconds de cada llamada. unstable_cache SÍ cachea aunque
   // la ruta sea dinámica (a diferencia de fetch+next.revalidate en Next 16).
+  //
+  // El try/catch vive DENTRO de la función cacheada a propósito: unstable_cache
+  // nunca cachea un throw, así que si el catch estuviera fuera, cada visita
+  // durante una caída de la API (cuota, rate-limit, red) relanzaba la llamada
+  // de cero — con muchos usuarios a la vez eso amplifica un problema de cuota
+  // puntual en una tormenta de reintentos que no se cura sola (incidentes
+  // 5-jul y 13-ago: la API tardaba horas en "recuperarse" aunque la cuota ya
+  // hubiera reseteado, porque el tráfico normal la volvía a agotar al
+  // instante). Cacheando el fallo con el MISMO TTL que un éxito, como mucho
+  // se reintenta cada `revalidateSeconds` — igual que si hubiera ido bien.
   const cached = unstable_cache(
-    () => rawGet<T>(urlStr, path, paramStr),
+    async () => {
+      try {
+        return await rawGet<T>(urlStr, path, paramStr);
+      } catch {
+        return { response: [] as T[], errors: { failed: true } };
+      }
+    },
     ["apif", urlStr],
     { revalidate: revalidateSeconds },
   );
@@ -144,7 +160,7 @@ async function get<T>(
   try {
     return await cached();
   } catch {
-    // Red caída / HTTP != 2xx / API con error (quota) → vacío sin cachear.
+    // Red de respaldo por si unstable_cache en sí falla (infra, no la API).
     // Lo maneja el fallback a BD de /mundial (wc-fallback.ts).
     return { response: [], errors: { failed: true } };
   }
