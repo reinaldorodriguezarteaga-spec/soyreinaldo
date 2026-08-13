@@ -49,7 +49,13 @@ export default async function AdminLayout({
               href="/admin/resultado-final"
               className="hover:text-white"
             >
-              Final
+              Final Mundial
+            </Link>
+            <Link
+              href="/admin/quiniela-liga"
+              className="hover:text-white"
+            >
+              Final Quiniela LaLiga
             </Link>
             <Link href="/admin/seguidores" className="hover:text-white">
               Redes
