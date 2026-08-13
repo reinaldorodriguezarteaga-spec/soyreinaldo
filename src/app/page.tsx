@@ -118,22 +118,8 @@ export default async function Home() {
       {/* QUINIELA — promo del juego gratuito (la joya nueva). */}
       <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
         <div className="wrap">
-          <Link
-            href="/quiniela-liga"
-            className="panel"
-            style={{
-              display: "block",
-              padding: "clamp(24px, 4vw, 36px)",
-              textDecoration: "none",
-              color: "inherit",
-              borderColor: "var(--accent)",
-              background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--accent) 14%, transparent), transparent 60%)",
-            }}
-          >
-            <p className="eyebrow" style={{ color: "var(--accent)" }}>
-              🏆 Nuevo · Gratis
-            </p>
+          <Link href="/quiniela-liga" className="panel promopanel">
+            <p className="eyebrow">🏆 Nuevo · Gratis</p>
             <h2
               className="feat__title"
               style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
@@ -183,29 +169,9 @@ export default async function Home() {
               {standingsSnapshot.map(({ competition, standings }) =>
                 hasStarted(standings) ? (
                   <div key={competition.slug}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontFamily: "var(--font-display-stack)",
-                          fontWeight: 800,
-                          fontSize: "1.1rem",
-                        }}
-                      >
-                        {competition.name}
-                      </h3>
-                      <Link
-                        href={`/liga/${competition.slug}?v=tabla`}
-                        className="match__when"
-                        style={{ color: "var(--accent)", textDecoration: "none" }}
-                      >
+                    <div className="subhead">
+                      <h3>{competition.name}</h3>
+                      <Link href={`/liga/${competition.slug}?v=tabla`}>
                         Ver tabla completa →
                       </Link>
                     </div>
@@ -230,7 +196,7 @@ export default async function Home() {
               <h2 className="feat__title">Qué hacemos.</h2>
             </div>
           </div>
-          <div className="cards" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+          <div className="cards cards--2">
             <Link href="/redes" className="card">
               <div>
                 <p className="card__tag">@SoyReinaldoR</p>
