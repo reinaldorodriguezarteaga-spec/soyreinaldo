@@ -6,13 +6,24 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/login/actions";
 import type { User } from "@supabase/supabase-js";
 
+const ADMIN_LINKS = [
+  { href: "/admin/ligas", label: "Ligas" },
+  { href: "/admin/partidos", label: "Resultados de partidos" },
+  { href: "/admin/resultado-final", label: "Final Mundial" },
+  { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
+  { href: "/admin/seguidores", label: "Redes (seguidores)" },
+];
+
 export default function UserMenu({
   initialUser,
+  isAdmin = false,
 }: {
   initialUser: User | null;
+  isAdmin?: boolean;
 }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [open, setOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,11 +36,18 @@ export default function UserMenu({
     return () => subscription.unsubscribe();
   }, []);
 
+  // Cierra el menú entero y, con él, el acordeón "Admin" — así no queda
+  // desplegado la próxima vez que se abra.
+  function closeMenu() {
+    setOpen(false);
+    setAdminOpen(false);
+  }
+
   useEffect(() => {
     if (!open) return;
     function handleClick(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
+        closeMenu();
       }
     }
     document.addEventListener("mousedown", handleClick);
@@ -92,11 +110,54 @@ export default function UserMenu({
           <div className="my-1 h-px bg-zinc-900" />
           <Link
             href="/perfil"
-            onClick={() => setOpen(false)}
+            onClick={closeMenu}
             className="block rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900"
           >
             Perfil
           </Link>
+
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => setAdminOpen((o) => !o)}
+                aria-expanded={adminOpen}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900"
+              >
+                <span>Admin</span>
+                <svg
+                  className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${
+                    adminOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {adminOpen && (
+                <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
+                  {ADMIN_LINKS.map((a) => (
+                    <Link
+                      key={a.href}
+                      href={a.href}
+                      onClick={closeMenu}
+                      className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+                    >
+                      {a.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           <div className="my-1 h-px bg-zinc-900" />
           <form action={signOut}>
             <button

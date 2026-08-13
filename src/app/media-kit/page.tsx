@@ -6,6 +6,7 @@ import {
   TikTokLogo,
   YouTubeLogo,
 } from "@/components/social-logos";
+import { getSocialStats } from "@/lib/social-stats";
 
 export const metadata = {
   title: "Media Kit | Soy Reinaldo",
@@ -31,48 +32,49 @@ type MetricKey =
 
 type Metric = { key: MetricKey; value: string; label: string };
 
-const platforms = [
+/**
+ * Metadatos fijos de cada plataforma (nombre, handle, logo, etiqueta). El
+ * número de seguidores NO va aquí — sale de `getSocialStats()` (misma
+ * fuente que portada/redes/contacto y el admin en /admin/seguidores) para
+ * no tener que tocar código cada vez que cambian las cifras.
+ */
+const PLATFORM_META = [
   {
+    key: "ig_followers",
     name: "Instagram",
     handle: "@SoyReinaldoR",
-    metric: "54.700",
     label: "Seguidores",
     Logo: InstagramLogo,
   },
   {
+    key: "fb_followers",
     name: "Facebook",
     handle: "Fútbol con Reinaldo",
-    metric: "43.000",
     label: "Seguidores",
     Logo: FacebookLogo,
   },
   {
+    key: "tt_followers",
     name: "TikTok",
     handle: "@SoyReinaldoR",
-    metric: "35.000",
     label: "Seguidores activos",
     Logo: TikTokLogo,
   },
   {
+    key: "yt_subscribers",
     name: "YouTube",
     handle: "Fútbol con Reinaldo",
-    metric: "9.300",
     label: "Suscriptores fieles",
     Logo: YouTubeLogo,
   },
   {
+    key: "threads_followers",
     name: "Threads",
     handle: "@SoyReinaldoR",
-    metric: "9.000",
     label: "Seguidores",
     Logo: ThreadsLogo,
   },
 ] as const;
-
-const TOTAL_FOLLOWERS = platforms.reduce(
-  (acc, p) => acc + Number(p.metric.replace(/\./g, "")),
-  0,
-);
 
 const igStats: Metric[] = [
   { key: "interactions", label: "Interacciones totales", value: "957.600" },
@@ -400,7 +402,18 @@ function PlatformHeader({
   );
 }
 
-export default function MediaKitPage() {
+export default async function MediaKitPage() {
+  const stats = await getSocialStats();
+  const platforms = PLATFORM_META.map((p) => ({
+    ...p,
+    metric: stats[p.key],
+  }));
+  const ytStatsLive: Metric[] = [
+    { key: "subscribers", label: "Suscriptores fieles", value: stats.yt_subscribers },
+    { key: "views", label: "Visualizaciones / mes", value: stats.yt_views_monthly },
+    ytStats[2],
+  ];
+
   return (
     <main className="page">
       <section className="phero">
@@ -427,9 +440,7 @@ export default function MediaKitPage() {
                   className="flex items-baseline gap-3"
                   style={{ marginTop: 10 }}
                 >
-                  <span className="bignum">
-                    {TOTAL_FOLLOWERS.toLocaleString("es-ES")}
-                  </span>
+                  <span className="bignum">{stats.total_followers}</span>
                   <span style={{ color: "var(--text-dim)" }}>seguidores</span>
                 </div>
                 <p
@@ -606,7 +617,7 @@ export default function MediaKitPage() {
               period="recurrente / mes"
             />
             <div className="grid3">
-              {ytStats.map((s) => (
+              {ytStatsLive.map((s) => (
                 <MetricCard key={s.label} metric={s} />
               ))}
             </div>
