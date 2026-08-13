@@ -44,15 +44,16 @@ export default function BackButton() {
     }
   };
 
-  // Atajo a la quiniela cuando estás viendo predicciones/resultados/ranking.
+  // Atajo a la quiniela desde una ficha de partido/equipo de cualquier liga —
+  // pero no dentro de la propia quiniela, donde ya hay su propia barra de
+  // pestañas (Pronósticos/Clasificación/Selecciones/Especiales) y el atajo
+  // sería un bucle a la misma sección.
+  // (Antes apuntaba también a /quiniela y /mundial — ambos retirados y
+  // redirigidos — lo que producía un botón "Mundial" que caía en la portada
+  // y un botón "Quiniela" que volvía a la propia página. Limpiado.)
   const showQuiniela =
-    (pathname.startsWith("/quiniela") && pathname !== "/quiniela") ||
-    pathname.startsWith("/mundial");
-
-  // Atajo al Mundial (lista de partidos) desde la quiniela y desde el detalle
-  // de un partido/equipo. En el propio hub /mundial no hace falta.
-  const showMundial =
-    pathname.startsWith("/quiniela") || pathname.startsWith("/mundial/");
+    pathname.startsWith("/liga/") &&
+    (pathname.includes("/partido/") || pathname.includes("/equipo/"));
 
   return (
     <div className="backbar">
@@ -79,14 +80,8 @@ export default function BackButton() {
           Atrás
         </button>
 
-        {showMundial && (
-          <Link href="/mundial?v=partidos" className="backbtn">
-            ⚽ Mundial
-          </Link>
-        )}
-
         {showQuiniela && (
-          <Link href="/quiniela" className="backbtn backbtn--accent">
+          <Link href="/quiniela-liga" className="backbtn backbtn--accent">
             🏆 Quiniela
           </Link>
         )}
