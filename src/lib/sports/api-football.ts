@@ -9,6 +9,7 @@
 
 import { unstable_cache } from "next/cache";
 import { WORLD_CUP_2026, type Competition, type KoStructureEntry } from "./competitions";
+import { cachedOrLive, readCache } from "./sports-cache";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -302,33 +303,55 @@ export type WcGroup = { group: string; rows: StandingRow[] };
  * refrescarla cada 10 min ya provocaba ráfagas de rate-limit (429) contra la
  * API tras cada deploy (caché en frío).
  */
+/** Clave de sports_cache para la tabla de una competición — exportada para
+ * que el cron (/api/cron/refresh-sports-cache) escriba bajo la misma clave
+ * que lee esta función. */
+export function standingsCacheKey(competition: Competition): string {
+  return `standings:${competition.slug}`;
+}
+
 export async function getCompetitionStandings(
   competition: Competition,
+  opts: { forceLive?: boolean } = {},
 ): Promise<StandingRow[] | WcGroup[] | null> {
   if (competition.standingsMode === "none") return null;
 
-  const r = await get<StandingsResponse>(
-    "/standings",
-    { league: competition.leagueId, season: competition.season },
-    1800,
-  );
-  const groups = r.response[0]?.league.standings ?? [];
+  const parse = (r: StandingsResponse[]): StandingRow[] | WcGroup[] => {
+    const groups = r[0]?.league.standings ?? [];
+    if (competition.standingsMode === "table") {
+      return (groups[0] ?? []).slice().sort((a, b) => a.rank - b.rank);
+    }
+    return groups
+      .map((rows) => ({ group: rows[0]?.group ?? "", rows }))
+      .filter((g) => g.rows.length > 0)
+      // Solo los grupos reales (A..L), normalizando el nombre: el API a veces
+      // los llama "Group A" y a veces "Group Stage - Group A" (cambió 11-jun).
+      // La tabla extra "Ranking of third-placed teams" no matchea, fuera.
+      .flatMap((g) => {
+        const m = g.group.match(/Group ([A-L])$/);
+        return m ? [{ group: `Group ${m[1]}`, rows: g.rows }] : [];
+      })
+      .sort((a, b) => a.group.localeCompare(b.group));
+  };
 
-  if (competition.standingsMode === "table") {
-    return (groups[0] ?? []).slice().sort((a, b) => a.rank - b.rank);
-  }
+  const fetchLive = async () =>
+    parse(
+      (
+        await get<StandingsResponse>(
+          "/standings",
+          { league: competition.leagueId, season: competition.season },
+          1800,
+        )
+      ).response,
+    );
 
-  return groups
-    .map((rows) => ({ group: rows[0]?.group ?? "", rows }))
-    .filter((g) => g.rows.length > 0)
-    // Solo los grupos reales (A..L), normalizando el nombre: el API a veces
-    // los llama "Group A" y a veces "Group Stage - Group A" (cambió el 11-jun).
-    // La tabla extra "Ranking of third-placed teams" no matchea y queda fuera.
-    .flatMap((g) => {
-      const m = g.group.match(/Group ([A-L])$/);
-      return m ? [{ group: `Group ${m[1]}`, rows: g.rows }] : [];
-    })
-    .sort((a, b) => a.group.localeCompare(b.group));
+  // Precalculado por el cron (/api/cron/refresh-sports-cache) — con 9
+  // competiciones, dejar esto solo en manos del TTL de cada visitante hace
+  // que un pico de tráfico (o un bot) pueda agotar la cuota diaria en
+  // minutos. Cae a la llamada en vivo si el cron no ha corrido o está viejo.
+  // `forceLive` lo usa el propio cron para refrescar el caché en vez de leerlo.
+  if (opts.forceLive) return fetchLive();
+  return cachedOrLive(standingsCacheKey(competition), 2400, fetchLive);
 }
 
 /**
@@ -344,16 +367,41 @@ export async function getWorldCupStandings(): Promise<WcGroup[]> {
  * cambia salvo aplazamientos puntuales (ver nota de rate-limit en
  * `getCompetitionStandings`, misma razón).
  */
+/** Techo de fixturas próximas que cachea el cron — cualquier `n` pedido se
+ * sirve recortando este mismo caché (hoy el mayor `n` real es 12, en
+ * /liga/[slug]). */
+const UPCOMING_CACHE_N = 12;
+
+/** Clave de sports_cache para las próximas fixturas de una competición
+ * (siempre las UPCOMING_CACHE_N primeras — ver nota arriba). */
+export function upcomingCacheKey(competition: Competition): string {
+  return `upcoming:${competition.slug}`;
+}
+
 export async function getCompetitionUpcomingFixtures(
   competition: Competition,
   n: number,
+  opts: { forceLive?: boolean } = {},
 ): Promise<Fixture[]> {
-  const r = await get<Fixture>(
-    "/fixtures",
-    { league: competition.leagueId, season: competition.season, next: n },
-    1800,
-  );
-  return r.response;
+  const fetchLive = async (nn: number) =>
+    (
+      await get<Fixture>(
+        "/fixtures",
+        { league: competition.leagueId, season: competition.season, next: nn },
+        1800,
+      )
+    ).response;
+
+  if (opts.forceLive) return fetchLive(UPCOMING_CACHE_N);
+
+  // Precalculado por el cron — ver nota en getCompetitionStandings. Solo se
+  // usa el caché cuando cubre el `n` pedido (si algún día se pide más de
+  // UPCOMING_CACHE_N, cae a la llamada en vivo sin romper nada).
+  if (n <= UPCOMING_CACHE_N) {
+    const cached = await readCache<Fixture[]>(upcomingCacheKey(competition), 2400);
+    if (cached) return cached.slice(0, n);
+  }
+  return fetchLive(n);
 }
 
 /** Próximas N fixturas del Mundial 2026. */
@@ -550,15 +598,31 @@ export async function getFixtureTimeline(
  * partidos EN VIVO no pasan por aquí, tienen su propia caché corta en
  * `getCompetitionFixturesWindow`).
  */
+/** Clave de sports_cache para el calendario completo de una competición. */
+export function allFixturesCacheKey(competition: Competition): string {
+  return `allFixtures:${competition.slug}`;
+}
+
 export async function getCompetitionAllFixtures(
   competition: Competition,
+  opts: { forceLive?: boolean } = {},
 ): Promise<Fixture[]> {
-  const r = await get<Fixture>(
-    "/fixtures",
-    { league: competition.leagueId, season: competition.season },
-    900,
-  );
-  return r.response;
+  const fetchLive = async () =>
+    (
+      await get<Fixture>(
+        "/fixtures",
+        { league: competition.leagueId, season: competition.season },
+        // 30 min (antes 15): calendario completo de la temporada — cambia solo
+        // por aplazamientos puntuales. Respalda getCompetitionFinishedFixtures,
+        // llamada desde portada Y /liga/[slug] — bajar su frecuencia a la mitad
+        // recorta el fan-out de 9 competiciones sin perder frescura relevante.
+        1800,
+      )
+    ).response;
+
+  // Precalculado por el cron — ver nota en getCompetitionStandings.
+  if (opts.forceLive) return fetchLive();
+  return cachedOrLive(allFixturesCacheKey(competition), 2400, fetchLive);
 }
 
 export function getWorldCupAllFixtures(): Promise<Fixture[]> {
@@ -609,9 +673,26 @@ export function knockoutBracket(fixtures: Fixture[]): BracketRound[] {
  * no gastar una llamada extra a `/teams`. Caché alta (30 min) — un equipo juega
  * cada varios días, así que no hace falta refrescar seguido y ahorra quota.
  */
+/** Claves de sports_cache para el historial de un equipo — exportadas para
+ * que el cron escriba bajo las mismas claves que lee esta función. Solo se
+ * usan para la combinación exacta que pide el calendario de la portada
+ * (equipos destacados); otras combinaciones (ficha de equipo) no se cachean
+ * y siguen yendo en vivo tal cual siempre. */
+export function teamFixturesLastCacheKey(teamId: number, last: number): string {
+  return `teamFixturesLast:${teamId}:${last}`;
+}
+export function teamFixturesNextCacheKey(teamId: number, next: number): string {
+  return `teamFixturesNext:${teamId}:${next}`;
+}
+
 export async function getTeamFixtures(
   teamId: number,
-  opts: { last?: number; next?: number; revalidate?: number } = {},
+  opts: {
+    last?: number;
+    next?: number;
+    revalidate?: number;
+    forceLive?: boolean;
+  } = {},
 ): Promise<{
   team: { id: number; name: string; logo: string } | null;
   recent: Fixture[];
@@ -621,16 +702,27 @@ export async function getTeamFixtures(
   const next = opts.next ?? 5;
   const rv = opts.revalidate ?? 1800;
 
-  const [lastR, nextR] = await Promise.all([
-    get<Fixture>("/fixtures", { team: teamId, last }, rv),
-    get<Fixture>("/fixtures", { team: teamId, next }, rv),
-  ]);
+  const fetchLast = async () =>
+    (await get<Fixture>("/fixtures", { team: teamId, last }, rv)).response;
+  const fetchNext = async () =>
+    (await get<Fixture>("/fixtures", { team: teamId, next }, rv)).response;
 
-  const recent = lastR.response.sort(
+  // Precalculado por el cron para la combinación exacta que usa el
+  // calendario de la portada (equipos destacados) — ver nota en
+  // getCompetitionStandings. Otras combinaciones (ficha de equipo) caen a
+  // la llamada en vivo tal cual siempre.
+  const [recentRaw, upcomingRaw] = opts.forceLive
+    ? await Promise.all([fetchLast(), fetchNext()])
+    : await Promise.all([
+        cachedOrLive(teamFixturesLastCacheKey(teamId, last), 2400, fetchLast),
+        cachedOrLive(teamFixturesNextCacheKey(teamId, next), 2400, fetchNext),
+      ]);
+
+  const recent = recentRaw.sort(
     (a, b) =>
       new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
   );
-  const upcoming = nextR.response.sort(
+  const upcoming = upcomingRaw.sort(
     (a, b) =>
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
   );
