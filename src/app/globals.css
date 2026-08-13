@@ -123,6 +123,9 @@ img {
 .btn--accent:hover {
   transform: translateY(-2px);
 }
+.btn:active {
+  transform: translateY(0) scale(0.97);
+}
 .btn--ghost {
   background: transparent;
   color: var(--text);
@@ -285,7 +288,7 @@ img {
   font-weight: 600;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.navdrop__item:hover { background: var(--surface-2); color: var(--accent); }
+.navdrop__item:hover, .navdrop__item:active { background: var(--surface-2); color: var(--accent); }
 .navdrop__item .d { display: block; font-weight: 400; color: var(--text-dim); font-size: 0.76rem; margin-top: 2px; }
 .navdrop__item--muted { color: var(--text-dim); font-weight: 500; }
 .navdrop__sep { height: 1px; background: var(--line); margin: 6px 4px; }
@@ -435,6 +438,7 @@ img {
   font-size: clamp(2.4rem, 5vw, 4rem);
 }
 .cards { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 16px; }
+.cards--2 { grid-template-columns: repeat(2, 1fr); }
 .card {
   position: relative;
   background: var(--surface);
@@ -449,6 +453,7 @@ img {
   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
 .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.card:active { transform: translateY(-1px) scale(0.99); border-color: var(--accent); }
 .card__tag {
   color: var(--accent);
   font-family: var(--font-mono-stack);
@@ -512,6 +517,7 @@ img {
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 .join:hover { border-color: var(--accent); transform: translateY(-3px); }
+.join:active { border-color: var(--accent); transform: translateY(-1px) scale(0.99); }
 .join__top { display: flex; align-items: center; justify-content: space-between; }
 .join__icon {
   width: 48px;
@@ -643,6 +649,25 @@ img {
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 
+/* Panel-enlace destacado (promo de la quiniela en portada, y similares) */
+.promopanel {
+  display: block;
+  padding: clamp(24px, 4vw, 36px);
+  text-decoration: none;
+  color: inherit;
+  border-color: var(--accent);
+  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 14%, transparent), transparent 60%);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.promopanel:hover { transform: translateY(-2px); }
+.promopanel:active { transform: translateY(0); }
+
+/* Cabecera pequeña dentro de un bloque (ej. cada tabla de "La tabla, en corto") */
+.subhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.subhead h3 { margin: 0; font-family: var(--font-display-stack); font-weight: 800; font-size: 1.1rem; }
+.subhead a { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); text-decoration: none; }
+.subhead a:hover { text-decoration: underline; }
+
 .matchlist { display: grid; gap: 12px; }
 .match {
   background: var(--surface);
@@ -659,6 +684,11 @@ img {
   border-color: var(--line-strong);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+}
+.match:active {
+  border-color: var(--line-strong);
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* Píldora "EN VIVO" del header (aparece si hay partido del Mundial en juego). */
@@ -708,6 +738,7 @@ img {
   border-radius: calc(var(--radius) - 4px);
 }
 .hmrow:hover { background: var(--surface-2); }
+.hmrow:active { background: var(--surface-2); opacity: 0.75; }
 .hmrow__time { font-family: var(--font-mono-stack); font-size: 0.64rem; color: var(--text-dim); text-align: center; white-space: nowrap; }
 .hmrow__time--live { display: inline-flex; align-items: center; gap: 5px; color: var(--live, #ff4d57); justify-content: center; width: 100%; }
 .hmrow__team { display: flex; align-items: center; gap: 7px; min-width: 0; }
@@ -766,6 +797,7 @@ img {
 
 .stadium { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: transform 0.25s ease, border-color 0.25s ease; display: flex; flex-direction: column; }
 .stadium:hover { transform: translateY(-4px); border-color: var(--accent); }
+.stadium:active { transform: translateY(-1px) scale(0.99); border-color: var(--accent); }
 .stadium__img { width: 100%; aspect-ratio: 16/10; height: auto; object-fit: cover; }
 .stadium__b { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
 .stadium__city { font-family: var(--font-mono-stack); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
@@ -776,6 +808,7 @@ img {
 
 .plat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; display: flex; flex-direction: column; gap: 18px; min-height: 220px; justify-content: space-between; transition: transform 0.2s ease, border-color 0.2s ease; }
 .plat:hover { transform: translateY(-4px); border-color: var(--accent); }
+.plat:active { transform: translateY(-1px) scale(0.99); border-color: var(--accent); }
 .plat__top { display: flex; align-items: center; justify-content: space-between; }
 .plat__icon { width: 52px; height: 52px; border-radius: var(--radius); display: grid; place-items: center; background: var(--surface-2); color: var(--accent); border: 1px solid var(--line); }
 .plat__h { font-family: var(--font-display-stack); font-weight: 900; text-transform: uppercase; font-size: 1.6rem; }
@@ -821,8 +854,14 @@ select.field { appearance: none; }
 .step p { color: var(--text-dim); line-height: 1.55; font-size: 0.92rem; margin: 0; }
 
 .tabs { display: flex; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius); padding: 5px; background: var(--surface); flex-wrap: wrap; }
+/* Separador entre grupos de pestañas (ej. partidos por tiempo vs. datos de
+   la competición) — solo visual, no afecta al layout flex de los botones. */
+.tabs__divider { flex: none; align-self: stretch; width: 1px; margin: 4px 3px; background: var(--line); }
+.tabs--scroll .tabs__divider { flex: 0 0 auto; }
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
+.tabs a:active, .tabs button:active { background: var(--surface-2); }
+.tabs a.on:active, .tabs button.on:active { background: var(--accent); opacity: 0.85; }
 /* Variante en una sola fila con scroll horizontal (para muchas pestañas). */
 .tabs--scroll { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .tabs--scroll::-webkit-scrollbar { display: none; }
@@ -870,6 +909,7 @@ select.field { appearance: none; }
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 .infocard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.infocard:active { border-color: var(--line-strong); transform: translateY(0); }
 .infocard h3 {
   font-family: var(--font-display-stack);
   font-weight: 800;
@@ -1002,6 +1042,7 @@ select.field { appearance: none; }
   transition: border-color 0.2s ease;
 }
 .leaguerow:hover { border-color: var(--line-strong); }
+.leaguerow:active { border-color: var(--line-strong); background: var(--surface-2); }
 .leaguerow--accent { border-color: color-mix(in oklch, var(--accent) 35%, transparent); background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 10%, transparent), var(--surface) 60%); }
 .leaguerow__main { min-width: 0; flex: 1 1 220px; }
 .leaguerow__name { font-family: var(--font-display-stack); font-weight: 800; text-transform: uppercase; font-size: 1.3rem; line-height: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1228,15 +1269,40 @@ select.field { appearance: none; }
   .formgrid, .steps { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .stats, .grid3, .grid2 { grid-template-columns: 1fr; }
-  .stat { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
-  .stat:first-child { border-top: 0; }
+  .grid3, .grid2 { grid-template-columns: 1fr; }
   .amounts { grid-template-columns: repeat(2, 1fr); }
   .match { gap: 8px; padding: 16px; }
   .team .tn { font-size: 0.95rem; }
   .score input { width: 40px; height: 40px; font-size: 1.2rem; }
   .standings .hidem { display: none; }
   .field-row { grid-template-columns: 1fr; }
+
+  /* Hero compacto: en pantallas de móvil el objetivo es llegar cuanto antes
+     al marcador/calendario, no llenar el primer scroll con la presentación
+     personal. Título más pequeño, respiros más cortos. */
+  .hero { padding-top: 22px; }
+  /* padding-right reserva sitio para hero__badge (absoluto, arriba a la
+     derecha) — sin esto "PREMIER"/"DIRECTO" quedaban tapados por la etiqueta. */
+  .hero__eyebrow {
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+    padding-right: 128px;
+    align-items: flex-start;
+  }
+  .hero__eyebrow::before { margin-top: 5px; }
+  .hero__title { font-size: 2.9rem; line-height: 0.92; }
+  .hero__lede { margin-top: 14px; font-size: 0.95rem; max-width: 34ch; }
+  .hero__actions { margin-top: 20px; gap: 10px; }
+  .hero__actions .btn { flex: 1 1 auto; justify-content: center; }
+  .hero__badge { padding: 9px 12px; font-size: 0.62rem; }
+
+  /* Stats en una sola fila compacta (antes se apilaban en 3 bloques altos,
+     empujando el marcador varias pantallas hacia abajo). */
+  .stats { grid-template-columns: repeat(3, 1fr); margin-top: 26px; }
+  .stat { padding: 16px 0 16px 10px; }
+  .stat:first-child { padding-left: 0; }
+  .stat__num { font-size: 1.55rem; }
+  .stat__lbl { font-size: 0.54rem; margin-top: 5px; letter-spacing: 0.1em; }
 }
 @media (prefers-reduced-motion: reduce) {
   .marquee__track, .ticker__dot { animation: none; }

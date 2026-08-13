@@ -86,6 +86,9 @@ export default function LigaTabs({
             >
               Finalizados
             </button>
+            {/* Separador: a la izquierda, partidos por tiempo (en vivo/próximos/
+                finalizados); a la derecha, datos de la competición. */}
+            <span className="tabs__divider" aria-hidden />
             {competition.standingsMode !== "none" && (
               <button
                 type="button"
