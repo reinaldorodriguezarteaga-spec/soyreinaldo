@@ -124,6 +124,15 @@ async function get<T>(
   path: string,
   params: Record<string, string | number>,
   revalidateSeconds: number,
+  /** true → salta la unstable_cache de esta URL y llama en vivo de verdad.
+   * Lo usa el cron de sports_cache (forceLive): sin esto, un `forceLive` en
+   * las funciones públicas solo saltaba `sports_cache` pero seguía
+   * devolviendo lo que hubiera cacheado unstable_cache para esa URL exacta
+   * — incluido un fallo vacío cacheado durante una caída de la API, que
+   * quedaría "atascado" hasta que expirase su TTL (hasta 30 min). El cron
+   * necesita un dato realmente fresco para no volver a escribir el mismo
+   * fallo en sports_cache. */
+  noCache = false,
 ): Promise<{ response: T[]; errors: unknown }> {
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
@@ -132,6 +141,14 @@ async function get<T>(
     .filter(([k]) => k !== "key")
     .map(([k, v]) => `${k}=${v}`)
     .join("&");
+
+  if (noCache) {
+    try {
+      return await rawGet<T>(urlStr, path, paramStr);
+    } catch {
+      return { response: [], errors: { failed: true } };
+    }
+  }
 
   // Caché REAL por URL. La clave incluye la URL completa (endpoint + params) y
   // el TTL = revalidateSeconds de cada llamada. unstable_cache SÍ cachea aunque
@@ -334,13 +351,14 @@ export async function getCompetitionStandings(
       .sort((a, b) => a.group.localeCompare(b.group));
   };
 
-  const fetchLive = async () =>
+  const fetchLive = async (noCache = false) =>
     parse(
       (
         await get<StandingsResponse>(
           "/standings",
           { league: competition.leagueId, season: competition.season },
           1800,
+          noCache,
         )
       ).response,
     );
@@ -349,9 +367,12 @@ export async function getCompetitionStandings(
   // competiciones, dejar esto solo en manos del TTL de cada visitante hace
   // que un pico de tráfico (o un bot) pueda agotar la cuota diaria en
   // minutos. Cae a la llamada en vivo si el cron no ha corrido o está viejo.
-  // `forceLive` lo usa el propio cron para refrescar el caché en vez de leerlo.
-  if (opts.forceLive) return fetchLive();
-  return cachedOrLive(standingsCacheKey(competition), 2400, fetchLive);
+  // `forceLive` lo usa el propio cron para refrescar el caché en vez de
+  // leerlo — con `noCache` también hasta el propio `get()`, sin eso seguiría
+  // sirviendo lo que unstable_cache tuviera guardado para esa URL exacta
+  // (incluido un fallo cacheado durante una caída de la API).
+  if (opts.forceLive) return fetchLive(true);
+  return cachedOrLive(standingsCacheKey(competition), 2400, () => fetchLive());
 }
 
 /**
@@ -383,16 +404,17 @@ export async function getCompetitionUpcomingFixtures(
   n: number,
   opts: { forceLive?: boolean } = {},
 ): Promise<Fixture[]> {
-  const fetchLive = async (nn: number) =>
+  const fetchLive = async (nn: number, noCache = false) =>
     (
       await get<Fixture>(
         "/fixtures",
         { league: competition.leagueId, season: competition.season, next: nn },
         1800,
+        noCache,
       )
     ).response;
 
-  if (opts.forceLive) return fetchLive(UPCOMING_CACHE_N);
+  if (opts.forceLive) return fetchLive(UPCOMING_CACHE_N, true);
 
   // Precalculado por el cron — ver nota en getCompetitionStandings. Solo se
   // usa el caché cuando cubre el `n` pedido (si algún día se pide más de
@@ -607,7 +629,7 @@ export async function getCompetitionAllFixtures(
   competition: Competition,
   opts: { forceLive?: boolean } = {},
 ): Promise<Fixture[]> {
-  const fetchLive = async () =>
+  const fetchLive = async (noCache = false) =>
     (
       await get<Fixture>(
         "/fixtures",
@@ -617,12 +639,13 @@ export async function getCompetitionAllFixtures(
         // llamada desde portada Y /liga/[slug] — bajar su frecuencia a la mitad
         // recorta el fan-out de 9 competiciones sin perder frescura relevante.
         1800,
+        noCache,
       )
     ).response;
 
   // Precalculado por el cron — ver nota en getCompetitionStandings.
-  if (opts.forceLive) return fetchLive();
-  return cachedOrLive(allFixturesCacheKey(competition), 2400, fetchLive);
+  if (opts.forceLive) return fetchLive(true);
+  return cachedOrLive(allFixturesCacheKey(competition), 2400, () => fetchLive());
 }
 
 export function getWorldCupAllFixtures(): Promise<Fixture[]> {
@@ -702,20 +725,20 @@ export async function getTeamFixtures(
   const next = opts.next ?? 5;
   const rv = opts.revalidate ?? 1800;
 
-  const fetchLast = async () =>
-    (await get<Fixture>("/fixtures", { team: teamId, last }, rv)).response;
-  const fetchNext = async () =>
-    (await get<Fixture>("/fixtures", { team: teamId, next }, rv)).response;
+  const fetchLast = async (noCache = false) =>
+    (await get<Fixture>("/fixtures", { team: teamId, last }, rv, noCache)).response;
+  const fetchNext = async (noCache = false) =>
+    (await get<Fixture>("/fixtures", { team: teamId, next }, rv, noCache)).response;
 
   // Precalculado por el cron para la combinación exacta que usa el
   // calendario de la portada (equipos destacados) — ver nota en
   // getCompetitionStandings. Otras combinaciones (ficha de equipo) caen a
   // la llamada en vivo tal cual siempre.
   const [recentRaw, upcomingRaw] = opts.forceLive
-    ? await Promise.all([fetchLast(), fetchNext()])
+    ? await Promise.all([fetchLast(true), fetchNext(true)])
     : await Promise.all([
-        cachedOrLive(teamFixturesLastCacheKey(teamId, last), 2400, fetchLast),
-        cachedOrLive(teamFixturesNextCacheKey(teamId, next), 2400, fetchNext),
+        cachedOrLive(teamFixturesLastCacheKey(teamId, last), 2400, () => fetchLast()),
+        cachedOrLive(teamFixturesNextCacheKey(teamId, next), 2400, () => fetchNext()),
       ]);
 
   const recent = recentRaw.sort(
