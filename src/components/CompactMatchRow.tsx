@@ -26,7 +26,9 @@ export default function CompactMatchRow({
   badge,
 }: {
   fx: Fixture;
-  href: string;
+  /** `null` = fila informativa sin enlace (ligas del calendario sin hub
+   * propio, p. ej. Bundesliga o selecciones). */
+  href: string | null;
   badge?: string;
 }) {
   const live = isLive(fx);
@@ -50,8 +52,8 @@ export default function CompactMatchRow({
     timeNode = <span className="hmrow__time">{formatKickoffTime(fx.fixture.date)}</span>;
   }
 
-  const row = (
-    <Link href={href} className="hmrow">
+  const inner = (
+    <>
       {timeNode}
       <span className="hmrow__team hmrow__team--home">
         <Image
@@ -88,7 +90,15 @@ export default function CompactMatchRow({
           unoptimized
         />
       </span>
+    </>
+  );
+
+  const row = href ? (
+    <Link href={href} className="hmrow">
+      {inner}
     </Link>
+  ) : (
+    <span className="hmrow">{inner}</span>
   );
 
   if (!badge) return row;

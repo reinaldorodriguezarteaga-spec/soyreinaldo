@@ -311,3 +311,38 @@ export const FEATURED_TEAMS: FeaturedTeam[] = [
   { id: 50, name: "Manchester City", homeCompetitionSlug: "premier" },
   { id: 40, name: "Liverpool", homeCompetitionSlug: "premier" },
 ];
+
+/* ---------------------------------------------------------------------- *
+ * Ligas/copas EXTRA solo para el calendario de la portada: no tienen hub
+ * propio (/liga/[slug]) ni tabla — solo sus próximos partidos, mezclados
+ * en la lista cronológica. IDs verificados contra /leagues de API-Football
+ * el 18-ago-2026. Cada entrada cuesta 1 llamada por pasada del cron de
+ * sports_cache — mantener la lista curada, no "todo lo que exista".
+ * ---------------------------------------------------------------------- */
+
+export type CalendarExtraLeague = {
+  /** Id de liga en API-Football. */
+  leagueId: number;
+  /** Season vigente (año de inicio). */
+  season: number;
+  /** Etiqueta a mostrar como badge en el calendario. */
+  name: string;
+};
+
+export const CALENDAR_EXTRA_LEAGUES: CalendarExtraLeague[] = [
+  // Inglaterra (la Premier y la FA Cup ya están como Competition)
+  { leagueId: 48, season: 2026, name: "EFL Cup" },
+  { leagueId: 528, season: 2026, name: "Community Shield" },
+  // Italia (la Serie A ya está como Competition)
+  { leagueId: 137, season: 2026, name: "Coppa Italia" },
+  { leagueId: 547, season: 2026, name: "Supercoppa" },
+  // Alemania
+  { leagueId: 78, season: 2026, name: "Bundesliga" },
+  { leagueId: 81, season: 2026, name: "DFB Pokal" },
+  // Selecciones (solo las que tienen partidos en el horizonte actual;
+  // cuando arranque la próxima edición, añadir aquí con su season:
+  // 32/34/31/30/29 = clasif. Mundial por confederación, 960 = clasif.
+  // Eurocopa, 4 = Eurocopa, 9 = Copa América)
+  { leagueId: 10, season: 2026, name: "Amistoso · Selecciones" },
+  { leagueId: 5, season: 2026, name: "Nations League" },
+];

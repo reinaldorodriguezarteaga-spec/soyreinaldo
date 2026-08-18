@@ -17,7 +17,10 @@ const MAX_DAYS = 7;
  * `HomeScoreboard` ya trae los datos.
  */
 export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
-  const visible = days.slice(0, MAX_DAYS);
+  // El grupo "⭐ Tus favoritos" (si existe, siempre el primero) no consume
+  // un hueco de los MAX_DAYS de días reales.
+  const hasFavGroup = days[0]?.dateKey === "favoritos";
+  const visible = days.slice(0, MAX_DAYS + (hasFavGroup ? 1 : 0));
 
   return (
     <div className="space-y-3">
@@ -53,7 +56,7 @@ export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
                 <CompactMatchRow
                   key={fx.fixture.id}
                   fx={fx}
-                  href={`/liga/${fx.linkSlug}/partido/${fx.fixture.id}`}
+                  href={fx.linkSlug ? `/liga/${fx.linkSlug}/partido/${fx.fixture.id}` : null}
                   badge={fx.competitionLabel}
                 />
               ))}

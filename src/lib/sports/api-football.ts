@@ -8,7 +8,12 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { WORLD_CUP_2026, type Competition, type KoStructureEntry } from "./competitions";
+import {
+  WORLD_CUP_2026,
+  type CalendarExtraLeague,
+  type Competition,
+  type KoStructureEntry,
+} from "./competitions";
 import { cachedOrLive, readCache } from "./sports-cache";
 
 const BASE = "https://v3.football.api-sports.io";
@@ -397,6 +402,33 @@ const UPCOMING_CACHE_N = 12;
  * (siempre las UPCOMING_CACHE_N primeras — ver nota arriba). */
 export function upcomingCacheKey(competition: Competition): string {
   return `upcoming:${competition.slug}`;
+}
+
+/** Clave de sports_cache para las próximas fixturas de una liga EXTRA del
+ * calendario (sin Competition propia — ver CALENDAR_EXTRA_LEAGUES). */
+export function upcomingExtraCacheKey(leagueId: number): string {
+  return `upcomingExtra:${leagueId}`;
+}
+
+/** Próximas fixturas de una liga extra del calendario. Mismo esquema
+ * cron-primero que getCompetitionUpcomingFixtures. */
+export async function getExtraLeagueUpcoming(
+  entry: CalendarExtraLeague,
+  n = 6,
+  opts: { forceLive?: boolean } = {},
+): Promise<Fixture[]> {
+  const fetchLive = async (noCache = false) =>
+    (
+      await get<Fixture>(
+        "/fixtures",
+        { league: entry.leagueId, season: entry.season, next: n },
+        1800,
+        noCache,
+      )
+    ).response;
+
+  if (opts.forceLive) return fetchLive(true);
+  return cachedOrLive(upcomingExtraCacheKey(entry.leagueId), 2400, () => fetchLive());
 }
 
 export async function getCompetitionUpcomingFixtures(

@@ -4,13 +4,19 @@ import {
   getCompetitionAllFixtures,
   getCompetitionStandings,
   getCompetitionUpcomingFixtures,
+  getExtraLeagueUpcoming,
   getTeamFixtures,
   standingsCacheKey,
   teamFixturesLastCacheKey,
   teamFixturesNextCacheKey,
   upcomingCacheKey,
+  upcomingExtraCacheKey,
 } from "@/lib/sports/api-football";
-import { COMPETITIONS, FEATURED_TEAMS } from "@/lib/sports/competitions";
+import {
+  CALENDAR_EXTRA_LEAGUES,
+  COMPETITIONS,
+  FEATURED_TEAMS,
+} from "@/lib/sports/competitions";
 import { writeCache } from "@/lib/sports/sports-cache";
 
 export const runtime = "nodejs";
@@ -48,6 +54,7 @@ export async function GET(request: Request) {
   const errors: string[] = [];
   let competitionsDone = 0;
   let teamsDone = 0;
+  let extrasDone = 0;
 
   // Lotes pequeños (3 a la vez): rápido, sin ráfaga contra el límite por
   // minuto de la API.
@@ -91,11 +98,20 @@ export async function GET(request: Request) {
     teamsDone++;
   });
 
+  // Ligas/copas extra del calendario (solo próximos partidos, 1 llamada c/u).
+  await runBatches(CALENDAR_EXTRA_LEAGUES, 3, async (entry) => {
+    const fixtures = await getExtraLeagueUpcoming(entry, 6, { forceLive: true });
+    await writeCache(upcomingExtraCacheKey(entry.leagueId), fixtures);
+    extrasDone++;
+  });
+
   return NextResponse.json({
     ok: errors.length === 0,
     competitionsDone,
     teamsDone,
-    total: COMPETITIONS.length + FEATURED_TEAMS.length,
+    extrasDone,
+    total:
+      COMPETITIONS.length + FEATURED_TEAMS.length + CALENDAR_EXTRA_LEAGUES.length,
     errors: errors.slice(0, 10),
   });
 }
