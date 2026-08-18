@@ -9,8 +9,12 @@ export const metadata = {
     "Entra a la quiniela general de LaLiga o a la quiniela privada de tu comunidad.",
 };
 
-/** Liga pública "Quiniela LaLiga 2026-27". */
-const PUBLIC_LEAGUE_CODE = "LALIGA2627";
+/** Id (estable) de la liga pública general. El CÓDIGO y el NOMBRE se leen
+ * de la BD en vivo — el dueño puede renombrarlos desde el panel de admin de
+ * liga, y un código hardcodeado aquí rompía el botón "Unirme" para todo el
+ * mundo (incidente 18-ago: la liga pasó de LALIGA2627 a CONOS y el enlace
+ * /unirse/LALIGA2627 daba "Liga no encontrada"). */
+const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 
 /** Quinielas privadas que se ANUNCIAN en el selector aunque no seas miembro
  * (con candado: el botón lleva al formulario del código, nunca entra
@@ -40,6 +44,14 @@ export default async function QuinielaLigaIndex() {
 
   const leagues = user ? await getMyClubLeagues(user.id) : [];
   const inPublic = leagues.some((l) => l.isPublic);
+
+  // Datos EN VIVO de la liga pública (código incluido) — es is_public, así
+  // que la RLS deja leerla a cualquiera, con o sin sesión.
+  const { data: publicLeague } = await supabase
+    .from("leagues")
+    .select("code, name, description")
+    .eq("id", PUBLIC_LEAGUE_ID)
+    .maybeSingle();
 
   // Quinielas privadas anunciadas — solo las que el usuario aún NO tiene
   // (si ya es miembro, su tarjeta normal de arriba basta). La vista previa
@@ -94,14 +106,17 @@ export default async function QuinielaLigaIndex() {
             <LeagueCard key={l.id} league={l} stats={stats.get(l.id)} />
           ))}
 
-          {!inPublic && (
+          {!inPublic && publicLeague && (
             <div className="panel" style={{ padding: 24 }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Quiniela LaLiga 2026-27</h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{publicLeague.name}</h2>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                La general, abierta a todo el mundo. Marcador exacto 3 pts,
-                acertar el ganador 1 pt.
+                {publicLeague.description ??
+                  "La general, abierta a todo el mundo. Marcador exacto 3 pts, acertar el ganador 1 pt."}
               </p>
-              <Link href={`/unirse/${PUBLIC_LEAGUE_CODE}`} className="btn btn--accent">
+              <Link
+                href={`/unirse/${encodeURIComponent(publicLeague.code)}`}
+                className="btn btn--accent"
+              >
                 Unirme <span className="arr">→</span>
               </Link>
             </div>
