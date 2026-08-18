@@ -98,7 +98,11 @@ export type LeagueRules = {
   champion: number;
   pichichi: number;
   relegated: number;
-  midseason: number;
+  gk: number;
+  assist: number;
+  mvp: number;
+  defense: number;
+  attack: number;
   specials: boolean;
 };
 
@@ -127,10 +131,14 @@ export function RulesForm({
         </span>
       </label>
       <div style={rowStyle}>
-        <Num name="champion" label="Campeón" value={rules.champion} disabled={pending} />
-        <Num name="pichichi" label="Pichichi" value={rules.pichichi} disabled={pending} />
-        <Num name="relegated" label="Cada descenso" value={rules.relegated} disabled={pending} />
-        <Num name="midseason" label="Cada pick de media temporada" value={rules.midseason} disabled={pending} />
+        <Num name="champion" label="🏆 Campeón" value={rules.champion} disabled={pending} />
+        <Num name="pichichi" label="⚽ Pichichi" value={rules.pichichi} disabled={pending} />
+        <Num name="relegated" label="🔻 Cada descenso" value={rules.relegated} disabled={pending} />
+        <Num name="gk" label="🧤 Zamora" value={rules.gk} disabled={pending} />
+        <Num name="assist" label="🎯 Máximo asistidor" value={rules.assist} disabled={pending} />
+        <Num name="mvp" label="⭐ MVP de la liga" value={rules.mvp} disabled={pending} />
+        <Num name="defense" label="🛡️ Equipo menos goleado" value={rules.defense} disabled={pending} />
+        <Num name="attack" label="🔥 Equipo más goleador" value={rules.attack} disabled={pending} />
       </div>
       <button type="submit" className="btn btn--accent" disabled={pending} style={{ marginTop: 16 }}>
         {pending ? "Guardando…" : "Guardar normas"}

@@ -158,7 +158,11 @@ export async function updateLeagueRules(
     p_champion: num("champion"),
     p_pichichi: num("pichichi"),
     p_relegated: num("relegated"),
-    p_midseason: num("midseason"),
+    p_gk: num("gk"),
+    p_assist: num("assist"),
+    p_mvp: num("mvp"),
+    p_defense: num("defense"),
+    p_attack: num("attack"),
   };
   if (Object.values(values).some((v) => v === null)) {
     return { status: "error", message: "Los puntos deben ser enteros entre 0 y 100." };
