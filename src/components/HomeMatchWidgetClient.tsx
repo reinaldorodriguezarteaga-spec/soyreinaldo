@@ -156,32 +156,57 @@ export default function HomeMatchWidgetClient({
     const liveRows = groups.flatMap((g) =>
       g.live.map((fx) => ({ fx, competition: g.competition })),
     );
-    if (liveRows.length === 0) return null;
+    // Sin la vista de acordeones (las pestañas se retiraron), los
+    // resultados de HOY también viven en esta tarjeta — debajo de los
+    // partidos en juego.
+    const finishedRows = groups.flatMap((g) =>
+      g.finishedToday.map((fx) => ({ fx, competition: g.competition })),
+    );
+    if (liveRows.length === 0 && finishedRows.length === 0) return null;
+    const anyLive = liveRows.length > 0;
     return (
       <div className="panel" style={{ overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
-          <span className="livepulse" />
+          {anyLive && <span className="livepulse" />}
           <b
             className="mono"
             style={{ flex: 1, minWidth: 0, fontSize: "0.64rem", letterSpacing: "0.12em", textTransform: "uppercase" }}
           >
-            En vivo
+            {anyLive ? "En vivo" : "Hoy"}
           </b>
           <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
-            {liveRows.length} partido{liveRows.length === 1 ? "" : "s"}
+            {liveRows.length + finishedRows.length} partido
+            {liveRows.length + finishedRows.length === 1 ? "" : "s"}
           </span>
         </div>
         <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
-          <div className="hmrowlist">
-            {liveRows.map(({ fx, competition }) => (
-              <CompactMatchRow
-                key={fx.fixture.id}
-                fx={fx}
-                href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
-                badge={competition.name}
-              />
-            ))}
-          </div>
+          {liveRows.length > 0 && (
+            <div className="hmrowlist">
+              {liveRows.map(({ fx, competition }) => (
+                <CompactMatchRow
+                  key={fx.fixture.id}
+                  fx={fx}
+                  href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
+                  badge={competition.name}
+                />
+              ))}
+            </div>
+          )}
+          {finishedRows.length > 0 && (
+            <div>
+              <GroupLabel>Finalizados hoy</GroupLabel>
+              <div className="hmrowlist">
+                {finishedRows.map(({ fx, competition }) => (
+                  <CompactMatchRow
+                    key={fx.fixture.id}
+                    fx={fx}
+                    href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
+                    badge={competition.name}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
