@@ -299,8 +299,10 @@ export type FeaturedTeam = {
   name: string;
   /** Slug de la Competition doméstica del equipo, para enlazar su ficha
    * (/liga/[slug]/equipo/[id]) — la ficha de equipo no depende de que el
-   * partido en sí sea de esa competición, solo necesita el fixture id. */
-  homeCompetitionSlug: string;
+   * partido en sí sea de esa competición, solo necesita el fixture id.
+   * `null` = equipo sin hub natural en el sitio (PSG/Lyon: no seguimos la
+   * Ligue 1) → sus filas del calendario van sin enlace. */
+  homeCompetitionSlug: string | null;
 };
 
 export const FEATURED_TEAMS: FeaturedTeam[] = [
@@ -310,6 +312,10 @@ export const FEATURED_TEAMS: FeaturedTeam[] = [
   { id: 33, name: "Manchester United", homeCompetitionSlug: "premier" },
   { id: 50, name: "Manchester City", homeCompetitionSlug: "premier" },
   { id: 40, name: "Liverpool", homeCompetitionSlug: "premier" },
+  // Pedido 18-ago: TODOS los partidos de PSG y Lyon en el calendario (ids
+  // verificados contra /teams?league=61). Sin hub francés → sin enlace.
+  { id: 85, name: "PSG", homeCompetitionSlug: null },
+  { id: 80, name: "Lyon", homeCompetitionSlug: null },
 ];
 
 /* ---------------------------------------------------------------------- *
@@ -327,6 +333,12 @@ export type CalendarExtraLeague = {
   season: number;
   /** Etiqueta a mostrar como badge en el calendario. */
   name: string;
+  /** Si está, solo se muestran partidos donde juegue uno de estos equipos
+   * (p. ej. Bundesliga → solo los 4 grandes). */
+  onlyTeamIds?: number[];
+  /** true → fuera selecciones juveniles (U17/U20/U21...) y femeninas —
+   * solo la absoluta. */
+  seniorOnly?: boolean;
 };
 
 export const CALENDAR_EXTRA_LEAGUES: CalendarExtraLeague[] = [
@@ -337,12 +349,14 @@ export const CALENDAR_EXTRA_LEAGUES: CalendarExtraLeague[] = [
   { leagueId: 137, season: 2026, name: "Coppa Italia" },
   { leagueId: 547, season: 2026, name: "Supercoppa" },
   // Alemania
-  { leagueId: 78, season: 2026, name: "Bundesliga" },
+  // Solo los 4 grandes (pedido 18-ago; ids verificados contra /teams):
+  // Bayern 157, Dortmund 165, Leverkusen 168, Leipzig 173.
+  { leagueId: 78, season: 2026, name: "Bundesliga", onlyTeamIds: [157, 165, 168, 173] },
   { leagueId: 81, season: 2026, name: "DFB Pokal" },
   // Selecciones (solo las que tienen partidos en el horizonte actual;
   // cuando arranque la próxima edición, añadir aquí con su season:
   // 32/34/31/30/29 = clasif. Mundial por confederación, 960 = clasif.
   // Eurocopa, 4 = Eurocopa, 9 = Copa América)
-  { leagueId: 10, season: 2026, name: "Amistoso · Selecciones" },
+  { leagueId: 10, season: 2026, name: "Amistoso · Selecciones", seniorOnly: true },
   { leagueId: 5, season: 2026, name: "Nations League" },
 ];

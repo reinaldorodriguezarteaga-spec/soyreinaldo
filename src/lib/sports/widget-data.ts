@@ -341,6 +341,12 @@ const MADRID_TZ = "Europe/Madrid";
 /** Id de la liga especial "Friendlies Clubs" de API-Football: amistosos de
  * clubes, cubre a todos los equipos — no es una `Competition` nuestra. */
 const FRIENDLIES_LEAGUE_ID = 667;
+/** Competiciones UEFA cuyas rondas previas se excluyen del calendario. */
+const UEFA_SLUGS = new Set(["champions", "europa", "conference"]);
+/** Selección juvenil (U17/U20/U21…) o femenina — para `seniorOnly`. */
+function isYouthOrWomenTeam(name: string): boolean {
+  return /\bU-?\d{1,2}\b/i.test(name) || /\sW$/.test(name);
+}
 /** Techo de fixturas totales del calendario (across todas las fuentes), para
  * que la sección no crezca sin límite en temporada alta con las 9 ligas
  * activas a la vez. */
@@ -420,12 +426,24 @@ export async function getUpcomingCalendar(
     competitions.map(async (c): Promise<CalendarFixture[]> => {
       try {
         const fixtures = await getCompetitionUpcomingFixtures(c, 6);
-        return fixtures.map((f) => ({
-          ...f,
-          ev: null,
-          competitionLabel: c.name,
-          linkSlug: c.slug,
-        }));
+        return fixtures
+          // Rondas previas de las competiciones UEFA fuera del CALENDARIO
+          // (pedido 18-ago, "lo más comercial posible"): los playoffs de
+          // clasificación llenan la lista de cruces tipo Górnik-Mónaco o
+          // Klaksvik-Riga que nadie busca aquí. Desde la fase liga entran
+          // solas. El marcador en vivo y /liga/[slug] NO filtran — allí
+          // sí se siguen esas rondas.
+          .filter(
+            (f) =>
+              !UEFA_SLUGS.has(c.slug) ||
+              !/qualif|playoff|prelim/i.test(f.league.round ?? ""),
+          )
+          .map((f) => ({
+            ...f,
+            ev: null,
+            competitionLabel: c.name,
+            linkSlug: c.slug,
+          }));
       } catch {
         return [];
       }
@@ -441,12 +459,33 @@ export async function getUpcomingCalendar(
     CALENDAR_EXTRA_LEAGUES.map(async (entry): Promise<CalendarFixture[]> => {
       try {
         const fixtures = await getExtraLeagueUpcoming(entry, 6);
-        return fixtures.map((f) => ({
-          ...f,
-          ev: null,
-          competitionLabel: entry.name,
-          linkSlug: null,
-        }));
+        return fixtures
+          // `onlyTeamIds`: solo partidos donde juegue uno de esos equipos
+          // (Bundesliga → los 4 grandes). `seniorOnly`: fuera juveniles y
+          // femeninas (amistosos de selecciones → solo la absoluta).
+          .filter((f) => {
+            if (
+              entry.onlyTeamIds &&
+              !entry.onlyTeamIds.includes(f.teams.home.id) &&
+              !entry.onlyTeamIds.includes(f.teams.away.id)
+            ) {
+              return false;
+            }
+            if (
+              entry.seniorOnly &&
+              (isYouthOrWomenTeam(f.teams.home.name) ||
+                isYouthOrWomenTeam(f.teams.away.name))
+            ) {
+              return false;
+            }
+            return true;
+          })
+          .map((f) => ({
+            ...f,
+            ev: null,
+            competitionLabel: entry.name,
+            linkSlug: null,
+          }));
       } catch {
         return [];
       }
