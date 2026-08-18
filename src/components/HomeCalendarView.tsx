@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { CalendarDay } from "@/lib/sports/widget-data";
 import CompactMatchRow from "@/components/CompactMatchRow";
 
@@ -32,23 +35,37 @@ export default function HomeCalendarView({
   const favDay = hasFavGroup ? [days[0]] : [];
   const restDays = (hasFavGroup ? days.slice(1) : days).slice(0, MAX_DAYS);
 
+  // "Contraer todo" (pedido 18-ago: el calendario desplegado entero es
+  // mucha info). Cambiar allOpen remonta las tarjetas vía `key`, así el
+  // usuario puede seguir abriendo/cerrando días sueltos después.
+  const [allOpen, setAllOpen] = useState(true);
+
   return (
     <div className="space-y-3">
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          className="backbtn"
+          onClick={() => setAllOpen((v) => !v)}
+        >
+          {allOpen ? "Contraer todo ▴" : "Expandir todo ▾"}
+        </button>
+      </div>
       {favDay.map((day) => (
-        <DayCard key={day.dateKey} day={day} />
+        <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
       ))}
       {liveContent}
       {restDays.map((day) => (
-        <DayCard key={day.dateKey} day={day} />
+        <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
       ))}
     </div>
   );
 }
 
-function DayCard({ day }: { day: CalendarDay }) {
+function DayCard({ day, open = true }: { day: CalendarDay; open?: boolean }) {
   return (
-    <div className="panel" style={{ overflow: "hidden" }}>
-      <div
+    <details className="panel disclosure" style={{ overflow: "hidden" }} open={open}>
+      <summary
         style={{
           display: "flex",
           alignItems: "center",
@@ -71,7 +88,10 @@ function DayCard({ day }: { day: CalendarDay }) {
         <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
           {day.fixtures.length} partido{day.fixtures.length === 1 ? "" : "s"}
         </span>
-      </div>
+        <span className="chev" style={{ color: "var(--text-dim)" }}>
+          ▾
+        </span>
+      </summary>
       <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
         <div className="hmrowlist">
           {day.fixtures.map((fx) => (
@@ -84,6 +104,6 @@ function DayCard({ day }: { day: CalendarDay }) {
           ))}
         </div>
       </div>
-    </div>
+    </details>
   );
 }

@@ -33,13 +33,10 @@ export default function HomeScoreboardTabs({
 
   if (!hasLive && !hasCalendar) return null;
 
+  // Sin <section>/<div class="wrap"> propios: desde el layout de 3 columnas
+  // de la portada, el contenedor lo pone page.tsx (columna central).
   return (
-    <section
-      className="section"
-      style={{ paddingTop: 44, paddingBottom: 10 }}
-      aria-label="Marcador y calendario"
-    >
-      <div className="wrap">
+    <div aria-label="Marcador y calendario">
         {hasLive && hasCalendar ? (
           <div className="tabs" style={{ marginBottom: 22, maxWidth: 440 }}>
             <button type="button" className={tab === "live" ? "on" : ""} onClick={() => setTab("live")}>
@@ -81,7 +78,6 @@ export default function HomeScoreboardTabs({
             }
           />
         )}
-      </div>
-    </section>
+    </div>
   );
 }

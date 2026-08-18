@@ -2310,3 +2310,62 @@ export async function getFixtureOdds(
     doubleChance,
   };
 }
+
+/* ---------------------------------------------------------------------- *
+ * Fichajes recientes (rail "Fichajes" de la portada, estilo FotMob).
+ * /transfers?team=X devuelve el HISTORIAL COMPLETO del club — se adelgaza
+ * aquí a los últimos días y se deduplica (la API repite el mismo traspaso
+ * con fechas consecutivas). Caché de 6h vía get(): los fichajes no
+ * necesitan frescura de minutos y así el coste de cuota es ínfimo.
+ * ---------------------------------------------------------------------- */
+
+export type RecentTransfer = {
+  date: string;
+  player: string;
+  /** "Transfer", "Loan", "Free", "€ 60M", "N/A" o null — crudo de la API. */
+  type: string | null;
+  from: { name: string; logo: string | null } | null;
+  to: { name: string; logo: string | null } | null;
+};
+
+type TransferApiItem = {
+  player: { name: string };
+  transfers: {
+    date: string | null;
+    type: string | null;
+    teams: {
+      in: { name: string; logo: string | null } | null;
+      out: { name: string; logo: string | null } | null;
+    };
+  }[];
+};
+
+export async function getTeamRecentTransfers(
+  teamId: number,
+  sinceDays = 75,
+): Promise<RecentTransfer[]> {
+  const r = await get<TransferApiItem>("/transfers", { team: teamId }, 21600);
+  const cutoff = new Date(Date.now() - sinceDays * 24 * 3600_000)
+    .toISOString()
+    .slice(0, 10);
+
+  // Dedupe: la API repite el mismo movimiento en fechas consecutivas —
+  // clave jugador+destino, gana la fecha más reciente.
+  const byKey = new Map<string, RecentTransfer>();
+  for (const item of r.response) {
+    for (const t of item.transfers) {
+      if (!t.date || t.date < cutoff) continue;
+      const key = `${item.player.name}|${t.teams.in?.name ?? ""}`;
+      const prev = byKey.get(key);
+      if (prev && prev.date >= t.date) continue;
+      byKey.set(key, {
+        date: t.date,
+        player: item.player.name,
+        type: t.type,
+        from: t.teams.out ? { name: t.teams.out.name, logo: t.teams.out.logo } : null,
+        to: t.teams.in ? { name: t.teams.in.name, logo: t.teams.in.logo } : null,
+      });
+    }
+  }
+  return [...byKey.values()].sort((a, b) => b.date.localeCompare(a.date));
+}

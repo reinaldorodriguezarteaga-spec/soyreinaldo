@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import DonationBlock from "@/components/DonationBlock";
 import HomeScoreboard from "@/components/HomeScoreboard";
+import NewsCard from "@/components/NewsCard";
+import TransfersCard from "@/components/TransfersCard";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
 import { isAppRequest } from "@/lib/is-app";
@@ -20,28 +23,15 @@ const MARQUEE = [
   "Debate",
 ];
 
-/** Una liga "ha empezado" cuando algún equipo ya ha jugado al menos un
- * partido. En pretemporada (todas las tablas a cero, arrancan a mediados de
- * agosto) esto es false y la sección "La tabla, en corto" se oculta en vez
- * de enseñar tablas llenas de ceros. */
-function hasStarted(standings: StandingRow[]): boolean {
-  return standings.some((r) => r.all.played > 0);
-}
-
-/** Las dos grandes se enseñan SIEMPRE en la portada (pedido del dueño:
- * LaLiga y Premier lado a lado), aunque una todavía esté a cero por no
- * haber arrancado. El resto sigue apareciendo solo cuando tiene partidos
- * jugados, para no llenar la portada de tablas vacías. */
+/** Las dos tablas de la portada (rails del feed de 3 columnas): LaLiga a la
+ * izquierda, Premier a la derecha — pedido del dueño. El resto de tablas
+ * viven en su /liga/[slug]. */
 const HOME_ALWAYS_SHOW = ["laliga", "premier"];
 
 async function getStandingsSnapshot() {
-  const competitions = COMPETITIONS.filter((c) => c.standingsMode === "table")
-    // Las fijas primero y en su orden (LaLiga, Premier); después las demás.
-    .sort((a, b) => {
-      const ia = HOME_ALWAYS_SHOW.indexOf(a.slug);
-      const ib = HOME_ALWAYS_SHOW.indexOf(b.slug);
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-    });
+  const competitions = COMPETITIONS.filter((c) =>
+    HOME_ALWAYS_SHOW.includes(c.slug),
+  );
   return Promise.all(
     competitions.map(async (competition) => {
       try {
@@ -54,18 +44,23 @@ async function getStandingsSnapshot() {
   );
 }
 
-/** ¿Debe verse esta tabla en la portada? */
-function showOnHome(slug: string, standings: StandingRow[]): boolean {
-  if (standings.length === 0) return false;
-  return HOME_ALWAYS_SHOW.includes(slug) || hasStarted(standings);
-}
-
 export default async function Home() {
   const [stats, inApp, standingsSnapshot] = await Promise.all([
     getSocialStats(),
     isAppRequest(),
     getStandingsSnapshot(),
   ]);
+
+  // Rails del layout de 3 columnas: LaLiga a la izquierda, Premier a la
+  // derecha (pedido explícito). El resto de tablas viven en su /liga/[slug].
+  const laligaSnapshot =
+    standingsSnapshot.find(
+      (s) => s.competition.slug === "laliga" && s.standings.length > 0,
+    ) ?? null;
+  const premierSnapshot =
+    standingsSnapshot.find(
+      (s) => s.competition.slug === "premier" && s.standings.length > 0,
+    ) ?? null;
 
   return (
     <main className="page">
@@ -129,9 +124,55 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* MARCADOR EN VIVO / CALENDARIO — pestañas, protagonista justo bajo el
-          hero, solo cuando hay algo que enseñar en alguna de las dos. */}
-      <HomeScoreboard />
+      {/* FEED PRINCIPAL — 3 columnas en escritorio (estilo FotMob, pedido
+          18-ago: "a los lados se pierde mucho espacio"): LaLiga + Fichajes a
+          la izquierda, marcador/calendario al centro, Premier + Noticias a
+          la derecha. En móvil se apila: feed primero, rails después. */}
+      <section className="section" style={{ paddingTop: 44, paddingBottom: 10 }}>
+        <div className="wrap">
+          <div className="home3col">
+            <aside className="home3col__side home3col__left">
+              {laligaSnapshot && (
+                <div>
+                  <div className="subhead">
+                    <h3>LaLiga</h3>
+                    <Link href="/liga/laliga?v=tabla">Tabla completa →</Link>
+                  </div>
+                  <StandingsTableView
+                    competition={{ ...laligaSnapshot.competition, koStructure: undefined }}
+                    standings={laligaSnapshot.standings.slice(0, 10)}
+                  />
+                </div>
+              )}
+              <Suspense fallback={null}>
+                <TransfersCard />
+              </Suspense>
+            </aside>
+
+            <div className="home3col__main">
+              <HomeScoreboard />
+            </div>
+
+            <aside className="home3col__side home3col__right">
+              {premierSnapshot && (
+                <div>
+                  <div className="subhead">
+                    <h3>Premier League</h3>
+                    <Link href="/liga/premier?v=tabla">Tabla completa →</Link>
+                  </div>
+                  <StandingsTableView
+                    competition={{ ...premierSnapshot.competition, koStructure: undefined }}
+                    standings={premierSnapshot.standings.slice(0, 10)}
+                  />
+                </div>
+              )}
+              <Suspense fallback={null}>
+                <NewsCard />
+              </Suspense>
+            </aside>
+          </div>
+        </div>
+      </section>
 
       {/* QUINIELA — promo del juego gratuito (la joya nueva). */}
       <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
@@ -172,38 +213,9 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* TABLA — resumen de las competiciones que YA han empezado (en
-          pretemporada, con todo a cero, la sección entera se oculta). */}
-      {standingsSnapshot.some((s) => showOnHome(s.competition.slug, s.standings)) && (
-        <section className="section">
-          <div className="wrap">
-            <div className="shead">
-              <div>
-                <p className="eyebrow">Clasificación</p>
-                <h2 className="feat__title">La tabla, en corto.</h2>
-              </div>
-            </div>
-            <div className="grid2" style={{ alignItems: "start" }}>
-              {standingsSnapshot.map(({ competition, standings }) =>
-                showOnHome(competition.slug, standings) ? (
-                  <div key={competition.slug}>
-                    <div className="subhead">
-                      <h3>{competition.name}</h3>
-                      <Link href={`/liga/${competition.slug}?v=tabla`}>
-                        Ver tabla completa →
-                      </Link>
-                    </div>
-                    <StandingsTableView
-                      competition={{ ...competition, koStructure: undefined }}
-                      standings={standings.slice(0, 5)}
-                    />
-                  </div>
-                ) : null,
-              )}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Las tablas viven ahora en los rails del feed de 3 columnas de
+          arriba (LaLiga izquierda, Premier derecha) — la antigua sección
+          "La tabla, en corto" se retiró para no duplicarlas. */}
 
       {/* FEATURES */}
       <section className="section">
