@@ -60,7 +60,7 @@ export default async function QuinielaLigaRankingPage({
             {active && !active.isPublic ? `${active.name} · ` : ""}
             LaLiga 2026-27 · marcador exacto 3 pts, acertar el ganador 1 pt.
           </p>
-          {active && !active.isPublic && (
+          {active && (!active.isPublic || active.role === "admin") && (
             <p style={{ marginTop: 12 }}>
               <Link
                 href={`/quiniela-liga/liga/${encodeURIComponent(active.code)}`}

@@ -162,7 +162,7 @@ function LeagueCard({
         <Link href={ranking} className="btn">
           Clasificación
         </Link>
-        {!league.isPublic && (
+        {(!league.isPublic || league.role === "admin") && (
           <Link href={`/quiniela-liga/liga/${encodeURIComponent(league.code)}`} className="btn">
             {league.role === "admin" ? "Gestionar" : "La liga"}
           </Link>
