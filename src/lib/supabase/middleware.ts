@@ -5,8 +5,14 @@ const PROTECTED_PREFIXES = ["/quiniela"];
 
 // Excepciones bajo prefijos protegidos: páginas que NO requieren login (la
 // gente debe poder leerlas antes de registrarse). El ranking de la quiniela
-// de clubes es público de gancho — pronosticar sí exige login.
-const PUBLIC_EXCEPTIONS = ["/quiniela/puntos", "/quiniela-liga/ranking"];
+// de clubes es público de gancho; las reglas también — hay que poder leerlas
+// antes de decidir si unirse, y sirven de referencia pública para cortar
+// disputas — pronosticar sí exige login.
+const PUBLIC_EXCEPTIONS = [
+  "/quiniela/puntos",
+  "/quiniela-liga/ranking",
+  "/quiniela-liga/reglas",
+];
 
 const PENDING_INVITE_COOKIE = "pending_invite";
 // El código solo puede sobrevivir 30 min — suficiente para completar email
