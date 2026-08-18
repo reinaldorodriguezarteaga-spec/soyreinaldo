@@ -270,9 +270,18 @@ export default async function LeaguePanelPage({
               <div className="panel" style={{ padding: 24 }}>
                 <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Invitar</h2>
                 <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
-                  Solo se entra con este enlace o tecleando el código{" "}
-                  <strong style={{ fontFamily: "var(--font-mono-stack)" }}>{league.code}</strong>{" "}
-                  en la página de quinielas. La liga no aparece listada en ningún sitio.
+                  {league.is_public ? (
+                    <>
+                      Esta liga es la general: cualquiera puede entrar desde la
+                      página de quinielas. El enlace directo es este.
+                    </>
+                  ) : (
+                    <>
+                      Solo se entra con este enlace o tecleando el código{" "}
+                      <strong style={{ fontFamily: "var(--font-mono-stack)" }}>{league.code}</strong>{" "}
+                      en la página de quinielas. La liga no aparece listada en ningún sitio.
+                    </>
+                  )}
                 </p>
                 <InviteLink code={league.code} />
               </div>
