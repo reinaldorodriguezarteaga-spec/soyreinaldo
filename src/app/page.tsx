@@ -5,12 +5,12 @@ import DonationBlock from "@/components/DonationBlock";
 import HomeScoreboard from "@/components/HomeScoreboard";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
+import RailStandings from "@/components/RailStandings";
 import { InstagramLogo, WhatsAppLogo } from "@/components/social-logos";
 import { getSocialStats } from "@/lib/social-stats";
 import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
-import { StandingsTableView } from "@/components/competition/tab-views";
 
 const MARQUEE = [
   "Culé",
@@ -138,10 +138,7 @@ export default async function Home() {
                     <h3>LaLiga</h3>
                     <Link href="/liga/laliga?v=tabla">Tabla completa →</Link>
                   </div>
-                  <StandingsTableView
-                    competition={{ ...laligaSnapshot.competition, koStructure: undefined }}
-                    standings={laligaSnapshot.standings.slice(0, 10)}
-                  />
+                  <RailStandings slug="laliga" standings={laligaSnapshot.standings} />
                 </div>
               )}
               <Suspense fallback={null}>
@@ -160,10 +157,7 @@ export default async function Home() {
                     <h3>Premier League</h3>
                     <Link href="/liga/premier?v=tabla">Tabla completa →</Link>
                   </div>
-                  <StandingsTableView
-                    competition={{ ...premierSnapshot.competition, koStructure: undefined }}
-                    standings={premierSnapshot.standings.slice(0, 10)}
-                  />
+                  <RailStandings slug="premier" standings={premierSnapshot.standings} />
                 </div>
               )}
               <Suspense fallback={null}>
