@@ -5,6 +5,7 @@ import {
   getCompetitionFinishedFixtures,
   getCompetitionFixturesWindow,
   getCompetitionUpcomingFixtures,
+  getExtraLeagueUpcoming,
   getFixtureCards,
   getFixtureGoals,
   getRelevantFixtureForTeam,
@@ -19,7 +20,11 @@ import {
   type FixtureCard,
   type FixtureGoal,
 } from "./api-football";
-import type { Competition, FeaturedTeam } from "./competitions";
+import {
+  CALENDAR_EXTRA_LEAGUES,
+  type Competition,
+  type FeaturedTeam,
+} from "./competitions";
 
 export type WidgetMode = "wc" | "clubs";
 
@@ -350,7 +355,15 @@ export type CalendarFixture = WcFixture & {
   competitionLabel: string;
   /** Slug para el link al detalle — SIEMPRE uno de `COMPETITIONS_BY_SLUG`
    * (la página de detalle hace notFound() si no), nunca el id/nombre crudo
-   * de la liga real del fixture. */
+   * de la liga real del fixture. `null` = fila sin enlace (ligas extra del
+   * calendario sin hub propio, p. ej. Bundesliga o selecciones). */
+  linkSlug: string | null;
+};
+
+/** Equipo favorito del usuario, para la sección "⭐ Tus favoritos". */
+export type FavoriteTeamRef = {
+  id: number;
+  /** Slug válido para enlazar el detalle (derivado de link_path del favorito). */
   linkSlug: string;
 };
 
@@ -395,6 +408,7 @@ function dayLabel(dateKey: string, todayKey: string, tomorrowKey: string): strin
 export async function getUpcomingCalendar(
   competitions: Competition[],
   featuredTeams: FeaturedTeam[],
+  favoriteTeams: FavoriteTeamRef[] = [],
 ): Promise<CalendarDay[]> {
   // Un Map por fixture id: se llena primero con los de competición (más
   // fiables/nombre correcto) y luego, solo si falta, con los de equipos
@@ -419,6 +433,29 @@ export async function getUpcomingCalendar(
   );
   for (const list of perCompetition) {
     for (const fx of list) merged.set(fx.fixture.id, fx);
+  }
+
+  // Ligas/copas extra del calendario (Bundesliga, copas ES/EN/IT/DE,
+  // selecciones — ver CALENDAR_EXTRA_LEAGUES): sin hub propio → sin enlace.
+  const perExtra = await Promise.all(
+    CALENDAR_EXTRA_LEAGUES.map(async (entry): Promise<CalendarFixture[]> => {
+      try {
+        const fixtures = await getExtraLeagueUpcoming(entry, 6);
+        return fixtures.map((f) => ({
+          ...f,
+          ev: null,
+          competitionLabel: entry.name,
+          linkSlug: null,
+        }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  for (const list of perExtra) {
+    for (const fx of list) {
+      if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
+    }
   }
 
   const perTeam = await Promise.all(
@@ -447,7 +484,51 @@ export async function getUpcomingCalendar(
     .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())
     .slice(0, CALENDAR_MAX_FIXTURES);
 
-  if (all.length === 0) return [];
+  // Sección "⭐ Tus favoritos": los próximos partidos de los equipos que el
+  // usuario marcó con la estrella, como PRIMER grupo del calendario. Van
+  // también en su día normal a propósito (como FotMob) — esto es un
+  // acceso rápido, no un filtro excluyente. `next: 4` coincide con lo que
+  // ya precalcula el cron para los equipos destacados; para favoritos no
+  // destacados cae a la llamada en vivo con su caché de 30 min.
+  const favFixtures = new Map<number, CalendarFixture>();
+  if (favoriteTeams.length > 0) {
+    const perFav = await Promise.all(
+      favoriteTeams.map(async (fav): Promise<CalendarFixture[]> => {
+        try {
+          const { upcoming } = await getTeamFixtures(fav.id, { next: 4 });
+          return upcoming.slice(0, 3).map((f) => ({
+            ...f,
+            ev: null,
+            competitionLabel:
+              f.league.id === FRIENDLIES_LEAGUE_ID ? "Amistoso" : f.league.name,
+            linkSlug: fav.linkSlug,
+          }));
+        } catch {
+          return [];
+        }
+      }),
+    );
+    for (const list of perFav) {
+      for (const fx of list) {
+        if (!favFixtures.has(fx.fixture.id)) favFixtures.set(fx.fixture.id, fx);
+      }
+    }
+  }
+  const favDay: CalendarDay | null =
+    favFixtures.size > 0
+      ? {
+          dateKey: "favoritos",
+          label: "⭐ Tus favoritos",
+          fixtures: [...favFixtures.values()]
+            .sort(
+              (a, b) =>
+                new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+            )
+            .slice(0, 10),
+        }
+      : null;
+
+  if (all.length === 0 && !favDay) return [];
 
   const now = new Date();
   const todayKey = madridDateKey(now);
@@ -461,11 +542,13 @@ export async function getUpcomingCalendar(
     else byDay.set(key, [fx]);
   }
 
-  return [...byDay.entries()]
+  const days = [...byDay.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([dateKey, fixtures]) => ({
       dateKey,
       label: dayLabel(dateKey, todayKey, tomorrowKey),
       fixtures,
     }));
+
+  return favDay ? [favDay, ...days] : days;
 }
