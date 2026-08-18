@@ -352,7 +352,9 @@ export const CALENDAR_EXTRA_LEAGUES: CalendarExtraLeague[] = [
   // Solo los 4 grandes (pedido 18-ago; ids verificados contra /teams):
   // Bayern 157, Dortmund 165, Leverkusen 168, Leipzig 173.
   { leagueId: 78, season: 2026, name: "Bundesliga", onlyTeamIds: [157, 165, 168, 173] },
-  { leagueId: 81, season: 2026, name: "DFB Pokal" },
+  // La copa también solo con los 4 grandes — la 1ª ronda son 32 cruces de
+  // clubes de regional que el dueño confundió con "una liga polaca".
+  { leagueId: 81, season: 2026, name: "DFB Pokal", onlyTeamIds: [157, 165, 168, 173] },
   // Selecciones (solo las que tienen partidos en el horizonte actual;
   // cuando arranque la próxima edición, añadir aquí con su season:
   // 32/34/31/30/29 = clasif. Mundial por confederación, 960 = clasif.

@@ -107,7 +107,16 @@ function CompetitionAccordion({ group }: { group: CompetitionGroup }) {
  * `/api/sports/home-widget` (paralelo a `/api/sports/widget`, exclusivo del
  * Mundial — no se toca).
  */
-export default function HomeMatchWidgetClient({ initial }: { initial: HomeWidgetData }) {
+export default function HomeMatchWidgetClient({
+  initial,
+  liveOnly = false,
+}: {
+  initial: HomeWidgetData;
+  /** true → una sola tarjeta "En vivo" con SOLO los partidos en juego
+   * (badge de competición por fila), para incrustar encima del calendario.
+   * Mantiene el mismo polling de 30s que el widget completo. */
+  liveOnly?: boolean;
+}) {
   const [data, setData] = useState<HomeWidgetData>(initial);
 
   useEffect(() => {
@@ -142,6 +151,41 @@ export default function HomeMatchWidgetClient({ initial }: { initial: HomeWidget
 
   const { groups } = data;
   if (groups.length === 0) return null;
+
+  if (liveOnly) {
+    const liveRows = groups.flatMap((g) =>
+      g.live.map((fx) => ({ fx, competition: g.competition })),
+    );
+    if (liveRows.length === 0) return null;
+    return (
+      <div className="panel" style={{ overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px" }}>
+          <span className="livepulse" />
+          <b
+            className="mono"
+            style={{ flex: 1, minWidth: 0, fontSize: "0.64rem", letterSpacing: "0.12em", textTransform: "uppercase" }}
+          >
+            En vivo
+          </b>
+          <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
+            {liveRows.length} partido{liveRows.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
+          <div className="hmrowlist">
+            {liveRows.map(({ fx, competition }) => (
+              <CompactMatchRow
+                key={fx.fixture.id}
+                fx={fx}
+                href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
+                badge={competition.name}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
