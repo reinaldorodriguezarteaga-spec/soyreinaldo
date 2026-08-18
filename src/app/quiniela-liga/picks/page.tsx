@@ -33,14 +33,16 @@ export default async function QuinielaLigaPicksPage() {
   }
   const teams = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
 
-  const [{ data: pick }, { data: started }, { data: midPick }, { data: midStarted }] =
+  // Un único candado para TODOS los picks especiales: cierran al arrancar
+  // la jornada 6 (antes campeón/pichichi/descensos cerraban en la jornada 1,
+  // unificado a petición del dueño — ver migración 034).
+  const [{ data: pick }, { data: midPick }, { data: matchday6Started }] =
     await Promise.all([
       supabase
         .from("lq_season_picks")
         .select("champion_team, pichichi_name, relegated_teams")
         .eq("user_id", user.id)
         .maybeSingle(),
-      supabase.rpc("lq_season_started", { p_comp: "laliga", p_season: 2026 }),
       supabase
         .from("lq_midseason_picks")
         .select("best_gk_name, best_assist_name, best_defense_team, best_attack_team, mvp_name")
@@ -58,7 +60,7 @@ export default async function QuinielaLigaPicksPage() {
     pichichi: pick?.pichichi_name ?? "",
     relegated: (pick?.relegated_teams ?? []) as number[],
   };
-  const locked = started === true;
+  const locked = matchday6Started === true;
 
   const midInitial = {
     bestGk: midPick?.best_gk_name ?? "",
@@ -67,7 +69,7 @@ export default async function QuinielaLigaPicksPage() {
     bestAttackTeam: midPick?.best_attack_team ?? null,
     mvp: midPick?.mvp_name ?? "",
   };
-  const midLocked = midStarted === true;
+  const midLocked = locked;
 
   return (
     <main className="page">

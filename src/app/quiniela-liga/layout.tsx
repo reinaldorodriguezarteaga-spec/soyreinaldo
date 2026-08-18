@@ -9,6 +9,7 @@ const TABS = [
   { href: "/quiniela-liga/ranking", label: "Clasificación" },
   { href: "/quiniela-liga/selecciones", label: "Selecciones" },
   { href: "/quiniela-liga/picks", label: "Especiales" },
+  { href: "/quiniela-liga/reglas", label: "Reglas" },
 ];
 
 export default function QuinielaLigaLayout({

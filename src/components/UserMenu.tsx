@@ -9,7 +9,6 @@ import type { User } from "@supabase/supabase-js";
 const ADMIN_LINKS = [
   { href: "/admin/ligas", label: "Ligas" },
   { href: "/admin/partidos", label: "Resultados de partidos" },
-  { href: "/admin/resultado-final", label: "Final Mundial" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
 ];
