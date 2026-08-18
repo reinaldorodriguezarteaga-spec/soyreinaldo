@@ -28,8 +28,20 @@ function hasStarted(standings: StandingRow[]): boolean {
   return standings.some((r) => r.all.played > 0);
 }
 
+/** Las dos grandes se enseñan SIEMPRE en la portada (pedido del dueño:
+ * LaLiga y Premier lado a lado), aunque una todavía esté a cero por no
+ * haber arrancado. El resto sigue apareciendo solo cuando tiene partidos
+ * jugados, para no llenar la portada de tablas vacías. */
+const HOME_ALWAYS_SHOW = ["laliga", "premier"];
+
 async function getStandingsSnapshot() {
-  const competitions = COMPETITIONS.filter((c) => c.standingsMode === "table");
+  const competitions = COMPETITIONS.filter((c) => c.standingsMode === "table")
+    // Las fijas primero y en su orden (LaLiga, Premier); después las demás.
+    .sort((a, b) => {
+      const ia = HOME_ALWAYS_SHOW.indexOf(a.slug);
+      const ib = HOME_ALWAYS_SHOW.indexOf(b.slug);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
   return Promise.all(
     competitions.map(async (competition) => {
       try {
@@ -40,6 +52,12 @@ async function getStandingsSnapshot() {
       }
     }),
   );
+}
+
+/** ¿Debe verse esta tabla en la portada? */
+function showOnHome(slug: string, standings: StandingRow[]): boolean {
+  if (standings.length === 0) return false;
+  return HOME_ALWAYS_SHOW.includes(slug) || hasStarted(standings);
 }
 
 export default async function Home() {
@@ -156,7 +174,7 @@ export default async function Home() {
 
       {/* TABLA — resumen de las competiciones que YA han empezado (en
           pretemporada, con todo a cero, la sección entera se oculta). */}
-      {standingsSnapshot.some((s) => hasStarted(s.standings)) && (
+      {standingsSnapshot.some((s) => showOnHome(s.competition.slug, s.standings)) && (
         <section className="section">
           <div className="wrap">
             <div className="shead">
@@ -167,7 +185,7 @@ export default async function Home() {
             </div>
             <div className="grid2" style={{ alignItems: "start" }}>
               {standingsSnapshot.map(({ competition, standings }) =>
-                hasStarted(standings) ? (
+                showOnHome(competition.slug, standings) ? (
                   <div key={competition.slug}>
                     <div className="subhead">
                       <h3>{competition.name}</h3>
