@@ -26,7 +26,7 @@ export default function LeagueSwitcher({
         {leagues.map((l) => (
           <Link
             key={l.id}
-            href={l.isPublic ? basePath : `${basePath}?liga=${encodeURIComponent(l.code)}`}
+            href={l.isPublic ? basePath : `${basePath}?liga=${encodeURIComponent(l.id)}`}
             className={active?.id === l.id ? "on" : ""}
           >
             {l.name}

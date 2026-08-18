@@ -51,7 +51,7 @@ export async function acceptInvite(formData: FormData) {
     redirect(
       preview.is_public
         ? "/quiniela-liga/ranking?bienvenida=1"
-        : `/quiniela-liga/ranking?liga=${encodeURIComponent(code!)}&bienvenida=1`,
+        : `/quiniela-liga/ranking?liga=${encodeURIComponent(leagueId ?? code!)}&bienvenida=1`,
     );
   }
 

@@ -104,18 +104,16 @@ export type LeagueRules = {
 
 export function RulesForm({
   leagueId,
-  code,
   rules,
 }: {
   leagueId: string;
-  code: string;
   rules: LeagueRules;
 }) {
   const [state, action, pending] = useActionState(updateLeagueRules, initial);
   return (
     <form action={action}>
       <input type="hidden" name="league_id" value={leagueId} />
-      <input type="hidden" name="code" value={code} />
+      <input type="hidden" name="ref" value={leagueId} />
       <div style={rowStyle}>
         <Num name="exact" label="Marcador exacto" value={rules.exact} disabled={pending} />
         <Num name="result" label="Acertar ganador" value={rules.result} disabled={pending} />
@@ -171,18 +169,16 @@ function Num({
 
 export function AdjustmentForm({
   leagueId,
-  code,
   members,
 }: {
   leagueId: string;
-  code: string;
   members: { userId: string; displayName: string }[];
 }) {
   const [state, action, pending] = useActionState(addAdjustment, initial);
   return (
     <form action={action}>
       <input type="hidden" name="league_id" value={leagueId} />
-      <input type="hidden" name="code" value={code} />
+      <input type="hidden" name="ref" value={leagueId} />
       <div style={rowStyle}>
         <label>
           <Label>Jugador</Label>

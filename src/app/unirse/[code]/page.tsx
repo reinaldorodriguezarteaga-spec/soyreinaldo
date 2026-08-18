@@ -62,7 +62,7 @@ export default async function JoinByCodePage({
     ? isClubs
       ? preview.is_public
         ? "/quiniela-liga/ranking"
-        : `/quiniela-liga/ranking?liga=${encodeURIComponent(code)}`
+        : `/quiniela-liga/ranking?liga=${encodeURIComponent(preview.id)}`
       : `/quiniela/ranking/${preview.id}`
     : hubHref;
 

@@ -82,8 +82,14 @@ export function pickLeague(
   return leagues[0];
 }
 
-/** Añade `?liga=CODE` solo cuando hace falta (la pública es el destino por defecto). */
+/**
+ * Añade `?liga=` solo cuando hace falta (la pública es el destino por
+ * defecto). Viaja el **id**, no el código: el código es la llave para entrar
+ * a una liga privada y no tiene por qué acabar en la barra de direcciones de
+ * cada miembro. `pickLeague` acepta los dos, así que los enlaces viejos con
+ * código siguen funcionando.
+ */
 export function leagueHref(path: string, league: ClubLeague | null): string {
   if (!league || league.isPublic) return path;
-  return `${path}?liga=${encodeURIComponent(league.code)}`;
+  return `${path}?liga=${encodeURIComponent(league.id)}`;
 }

@@ -170,12 +170,13 @@ function LeagueCard({
   league: ClubLeague;
   stats?: { pos: number | null; points: number; members: number };
 }) {
+  // Por id, no por código: el código es la llave de entrada (ver leagueHref).
   const base = league.isPublic
     ? "/quiniela-liga/partidos"
-    : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.code)}`;
+    : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.id)}`;
   const ranking = league.isPublic
     ? "/quiniela-liga/ranking"
-    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.code)}`;
+    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.id)}`;
 
   return (
     <div className="panel" style={{ padding: 24 }}>
@@ -193,7 +194,7 @@ function LeagueCard({
               padding: "3px 10px",
             }}
           >
-            PRIVADA · {league.code}
+            {league.role === "admin" ? `PRIVADA · ${league.code}` : "PRIVADA"}
           </span>
         )}
         {league.role === "admin" && (
@@ -222,7 +223,7 @@ function LeagueCard({
           Clasificación
         </Link>
         {(!league.isPublic || league.role === "admin") && (
-          <Link href={`/quiniela-liga/liga/${encodeURIComponent(league.code)}`} className="btn">
+          <Link href={`/quiniela-liga/liga/${encodeURIComponent(league.id)}`} className="btn">
             {league.role === "admin" ? "Gestionar" : "La liga"}
           </Link>
         )}
