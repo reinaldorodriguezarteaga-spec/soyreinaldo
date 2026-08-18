@@ -21,7 +21,11 @@ type LeagueRow = {
   lq_points_champion: number;
   lq_points_pichichi: number;
   lq_points_relegated: number;
-  lq_points_midseason: number;
+  lq_points_gk: number;
+  lq_points_assist: number;
+  lq_points_mvp: number;
+  lq_points_defense: number;
+  lq_points_attack: number;
   lq_specials_enabled: boolean;
 };
 type MemberRow = { user_id: string; joined_at: string; role: "member" | "admin" };
@@ -77,7 +81,8 @@ export default async function LeaguePanelPage({
     .select(
       `id, name, code, description, is_public, kind,
        lq_points_exact, lq_points_result, lq_points_champion, lq_points_pichichi,
-       lq_points_relegated, lq_points_midseason, lq_specials_enabled`,
+       lq_points_relegated, lq_points_gk, lq_points_assist, lq_points_mvp,
+       lq_points_defense, lq_points_attack, lq_specials_enabled`,
     );
   const { data: league } = await (isId
     ? query.eq("id", ref)
@@ -188,9 +193,11 @@ export default async function LeaguePanelPage({
               <li>Acertar el ganador (o el empate): <strong>{league.lq_points_result} pts</strong></li>
               {league.lq_specials_enabled ? (
                 <li>
-                  Especiales: campeón {league.lq_points_champion} · pichichi{" "}
-                  {league.lq_points_pichichi} · cada descenso {league.lq_points_relegated} ·
-                  cada pick de media temporada {league.lq_points_midseason}
+                  Especiales: 🏆 campeón {league.lq_points_champion} · ⚽ pichichi{" "}
+                  {league.lq_points_pichichi} · 🔻 cada descenso {league.lq_points_relegated} ·
+                  🧤 Zamora {league.lq_points_gk} · 🎯 asistidor {league.lq_points_assist} ·
+                  ⭐ MVP {league.lq_points_mvp} · 🛡️ menos goleado {league.lq_points_defense} ·
+                  🔥 más goleador {league.lq_points_attack}
                 </li>
               ) : (
                 <li>Los picks especiales no puntúan en esta quiniela</li>
@@ -210,7 +217,11 @@ export default async function LeaguePanelPage({
                       champion: league.lq_points_champion,
                       pichichi: league.lq_points_pichichi,
                       relegated: league.lq_points_relegated,
-                      midseason: league.lq_points_midseason,
+                      gk: league.lq_points_gk,
+                      assist: league.lq_points_assist,
+                      mvp: league.lq_points_mvp,
+                      defense: league.lq_points_defense,
+                      attack: league.lq_points_attack,
                       specials: league.lq_specials_enabled,
                     }}
                   />

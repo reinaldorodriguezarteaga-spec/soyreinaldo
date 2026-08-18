@@ -16,7 +16,11 @@ const DEFAULT_RULES = {
   champion: 15,
   pichichi: 10,
   relegated: 5,
-  midseason: 10,
+  gk: 10,
+  assist: 10,
+  mvp: 10,
+  defense: 10,
+  attack: 10,
   specials: true,
 };
 type Rules = typeof DEFAULT_RULES;
@@ -36,11 +40,11 @@ const seasonRows = (r: Rules): Row[] => [
 ];
 
 const midseasonRows = (r: Rules): Row[] => [
-  { label: "🧤 Zamora (portero menos goleado)", points: pts(r.midseason), note: "por nombre" },
-  { label: "🎯 Máximo asistidor", points: pts(r.midseason), note: "por nombre" },
-  { label: "⭐ MVP de la liga", points: pts(r.midseason), note: "por nombre" },
-  { label: "🛡️ Equipo menos goleado", points: pts(r.midseason) },
-  { label: "🔥 Equipo más goleador", points: pts(r.midseason) },
+  { label: "🧤 Zamora (portero menos goleado)", points: pts(r.gk), note: "por nombre" },
+  { label: "🎯 Máximo asistidor", points: pts(r.assist), note: "por nombre" },
+  { label: "⭐ MVP de la liga", points: pts(r.mvp), note: "por nombre" },
+  { label: "🛡️ Equipo menos goleado", points: pts(r.defense) },
+  { label: "🔥 Equipo más goleador", points: pts(r.attack) },
 ];
 
 function PointsTable({ rows }: { rows: Row[] }) {
@@ -105,7 +109,8 @@ export default async function QuinielaLigaReglasPage({
       .from("leagues")
       .select(
         `lq_points_exact, lq_points_result, lq_points_champion, lq_points_pichichi,
-         lq_points_relegated, lq_points_midseason, lq_specials_enabled`,
+         lq_points_relegated, lq_points_gk, lq_points_assist, lq_points_mvp,
+         lq_points_defense, lq_points_attack, lq_specials_enabled`,
       )
       .eq("id", active.id)
       .maybeSingle();
@@ -116,7 +121,11 @@ export default async function QuinielaLigaReglasPage({
         champion: data.lq_points_champion,
         pichichi: data.lq_points_pichichi,
         relegated: data.lq_points_relegated,
-        midseason: data.lq_points_midseason,
+        gk: data.lq_points_gk,
+        assist: data.lq_points_assist,
+        mvp: data.lq_points_mvp,
+        defense: data.lq_points_defense,
+        attack: data.lq_points_attack,
         specials: data.lq_specials_enabled,
       };
     }
