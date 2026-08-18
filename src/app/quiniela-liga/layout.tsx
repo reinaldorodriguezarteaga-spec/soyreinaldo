@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ScrollHintTabs from "@/components/ScrollHintTabs";
 
 /** Pestañas del hub de la quiniela de LaLiga. */
 const TABS = [
@@ -22,7 +23,7 @@ export default function QuinielaLigaLayout({
     <>
       <div className="wrap" style={{ paddingTop: 18 }}>
         <nav aria-label="Secciones de la quiniela" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-          <div className="tabs tabs--scroll" style={{ maxWidth: 520 }}>
+          <ScrollHintTabs maxWidth={520}>
             {TABS.map((t) => {
               const active =
                 pathname === t.href || pathname.startsWith(`${t.href}/`);
@@ -36,7 +37,7 @@ export default function QuinielaLigaLayout({
                 </Link>
               );
             })}
-          </div>
+          </ScrollHintTabs>
         </nav>
       </div>
       {children}
