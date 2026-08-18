@@ -69,7 +69,18 @@ export default function HomeScoreboardTabs({
         )}
 
         {tab === "live" && hasLive && <HomeMatchWidgetClient initial={widgetData!} />}
-        {tab === "calendar" && hasCalendar && <HomeCalendarView days={calendarDays!} />}
+        {tab === "calendar" && hasCalendar && (
+          <HomeCalendarView
+            days={calendarDays!}
+            // Con partidos en juego, el calendario también los enseña —
+            // tarjeta "En vivo" (con su polling) entre favoritos y próximos.
+            liveContent={
+              hasLive && anyLive ? (
+                <HomeMatchWidgetClient initial={widgetData!} liveOnly />
+              ) : undefined
+            }
+          />
+        )}
       </div>
     </section>
   );

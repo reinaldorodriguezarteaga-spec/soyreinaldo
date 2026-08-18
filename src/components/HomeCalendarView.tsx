@@ -16,54 +16,74 @@ const MAX_DAYS = 7;
  * 9 competiciones a la vez. Presentacional puro — sin fetch propio,
  * `HomeScoreboard` ya trae los datos.
  */
-export default function HomeCalendarView({ days }: { days: CalendarDay[] }) {
+export default function HomeCalendarView({
+  days,
+  liveContent,
+}: {
+  days: CalendarDay[];
+  /** Bloque "En vivo" (HomeMatchWidgetClient liveOnly) — se pinta entre el
+   * grupo de favoritos y los días de próximos partidos, como pidió el
+   * dueño ("los en vivo junto con el calendario, arriba de los próximos"). */
+  liveContent?: React.ReactNode;
+}) {
   // El grupo "⭐ Tus favoritos" (si existe, siempre el primero) no consume
   // un hueco de los MAX_DAYS de días reales.
   const hasFavGroup = days[0]?.dateKey === "favoritos";
-  const visible = days.slice(0, MAX_DAYS + (hasFavGroup ? 1 : 0));
+  const favDay = hasFavGroup ? [days[0]] : [];
+  const restDays = (hasFavGroup ? days.slice(1) : days).slice(0, MAX_DAYS);
 
   return (
     <div className="space-y-3">
-      {visible.map((day) => (
-        <div key={day.dateKey} className="panel" style={{ overflow: "hidden" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "14px 16px",
-            }}
-          >
-            <b
-              className="mono"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                fontSize: "0.64rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-              }}
-            >
-              {day.label}
-            </b>
-            <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
-              {day.fixtures.length} partido{day.fixtures.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
-            <div className="hmrowlist">
-              {day.fixtures.map((fx) => (
-                <CompactMatchRow
-                  key={fx.fixture.id}
-                  fx={fx}
-                  href={fx.linkSlug ? `/liga/${fx.linkSlug}/partido/${fx.fixture.id}` : null}
-                  badge={fx.competitionLabel}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+      {favDay.map((day) => (
+        <DayCard key={day.dateKey} day={day} />
       ))}
+      {liveContent}
+      {restDays.map((day) => (
+        <DayCard key={day.dateKey} day={day} />
+      ))}
+    </div>
+  );
+}
+
+function DayCard({ day }: { day: CalendarDay }) {
+  return (
+    <div className="panel" style={{ overflow: "hidden" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "14px 16px",
+        }}
+      >
+        <b
+          className="mono"
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: "0.64rem",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+          }}
+        >
+          {day.label}
+        </b>
+        <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
+          {day.fixtures.length} partido{day.fixtures.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
+        <div className="hmrowlist">
+          {day.fixtures.map((fx) => (
+            <CompactMatchRow
+              key={fx.fixture.id}
+              fx={fx}
+              href={fx.linkSlug ? `/liga/${fx.linkSlug}/partido/${fx.fixture.id}` : null}
+              badge={fx.competitionLabel}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
