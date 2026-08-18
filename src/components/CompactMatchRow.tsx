@@ -13,7 +13,7 @@ function formatKickoffTime(iso: string) {
 }
 
 /**
- * Fila de partido de una sola línea (estilo Sofascore/FotMob): hora/estado,
+ * Fila de partido de una sola línea (estilo FotMob): hora/estado,
  * escudo+nombre de cada equipo y marcador, sin badges de eventos ni CTA —
  * eso se reserva para el detalle del partido. Compartida por
  * `HomeMatchWidgetClient` (dentro de cada desplegable de competición, sin
