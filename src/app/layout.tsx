@@ -56,6 +56,12 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  // Verificación de propiedad de AdSense (método "Etiqueta meta") — señal
+  // extra además del script y de /ads.txt, por si el rastreador tropieza
+  // con la redirección apex→www al verificar.
+  other: ADSENSE_CLIENT_ID
+    ? { "google-adsense-account": ADSENSE_CLIENT_ID }
+    : {},
 };
 
 export const viewport = {
