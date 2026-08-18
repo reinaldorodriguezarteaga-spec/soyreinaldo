@@ -436,7 +436,9 @@ export async function getUpcomingCalendar(
           .filter(
             (f) =>
               !UEFA_SLUGS.has(c.slug) ||
-              !/qualif|playoff|prelim/i.test(f.league.round ?? ""),
+              // "Playoff round" (Europa/Conference) Y "Play-offs" (Champions,
+              // con guion) — por eso el separador opcional.
+              !/qualif|play[\s-]?off|prelim/i.test(f.league.round ?? ""),
           )
           .map((f) => ({
             ...f,
