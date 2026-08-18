@@ -56,25 +56,33 @@ export default async function LeaguePanelPage({
   params: Promise<{ code: string }>;
   searchParams: Promise<{ guardado?: string }>;
 }) {
-  const { code: rawCode } = await params;
+  const { code: rawRef } = await params;
   const { guardado } = await searchParams;
-  const code = decodeURIComponent(rawCode).toUpperCase();
+  // La ruta acepta el id de la liga (lo que enlaza la app: el código es la
+  // llave de entrada y no debe pasearse por la barra de direcciones) o el
+  // propio código, para que los enlaces repartidos a mano sigan valiendo.
+  const ref = decodeURIComponent(rawRef);
+  const isId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+  const code = ref.toUpperCase();
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?redirect=/quiniela-liga/liga/${encodeURIComponent(code)}`);
+  if (!user) redirect(`/login?redirect=/quiniela-liga/liga/${encodeURIComponent(ref)}`);
 
-  const { data: league } = await supabase
+  const query = supabase
     .from("leagues")
     .select(
       `id, name, code, description, is_public, kind,
        lq_points_exact, lq_points_result, lq_points_champion, lq_points_pichichi,
        lq_points_relegated, lq_points_midseason, lq_specials_enabled`,
-    )
-    .eq("code", code)
-    .maybeSingle<LeagueRow>();
+    );
+  const { data: league } = await (isId
+    ? query.eq("id", ref)
+    : query.eq("code", code)
+  ).maybeSingle<LeagueRow>();
 
   if (!league) notFound();
 
@@ -86,7 +94,7 @@ export default async function LeaguePanelPage({
     .maybeSingle<{ role: "member" | "admin" }>();
 
   // Aún no eres de la liga: pasa por la invitación, no por aquí.
-  if (!me) redirect(`/unirse/${encodeURIComponent(code)}`);
+  if (!me) redirect(`/unirse/${encodeURIComponent(league.code)}`);
   const isLeagueAdmin = me.role === "admin";
 
   const [{ data: memberRows }, { data: lb }] = await Promise.all([
@@ -124,7 +132,7 @@ export default async function LeaguePanelPage({
 
   const rankingHref = league.is_public
     ? "/quiniela-liga/ranking"
-    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.code)}`;
+    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.id)}`;
 
   return (
     <main className="page">
@@ -151,7 +159,7 @@ export default async function LeaguePanelPage({
               href={
                 league.is_public
                   ? "/quiniela-liga/partidos"
-                  : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.code)}`
+                  : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.id)}`
               }
               className="btn"
             >
@@ -196,7 +204,6 @@ export default async function LeaguePanelPage({
                 <div style={{ marginTop: 16 }}>
                   <RulesForm
                     leagueId={league.id}
-                    code={league.code}
                     rules={{
                       exact: league.lq_points_exact,
                       result: league.lq_points_result,
@@ -247,7 +254,7 @@ export default async function LeaguePanelPage({
                           <form action={kickMember}>
                             <input type="hidden" name="league_id" value={league.id} />
                             <input type="hidden" name="user_id" value={m.user_id} />
-                            <input type="hidden" name="code" value={league.code} />
+                            <input type="hidden" name="ref" value={league.id} />
                             <button
                               type="submit"
                               className="btn btn--ghost"
@@ -299,7 +306,6 @@ export default async function LeaguePanelPage({
                 </p>
                 <AdjustmentForm
                   leagueId={league.id}
-                  code={league.code}
                   members={members.map((m) => ({
                     userId: m.user_id,
                     displayName: nameById.get(m.user_id) ?? "Sin nombre",
@@ -328,7 +334,7 @@ export default async function LeaguePanelPage({
                         </span>
                         <form action={deleteAdjustment}>
                           <input type="hidden" name="id" value={a.id} />
-                          <input type="hidden" name="code" value={league.code} />
+                          <input type="hidden" name="ref" value={league.id} />
                           <button
                             type="submit"
                             className="btn btn--ghost"

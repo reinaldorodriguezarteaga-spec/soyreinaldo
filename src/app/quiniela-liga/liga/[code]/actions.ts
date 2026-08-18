@@ -61,18 +61,17 @@ export async function updateLeagueMeta(
     return { status: "error", message: readableError(error.message) };
   }
 
-  const newCode = code.toUpperCase();
-  revalidatePath(`/quiniela-liga/liga/${newCode}`);
+  revalidatePath(`/quiniela-liga/liga/${leagueId}`);
   revalidatePath("/quiniela-liga/ranking");
-  // El código va en la URL: si ha cambiado, la ruta antigua ya no existe.
-  redirect(`/quiniela-liga/liga/${encodeURIComponent(newCode)}?guardado=1`);
+  // La ruta va por id, así que cambiar el código no la mueve.
+  redirect(`/quiniela-liga/liga/${encodeURIComponent(leagueId)}?guardado=1`);
 }
 
 /** Expulsar a un miembro. La RLS impide echar a otro admin. */
 export async function kickMember(formData: FormData) {
   const leagueId = formData.get("league_id") as string | null;
   const userId = formData.get("user_id") as string | null;
-  const code = formData.get("code") as string | null;
+  const ref = formData.get("ref") as string | null;
   if (!leagueId || !userId) return;
 
   const supabase = await createClient();
@@ -82,7 +81,7 @@ export async function kickMember(formData: FormData) {
     .eq("league_id", leagueId)
     .eq("user_id", userId);
 
-  if (code) revalidatePath(`/quiniela-liga/liga/${code}`);
+  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
   revalidatePath("/quiniela-liga/ranking");
 }
 
@@ -92,7 +91,7 @@ export async function addAdjustment(
 ): Promise<LeagueFormState> {
   const leagueId = formData.get("league_id") as string | null;
   const userId = formData.get("user_id") as string | null;
-  const code = formData.get("code") as string | null;
+  const ref = formData.get("ref") as string | null;
   const delta = Number.parseInt((formData.get("delta") as string | null) ?? "", 10);
   const reason = (formData.get("reason") as string | null)?.trim();
 
@@ -120,7 +119,7 @@ export async function addAdjustment(
 
   if (error) return { status: "error", message: readableError(error.message) };
 
-  if (code) revalidatePath(`/quiniela-liga/liga/${code}`);
+  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
   revalidatePath("/quiniela-liga/ranking");
   return {
     status: "success",
@@ -130,13 +129,13 @@ export async function addAdjustment(
 
 export async function deleteAdjustment(formData: FormData) {
   const id = formData.get("id") as string | null;
-  const code = formData.get("code") as string | null;
+  const ref = formData.get("ref") as string | null;
   if (!id) return;
 
   const supabase = await createClient();
   await supabase.from("point_adjustments").delete().eq("id", id);
 
-  if (code) revalidatePath(`/quiniela-liga/liga/${code}`);
+  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
   revalidatePath("/quiniela-liga/ranking");
 }
 
@@ -146,7 +145,7 @@ export async function updateLeagueRules(
   formData: FormData,
 ): Promise<LeagueFormState> {
   const leagueId = formData.get("league_id") as string | null;
-  const code = formData.get("code") as string | null;
+  const ref = formData.get("ref") as string | null;
   if (!leagueId) return { status: "error", message: "Liga no encontrada." };
 
   const num = (key: string) => {
@@ -174,7 +173,7 @@ export async function updateLeagueRules(
 
   if (error) return { status: "error", message: readableError(error.message) };
 
-  if (code) revalidatePath(`/quiniela-liga/liga/${code}`);
+  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
   revalidatePath("/quiniela-liga/ranking");
   return { status: "success", message: "Normas actualizadas." };
 }

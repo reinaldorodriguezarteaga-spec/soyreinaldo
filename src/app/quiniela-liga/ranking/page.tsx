@@ -63,7 +63,7 @@ export default async function QuinielaLigaRankingPage({
           {active && (!active.isPublic || active.role === "admin") && (
             <p style={{ marginTop: 12 }}>
               <Link
-                href={`/quiniela-liga/liga/${encodeURIComponent(active.code)}`}
+                href={`/quiniela-liga/liga/${encodeURIComponent(active.id)}`}
                 className="btn"
               >
                 {active.role === "admin" ? "Gestionar liga" : "Ver liga"}{" "}
