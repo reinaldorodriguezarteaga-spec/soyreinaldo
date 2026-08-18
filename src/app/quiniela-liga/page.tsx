@@ -12,7 +12,20 @@ export const metadata = {
 /** Liga pública "Quiniela LaLiga 2026-27". */
 const PUBLIC_LEAGUE_CODE = "LALIGA2627";
 
+/** Quinielas privadas que se ANUNCIAN en el selector aunque no seas miembro
+ * (con candado: el botón lleva al formulario del código, nunca entra
+ * directo — el código sigue siendo la llave). Pedido del dueño: que la de
+ * Pacha se vea debajo de la general. */
+const FEATURED_PRIVATE_CODES = ["PACHA"];
+
 type LbRow = { user_id: string; total_points: number };
+
+type PrivatePreview = {
+  id: string;
+  name: string;
+  description: string | null;
+  member_count: number;
+};
 
 /**
  * Portada del hub: elegir a qué quiniela entrar. La mayoría solo tendrá la
@@ -27,6 +40,23 @@ export default async function QuinielaLigaIndex() {
 
   const leagues = user ? await getMyClubLeagues(user.id) : [];
   const inPublic = leagues.some((l) => l.isPublic);
+
+  // Quinielas privadas anunciadas — solo las que el usuario aún NO tiene
+  // (si ya es miembro, su tarjeta normal de arriba basta). La vista previa
+  // sale de get_league_public_preview (RPC pública pensada justo para esto:
+  // nombre/descr./miembros, nada sensible).
+  const memberIds = new Set(leagues.map((l) => l.id));
+  const featuredPrivate = (
+    await Promise.all(
+      FEATURED_PRIVATE_CODES.map(async (code) => {
+        const { data } = await supabase.rpc("get_league_public_preview", {
+          p_code: code,
+        });
+        const row = (data as PrivatePreview[] | null)?.[0];
+        return row && !memberIds.has(row.id) ? row : null;
+      }),
+    )
+  ).filter((p): p is PrivatePreview => p !== null);
 
   // Posición y puntos de cada liga (son pocas; una consulta por liga).
   const stats = new Map<string, { pos: number | null; points: number; members: number }>();
@@ -77,6 +107,35 @@ export default async function QuinielaLigaIndex() {
             </div>
           )}
 
+          {featuredPrivate.map((p) => (
+            <div key={p.id} className="panel" style={{ padding: 24 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{p.name}</h2>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono-stack)",
+                    fontSize: "0.7rem",
+                    letterSpacing: "0.1em",
+                    color: "var(--text-dim)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 999,
+                    padding: "3px 10px",
+                  }}
+                >
+                  🔒 PRIVADO
+                </span>
+              </div>
+              <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
+                {p.description ?? "Quiniela privada de su comunidad."}
+                {p.member_count > 0 &&
+                  ` · ${p.member_count} ${p.member_count === 1 ? "jugador" : "jugadores"}`}
+              </p>
+              <Link href="#codigo" className="btn btn--accent">
+                Acceder <span className="arr">→</span>
+              </Link>
+            </div>
+          ))}
+
           {!user && (
             <div className="panel" style={{ padding: 24 }}>
               <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Entra para jugar</h2>
@@ -89,7 +148,7 @@ export default async function QuinielaLigaIndex() {
             </div>
           )}
 
-          <div className="panel" style={{ padding: 24 }}>
+          <div id="codigo" className="panel" style={{ padding: 24, scrollMarginTop: 90 }}>
             <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
               ¿Te han invitado a una quiniela privada?
             </h2>
