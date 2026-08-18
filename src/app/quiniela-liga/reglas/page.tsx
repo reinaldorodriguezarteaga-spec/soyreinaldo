@@ -1,3 +1,6 @@
+import { createClient } from "@/lib/supabase/server";
+import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
+
 export const metadata = {
   title: "Reglas · Quiniela LaLiga 2026-27 | Soy Reinaldo",
   description:
@@ -6,24 +9,38 @@ export const metadata = {
 
 type Row = { label: string; points: string; note?: string };
 
-const PREDICTION_ROWS: Row[] = [
-  { label: "Marcador exacto", points: "3 pts" },
-  { label: "Aciertas el ganador (o empate), marcador distinto", points: "1 pt" },
+/** Baremo de la quiniela general; cada liga privada puede tener el suyo. */
+const DEFAULT_RULES = {
+  exact: 3,
+  result: 1,
+  champion: 15,
+  pichichi: 10,
+  relegated: 5,
+  midseason: 10,
+  specials: true,
+};
+type Rules = typeof DEFAULT_RULES;
+
+const pts = (n: number) => `${n} ${n === 1 ? "pt" : "pts"}`;
+
+const predictionRows = (r: Rules): Row[] => [
+  { label: "Marcador exacto", points: pts(r.exact) },
+  { label: "Aciertas el ganador (o empate), marcador distinto", points: pts(r.result) },
   { label: "No aciertas", points: "0 pts" },
 ];
 
-const SEASON_ROWS: Row[] = [
-  { label: "🏆 Campeón de LaLiga", points: "15 pts" },
-  { label: "⚽ Pichichi (máximo goleador)", points: "10 pts", note: "por nombre" },
-  { label: "🔻 Cada equipo descendido acertado (hasta 3)", points: "5 pts c/u" },
+const seasonRows = (r: Rules): Row[] => [
+  { label: "🏆 Campeón de LaLiga", points: pts(r.champion) },
+  { label: "⚽ Pichichi (máximo goleador)", points: pts(r.pichichi), note: "por nombre" },
+  { label: "🔻 Cada equipo descendido acertado (hasta 3)", points: `${pts(r.relegated)} c/u` },
 ];
 
-const MIDSEASON_ROWS: Row[] = [
-  { label: "🧤 Zamora (portero menos goleado)", points: "10 pts", note: "por nombre" },
-  { label: "🎯 Máximo asistidor", points: "10 pts", note: "por nombre" },
-  { label: "⭐ MVP de la liga", points: "10 pts", note: "por nombre" },
-  { label: "🛡️ Equipo menos goleado", points: "10 pts" },
-  { label: "🔥 Equipo más goleador", points: "10 pts" },
+const midseasonRows = (r: Rules): Row[] => [
+  { label: "🧤 Zamora (portero menos goleado)", points: pts(r.midseason), note: "por nombre" },
+  { label: "🎯 Máximo asistidor", points: pts(r.midseason), note: "por nombre" },
+  { label: "⭐ MVP de la liga", points: pts(r.midseason), note: "por nombre" },
+  { label: "🛡️ Equipo menos goleado", points: pts(r.midseason) },
+  { label: "🔥 Equipo más goleador", points: pts(r.midseason) },
 ];
 
 function PointsTable({ rows }: { rows: Row[] }) {
@@ -66,12 +83,58 @@ function PointsTable({ rows }: { rows: Row[] }) {
   );
 }
 
-export default function QuinielaLigaReglasPage() {
+export default async function QuinielaLigaReglasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ liga?: string }>;
+}) {
+  const { liga } = await searchParams;
+
+  // Sin sesión se enseña el baremo de la general (la página es pública); con
+  // sesión, el de la liga que se esté mirando — cada una puede tener el suyo.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const leagues = user ? await getMyClubLeagues(user.id) : [];
+  const active = pickLeague(leagues, liga);
+
+  let rules = DEFAULT_RULES;
+  if (active) {
+    const { data } = await supabase
+      .from("leagues")
+      .select(
+        `lq_points_exact, lq_points_result, lq_points_champion, lq_points_pichichi,
+         lq_points_relegated, lq_points_midseason, lq_specials_enabled`,
+      )
+      .eq("id", active.id)
+      .maybeSingle();
+    if (data) {
+      rules = {
+        exact: data.lq_points_exact,
+        result: data.lq_points_result,
+        champion: data.lq_points_champion,
+        pichichi: data.lq_points_pichichi,
+        relegated: data.lq_points_relegated,
+        midseason: data.lq_points_midseason,
+        specials: data.lq_specials_enabled,
+      };
+    }
+  }
+
+  const PREDICTION_ROWS = predictionRows(rules);
+  const SEASON_ROWS = seasonRows(rules);
+  const MIDSEASON_ROWS = midseasonRows(rules);
+
   return (
     <main className="page">
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 20 }}>
         <div className="wrap">
-          <p className="eyebrow">Quiniela · LaLiga 2026-27</p>
+          <p className="eyebrow">
+            {active && !active.isPublic
+              ? `${active.name} · LaLiga 2026-27`
+              : "Quiniela · LaLiga 2026-27"}
+          </p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.4rem)" }}>
             Reglas
           </h1>
@@ -97,41 +160,45 @@ export default function QuinielaLigaReglasPage() {
         </div>
       </section>
 
-      <section className="section" style={{ paddingTop: 8, paddingBottom: 16 }}>
-        <div className="wrap" style={{ maxWidth: 620 }}>
-          <div className="shead" style={{ marginBottom: 16 }}>
-            <div>
-              <p className="eyebrow">Toda la temporada</p>
-              <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
-                Campeón, pichichi y descensos
-              </h2>
+      {rules.specials && (
+        <>
+        <section className="section" style={{ paddingTop: 8, paddingBottom: 16 }}>
+          <div className="wrap" style={{ maxWidth: 620 }}>
+            <div className="shead" style={{ marginBottom: 16 }}>
+              <div>
+                <p className="eyebrow">Toda la temporada</p>
+                <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
+                  Campeón, pichichi y descensos
+                </h2>
+              </div>
             </div>
+            <PointsTable rows={SEASON_ROWS} />
+            <p className="hint" style={{ marginTop: 12 }}>
+              Editables hasta que arranque la <b>jornada 6</b> — después quedan
+              fijos hasta que se sepa el resultado real al acabar la temporada.
+            </p>
           </div>
-          <PointsTable rows={SEASON_ROWS} />
-          <p className="hint" style={{ marginTop: 12 }}>
-            Editables hasta que arranque la <b>jornada 6</b> — después quedan
-            fijos hasta que se sepa el resultado real al acabar la temporada.
-          </p>
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 8, paddingBottom: 16 }}>
-        <div className="wrap" style={{ maxWidth: 620 }}>
-          <div className="shead" style={{ marginBottom: 16 }}>
-            <div>
-              <p className="eyebrow">Más margen</p>
-              <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
-                Picks de mitad de temporada
-              </h2>
+        </section>
+  
+        <section className="section" style={{ paddingTop: 8, paddingBottom: 16 }}>
+          <div className="wrap" style={{ maxWidth: 620 }}>
+            <div className="shead" style={{ marginBottom: 16 }}>
+              <div>
+                <p className="eyebrow">Más margen</p>
+                <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
+                  Picks de mitad de temporada
+                </h2>
+              </div>
             </div>
+            <PointsTable rows={MIDSEASON_ROWS} />
+            <p className="hint" style={{ marginTop: 12 }}>
+              También editables hasta que arranque la <b>jornada 6</b> — dan más
+              margen porque se deciden mejor tras ver algo de forma.
+            </p>
           </div>
-          <PointsTable rows={MIDSEASON_ROWS} />
-          <p className="hint" style={{ marginTop: 12 }}>
-            También editables hasta que arranque la <b>jornada 6</b> — dan más
-            margen porque se deciden mejor tras ver algo de forma.
-          </p>
-        </div>
-      </section>
+        </section>
+        </>
+      )}
 
       <section className="section" style={{ paddingTop: 8 }}>
         <div className="wrap" style={{ maxWidth: 620 }}>
