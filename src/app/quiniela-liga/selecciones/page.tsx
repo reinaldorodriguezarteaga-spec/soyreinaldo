@@ -4,11 +4,17 @@ import SeleccionesView, {
   type SeleccionMatch,
   type SeleccionMember,
 } from "./selecciones-view";
+import {
+  getMyClubLeagues,
+  pickLeague,
+} from "@/lib/quiniela-liga/leagues";
+import LeagueSwitcher from "../league-switcher";
 
 export const metadata = {
   title: "Selecciones · Quiniela LaLiga 2026-27 | Soy Reinaldo",
 };
 
+/** Liga pública "Quiniela LaLiga 2026-27": el destino por defecto. */
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 const LIVE_STATES = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"];
 
@@ -26,17 +32,27 @@ type MatchRow = {
 };
 type LbRow = { user_id: string; display_name: string };
 
-export default async function QuinielaLigaSeleccionesPage() {
+export default async function QuinielaLigaSeleccionesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ liga?: string }>;
+}) {
+  const { liga } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/quiniela-liga/selecciones");
 
+  // Solo se ven los pronósticos de la gente de TU liga (además, la RLS de
+  // lq_predictions no deja leerlos hasta que el partido ha empezado).
+  const leagues = await getMyClubLeagues(user.id);
+  const active = pickLeague(leagues, liga);
+
   const nowIso = new Date().toISOString();
 
   const [{ data: lb }, { data: matchRows }] = await Promise.all([
-    supabase.rpc("lq_leaderboard", { p_league_id: PUBLIC_LEAGUE_ID }),
+    supabase.rpc("lq_leaderboard", { p_league_id: active?.id ?? PUBLIC_LEAGUE_ID }),
     supabase
       .from("lq_matches")
       .select(
@@ -95,7 +111,11 @@ export default async function QuinielaLigaSeleccionesPage() {
     <main className="page">
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 16 }}>
         <div className="wrap">
-          <p className="eyebrow">Quiniela · LaLiga 2026-27</p>
+          <p className="eyebrow">
+            {active && !active.isPublic
+              ? `${active.name} · LaLiga 2026-27`
+              : "Quiniela · LaLiga 2026-27"}
+          </p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.2rem)" }}>
             Selecciones
           </h1>
@@ -104,6 +124,11 @@ export default async function QuinielaLigaSeleccionesPage() {
 
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap">
+          <LeagueSwitcher
+            leagues={leagues}
+            active={active}
+            basePath="/quiniela-liga/selecciones"
+          />
           <SeleccionesView
             matches={seleccionMatches}
             members={members}

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getMyClubLeagues, pickLeague, leagueHref } from "@/lib/quiniela-liga/leagues";
+import LeagueSwitcher from "../league-switcher";
 
-/** Liga pública "Quiniela LaLiga 2026-27". */
+/** Liga pública "Quiniela LaLiga 2026-27": lo que ve quien no ha entrado. */
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 
 export const metadata = {
@@ -19,21 +21,33 @@ type Row = {
   predictions_made: number;
 };
 
-export default async function QuinielaLigaRankingPage() {
+export default async function QuinielaLigaRankingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ liga?: string }>;
+}) {
+  const { liga } = await searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: auth }] = await Promise.all([
-    supabase.rpc("lq_leaderboard", { p_league_id: PUBLIC_LEAGUE_ID }),
-    supabase.auth.getUser(),
-  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const leagues = user ? await getMyClubLeagues(user.id) : [];
+  const active = pickLeague(leagues, liga);
+  const leagueId = active?.id ?? PUBLIC_LEAGUE_ID;
+
+  const { data } = await supabase.rpc("lq_leaderboard", {
+    p_league_id: leagueId,
+  });
   const rows = (data ?? []) as Row[];
-  const meId = auth.user?.id ?? null;
+  const meId = user?.id ?? null;
 
   return (
     <main className="page">
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
-            href="/quiniela-liga/partidos"
+            href={leagueHref("/quiniela-liga/partidos", active)}
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
@@ -43,13 +57,30 @@ export default async function QuinielaLigaRankingPage() {
             Clasificación
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            Quiniela LaLiga 2026-27 · marcador exacto 3 pts, acertar el ganador 1 pt.
+            {active && !active.isPublic ? `${active.name} · ` : ""}
+            LaLiga 2026-27 · marcador exacto 3 pts, acertar el ganador 1 pt.
           </p>
+          {active && !active.isPublic && (
+            <p style={{ marginTop: 12 }}>
+              <Link
+                href={`/quiniela-liga/liga/${encodeURIComponent(active.code)}`}
+                className="btn"
+              >
+                {active.role === "admin" ? "Gestionar liga" : "Ver liga"}{" "}
+                <span className="arr">→</span>
+              </Link>
+            </p>
+          )}
         </div>
       </section>
 
       <section className="section" style={{ paddingTop: 24 }}>
         <div className="wrap">
+          <LeagueSwitcher
+            leagues={leagues}
+            active={active}
+            basePath="/quiniela-liga/ranking"
+          />
           {rows.length === 0 ? (
             <div
               className="panel"
@@ -63,7 +94,10 @@ export default async function QuinielaLigaRankingPage() {
               Todavía no hay nadie en la clasificación. Haz tu primer pronóstico
               y aparecerás aquí.
               <div style={{ marginTop: 16 }}>
-                <Link href="/quiniela-liga" className="btn btn--accent">
+                <Link
+                  href={leagueHref("/quiniela-liga/partidos", active)}
+                  className="btn btn--accent"
+                >
                   Ir a pronosticar <span className="arr">→</span>
                 </Link>
               </div>
