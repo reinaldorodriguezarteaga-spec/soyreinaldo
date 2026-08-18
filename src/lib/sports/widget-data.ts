@@ -460,7 +460,10 @@ export async function getUpcomingCalendar(
   const perExtra = await Promise.all(
     CALENDAR_EXTRA_LEAGUES.map(async (entry): Promise<CalendarFixture[]> => {
       try {
-        const fixtures = await getExtraLeagueUpcoming(entry, 6);
+        // Con filtro de equipos (Bundesliga → top-4) pedimos más fixturas
+        // para que el corte no deje fuera partidos de los equipos que SÍ
+        // queremos — misma única llamada a la API, solo cambia el `next`.
+        const fixtures = await getExtraLeagueUpcoming(entry, entry.onlyTeamIds ? 12 : 6);
         return fixtures
           // `onlyTeamIds`: solo partidos donde juegue uno de esos equipos
           // (Bundesliga → los 4 grandes). `seniorOnly`: fuera juveniles y
