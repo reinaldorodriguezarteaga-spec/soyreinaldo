@@ -1,10 +1,17 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** Liga pública "Quiniela LaLiga 2026-27" (código LALIGA2627). Al guardar el
- * primer pronóstico, el usuario se da de alta aquí sin fricción. */
-const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
+/**
+ * Da de alta al usuario en una liga de clubes si aún no tiene ninguna: la
+ * pública ("Quiniela LaLiga 2026-27") sin fricción. Quien ya entró por
+ * invitación a una liga privada — la comunidad de Pacha, p.ej. — se queda
+ * solo en la suya y no aparece en la clasificación general.
+ */
+async function ensureLeague(supabase: SupabaseClient) {
+  await supabase.rpc("lq_ensure_league");
+}
 
 export type SaveResult =
   | { ok: true }
@@ -14,7 +21,7 @@ export type SaveResult =
  * Guarda (o actualiza) el marcador pronosticado de un partido de la quiniela
  * de clubes. El candado de 30 min lo impone la RLS de `lq_predictions`; aquí
  * solo traducimos el error a un motivo legible. De paso da de alta al usuario
- * en la liga pública (idempotente) para que aparezca en el ranking.
+ * en su liga (idempotente) para que aparezca en el ranking.
  */
 export async function savePrediction(
   matchId: number,
@@ -38,8 +45,7 @@ export async function savePrediction(
     return { ok: false, reason: "error", message: "Marcador inválido" };
   }
 
-  // Alta sin fricción en la liga pública (no falla si ya es miembro).
-  await supabase.rpc("join_public_league", { p_league_id: PUBLIC_LEAGUE_ID });
+  await ensureLeague(supabase);
 
   const { error } = await supabase.from("lq_predictions").upsert({
     user_id: user.id,
@@ -58,16 +64,14 @@ export async function savePrediction(
   return { ok: true };
 }
 
-/** Alta explícita en la liga pública (botón "Unirme", sin código). */
+/** Alta explícita en la quiniela (botón "Unirme", sin código). */
 export async function joinQuinielaLiga(): Promise<{ ok: boolean }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false };
-  const { error } = await supabase.rpc("join_public_league", {
-    p_league_id: PUBLIC_LEAGUE_ID,
-  });
+  const { error } = await supabase.rpc("lq_ensure_league");
   return { ok: !error };
 }
 
@@ -78,7 +82,7 @@ export type PicksResult =
 /**
  * Guarda las selecciones especiales de temporada (campeón, pichichi, hasta 3
  * descendidos). La RLS bloquea la escritura una vez arrancada LaLiga. De paso
- * da de alta al usuario en la liga pública.
+ * da de alta al usuario en su liga.
  */
 export async function saveSeasonPicks(
   championTeam: number | null,
@@ -95,7 +99,7 @@ export async function saveSeasonPicks(
     ...new Set(relegatedTeams.filter((n) => Number.isInteger(n) && n > 0)),
   ].slice(0, 3);
 
-  await supabase.rpc("join_public_league", { p_league_id: PUBLIC_LEAGUE_ID });
+  await ensureLeague(supabase);
 
   const { error } = await supabase.from("lq_season_picks").upsert({
     user_id: user.id,
@@ -139,7 +143,7 @@ export async function saveMidseasonPicks(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, reason: "auth", message: "Inicia sesión" };
 
-  await supabase.rpc("join_public_league", { p_league_id: PUBLIC_LEAGUE_ID });
+  await ensureLeague(supabase);
 
   const { error } = await supabase.from("lq_midseason_picks").upsert({
     user_id: user.id,

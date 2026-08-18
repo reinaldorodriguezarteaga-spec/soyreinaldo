@@ -5,7 +5,7 @@ import { acceptInvite, dismissInvite } from "./actions";
 export const metadata = {
   title: "Unirme a la liga | Soy Reinaldo",
   description:
-    "Acepta la invitación para unirte a una liga de la quiniela del Mundial 2026.",
+    "Acepta la invitación para unirte a una quiniela privada de soyreinaldo.com.",
 };
 
 type LeaguePreview = {
@@ -13,6 +13,9 @@ type LeaguePreview = {
   name: string;
   description: string | null;
   member_count: number;
+  /** 'clubs' (quiniela de LaLiga) o 'mundial'. Decide adónde llevar tras entrar. */
+  kind: string;
+  is_public: boolean;
 };
 
 export default async function JoinByCodePage({
@@ -51,6 +54,18 @@ export default async function JoinByCodePage({
 
   const joinPath = `/unirse/${encodeURIComponent(code)}`;
 
+  // Cada quiniela tiene su hub; sin preview asumimos la de clubes, que es la
+  // que está en marcha.
+  const isClubs = preview ? preview.kind === "clubs" : true;
+  const hubHref = isClubs ? "/quiniela-liga" : "/quiniela";
+  const rankingHref = preview
+    ? isClubs
+      ? preview.is_public
+        ? "/quiniela-liga/ranking"
+        : `/quiniela-liga/ranking?liga=${encodeURIComponent(code)}`
+      : `/quiniela/ranking/${preview.id}`
+    : hubHref;
+
   return (
     <main className="page">
       <div className="wrap">
@@ -78,7 +93,7 @@ export default async function JoinByCodePage({
             </h1>
 
             {!preview ? (
-              <NotFound code={code} />
+              <NotFound code={code} hubHref={hubHref} />
             ) : (
               <article className="auth__card">
                 <div className="mb-4 flex items-center justify-between">
@@ -111,7 +126,7 @@ export default async function JoinByCodePage({
                 {!user ? (
                   <NotLoggedIn joinPath={joinPath} />
                 ) : alreadyMember ? (
-                  <AlreadyMember leagueId={preview.id} />
+                  <AlreadyMember target={rankingHref} />
                 ) : (
                   <ConfirmJoin code={code} />
                 )}
@@ -120,7 +135,7 @@ export default async function JoinByCodePage({
 
             <p style={{ textAlign: "center", marginTop: 22 }}>
               <Link
-                href="/quiniela"
+                href={hubHref}
                 className="mono"
                 style={{ color: "var(--text-dim)" }}
               >
@@ -134,7 +149,7 @@ export default async function JoinByCodePage({
   );
 }
 
-function NotFound({ code }: { code: string }) {
+function NotFound({ code, hubHref }: { code: string; hubHref: string }) {
   return (
     <article className="auth__card">
       <p style={{ color: "var(--text-dim)", fontSize: "0.92rem", lineHeight: 1.6 }}>
@@ -143,7 +158,7 @@ function NotFound({ code }: { code: string }) {
         que lo verifique — es probable que el código se haya cambiado.
       </p>
       <form action={dismissInvite} style={{ marginTop: 22 }}>
-        <input type="hidden" name="target" value="/quiniela" />
+        <input type="hidden" name="target" value={hubHref} />
         <button
           type="submit"
           className="mono"
@@ -179,16 +194,12 @@ function NotLoggedIn({ joinPath }: { joinPath: string }) {
   );
 }
 
-function AlreadyMember({ leagueId }: { leagueId: string }) {
+function AlreadyMember({ target }: { target: string }) {
   return (
     <div className="space-y-3">
       <p className="notice notice--ok">Ya estás dentro de esta liga.</p>
       <form action={dismissInvite}>
-        <input
-          type="hidden"
-          name="target"
-          value={`/quiniela/ranking/${leagueId}`}
-        />
+        <input type="hidden" name="target" value={target} />
         <button type="submit" className="btn btn--accent w-full justify-center">
           Ver ranking
         </button>
