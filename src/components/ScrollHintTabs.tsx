@@ -36,6 +36,43 @@ export default function ScrollHintTabs({
     };
   }, []);
 
+  // "Asomadita" al montar: si hay pestañas fuera de pantalla, la barra se
+  // desliza sola unos px y vuelve — demuestra el gesto en vez de confiar en
+  // que la gente interprete la flecha (feedback real: con solo el degradado
+  // + "›" seguía sin verse que había más). Se salta si el usuario ya tocó/
+  // scrolleó la barra o si pide menos animaciones (prefers-reduced-motion).
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (el.scrollWidth <= el.clientWidth + 4) return; // no desborda
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cancelled = false;
+    const cancel = () => {
+      cancelled = true;
+    };
+    // Cualquier gesto del usuario sobre la barra cancela la demo — que nunca
+    // pelee contra un scroll real.
+    el.addEventListener("touchstart", cancel, { passive: true, once: true });
+    el.addEventListener("pointerdown", cancel, { once: true });
+
+    const t1 = setTimeout(() => {
+      if (cancelled || el.scrollLeft > 0) return;
+      el.scrollTo({ left: 72, behavior: "smooth" });
+    }, 600);
+    const t2 = setTimeout(() => {
+      if (cancelled) return;
+      el.scrollTo({ left: 0, behavior: "smooth" });
+    }, 1350);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      el.removeEventListener("touchstart", cancel);
+      el.removeEventListener("pointerdown", cancel);
+    };
+  }, []);
+
   return (
     <div style={{ position: "relative", maxWidth }}>
       <div ref={ref} className="tabs tabs--scroll">
