@@ -7,9 +7,11 @@ export const dynamic = "force-dynamic";
 /**
  * Cron-driven ingest de resultados desde API-Football.
  *
- * Llamada esperada: cada 1 min durante el Mundial vía cron-job.org pegando a
- * `https://www.soyreinaldo.com/api/sports/ingest` con header
- * `Authorization: Bearer ${CRON_SECRET}`.
+ * Quién la llama: el job de pg_cron `ingesta-marcadores`, cada minuto, DENTRO
+ * de Supabase (migración 038). Pega a `https://www.soyreinaldo.com/api/sports/ingest`
+ * con `Authorization: Bearer <ingest_cron_secret del Vault>`. No hay ningún
+ * cron externo — esto llegó a decir "cron-job.org" y costó una tarde: para
+ * saber quién dispara qué, `select * from cron.job`.
  *
  * Flujo:
  *   1. Lista los partidos "ingestables" (live o recién terminados sin marcar).
