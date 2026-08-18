@@ -100,7 +100,10 @@ export async function GET(request: Request) {
 
   // Ligas/copas extra del calendario (solo próximos partidos, 1 llamada c/u).
   await runBatches(CALENDAR_EXTRA_LEAGUES, 3, async (entry) => {
-    const fixtures = await getExtraLeagueUpcoming(entry, 6, { forceLive: true });
+    // n=12 con filtro de equipos — ver nota en getUpcomingCalendar.
+    const fixtures = await getExtraLeagueUpcoming(entry, entry.onlyTeamIds ? 12 : 6, {
+      forceLive: true,
+    });
     await writeCache(upcomingExtraCacheKey(entry.leagueId), fixtures);
     extrasDone++;
   });
