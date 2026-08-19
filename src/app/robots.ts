@@ -23,8 +23,16 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/mundial/partido/",
         "/mundial/equipo/",
+        "/mundial/jugador/",
+        "/mundial/comparar",
         "/liga/*/partido/",
         "/liga/*/equipo/",
+        // Añadidas 19-ago: las fichas de jugador (5-6 llamadas a la API cada
+        // una) no estaban y un crawler barrió 19.133 en 6h agotando la cuota
+        // diaria. El middleware además bloquea activamente a los bots que
+        // ignoran este archivo (pasó con /partido/ desde julio).
+        "/liga/*/jugador/",
+        "/liga/*/comparar",
         "/api/",
         "/admin/",
       ],
