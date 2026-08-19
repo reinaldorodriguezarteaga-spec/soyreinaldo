@@ -34,7 +34,14 @@ const PREVIEW_BOT_RE =
  * a propósito: estas rutas están en Disallow de robots.txt, así que quien
  * llegue con ese UA o lo falsea o ignora robots.txt. */
 const BAD_BOT_RE =
-  /bot|crawl|spider|scrap|slurp|python|aiohttp|httpx|requests|curl|wget|libwww|okhttp|go-http|node-fetch|axios|scrapy|headless|phantom|puppeteer|playwright|selenium|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|amazonbot|ccbot|gptbot|claude|perplexity|yandex/i;
+  /bot|crawl|spider|scrap|slurp|python|aiohttp|httpx|requests|curl|wget|libwww|okhttp|go-http|node-fetch|axios|scrapy|headless|phantom|puppeteer|playwright|selenium|ahrefs|semrush|mj12|dotbot|petalbot|bytespider|amazonbot|ccbot|gptbot|claude|perplexity|yandex|meta-external|facebookcatalog/i;
+// El atacante del 19-ago RESULTÓ SER META: 35.100 requests en 24h desde su
+// ASN "Facebook, Inc." (IPs 57.141.0.x, una sola huella TLS/JA4) con
+// User-Agents FALSOS de navegador — el patrón documentado de su crawler
+// sigiloso de datos para IA. Sus UAs declarados (meta-externalagent/
+// fetcher) quedan arriba por si algún día se identifica; su modo sigiloso
+// muere en el desafío de cookie. facebookexternalhit (previsualización de
+// enlaces al compartir) sigue permitido a propósito.
 
 const CHALLENGE_COOKIE = "sr_ok";
 const CHALLENGE_PARAM = "_c";
