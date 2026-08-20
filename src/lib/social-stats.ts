@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { formatearTotal, sumarSeguidores } from "@/lib/social/totales";
 
 export type SocialStats = {
   ig_followers: string;
@@ -47,7 +48,23 @@ export async function getSocialStats(): Promise<SocialStats> {
       )
       .eq("id", 1)
       .maybeSingle<SocialStats>();
-    return data ?? FALLBACK;
+    if (!data) return FALLBACK;
+
+    // El total NO se lee: se suma. Escribiéndolo a mano se descuadraba —el
+    // 20-ago el media kit decía 169.100 con 169.800 reales— y es un número
+    // que se enseña a marcas.
+    const { total } = sumarSeguidores([
+      data.ig_followers,
+      data.fb_followers,
+      data.tt_followers,
+      data.yt_subscribers,
+      data.threads_followers,
+    ]);
+
+    return {
+      ...data,
+      total_followers: total > 0 ? formatearTotal(total) : data.total_followers,
+    };
   } catch {
     return FALLBACK;
   }
