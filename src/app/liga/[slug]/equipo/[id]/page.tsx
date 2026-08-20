@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import {
   getTeamCoach,
   getTeamFixtures,
+  getAllCompetitionPlayers,
   getTeamSquad,
   getTeamStatistics,
   isFinal,
@@ -82,6 +83,36 @@ export default async function LigaEquipoPage({
   ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
+
+  // Respaldo de la plantilla.
+  //
+  // La ficha lanza cinco llamadas a la vez y `/players/squads` es la que más
+  // se cae de la ráfaga: API-Football contesta con su límite por minuto y la
+  // pestaña "Jugadores" desaparecía según la visita — aparecía y se iba sin
+  // que nadie tocara nada.
+  //
+  // El listado de toda la competición pide esas mismas plantillas pero en
+  // lotes pequeños y con pausas, así que sí las consigue, y queda cacheado.
+  // Si la llamada directa vuelve vacía, se saca de ahí. Se pierden el dorsal
+  // y la edad, que ese listado no guarda; se gana que la pestaña esté
+  // siempre.
+  const squadFinal: SquadPlayer[] =
+    squad.length > 0
+      ? squad
+      : await getAllCompetitionPlayers(competition)
+          .then((todos) =>
+            todos
+              .filter((p) => p.teamId === teamId)
+              .map((p) => ({
+                id: p.id,
+                name: p.name,
+                photo: p.photo,
+                number: null,
+                position: p.position,
+                age: null,
+              })),
+          )
+          .catch(() => [] as SquadPlayer[]);
 
   const favorited = await isFavorited("team", String(teamId));
 
@@ -195,8 +226,8 @@ export default async function LigaEquipoPage({
           {stats && <TeamStats stats={stats} />}
 
           <TeamTabs
-            hasSquad={squad.length > 0}
-            jugadores={<SquadList competition={competition} squad={squad} />}
+            hasSquad={squadFinal.length > 0}
+            jugadores={<SquadList competition={competition} squad={squadFinal} />}
             partidos={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}
           />
         </div>
