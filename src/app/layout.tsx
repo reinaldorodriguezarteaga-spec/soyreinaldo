@@ -48,7 +48,9 @@ export const metadata: Metadata = {
   title: "Soy Reinaldo — Fútbol con Reinaldo",
   description:
     "Web personal de Reinaldo Rodríguez (@SoyReinaldoR) — creador de contenido culé. Quiniela del Mundial, media kit, redes y bot de comentarios.",
-  metadataBase: new URL("https://soyreinaldo.com"),
+  // La web vive en www — el ápice redirige. Con el ápice aquí, cada canónica
+  // y cada URL de OpenGraph apuntaba a una dirección que rebota.
+  metadataBase: new URL("https://www.soyreinaldo.com"),
   applicationName: "Soy Reinaldo",
   appleWebApp: {
     capable: true,
