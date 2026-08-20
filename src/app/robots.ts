@@ -1,19 +1,28 @@
 import type { MetadataRoute } from "next";
 
+const SITE = "https://www.soyreinaldo.com";
+
 /**
- * robots.txt — mantiene a los crawlers fuera de las páginas dinámicas pesadas.
+ * robots.txt
  *
- * `/mundial/partido/[id]` y `/mundial/equipo/[id]` tiran de API-Football (hasta
- * 6 llamadas por página) y enlazan a cientos de partidos de historial/H2H que NO
- * son del Mundial. Un crawler siguiéndolos barre >1.700 páginas y dispara la
- * quota (fue la causa del pico del 5-jul). No aportan SEO, así que se bloquean.
- * El caché las abarata igualmente; esto es defensa en profundidad.
+ * Historia corta: estas fichas estuvieron cerradas a los buscadores desde
+ * julio. Cada una dispara 5-7 llamadas a API-Football y tres crawlers
+ * distintos agotaron la cuota diaria barriéndolas (5-jul, 23-jul y el 19-ago,
+ * cuando el crawler de IA de Meta se llevó 19.133 fichas de jugador en 6h).
+ * Bloquearlas fue lo que mantuvo la web en pie.
  *
- * `/liga/[slug]/partido/[id]` y `/liga/[slug]/equipo/[id]` son el mismo patrón
- * (equivalente genérico del Mundial, migración de hoy, 9 competiciones × 2
- * temporadas cada una = mucha más superficie que barrer) — mismo bloqueo,
- * mismo motivo. Confirmado el 23-jul: un solo crawler generando cientos de
- * 429 sostenidos en /liga/[slug]/partido/[id] durante más de una hora.
+ * El efecto secundario era grave: quien buscara en Google "Lewandowski
+ * estadísticas" no podía encontrarnos, y ese es justo el tráfico que hace
+ * falta. Con la caché precalculada (`sports_cache`, refrescada por cron cada
+ * 10 min) el coste de servir una ficha ya no depende de la API, así que se
+ * abren — pero solo a buscadores de verdad, y el middleware sigue echando a
+ * todo lo demás.
+ *
+ * Lo que sigue cerrado y por qué:
+ *  - `/liga/*\/comparar`: acepta cualquier par de equipos → combinaciones
+ *    infinitas. Es una trampa de rastreo clásica, no una página que indexar.
+ *  - `/mundial/*`: el torneo acabó. Indexarlo solo multiplica superficie.
+ *  - `/api/`, `/admin/`, `/quiniela*`: privado o sin valor de búsqueda.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -21,21 +30,20 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
+        "/liga/*/comparar",
         "/mundial/partido/",
         "/mundial/equipo/",
         "/mundial/jugador/",
         "/mundial/comparar",
-        "/liga/*/partido/",
-        "/liga/*/equipo/",
-        // Añadidas 19-ago: las fichas de jugador (5-6 llamadas a la API cada
-        // una) no estaban y un crawler barrió 19.133 en 6h agotando la cuota
-        // diaria. El middleware además bloquea activamente a los bots que
-        // ignoran este archivo (pasó con /partido/ desde julio).
-        "/liga/*/jugador/",
-        "/liga/*/comparar",
         "/api/",
         "/admin/",
+        "/quiniela/",
+        "/quiniela-liga/liga/",
+        "/unirse/",
+        "/perfil",
+        "/completar-perfil",
       ],
     },
+    sitemap: `${SITE}/sitemap.xml`,
   };
 }
