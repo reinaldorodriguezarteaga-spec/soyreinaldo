@@ -74,6 +74,8 @@ export default async function LigaJugadorPage({
             name: p.name,
             ...(p.photo ? { image: p.photo } : {}),
             ...(p.nationality ? { nationality: p.nationality } : {}),
+            ...(p.birthDate ? { birthDate: p.birthDate } : {}),
+            ...(p.heightCm ? { height: p.heightCm } : {}),
             ...(p.position ? { jobTitle: p.position } : {}),
             ...(p.team ? { memberOf: { "@type": "SportsTeam", name: p.team.name } } : {}),
             url: absolute(`/liga/${competition.slug}/jugador/${pid}`),
@@ -124,6 +126,20 @@ export default async function LigaJugadorPage({
                 )}
                 {p?.position && <span>· {POS_ES[p.position] ?? p.position}</span>}
                 {p?.age != null && <span>· {p.age} años</span>}
+                {p?.nationality && <span>· {p.nationality}</span>}
+                {p?.injured && (
+                  <span
+                    style={{
+                      color: "var(--danger, #ff6b6b)",
+                      border: "1px solid currentcolor",
+                      borderRadius: 999,
+                      padding: "1px 10px",
+                      fontSize: "0.78rem",
+                    }}
+                  >
+                    🚑 Lesionado
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -132,11 +148,66 @@ export default async function LigaJugadorPage({
 
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap" style={{ maxWidth: 680 }}>
+          {p && <PlayerBio p={p} />}
           {p && <SeasonStats p={p} />}
           <PlayerExtras extras={extras} />
         </div>
       </section>
     </main>
+  );
+}
+
+/** Ficha personal: nacimiento, medidas. La API siempre la manda y hasta ahora
+ * la ficha solo enseñaba números de temporada — un jugador sin contexto. */
+function PlayerBio({ p }: { p: PlayerSeason }) {
+  const birth = p.birthDate
+    ? new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
+        new Date(p.birthDate),
+      )
+    : null;
+  const items: { label: string; value: string }[] = [];
+  if (birth) {
+    items.push({
+      label: "Nacimiento",
+      value: p.birthPlace ? `${birth} · ${p.birthPlace}` : birth,
+    });
+  }
+  if (p.heightCm || p.weightKg) {
+    items.push({
+      label: "Físico",
+      value: [p.heightCm, p.weightKg].filter(Boolean).join(" · "),
+    });
+  }
+  if (items.length === 0) return null;
+  return (
+    <div
+      className="panel"
+      style={{
+        padding: "14px 18px",
+        marginBottom: 16,
+        display: "flex",
+        gap: "10px 28px",
+        flexWrap: "wrap",
+      }}
+    >
+      {items.map((it) => (
+        <div key={it.label}>
+          <div
+            style={{
+              fontFamily: "var(--font-mono-stack)",
+              fontSize: "0.62rem",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--text-dim)",
+              marginBottom: 2,
+            }}
+          >
+            {it.label}
+          </div>
+          <div style={{ fontSize: "0.95rem" }}>{it.value}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
