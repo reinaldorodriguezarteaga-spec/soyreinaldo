@@ -92,10 +92,67 @@ export function isFinal(f: Fixture) {
  * cuando la API responde 200 con `errors` (p.ej. quota agotada) → así
  * `unstable_cache` NO cachea el fallo y se recupera en cuanto la API vuelve.
  */
+/**
+ * Límite de llamadas SIMULTÁNEAS a API-Football desde una misma instancia.
+ *
+ * La ficha de equipo dispara cinco llamadas a la vez (fixtures ida y vuelta,
+ * estadísticas, plantilla y entrenador) y eso basta para que la API conteste
+ * `{"rateLimit": "Too many requests..."}` — el límite POR MINUTO del plan, no
+ * la cuota diaria, que va sobrada. Reproducido el 20-ago: seis ráfagas de
+ * cinco llamadas, tres rechazadas. El síntoma era que la pestaña "Jugadores"
+ * de un equipo aparecía y desaparecía según la visita.
+ *
+ * Con un carril de tres, la ráfaga se ordena sola y la latencia apenas cambia.
+ */
+const MAX_SIMULTANEAS = 3;
+let enVuelo = 0;
+const cola: Array<() => void> = [];
+
+async function tomarCarril(): Promise<void> {
+  if (enVuelo < MAX_SIMULTANEAS) {
+    enVuelo++;
+    return;
+  }
+  await new Promise<void>((resolve) => cola.push(resolve));
+  enVuelo++;
+}
+
+function soltarCarril(): void {
+  enVuelo--;
+  cola.shift()?.();
+}
+
+/** ¿La API ha dicho que vamos demasiado rápido? */
+function esRateLimit(errs: unknown): boolean {
+  return (
+    !!errs &&
+    typeof errs === "object" &&
+    !Array.isArray(errs) &&
+    "rateLimit" in (errs as Record<string, unknown>)
+  );
+}
+
+const ESPERA_RATE_LIMIT_MS = 1500;
+const REINTENTOS_RATE_LIMIT = 2;
+
 async function rawGet<T>(
   url: string,
   path: string,
   paramStr: string,
+): Promise<{ response: T[]; errors: unknown }> {
+  await tomarCarril();
+  try {
+    return await rawGetSinCarril<T>(url, path, paramStr);
+  } finally {
+    soltarCarril();
+  }
+}
+
+async function rawGetSinCarril<T>(
+  url: string,
+  path: string,
+  paramStr: string,
+  intento = 0,
 ): Promise<{ response: T[]; errors: unknown }> {
   const key = process.env.API_FOOTBALL_KEY;
   if (!key) throw new Error("API_FOOTBALL_KEY missing");
@@ -113,10 +170,23 @@ async function rawGet<T>(
     `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
   );
 
+  if (res.status === 429 && intento < REINTENTOS_RATE_LIMIT) {
+    await new Promise((r) => setTimeout(r, ESPERA_RATE_LIMIT_MS * (intento + 1)));
+    return rawGetSinCarril<T>(url, path, paramStr, intento + 1);
+  }
   if (!res.ok) throw new Error(`apif http ${res.status} ${path}`);
 
   const json = (await res.json()) as { response: T[]; errors: unknown };
   const errs = json.errors;
+
+  // La API contesta 200 con `errors.rateLimit` cuando vamos demasiado rápido.
+  // No es un fallo de verdad: es "espera un momento". Se espera y se repite,
+  // en vez de devolver vacío y dejar media ficha sin datos.
+  if (esRateLimit(errs) && intento < REINTENTOS_RATE_LIMIT) {
+    console.log(`[apif] ${path} rate-limited, reintento ${intento + 1}`);
+    await new Promise((r) => setTimeout(r, ESPERA_RATE_LIMIT_MS * (intento + 1)));
+    return rawGetSinCarril<T>(url, path, paramStr, intento + 1);
+  }
   const hasErr = Array.isArray(errs)
     ? errs.length > 0
     : !!errs && typeof errs === "object" && Object.keys(errs).length > 0;
