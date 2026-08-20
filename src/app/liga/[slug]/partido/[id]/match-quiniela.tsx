@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
+import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 
 /**
  * La quiniela, dentro de la ficha del partido.
@@ -21,17 +22,6 @@ import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
  */
 
 type Pred = { user_id: string; score_home: number; score_away: number };
-
-/** Puntos de un pronóstico con el baremo de la liga. */
-function puntos(
-  p: { home: number; away: number },
-  m: { home: number; away: number },
-  exacto: number,
-  acierto: number,
-): number {
-  if (p.home === m.home && p.away === m.away) return exacto;
-  return Math.sign(p.home - p.away) === Math.sign(m.home - m.away) ? acierto : 0;
-}
 
 export default async function MatchQuiniela({
   fixtureId,
@@ -133,11 +123,10 @@ export default async function MatchQuiniela({
       nombre: nombre.get(p.user_id) ?? "Sin nombre",
       pron: { home: p.score_home, away: p.score_away },
       pts: hayResultado
-        ? puntos(
+        ? puntosPronostico(
             { home: p.score_home, away: p.score_away },
             marcador,
-            ptsExacto,
-            ptsAcierto,
+            { exacto: ptsExacto, acierto: ptsAcierto },
           )
         : null,
     }))
@@ -155,11 +144,10 @@ export default async function MatchQuiniela({
             <span style={{ color: "var(--text-dim)" }}>
               {" "}
               ·{" "}
-              {puntos(
+              {puntosPronostico(
                 { home: mio.score_home, away: mio.score_away },
                 marcador,
-                ptsExacto,
-                ptsAcierto,
+                { exacto: ptsExacto, acierto: ptsAcierto },
               )}{" "}
               pts
             </span>

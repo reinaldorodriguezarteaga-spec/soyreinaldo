@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ScrollHintTabs from "@/components/ScrollHintTabs";
-import type { ClubLeague } from "@/lib/quiniela-liga/leagues";
+import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 
 const TABS = [
   { href: "/quiniela-liga/partidos", label: "Pronósticos" },
