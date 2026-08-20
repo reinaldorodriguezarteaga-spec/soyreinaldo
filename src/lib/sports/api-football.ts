@@ -1791,6 +1791,9 @@ export type AllPlayer = {
   name: string;
   photo: string | null;
   position: string | null;
+  /** Id del equipo: permite reusar este listado como respaldo de una
+   * plantilla concreta (ver la ficha de equipo). */
+  teamId: number;
   team: { name: string; logo: string } | null;
 };
 
@@ -1871,7 +1874,14 @@ export async function getAllCompetitionPlayers(
     for (const p of sq) {
       if (seen.has(p.id)) continue;
       seen.add(p.id);
-      out.push({ id: p.id, name: p.name, photo: p.photo, position: p.position, team });
+      out.push({
+        id: p.id,
+        name: p.name,
+        photo: p.photo,
+        position: p.position,
+        teamId: id,
+        team,
+      });
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name, "es"));
