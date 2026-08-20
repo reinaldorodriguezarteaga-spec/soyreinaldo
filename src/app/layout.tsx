@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
+import { Analytics } from "@vercel/analytics/next";
 import { createClient } from "@/lib/supabase/server";
 import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
@@ -166,6 +167,10 @@ export default async function RootLayout({
         {children}
         <Footer />
         {ADSENSE_CLIENT_ID && <CookieConsent />}
+        {/* Vercel Web Analytics: visitas y páginas vistas sin cookies ni
+            huella de usuario, así que no depende del banner de consentimiento.
+            Hay que tenerlo activado además en el panel de Vercel. */}
+        <Analytics />
       </body>
     </html>
   );
