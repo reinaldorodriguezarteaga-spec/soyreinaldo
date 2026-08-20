@@ -1304,6 +1304,10 @@ export async function getFixturePlayers(
 /** Agregado de un jugador en TODO el Mundial (no de un partido). */
 export type PlayerSeason = {
   id: number;
+  /** Temporada de la que son ESTOS datos. No tiene por qué ser la actual: si
+   * el jugador ya no está en la competición, se cae a una archivada (ver
+   * `getPlayerSeasonStats`) y la ficha tiene que decirlo, o miente. */
+  season: number;
   name: string;
   photo: string | null;
   age: number | null;
@@ -1381,6 +1385,12 @@ export async function getPlayerSeasonStats(
 ): Promise<PlayerSeason | null> {
   // Igual que el buscador: en pretemporada la season actual está vacía →
   // caemos a las archivadas para que la ficha muestre datos igualmente.
+  //
+  // ⚠️ Ese respaldo también salta cuando el jugador SE HA IDO de la
+  // competición (Lewandowski, que pasó del Barça al Chicago Fire): entonces
+  // devuelve su última temporada aquí, con el equipo de entonces. Quien pinte
+  // esto DEBE mirar `season` y etiquetarlo, o estará afirmando que juega
+  // donde ya no juega.
   const seasons = [competition.season, ...(competition.archivedSeasons ?? [])];
   for (const season of seasons) {
     const r = await get<PlayerSeasonResponse>(
@@ -1393,6 +1403,7 @@ export async function getPlayerSeasonStats(
     if (!p || !s) continue;
     return {
       id: p.player.id,
+      season,
       name: p.player.name,
       photo: p.player.photo ?? null,
       age: p.player.age ?? null,

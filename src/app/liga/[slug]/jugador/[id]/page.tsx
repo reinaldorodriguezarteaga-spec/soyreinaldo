@@ -31,8 +31,15 @@ export async function generateMetadata({
   if (!competition) return {};
   const p = await getPlayerSeasonStats(Number(id), competition).catch(() => null);
   if (!p) return { title: `Jugador · ${competition.name} | Soy Reinaldo` };
-  const title = `${p.name} · ${competition.name}`;
-  const description = `${p.goals} goles y ${p.assists} asistencias de ${p.name} en ${competition.name}.`;
+  const vigente = p.season === competition.season;
+  const temporada = `${p.season}-${String(p.season + 1).slice(2)}`;
+  const title = vigente
+    ? `${p.name} · ${competition.name}`
+    : `${p.name} · ${competition.name} ${temporada}`;
+  const description = vigente
+    ? `${p.goals} goles y ${p.assists} asistencias de ${p.name} en ${competition.name}.`
+    : `${p.goals} goles y ${p.assists} asistencias de ${p.name} en ${competition.name} ` +
+      `${temporada}. No consta en la temporada actual.`;
   return {
     title,
     description,
@@ -77,7 +84,12 @@ export default async function LigaJugadorPage({
             ...(p.birthDate ? { birthDate: p.birthDate } : {}),
             ...(p.heightCm ? { height: p.heightCm } : {}),
             ...(p.position ? { jobTitle: p.position } : {}),
-            ...(p.team ? { memberOf: { "@type": "SportsTeam", name: p.team.name } } : {}),
+            // Solo afirmamos el equipo si los datos son de la temporada en
+            // curso: publicar en datos estructurados que un jugador milita
+            // donde ya no milita es peor que no decir nada.
+            ...(p.team && p.season === competition.season
+              ? { memberOf: { "@type": "SportsTeam", name: p.team.name } }
+              : {}),
             url: absolute(`/liga/${competition.slug}/jugador/${pid}`),
           }}
         />
@@ -117,11 +129,34 @@ export default async function LigaJugadorPage({
                   initialFavorited={favorited}
                 />
               </div>
+              {p && p.season !== competition.season && (
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    padding: "6px 12px",
+                    border: "1px solid var(--line)",
+                    borderRadius: 999,
+                    display: "inline-block",
+                    fontSize: "0.8rem",
+                    color: "var(--text-dim)",
+                    background: "var(--surface-2)",
+                  }}
+                >
+                  Datos de {competition.name}{" "}
+                  {`${p.season}-${String(p.season + 1).slice(2)}`} · no consta
+                  en la temporada actual
+                </p>
+              )}
               <p className="phero__lede" style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 {p?.team && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <Image src={p.team.logo} alt="" width={20} height={20} unoptimized />
                     {p.team.name}
+                    {p.season !== competition.season && (
+                      <span style={{ color: "var(--text-dim)" }}>
+                        (en {`${p.season}-${String(p.season + 1).slice(2)}`})
+                      </span>
+                    )}
                   </span>
                 )}
                 {p?.position && <span>· {POS_ES[p.position] ?? p.position}</span>}
