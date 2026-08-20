@@ -7,8 +7,10 @@ import { signOut } from "@/app/login/actions";
 import type { User } from "@supabase/supabase-js";
 
 const ADMIN_LINKS = [
+  // Escribir va primero: es lo que más se usa y lo único que no puede copiar
+  // la competencia.
+  { href: "/admin/analisis", label: "Escribir análisis" },
   { href: "/admin/ligas", label: "Ligas" },
-  { href: "/admin/partidos", label: "Resultados de partidos" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
 ];
