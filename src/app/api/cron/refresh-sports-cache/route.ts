@@ -4,11 +4,14 @@ import {
   getCompetitionAllFixtures,
   getCompetitionStandings,
   getCompetitionUpcomingFixtures,
+  getCompetitionTeamRefs,
   getExtraLeagueUpcoming,
   getTeamFixtures,
+  getTeamSquadLive,
   standingsCacheKey,
   teamFixturesLastCacheKey,
   teamFixturesNextCacheKey,
+  teamSquadCacheKey,
   upcomingCacheKey,
   upcomingExtraCacheKey,
 } from "@/lib/sports/api-football";
@@ -17,7 +20,7 @@ import {
   COMPETITIONS,
   FEATURED_TEAMS,
 } from "@/lib/sports/competitions";
-import { writeCache } from "@/lib/sports/sports-cache";
+import { readCache, writeCache } from "@/lib/sports/sports-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +57,7 @@ export async function GET(request: Request) {
   const errors: string[] = [];
   let competitionsDone = 0;
   let teamsDone = 0;
+  let squadsDone = 0;
   let extrasDone = 0;
 
   // Lotes pequeños (3 a la vez): rápido, sin ráfaga contra el límite por
@@ -108,9 +112,47 @@ export async function GET(request: Request) {
     extrasDone++;
   });
 
+  // PLANTILLAS. La ficha de equipo lanzaba esta llamada en la misma ráfaga que
+  // otras cuatro y API-Football la rechazaba por su límite POR MINUTO, así que
+  // la pestaña "Jugadores" aparecía y desaparecía según la visita. Ahora el
+  // coste lo paga el cron, despacio y una sola vez, igual que el resto de la
+  // caché.
+  //
+  // Solo se rellenan las que faltan o llevan más de 12h, y como mucho SQUAD_MAX
+  // por vuelta: con el cron cada 10 min, una competición entera se completa en
+  // dos vueltas y luego el coste en régimen es casi cero.
+  const SQUAD_MAX = 12;
+  const SQUAD_FRESCA_S = 60 * 60 * 12;
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  for (const c of COMPETITIONS) {
+    if (squadsDone >= SQUAD_MAX) break;
+    if (c.standingsMode === "none") continue;
+    try {
+      const refs = await getCompetitionTeamRefs(c);
+      for (const t of refs) {
+        if (squadsDone >= SQUAD_MAX) break;
+        const fresca = await readCache<unknown[]>(
+          teamSquadCacheKey(t.id),
+          SQUAD_FRESCA_S,
+        );
+        if (fresca && fresca.length > 0) continue;
+        const sq = await getTeamSquadLive(t.id);
+        if (sq.length > 0) {
+          await writeCache(teamSquadCacheKey(t.id), sq);
+          squadsDone++;
+        }
+        await sleep(250);
+      }
+    } catch (e) {
+      errors.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   return NextResponse.json({
     ok: errors.length === 0,
     competitionsDone,
+    squadsDone,
     teamsDone,
     extrasDone,
     total:

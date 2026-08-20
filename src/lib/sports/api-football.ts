@@ -1677,11 +1677,40 @@ type SquadResponse = {
   }>;
 };
 
+/** Clave en `sports_cache` de la plantilla precalculada de un equipo. */
+export function teamSquadCacheKey(teamId: number): string {
+  return `squad:${teamId}`;
+}
+
 /**
- * Plantilla de una selección (endpoint `/players/squads`). Ordenada por
- * posición (POR, DEF, MED, DEL) y dorsal. Caché 1 día. Vacío si no hay datos.
+ * Plantilla de un equipo (endpoint `/players/squads`). Ordenada por posición
+ * (POR, DEF, MED, DEL) y dorsal.
+ *
+ * Se lee ANTES de `sports_cache`, donde el cron la deja precalculada cada 10
+ * min. El motivo: la ficha de equipo dispara cinco llamadas a la vez y esta
+ * era la que más se caía, porque API-Football responde con su límite POR
+ * MINUTO (no la cuota diaria, que va sobrada). Como `TeamTabs` esconde las
+ * pestañas cuando no hay plantilla, la de "Jugadores" aparecía y desaparecía
+ * según la visita.
+ *
+ * Mismo patrón que resolvió el problema de cuota en el resto del sitio: el
+ * coste en la API lo paga el cron, una vez, en lotes tranquilos — no cada
+ * visitante.
  */
 export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
+  // Una semana: si el cron lleva días caído, una plantilla algo vieja sigue
+  // siendo mejor que ninguna (y del cron caído ya avisa el vigilante).
+  const precalculada = await readCache<SquadPlayer[]>(
+    teamSquadCacheKey(teamId),
+    60 * 60 * 24 * 7,
+  );
+  if (precalculada && precalculada.length > 0) return precalculada;
+  return getTeamSquadLive(teamId);
+}
+
+/** La llamada de verdad a la API. La usa el cron (para precalcular) y la
+ * ficha solo si en `sports_cache` no hay nada. */
+export async function getTeamSquadLive(teamId: number): Promise<SquadPlayer[]> {
   // retryIfEmpty: un equipo siempre tiene jugadores, así que una plantilla
   // vacía es un fallo disfrazado — y con TTL de 1 día costaba la pestaña
   // entera hasta el día siguiente.
@@ -1804,7 +1833,7 @@ export type AllPlayer = {
  * (equipos local/visitante) en su lugar — sin esto, esas competiciones se
  * quedarían sin pestaña "Jugadores" (sin equipos que enumerar).
  */
-async function getCompetitionTeamRefs(
+export async function getCompetitionTeamRefs(
   competition: Competition,
 ): Promise<{ id: number; name: string; logo: string }[]> {
   const standings = await getCompetitionStandings(competition);
@@ -1852,7 +1881,7 @@ export async function getAllCompetitionPlayers(
       const chunk = batchIds.slice(i, i + size);
       const res = await Promise.all(
         chunk.map((id) =>
-          getTeamSquad(id)
+          getTeamSquadLive(id)
             .then((sq) => ({ id, sq }))
             .catch(() => ({ id, sq: [] as SquadPlayer[] })),
         ),
