@@ -125,6 +125,18 @@ async function rawGet<T>(
   return json;
 }
 
+/** Cada cuánto se reintenta una llamada que quedó cacheada como fallo. */
+const FAILURE_RETRY_S = 300;
+
+/** ¿Lo cacheado es el marcador de fallo que pone el catch de más abajo? */
+function failed(r: { errors: unknown }): boolean {
+  return (
+    typeof r.errors === "object" &&
+    r.errors !== null &&
+    "failed" in (r.errors as Record<string, unknown>)
+  );
+}
+
 async function get<T>(
   path: string,
   params: Record<string, string | number>,
@@ -138,6 +150,11 @@ async function get<T>(
    * necesita un dato realmente fresco para no volver a escribir el mismo
    * fallo en sports_cache. */
   noCache = false,
+  /** true → una respuesta VACÍA se trata como fallo y se reintenta pronto.
+   * Solo para endpoints donde el vacío no tiene sentido: un equipo siempre
+   * tiene plantilla. En `/injuries` o `/trophies`, vacío es una respuesta
+   * legítima y reintentarla sería quemar cuota para nada. */
+  retryIfEmpty = false,
 ): Promise<{ response: T[]; errors: unknown }> {
   const url = new URL(BASE + path);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
@@ -180,12 +197,46 @@ async function get<T>(
     { revalidate: revalidateSeconds },
   );
 
+  let res: { response: T[]; errors: unknown };
   try {
-    return await cached();
+    res = await cached();
   } catch {
     // Red de respaldo por si unstable_cache en sí falla (infra, no la API).
     // Lo maneja el fallback a BD de /mundial (wc-fallback.ts).
     return { response: [], errors: { failed: true } };
+  }
+
+  // Cachear el fallo evita la tormenta de reintentos, pero con TTL largos se
+  // pasa de frenada: un tropiezo puntual en `/players/squads` (TTL 1 día)
+  // dejaba a un equipo sin pestaña de jugadores 24 horas. Pasó con el Barça.
+  //
+  // Aquí se separan las dos cosas: el ÉXITO sigue cacheado su TTL completo,
+  // pero un fallo se reintenta cada FAILURE_RETRY_S. La clave lleva el número
+  // de ventana temporal, así que por muchas visitas que haya solo se hace UNA
+  // llamada real cada 5 minutos — la protección contra tormentas se mantiene.
+  const fallo = failed(res) || (retryIfEmpty && res.response.length === 0);
+  if (!fallo || revalidateSeconds <= FAILURE_RETRY_S) return res;
+
+  const ventana = Math.floor(Date.now() / (FAILURE_RETRY_S * 1000));
+  const reintento = unstable_cache(
+    async () => {
+      try {
+        return await rawGet<T>(urlStr, path, paramStr);
+      } catch {
+        return { response: [] as T[], errors: { failed: true } };
+      }
+    },
+    ["apif-retry", urlStr, String(ventana)],
+    { revalidate: FAILURE_RETRY_S },
+  );
+
+  try {
+    const r2 = await reintento();
+    const sigueFallando =
+      failed(r2) || (retryIfEmpty && r2.response.length === 0);
+    return sigueFallando ? res : r2;
+  } catch {
+    return res;
   }
 }
 
@@ -1550,7 +1601,16 @@ type SquadResponse = {
  * posición (POR, DEF, MED, DEL) y dorsal. Caché 1 día. Vacío si no hay datos.
  */
 export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
-  const r = await get<SquadResponse>("/players/squads", { team: teamId }, 86400);
+  // retryIfEmpty: un equipo siempre tiene jugadores, así que una plantilla
+  // vacía es un fallo disfrazado — y con TTL de 1 día costaba la pestaña
+  // entera hasta el día siguiente.
+  const r = await get<SquadResponse>(
+    "/players/squads",
+    { team: teamId },
+    86400,
+    false,
+    true,
+  );
   const players = r.response[0]?.players ?? [];
   const order: Record<string, number> = {
     Goalkeeper: 0,
