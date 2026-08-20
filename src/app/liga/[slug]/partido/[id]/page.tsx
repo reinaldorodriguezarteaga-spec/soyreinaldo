@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -23,6 +24,7 @@ import {
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
+import MatchQuiniela from "./match-quiniela";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -423,6 +425,18 @@ export default async function LigaPartidoPage({
           </div>
         </section>
       )}
+
+      <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
+        <div className="wrap">
+          <Suspense fallback={null}>
+            <MatchQuiniela
+              fixtureId={fixtureId}
+              played={played}
+              goles={{ home: fx.goals.home, away: fx.goals.away }}
+            />
+          </Suspense>
+        </div>
+      </section>
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap">
