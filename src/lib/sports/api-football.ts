@@ -1257,6 +1257,12 @@ export type PlayerSeason = {
   photo: string | null;
   age: number | null;
   nationality: string | null;
+  /** Biografía: la API la devuelve siempre y hasta ahora se tiraba. */
+  birthDate: string | null;
+  birthPlace: string | null;
+  heightCm: string | null;
+  weightKg: string | null;
+  injured: boolean;
   team: { name: string; logo: string } | null;
   position: string | null;
   appearances: number | null;
@@ -1291,6 +1297,10 @@ type PlayerSeasonResponse = {
     photo: string | null;
     age: number | null;
     nationality: string | null;
+    birth?: { date: string | null; place: string | null; country: string | null };
+    height?: string | null;
+    weight?: string | null;
+    injured?: boolean;
   };
   statistics: Array<{
     team: { name: string; logo: string };
@@ -1336,6 +1346,13 @@ export async function getPlayerSeasonStats(
       photo: p.player.photo ?? null,
       age: p.player.age ?? null,
       nationality: p.player.nationality ?? null,
+      birthDate: p.player.birth?.date ?? null,
+      birthPlace: [p.player.birth?.place, p.player.birth?.country]
+        .filter(Boolean)
+        .join(", ") || null,
+      heightCm: p.player.height ?? null,
+      weightKg: p.player.weight ?? null,
+      injured: p.player.injured ?? false,
       team: s.team ? { name: s.team.name, logo: s.team.logo } : null,
       position: s.games?.position ?? null,
       appearances: s.games?.appearences ?? null,
