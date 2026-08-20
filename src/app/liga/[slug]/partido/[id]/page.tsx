@@ -25,6 +25,7 @@ import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competition
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
+import MatchAnalisis from "./match-analisis";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -428,6 +429,9 @@ export default async function LigaPartidoPage({
 
       <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
         <div className="wrap">
+          <Suspense fallback={null}>
+            <MatchAnalisis fixtureId={fixtureId} />
+          </Suspense>
           <Suspense fallback={null}>
             <MatchQuiniela
               fixtureId={fixtureId}
