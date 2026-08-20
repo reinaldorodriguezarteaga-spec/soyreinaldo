@@ -15,11 +15,14 @@ import {
   isLive,
   reconcileGoals,
   subKey,
+  getCompetitionStandings,
   type Fixture,
   type FixtureGoal,
+  type StandingRow,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
+import StandingsImpact from "./standings-impact";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -287,6 +290,18 @@ export default async function LigaPartidoPage({
     players.find((t) => t.team.id === home.id)?.players ?? [];
   const awayPlayers =
     players.find((t) => t.team.id === away.id)?.players ?? [];
+  // Clasificación proyectada: solo tiene sentido antes de jugarse y en
+  // competiciones con tabla. Sale de `sports_cache`, no gasta cuota.
+  const standings =
+    !played && competition.standingsMode === "table"
+      ? await getCompetitionStandings(competition).catch(() => null)
+      : null;
+  const standingsRows = Array.isArray(standings)
+    ? (standings as StandingRow[]).filter(
+        (r): r is StandingRow => "rank" in r && "points" in r,
+      )
+    : [];
+
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
@@ -396,6 +411,18 @@ export default async function LigaPartidoPage({
           </div>
         </div>
       </section>
+
+      {standingsRows.length > 0 && (
+        <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
+          <div className="wrap">
+            <StandingsImpact
+              rows={standingsRows}
+              home={{ id: home.id, name: home.name }}
+              away={{ id: away.id, name: away.name }}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap">
