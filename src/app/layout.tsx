@@ -7,6 +7,7 @@ import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
 import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
@@ -171,6 +172,10 @@ export default async function RootLayout({
             huella de usuario, así que no depende del banner de consentimiento.
             Hay que tenerlo activado además en el panel de Vercel. */}
         <Analytics />
+        {/* Speed Insights: mide en el navegador de cada visitante las Core Web
+            Vitals reales (LCP, INP, CLS). Como Analytics, va sin cookies y hay
+            que activarlo aparte en el panel de Vercel. */}
+        <SpeedInsights />
       </body>
     </html>
   );
