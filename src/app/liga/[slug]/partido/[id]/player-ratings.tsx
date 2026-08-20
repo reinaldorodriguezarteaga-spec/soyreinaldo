@@ -508,6 +508,9 @@ export default function PlayerRatings({
   const maxShots = Math.max(...entries.map((e) => e.p.stats.shotsTotal ?? 0));
 
   const canPitch = !!(homeLineup?.startXI.length && awayLineup?.startXI.length);
+  // Sin valoraciones todavía (previa o primeros minutos) el bloque es la
+  // alineación a secas: solo vista de campo, sin pestaña de lista vacía.
+  const lineupOnly = entries.length === 0 && canPitch;
   const [view, setView] = useState<"campo" | "lista">(canPitch ? "campo" : "lista");
   const [open, setOpen] = useState<number | null>(null);
   // Campo horizontal en escritorio, vertical en móvil. Arranca vertical (= SSR)
@@ -544,8 +547,10 @@ export default function PlayerRatings({
   return (
     <div>
       <div className="shead">
-        <h2>Valoraciones</h2>
-        {canPitch ? (
+        <h2>{lineupOnly ? "Alineaciones" : "Valoraciones"}</h2>
+        {lineupOnly ? (
+          <span className="sh-note">once inicial confirmado</span>
+        ) : canPitch ? (
           <div className="tabs" style={{ maxWidth: 200 }}>
             <button type="button" className={view === "campo" ? "on" : ""} onClick={() => setView("campo")}>
               Campo
