@@ -15,9 +15,11 @@ import {
   isLive,
   reconcileGoals,
   subKey,
+  type Fixture,
   type FixtureGoal,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -59,8 +61,68 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: `/liga/${slug}/partido/${id}` },
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },
+  };
+}
+
+/** schema.org/SportsEvent — lo que permite a Google enseñar el marcador
+ * directamente en los resultados de búsqueda. */
+function matchJsonLd(
+  fx: Fixture,
+  competition: Competition,
+  played: boolean,
+): Record<string, unknown> {
+  const home = fx.teams.home;
+  const away = fx.teams.away;
+  const equipo = (t: { name: string; logo: string }) => ({
+    "@type": "SportsTeam",
+    name: t.name,
+    logo: t.logo,
+  });
+  return {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: `${home.name} - ${away.name}`,
+    description: `${home.name} contra ${away.name} en ${competition.name}.`,
+    startDate: fx.fixture.date,
+    eventStatus:
+      fx.fixture.status.short === "PST"
+        ? "https://schema.org/EventPostponed"
+        : fx.fixture.status.short === "CANC"
+          ? "https://schema.org/EventCancelled"
+          : "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    sport: "Soccer",
+    url: absolute(`/liga/${competition.slug}/partido/${fx.fixture.id}`),
+    ...(fx.fixture.venue.name
+      ? {
+          location: {
+            "@type": "Place",
+            name: fx.fixture.venue.name,
+            ...(fx.fixture.venue.city
+              ? {
+                  address: {
+                    "@type": "PostalAddress",
+                    addressLocality: fx.fixture.venue.city,
+                  },
+                }
+              : {}),
+          },
+        }
+      : {}),
+    homeTeam: equipo(home),
+    awayTeam: equipo(away),
+    competitor: [equipo(home), equipo(away)],
+    superEvent: { "@type": "SportsOrganization", name: competition.name },
+    ...(played
+      ? {
+          // El marcador, en el formato que Google sabe leer.
+          subEvent: [],
+          award: `${fx.goals.home ?? 0}-${fx.goals.away ?? 0}`,
+        }
+      : {}),
   };
 }
 
@@ -233,6 +295,7 @@ export default async function LigaPartidoPage({
 
   return (
     <main className="page">
+      <JsonLd data={matchJsonLd(fx, competition, played)} />
       {liveNow && <LiveRefresh />}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">

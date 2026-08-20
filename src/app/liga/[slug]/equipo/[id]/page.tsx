@@ -13,6 +13,7 @@ import {
   type Fixture,
   type SquadPlayer,
 } from "@/lib/sports/api-football";
+import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import { isFavorited } from "@/app/actions/favorites";
 import FavoriteStar from "@/components/FavoriteStar";
@@ -38,6 +39,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: `/liga/${slug}/equipo/${id}` },
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },
   };
@@ -100,6 +102,19 @@ export default async function LigaEquipoPage({
 
   return (
     <main className="page">
+      {team && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "SportsTeam",
+            name: team.name,
+            sport: "Soccer",
+            ...(team.logo ? { logo: team.logo } : {}),
+            url: absolute(`/liga/${competition.slug}/equipo/${teamId}`),
+            memberOf: { "@type": "SportsOrganization", name: competition.name },
+          }}
+        />
+      )}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
