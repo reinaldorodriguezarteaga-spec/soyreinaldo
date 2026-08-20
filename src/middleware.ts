@@ -25,6 +25,29 @@ import { updateSession } from "@/lib/supabase/middleware";
 const HEAVY_PATH_RE =
   /^\/(?:liga\/[^/]+|mundial)\/(?:jugador|partido|equipo|comparar)\//;
 
+/** Rutas que SÍ queremos que Google indexe: las fichas de las competiciones
+ * vivas. Se abrieron el 20-ago — hasta entonces estaban cerradas a cal y canto
+ * por la cuota de API-Football, y eso dejaba fuera de Google justo el contenido
+ * por el que alguien buscaría la web ("Lewandowski estadísticas", "Alavés
+ * Getafe resultado"). Ahora la caché precalculada (`sports_cache`, cron cada
+ * 10 min) desacopla el coste de API del tráfico, así que el rastreo sale
+ * barato. `/mundial/*` se queda fuera: el torneo acabó y solo multiplicaría
+ * superficie que rastrear. */
+const INDEXABLE_PATH_RE =
+  /^\/liga\/[^/]+\/(?:jugador|partido|equipo)\//;
+
+/** Buscadores a los que abrimos esas fichas. Va por User-Agent, que es
+ * falsificable: por eso siguen pasando por su propio límite por IP, más
+ * estrecho que el de una persona. Un impostor que se haga pasar por Googlebot
+ * gana saltarse el desafío de cookie, no barrer la web entera. */
+const SEARCH_BOT_RE =
+  /googlebot|bingbot|google-inspectiontool|duckduckbot|applebot(?!.*extended)/i;
+
+/** Presupuesto por minuto para buscadores. Google rastrea despacio y en
+ * ráfagas cortas; 30/min le sobra y a un impostor no le da para vaciar la
+ * base. */
+const BOT_RATE_LIMIT = 30;
+
 /** Bots de previsualización de enlaces (compartir un partido por WhatsApp/
  * Telegram/redes debe seguir generando su tarjetita). */
 const PREVIEW_BOT_RE =
@@ -53,7 +76,7 @@ const RATE_LIMIT = 40;
 const RATE_WINDOW_MS = 60_000;
 const hits = new Map<string, { n: number; t: number }>();
 
-function rateLimited(ip: string): boolean {
+function rateLimited(ip: string, limit: number = RATE_LIMIT): boolean {
   const now = Date.now();
   const cur = hits.get(ip);
   if (!cur || now - cur.t > RATE_WINDOW_MS) {
@@ -67,7 +90,7 @@ function rateLimited(ip: string): boolean {
     return false;
   }
   cur.n++;
-  return cur.n > RATE_LIMIT;
+  return cur.n > limit;
 }
 
 export async function middleware(request: NextRequest) {
@@ -75,6 +98,23 @@ export async function middleware(request: NextRequest) {
 
   if (HEAVY_PATH_RE.test(pathname)) {
     const ua = request.headers.get("user-agent") ?? "";
+
+    // Capa 0-bis: buscadores en las fichas que queremos indexar. Pasan sin
+    // desafío de cookie (un crawler no guarda cookies y moriría en él), pero
+    // con su propio presupuesto por minuto.
+    if (SEARCH_BOT_RE.test(ua) && INDEXABLE_PATH_RE.test(pathname)) {
+      const botIp =
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        request.headers.get("x-real-ip") ??
+        "bot";
+      if (rateLimited(`bot:${botIp}`, BOT_RATE_LIMIT)) {
+        return new NextResponse("Too Many Requests", {
+          status: 429,
+          headers: { "Retry-After": "120" },
+        });
+      }
+      return await updateSession(request);
+    }
 
     // Capa 0: bots de previsualización de enlaces pasan siempre.
     if (!PREVIEW_BOT_RE.test(ua)) {
