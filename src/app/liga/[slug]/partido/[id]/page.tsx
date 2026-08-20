@@ -290,6 +290,10 @@ export default async function LigaPartidoPage({
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
+  // Los onces se publican ~1h antes del pitido; las valoraciones, con el
+  // partido ya andando. Entre lo uno y lo otro, lo que la gente busca es la
+  // alineación — se pinta el mismo campo, sin notas.
+  const hasLineups = !!(homeLineup?.startXI.length && awayLineup?.startXI.length);
 
   const base = `/liga/${competition.slug}`;
 
@@ -427,7 +431,7 @@ export default async function LigaPartidoPage({
             </div>
           )}
 
-          {hasRatings && (
+          {(hasRatings || hasLineups) && (
             <div style={{ marginTop: 28 }}>
               <PlayerRatings
                 home={{ id: home.id, name: home.name, logo: home.logo }}
