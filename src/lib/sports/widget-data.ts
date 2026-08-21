@@ -364,6 +364,10 @@ export type CalendarFixture = WcFixture & {
    * de la liga real del fixture. `null` = fila sin enlace (ligas extra del
    * calendario sin hub propio, p. ej. Bundesliga o selecciones). */
   linkSlug: string | null;
+  /** Solo en el grupo "⭐ Tus favoritos": etiqueta de día ("Hoy", "Dom 23
+   * ago") por partido — ese grupo mezcla días y la hora sola no dice cuándo
+   * se juega. En los días normales el día ya es la cabecera del grupo. */
+  dayLabel?: string;
 };
 
 /** Equipo favorito del usuario, para la sección "⭐ Tus favoritos". */
@@ -558,6 +562,10 @@ export async function getUpcomingCalendar(
       }
     }
   }
+  const now = new Date();
+  const todayKey = madridDateKey(now);
+  const tomorrowKey = madridDateKey(new Date(now.getTime() + 24 * 3600_000));
+
   const favDay: CalendarDay | null =
     favFixtures.size > 0
       ? {
@@ -568,15 +576,19 @@ export async function getUpcomingCalendar(
               (a, b) =>
                 new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
             )
-            .slice(0, 10),
+            .slice(0, 10)
+            .map((fx) => ({
+              ...fx,
+              dayLabel: dayLabel(
+                madridDateKey(new Date(fx.fixture.date)),
+                todayKey,
+                tomorrowKey,
+              ),
+            })),
         }
       : null;
 
   if (all.length === 0 && !favDay) return [];
-
-  const now = new Date();
-  const todayKey = madridDateKey(now);
-  const tomorrowKey = madridDateKey(new Date(now.getTime() + 24 * 3600_000));
 
   const byDay = new Map<string, CalendarFixture[]>();
   for (const fx of all) {

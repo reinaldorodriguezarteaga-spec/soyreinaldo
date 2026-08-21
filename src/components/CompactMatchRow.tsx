@@ -24,12 +24,17 @@ export default function CompactMatchRow({
   fx,
   href,
   badge,
+  dateLabel,
 }: {
   fx: Fixture;
   /** `null` = fila informativa sin enlace (ligas del calendario sin hub
    * propio, p. ej. Bundesliga o selecciones). */
   href: string | null;
   badge?: string;
+  /** Día del partido ("Hoy", "Dom 23 ago"), junto al badge. Solo para filas
+   * fuera de una agrupación por día (el grupo "⭐ Tus favoritos" mezcla
+   * fechas y la hora sola no dice cuándo se juega). */
+  dateLabel?: string;
 }) {
   const live = isLive(fx);
   const final = isFinal(fx);
@@ -101,10 +106,18 @@ export default function CompactMatchRow({
     <span className="hmrow">{inner}</span>
   );
 
-  if (!badge) return row;
+  if (!badge && !dateLabel) return row;
   return (
     <div className="hmrow__wrap">
-      <span className="hmrow__badge truncate">{badge}</span>
+      <span className="hmrow__badge truncate">
+        {badge}
+        {dateLabel && (
+          <span style={{ color: "var(--text-dim)" }}>
+            {badge ? " · " : ""}
+            {dateLabel}
+          </span>
+        )}
+      </span>
       {row}
     </div>
   );

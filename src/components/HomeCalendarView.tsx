@@ -114,6 +114,7 @@ function DayCard({ day, open = true }: { day: CalendarDay; open?: boolean }) {
               fx={fx}
               href={fx.linkSlug ? `/liga/${fx.linkSlug}/partido/${fx.fixture.id}` : null}
               badge={fx.competitionLabel}
+              dateLabel={fx.dayLabel}
             />
           ))}
         </div>
