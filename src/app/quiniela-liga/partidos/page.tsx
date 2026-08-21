@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import LqMatchCard, { type LqMatchCardData } from "../match-card";
+import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 
 export const metadata = {
   title: "Pronósticos · Quiniela LaLiga 2026-27 | Soy Reinaldo",
@@ -66,6 +67,7 @@ export default async function QuinielaLigaPartidosPage({
 }: {
   searchParams: Promise<{ j?: string }>;
 }) {
+  const baremo = await getBaremoPublico();
   const { j } = await searchParams;
 
   const supabase = await createClient();
@@ -175,8 +177,9 @@ export default async function QuinielaLigaPartidosPage({
 
           <p className="hint" style={{ marginTop: 16 }}>
             Se guarda solo al completar el marcador. Cada partido se cierra 30
-            minutos antes del inicio. <b>Marcador exacto 3 pts</b>, acertar el
-            ganador 1 pt. Entras automáticamente en la clasificación pública.
+            minutos antes del inicio. <b>Marcador exacto {baremo.exacto} pts</b>,
+            acertar el ganador {baremo.acierto} pts. Entras automáticamente en
+            la clasificación pública.
           </p>
 
           {cards.length === 0 ? (

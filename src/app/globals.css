@@ -1397,3 +1397,25 @@ select.field { appearance: none; }
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+
+/* ---------------------------------------------------------------------------
+   Calendario de la portada: scroll propio.
+   Desplegado mide varias pantallas y obligaba a recorrerlo entero para llegar
+   a lo que hay debajo. Se le da una altura máxima generosa —queda página
+   visible por arriba y por abajo para poder agarrarla con el dedo en móvil— y
+   una línea de sombra abajo que insinúa que hay más.
+   --------------------------------------------------------------------------- */
+.hmcal-scroll {
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  /* Aire para que la última tarjeta no quede pegada al borde al hacer scroll. */
+  padding-bottom: 4px;
+  /* Insinúa continuidad sin pintar una barra fea. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+}
+/* Cuando cabe entero, nada de máscara ni recorte. */
+@media (max-height: 560px) {
+  .hmcal-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; }
+}

@@ -11,6 +11,8 @@ import { getSocialStats } from "@/lib/social-stats";
 import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
+import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 
 const MARQUEE = [
   "Culé",
@@ -45,6 +47,7 @@ async function getStandingsSnapshot() {
 }
 
 export default async function Home() {
+  const baremo = await getBaremoPublico();
   const [stats, inApp, standingsSnapshot] = await Promise.all([
     getSocialStats(),
     isAppRequest(),
@@ -187,8 +190,9 @@ export default async function Home() {
                 lineHeight: 1.5,
               }}
             >
-              Pronostica cada jornada, marcador exacto <b style={{ color: "var(--text)" }}>3 pts</b>,
-              y compite en la clasificación pública. Sin código: entras de un
+              Pronostica cada jornada, marcador exacto{" "}
+              <b style={{ color: "var(--text)" }}>{baremo.exacto} pts</b>, y
+              compite en la clasificación pública. Sin código: entras de un
               toque y a jugar.
             </p>
             <span className="btn btn--accent" style={{ marginTop: 18 }}>

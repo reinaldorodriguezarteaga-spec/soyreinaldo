@@ -52,3 +52,18 @@ export function leagueHref(path: string, league: ClubLeague | null): string {
   if (!league || league.isPublic) return path;
   return `${path}?liga=${encodeURIComponent(league.id)}`;
 }
+
+/** Baremo de puntuación de una liga, en texto. */
+export type Baremo = { exacto: number; acierto: number };
+
+/**
+ * "marcador exacto 5 pts, acertar el ganador 2 pts".
+ *
+ * Estas cifras estaban escritas a mano en cinco pantallas, y cuando el dueño
+ * cambió el baremo de 3/1 a 5/2 la web siguió anunciando lo viejo. Ahora se
+ * escriben desde el dato real, como el total de seguidores.
+ */
+export function textoBaremo({ exacto, acierto }: Baremo): string {
+  const pts = (n: number) => `${n} ${n === 1 ? "pt" : "pts"}`;
+  return `marcador exacto ${pts(exacto)}, acertar el ganador ${pts(acierto)}`;
+}

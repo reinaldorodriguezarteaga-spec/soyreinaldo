@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague, leagueHref } from "@/lib/quiniela-liga/leagues";
 import LeagueSwitcher from "../league-switcher";
+import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 
 /** Liga pública "Quiniela LaLiga 2026-27": lo que ve quien no ha entrado. */
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
@@ -36,6 +38,8 @@ export default async function QuinielaLigaRankingPage({
   const active = pickLeague(leagues, liga);
   const leagueId = active?.id ?? PUBLIC_LEAGUE_ID;
 
+  const baremo = await getBaremoPublico();
+
   const { data } = await supabase.rpc("lq_leaderboard", {
     p_league_id: leagueId,
   });
@@ -58,7 +62,7 @@ export default async function QuinielaLigaRankingPage({
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
             {active && !active.isPublic ? `${active.name} · ` : ""}
-            LaLiga 2026-27 · marcador exacto 3 pts, acertar el ganador 1 pt.
+            LaLiga 2026-27 · {textoBaremo(baremo)}.
           </p>
           {active && (!active.isPublic || active.role === "admin") && (
             <p style={{ marginTop: 12 }}>

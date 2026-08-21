@@ -51,13 +51,27 @@ export default function HomeCalendarView({
           {allOpen ? "Contraer todo ▴" : "Expandir todo ▾"}
         </button>
       </div>
-      {favDay.map((day) => (
-        <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
-      ))}
-      {liveContent}
-      {restDays.map((day) => (
-        <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
-      ))}
+
+      {/* El calendario tiene su propio scroll.
+       *
+       * Desplegado entero mide varias pantallas, y eso convertía la portada en
+       * un túnel: para llegar a la quiniela, al análisis o a cualquier otra
+       * cosa había que recorrerlo entero. Encerrándolo en su caja, quien
+       * quiera calendario lo recorre aquí dentro, y quien no, sigue bajando
+       * por la página como si no existiera.
+       *
+       * Sin `overscroll-behavior: contain` a propósito: al llegar al final de
+       * la lista el gesto continúa moviendo la página, que es lo que espera
+       * cualquiera. */}
+      <div className="hmcal-scroll space-y-3">
+        {favDay.map((day) => (
+          <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
+        ))}
+        {liveContent}
+        {restDays.map((day) => (
+          <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
+        ))}
+      </div>
     </div>
   );
 }

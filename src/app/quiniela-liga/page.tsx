@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, type ClubLeague } from "@/lib/quiniela-liga/leagues";
 import JoinCodeForm from "./join-code-form";
+import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 
 export const metadata = {
   title: "Elige tu quiniela | Soy Reinaldo",
@@ -43,6 +45,7 @@ export default async function QuinielaLigaIndex() {
   } = await supabase.auth.getUser();
 
   const leagues = user ? await getMyClubLeagues(user.id) : [];
+  const baremo = await getBaremoPublico();
   const inPublic = leagues.some((l) => l.isPublic);
 
   // Datos EN VIVO de la liga pública (código incluido) — es is_public, así
@@ -111,7 +114,7 @@ export default async function QuinielaLigaIndex() {
               <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{publicLeague.name}</h2>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
                 {publicLeague.description ??
-                  "La general, abierta a todo el mundo. Marcador exacto 3 pts, acertar el ganador 1 pt."}
+                  `La general, abierta a todo el mundo. ${textoBaremo(baremo)}.`}
               </p>
               <Link
                 href={`/unirse/${encodeURIComponent(publicLeague.code)}`}
