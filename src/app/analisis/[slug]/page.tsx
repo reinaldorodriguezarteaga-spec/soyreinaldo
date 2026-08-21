@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { porSlug } from "@/lib/analisis/queries";
 import { markdownAHtml, minutosDeLectura } from "@/lib/analisis/markdown";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
+import ShareArticle from "@/components/ShareArticle";
 
 export const revalidate = 300;
 
@@ -114,6 +115,8 @@ export default async function AnalisisPage({
               </Link>
             </p>
           )}
+
+          <ShareArticle title={a.title} url={absolute(`/analisis/${a.slug}`)} />
         </div>
       </section>
     </main>
