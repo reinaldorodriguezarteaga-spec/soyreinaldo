@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { marcarCompartido } from "@/app/analisis/actions";
 import {
   FacebookLogo,
   InstagramLogo,
@@ -23,14 +24,29 @@ import {
 export default function ShareArticle({
   title,
   url,
+  slug,
+  shareCount,
 }: {
   title: string;
+  /** Slug del artículo, para contar el compartido. */
+  slug: string;
+  /** Compartidos ya registrados (se pinta a partir de 3 para no enseñar
+   * un "1" triste recién publicado). */
+  shareCount: number;
   /** URL absoluta del artículo (los intents y la hoja nativa la necesitan
    * completa, no relativa). */
   url: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [avisoIg, setAvisoIg] = useState(false);
+  const [extra, setExtra] = useState(0);
+
+  /** Registra el compartido (y lo suma en pantalla al momento). Nunca
+   * bloquea la acción: si el contador falla, se comparte igual. */
+  function contar() {
+    setExtra((n) => n + 1);
+    void marcarCompartido(slug);
+  }
 
   const texto = `${title} — ${url}`;
   const redes = [
@@ -56,7 +72,9 @@ export default function ShareArticle({
     },
   ];
 
-  function copiar() {
+  /** Copia sin contar: la usan también las vías que YA han contado (si no,
+   * un mismo gesto sumaría dos). */
+  function copiarEnlace() {
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -66,7 +84,13 @@ export default function ShareArticle({
       .catch(() => {});
   }
 
+  function copiar() {
+    contar();
+    copiarEnlace();
+  }
+
   async function compartirNativo() {
+    contar();
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, url });
@@ -74,11 +98,12 @@ export default function ShareArticle({
         // El usuario cerró la hoja de compartir: no es un error.
       }
     } else {
-      copiar();
+      copiarEnlace();
     }
   }
 
   async function compartirInstagram() {
+    contar();
     if (typeof navigator !== "undefined" && navigator.share) {
       // Móvil (y escritorios con Web Share): en la hoja nativa Instagram
       // sí aparece como destino.
@@ -114,6 +139,19 @@ export default function ShareArticle({
       >
         ¿Te ha gustado? Compártelo
       </p>
+      {shareCount + extra >= 3 && (
+        <p
+          style={{
+            marginTop: -8,
+            marginBottom: 14,
+            fontSize: "0.82rem",
+            color: "var(--text-dim)",
+          }}
+        >
+          Compartido{" "}
+          <b style={{ color: "var(--text)" }}>{shareCount + extra}</b> veces.
+        </p>
+      )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
         <button type="button" className="btn btn--accent" onClick={compartirNativo}>
           Compartir <span className="arr">→</span>
@@ -129,6 +167,7 @@ export default function ShareArticle({
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn--ghost"
+            onClick={contar}
           >
             {red.icono}
             {red.nombre}

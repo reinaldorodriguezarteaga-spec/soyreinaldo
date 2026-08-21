@@ -13,6 +13,8 @@ type Fila = {
   fixture_id: number | null;
   competition_slug: string | null;
   updated_at: string;
+  view_count: number;
+  share_count: number;
 };
 
 export default async function AdminAnalisis({
@@ -27,7 +29,7 @@ export default async function AdminAnalisis({
   // sencillamente no verá nada que editar.
   const { data } = await supabase
     .from("articles")
-    .select("id, slug, title, published_at, fixture_id, competition_slug, updated_at")
+    .select("id, slug, title, published_at, fixture_id, competition_slug, updated_at, view_count, share_count")
     .order("updated_at", { ascending: false })
     .returns<Fila[]>();
   const articulos = data ?? [];
@@ -93,6 +95,14 @@ export default async function AdminAnalisis({
                     {a.published_at ? "publicado" : "borrador"}
                   </span>
                   <span className="flex-1 text-sm">{a.title}</span>
+                  {a.published_at && (
+                    <span
+                      className="text-xs tabular-nums text-zinc-500"
+                      title={`${a.view_count} lecturas · ${a.share_count} veces compartido`}
+                    >
+                      👁 {a.view_count} · ↗ {a.share_count}
+                    </span>
+                  )}
                   {a.published_at && (
                     <Link
                       href={`/analisis/${a.slug}`}
