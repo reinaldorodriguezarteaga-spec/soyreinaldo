@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   FacebookLogo,
+  InstagramLogo,
   ThreadsLogo,
   WhatsAppLogo,
   XLogo,
@@ -10,10 +11,14 @@ import {
 
 /**
  * Bloque "Compártelo" del final de cada análisis. El botón principal abre la
- * hoja de compartir NATIVA del sistema (Web Share API) — es la única vía real
- * hacia Instagram (Stories/DM), que no tiene intent web como los demás; en
- * navegadores sin la API (p. ej. Firefox de escritorio) cae a copiar el
- * enlace. El resto son intents web directos que no dependen de nada.
+ * hoja de compartir NATIVA del sistema (Web Share API); en navegadores sin
+ * la API (p. ej. Firefox de escritorio) cae a copiar el enlace.
+ *
+ * Instagram es caso aparte: NO tiene intent web (no existe URL tipo wa.me
+ * que abra Instagram con el enlace puesto), así que su botón abre la hoja
+ * nativa en móvil — ahí Instagram sí aparece (Stories/DM) — y en escritorio
+ * copia el enlace avisando de pegarlo en historia/DM. El resto son intents
+ * web directos que no dependen de nada.
  */
 export default function ShareArticle({
   title,
@@ -25,6 +30,7 @@ export default function ShareArticle({
   url: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [avisoIg, setAvisoIg] = useState(false);
 
   const texto = `${title} — ${url}`;
   const redes = [
@@ -72,6 +78,28 @@ export default function ShareArticle({
     }
   }
 
+  async function compartirInstagram() {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      // Móvil (y escritorios con Web Share): en la hoja nativa Instagram
+      // sí aparece como destino.
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        // Hoja cerrada por el usuario.
+      }
+    } else {
+      // Sin hoja nativa no hay forma de abrir Instagram con el enlace:
+      // copiamos y avisamos de pegarlo en historia/DM.
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          setAvisoIg(true);
+          setTimeout(() => setAvisoIg(false), 4000);
+        })
+        .catch(() => {});
+    }
+  }
+
   return (
     <div className="panel" style={{ marginTop: 36, padding: "22px 24px" }}>
       <p
@@ -90,6 +118,10 @@ export default function ShareArticle({
         <button type="button" className="btn btn--accent" onClick={compartirNativo}>
           Compartir <span className="arr">→</span>
         </button>
+        <button type="button" className="btn btn--ghost" onClick={compartirInstagram}>
+          <InstagramLogo className="h-4 w-4" />
+          Instagram
+        </button>
         {redes.map((red) => (
           <a
             key={red.nombre}
@@ -106,18 +138,21 @@ export default function ShareArticle({
           {copied ? "¡Copiado!" : "Copiar enlace"}
         </button>
       </div>
-      <p
-        style={{
-          marginTop: 12,
-          marginBottom: 0,
-          fontSize: "0.78rem",
-          color: "var(--text-dim)",
-          lineHeight: 1.5,
-        }}
-      >
-        Para Instagram usa <b style={{ color: "var(--text)" }}>Compartir</b> desde
-        el móvil: sale en la lista de apps.
-      </p>
+      {avisoIg && (
+        <p
+          style={{
+            marginTop: 12,
+            marginBottom: 0,
+            fontSize: "0.78rem",
+            color: "var(--text-dim)",
+            lineHeight: 1.5,
+          }}
+        >
+          <b style={{ color: "var(--text)" }}>Enlace copiado.</b> Pégalo en tu
+          historia o DM de Instagram — desde el móvil, el botón abre la lista
+          de apps con Instagram incluida.
+        </p>
+      )}
     </div>
   );
 }
