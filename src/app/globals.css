@@ -908,6 +908,38 @@ select.field { appearance: none; }
    la competición) — solo visual, no afecta al layout flex de los botones. */
 .tabs__divider { flex: none; align-self: stretch; width: 1px; margin: 4px 3px; background: var(--line); }
 .tabs--scroll .tabs__divider { flex: 0 0 auto; }
+
+/* Botón "hay más pestañas →" de ScrollHintTabs: degradado + flecha, y al
+   tocarlo desplaza la barra (antes era decorativo con pointer-events:none
+   y el toque atravesaba al control de debajo). */
+.tabs__more {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  right: 5px;
+  width: 54px;
+  border: 0;
+  padding: 0 10px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: var(--radius);
+  background: linear-gradient(to right, transparent, var(--surface) 68%);
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tabs__more:hover, .tabs__more:active { color: var(--text); }
+/* Espejo hacia la izquierda: aparece en cuanto la barra ya no está al
+   principio, para volver sin tener que arrastrar. */
+.tabs__more--left {
+  right: auto;
+  left: 5px;
+  padding: 0 0 0 10px;
+  justify-content: flex-start;
+  background: linear-gradient(to left, transparent, var(--surface) 68%);
+}
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
 .tabs a:active, .tabs button:active { background: var(--surface-2); }
@@ -1361,4 +1393,61 @@ select.field { appearance: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .marquee__track, .ticker__dot { animation: none; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Prosa de los análisis. Es el único sitio de la web donde manda el texto
+   largo, así que se le da anchura de lectura, aire entre párrafos y una
+   jerarquía propia — no la del resto de páginas, que son de datos.
+   --------------------------------------------------------------------------- */
+.prosa { font-size: 1.06rem; line-height: 1.75; color: var(--text); }
+.prosa > * + * { margin-top: 1.15em; }
+.prosa h2 {
+  font-family: var(--font-display-stack);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  margin-top: 2em;
+  text-wrap: balance;
+}
+.prosa h3 { font-weight: 700; font-size: 1.2rem; margin-top: 1.8em; }
+.prosa a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.prosa ul { padding-left: 1.3em; list-style: disc; }
+.prosa li + li { margin-top: 0.4em; }
+.prosa blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.prosa code {
+  font-family: var(--font-mono-stack);
+  font-size: 0.9em;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   Calendario de la portada: scroll propio.
+   Desplegado mide varias pantallas y obligaba a recorrerlo entero para llegar
+   a lo que hay debajo. Se le da una altura máxima generosa —queda página
+   visible por arriba y por abajo para poder agarrarla con el dedo en móvil— y
+   una línea de sombra abajo que insinúa que hay más.
+   --------------------------------------------------------------------------- */
+.hmcal-scroll {
+  max-height: min(68vh, 640px);
+  overflow-y: auto;
+  /* Aire para que la última tarjeta no quede pegada al borde al hacer scroll. */
+  padding-bottom: 4px;
+  /* Insinúa continuidad sin pintar una barra fea. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+}
+/* Cuando cabe entero, nada de máscara ni recorte. */
+@media (max-height: 560px) {
+  .hmcal-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; }
 }

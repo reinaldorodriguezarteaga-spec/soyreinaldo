@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { notificarEquipo } from "@/lib/push/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -226,6 +227,28 @@ export async function GET(request: Request) {
     const lqIds = ((lqPending ?? []) as Array<{ id: number }>).map((r) => r.id);
     if (lqIds.length > 0) {
       lqPolled = lqIds.length;
+      // Marcador ANTES de actualizarlo: comparándolo sabemos si ha habido gol.
+      // Sin esto solo tendríamos el resultado nuevo, que no dice si acaba de
+      // cambiar. De aquí salen los avisos.
+      const { data: previas } = await supabase
+        .from("lq_matches")
+        .select(
+          `id, score_home, score_away, team_home, team_away,
+           home:team_home(name), away:team_away(name)`,
+        )
+        .in("id", lqIds);
+      type Previa = {
+        id: number;
+        score_home: number | null;
+        score_away: number | null;
+        team_home: number;
+        team_away: number;
+        home: { name: string } | null;
+        away: { name: string } | null;
+      };
+      const antes = new Map(
+        ((previas ?? []) as unknown as Previa[]).map((m) => [m.id, m]),
+      );
       const lqNow = new Date().toISOString();
       const lqRes = await fetch(
         `https://v3.football.api-sports.io/fixtures?ids=${lqIds.join("-")}`,
@@ -259,6 +282,40 @@ export async function GET(request: Request) {
           if (!e) {
             lqUpdated += 1;
             if (isFinal) lqFinished += 1;
+
+            // ¿Gol? Avisamos a quien tenga a alguno de los dos en favoritos.
+            // Best-effort: si el envío falla, la ingesta sigue.
+            const prev = antes.get(fx.fixture.id);
+            if (prev && fx.goals.home != null && fx.goals.away != null) {
+              const localMarco = fx.goals.home > (prev.score_home ?? 0);
+              const visitanteMarco = fx.goals.away > (prev.score_away ?? 0);
+              if (localMarco || visitanteMarco) {
+                const nLocal = prev.home?.name ?? "Local";
+                const nVisitante = prev.away?.name ?? "Visitante";
+                const quienMarco = localMarco ? nLocal : nVisitante;
+                const equipoQueMarco = localMarco ? prev.team_home : prev.team_away;
+                const minuto = fx.fixture.status.elapsed;
+                const payload = {
+                  title: `⚽ Gol del ${quienMarco}`,
+                  body:
+                    `${nLocal} ${fx.goals.home}–${fx.goals.away} ${nVisitante}` +
+                    (minuto != null ? ` · min ${minuto}` : ""),
+                  url: `/liga/laliga/partido/${fx.fixture.id}`,
+                  // Mismo partido = el aviso se sustituye, no se apila.
+                  tag: `gol-${fx.fixture.id}`,
+                };
+                try {
+                  // A los dos bandos: al que marcó y al que encajó.
+                  await notificarEquipo(equipoQueMarco, payload);
+                  await notificarEquipo(
+                    localMarco ? prev.team_away : prev.team_home,
+                    payload,
+                  );
+                } catch {
+                  // no rompe la ingesta
+                }
+              }
+            }
           }
         }
       }

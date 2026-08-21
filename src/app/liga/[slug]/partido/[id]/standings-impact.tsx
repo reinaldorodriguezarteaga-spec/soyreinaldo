@@ -1,4 +1,8 @@
 import type { StandingRow } from "@/lib/sports/api-football";
+import {
+  proyectarPosiciones,
+  type FilaClasificacion,
+} from "@/lib/sports/standings-projection";
 
 /**
  * "Si gana, sube a 4º".
@@ -16,26 +20,14 @@ import type { StandingRow } from "@/lib/sports/api-football";
 
 type Escenario = { etiqueta: string; puestoLocal: number; puestoVisitante: number };
 
-function posiciones(
-  rows: StandingRow[],
-  homeId: number,
-  awayId: number,
-  ptsHome: number,
-  ptsAway: number,
-): { local: number; visitante: number } {
-  const proyectada = rows.map((r) => ({
-    id: r.team.id,
-    points: r.points + (r.team.id === homeId ? ptsHome : r.team.id === awayId ? ptsAway : 0),
-    gd: r.goalsDiff,
-    gf: r.all.goals.for,
+/** Adapta la fila del API al tipo del módulo de proyección. */
+function aFilas(rows: StandingRow[]): FilaClasificacion[] {
+  return rows.map((r) => ({
+    teamId: r.team.id,
+    points: r.points,
+    goalsDiff: r.goalsDiff,
+    goalsFor: r.all.goals.for,
   }));
-  proyectada.sort(
-    (a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf,
-  );
-  return {
-    local: proyectada.findIndex((t) => t.id === homeId) + 1,
-    visitante: proyectada.findIndex((t) => t.id === awayId) + 1,
-  };
 }
 
 export default function StandingsImpact({
@@ -54,9 +46,10 @@ export default function StandingsImpact({
   if (!filaLocal || !filaVisitante) return null;
   if (rows.every((r) => r.all.played === 0)) return null;
 
-  const gana = posiciones(rows, home.id, away.id, 3, 0);
-  const empate = posiciones(rows, home.id, away.id, 1, 1);
-  const pierde = posiciones(rows, home.id, away.id, 0, 3);
+  const filas = aFilas(rows);
+  const gana = proyectarPosiciones(filas, home.id, away.id, 3, 0);
+  const empate = proyectarPosiciones(filas, home.id, away.id, 1, 1);
+  const pierde = proyectarPosiciones(filas, home.id, away.id, 0, 3);
 
   const escenarios: Escenario[] = [
     { etiqueta: `Gana ${home.name}`, puestoLocal: gana.local, puestoVisitante: gana.visitante },

@@ -1,19 +1,48 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   updateSocialStats,
   type SocialStatsState,
 } from "./actions";
 import type { SocialStats } from "@/lib/social-stats";
+import { sumarSeguidores } from "@/lib/social/totales";
 
 const initial: SocialStatsState = { status: "idle" };
 
 export default function StatsForm({ initial: data }: { initial: SocialStats }) {
   const [state, action, pending] = useActionState(updateSocialStats, initial);
+  const [total, setTotal] = useState(
+    () =>
+      sumarSeguidores([
+        data.ig_followers,
+        data.fb_followers,
+        data.tt_followers,
+        data.yt_subscribers,
+        data.threads_followers,
+      ]).texto,
+  );
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      action={action}
+      className="space-y-6"
+      onInput={(e) => {
+        // Se lee el formulario entero en vez de controlar cada campo: así los
+        // inputs siguen siendo simples y el total se actualiza igual.
+        const fd = new FormData(e.currentTarget);
+        const leer = (k: string) => (fd.get(k) as string | null) ?? "";
+        setTotal(
+          sumarSeguidores([
+            leer("ig_followers"),
+            leer("fb_followers"),
+            leer("tt_followers"),
+            leer("yt_subscribers"),
+            leer("threads_followers"),
+          ]).texto,
+        );
+      }}
+    >
       <Section title="Instagram">
         <Pair
           a={{ name: "ig_followers", label: "Seguidores", value: data.ig_followers, placeholder: "54,5K" }}
@@ -52,12 +81,16 @@ export default function StatsForm({ initial: data }: { initial: SocialStats }) {
       </Section>
 
       <Section title="Comunidad total">
-        <Field
-          name="total_followers"
-          label="Suma redondeada (lo que se ve en el recuadro grande)"
-          value={data.total_followers}
-          placeholder="+149.000"
-        />
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+          <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+            Se calcula solo
+          </p>
+          <p className="text-2xl font-semibold tabular-nums">{total}</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Suma de las cinco redes. Antes se escribía a mano y acabó
+            descuadrado: el media kit decía 169.100 con 169.800 reales.
+          </p>
+        </div>
       </Section>
 
       <div className="flex items-center gap-3">

@@ -21,12 +21,15 @@ export default function ScrollHintTabs({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [moreRight, setMoreRight] = useState(false);
+  const [moreLeft, setMoreLeft] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () =>
+    const update = () => {
       setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+      setMoreLeft(el.scrollLeft > 4);
+    };
     update();
     el.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
@@ -73,33 +76,43 @@ export default function ScrollHintTabs({
     };
   }, []);
 
+  // BOTONES de verdad, no adornos: la primera versión llevaba
+  // pointerEvents:none y el toque atravesaba hasta lo que hubiera debajo
+  // (reportado por el dueño con captura: en la quiniela el clic caía en
+  // otro control). Desplazan la barra un 70% de su ancho visible.
+  function scrollTabs(dir: 1 | -1) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({
+      left: dir * Math.max(120, el.clientWidth * 0.7),
+      behavior: "smooth",
+    });
+  }
+
   return (
     <div style={{ position: "relative", maxWidth }}>
       <div ref={ref} className="tabs tabs--scroll">
         {children}
       </div>
-      {moreRight && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 5,
-            bottom: 5,
-            right: 5,
-            width: 54,
-            pointerEvents: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            paddingRight: 8,
-            borderRadius: "var(--radius)",
-            background: "linear-gradient(to right, transparent, var(--surface) 68%)",
-          }}
+      {moreLeft && (
+        <button
+          type="button"
+          className="tabs__more tabs__more--left"
+          aria-label="Pestañas anteriores"
+          onClick={() => scrollTabs(-1)}
         >
-          <span style={{ color: "var(--text-dim)", fontSize: "1.1rem", lineHeight: 1 }}>
-            ›
-          </span>
-        </div>
+          ‹
+        </button>
+      )}
+      {moreRight && (
+        <button
+          type="button"
+          className="tabs__more"
+          aria-label="Ver más pestañas"
+          onClick={() => scrollTabs(1)}
+        >
+          ›
+        </button>
       )}
     </div>
   );

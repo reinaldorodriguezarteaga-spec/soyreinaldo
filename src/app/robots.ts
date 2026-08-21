@@ -21,7 +21,7 @@ const SITE = "https://www.soyreinaldo.com";
  * Lo que sigue cerrado y por qué:
  *  - `/liga/*\/comparar`: acepta cualquier par de equipos → combinaciones
  *    infinitas. Es una trampa de rastreo clásica, no una página que indexar.
- *  - `/mundial/*`: el torneo acabó. Indexarlo solo multiplica superficie.
+ *  - `/mundial/*`: ya no existe — el Mundial se retiró del código el 20-ago.
  *  - `/api/`, `/admin/`, `/quiniela*`: privado o sin valor de búsqueda.
  */
 export default function robots(): MetadataRoute.Robots {
@@ -31,13 +31,8 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         "/liga/*/comparar",
-        "/mundial/partido/",
-        "/mundial/equipo/",
-        "/mundial/jugador/",
-        "/mundial/comparar",
         "/api/",
         "/admin/",
-        "/quiniela/",
         "/quiniela-liga/liga/",
         "/unirse/",
         "/perfil",

@@ -39,17 +39,11 @@ export default async function AdminLayout({
             Admin
           </span>
           <nav className="flex flex-wrap gap-3 text-zinc-400">
+            <Link href="/admin/analisis" className="hover:text-white">
+              Escribir
+            </Link>
             <Link href="/admin/ligas" className="hover:text-white">
               Ligas
-            </Link>
-            <Link href="/admin/partidos" className="hover:text-white">
-              Resultados
-            </Link>
-            <Link
-              href="/admin/resultado-final"
-              className="hover:text-white"
-            >
-              Final Mundial
             </Link>
             <Link
               href="/admin/quiniela-liga"

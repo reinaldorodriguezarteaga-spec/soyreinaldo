@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import { allFixturesCacheKey, type Fixture } from "@/lib/sports/api-football";
 import { readCache } from "@/lib/sports/sports-cache";
+import { listarPublicados } from "@/lib/analisis/queries";
 
 const SITE = "https://www.soyreinaldo.com";
 
@@ -45,6 +46,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
+  // Los análisis: son el contenido propio, el que de verdad puede posicionar
+  // por sí solo. Van con prioridad alta y su fecha real de publicación.
+  const analisis: MetadataRoute.Sitemap = (await listarPublicados(200).catch(() => []))
+    .map((a) => ({
+      url: `${SITE}/analisis/${a.slug}`,
+      lastModified: new Date(a.updated_at),
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    }));
+
   const partidos: MetadataRoute.Sitemap = [];
   const equipos = new Map<string, { url: string; slug: string }>();
 
@@ -79,6 +90,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...estaticas,
+    { url: `${SITE}/analisis`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.9 },
+    ...analisis,
     ...competiciones,
     ...[...equipos.values()].map((e) => ({
       url: e.url,

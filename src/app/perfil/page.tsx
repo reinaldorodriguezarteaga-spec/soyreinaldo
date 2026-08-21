@@ -5,6 +5,7 @@ import PasswordForm from "./password-form";
 import ProfileForm from "./profile-form";
 import DeleteAccount from "./delete-account";
 import { setReminders } from "./actions";
+import GoalAlerts from "@/components/GoalAlerts";
 
 export const metadata = {
   title: "Perfil | Soy Reinaldo",
@@ -174,6 +175,7 @@ export default async function PerfilPage() {
               .
             </p>
           )}
+          <GoalAlerts />
         </div>
       </section>
     </main>
