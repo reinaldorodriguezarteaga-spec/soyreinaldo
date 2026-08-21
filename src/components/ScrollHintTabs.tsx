@@ -73,33 +73,30 @@ export default function ScrollHintTabs({
     };
   }, []);
 
+  // BOTÓN de verdad, no adorno: la primera versión llevaba
+  // pointerEvents:none y el toque atravesaba hasta lo que hubiera debajo
+  // (reportado por el dueño con captura: en la quiniela el clic caía en
+  // otro control). Ahora desplaza la barra un 70% de su ancho visible.
+  function scrollRight() {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: Math.max(120, el.clientWidth * 0.7), behavior: "smooth" });
+  }
+
   return (
     <div style={{ position: "relative", maxWidth }}>
       <div ref={ref} className="tabs tabs--scroll">
         {children}
       </div>
       {moreRight && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 5,
-            bottom: 5,
-            right: 5,
-            width: 54,
-            pointerEvents: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            paddingRight: 8,
-            borderRadius: "var(--radius)",
-            background: "linear-gradient(to right, transparent, var(--surface) 68%)",
-          }}
+        <button
+          type="button"
+          className="tabs__more"
+          aria-label="Ver más pestañas"
+          onClick={scrollRight}
         >
-          <span style={{ color: "var(--text-dim)", fontSize: "1.1rem", lineHeight: 1 }}>
-            ›
-          </span>
-        </div>
+          ›
+        </button>
       )}
     </div>
   );

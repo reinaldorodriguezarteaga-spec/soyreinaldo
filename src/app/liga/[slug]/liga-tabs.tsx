@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { isLive } from "@/lib/sports/api-football";
+import ScrollHintTabs from "@/components/ScrollHintTabs";
 import type { Competition } from "@/lib/sports/competitions";
 import {
   EnVivoView,
@@ -37,31 +38,26 @@ export default function LigaTabs({
   view: LigaTab;
 }) {
   const [tab, setTab] = useState<LigaTab>(view);
-  useEffect(() => setTab(view), [view]);
-
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const [moreRight, setMoreRight] = useState(false);
-  useEffect(() => {
-    const el = tabsRef.current;
-    if (!el) return;
-    const update = () =>
-      setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
+  // Sincroniza con `?v=` al navegar SIN efecto (ajuste durante el render,
+  // patrón de react.dev "adjusting state when props change") — setState
+  // dentro de un useEffect es error de lint aquí (react-hooks/set-state-in-effect).
+  const [prevView, setPrevView] = useState(view);
+  if (prevView !== view) {
+    setPrevView(view);
+    setTab(view);
+  }
 
   const anyLive = data.today.some(isLive);
 
   return (
     <section className="section" style={{ paddingTop: 28 }}>
       <div className="wrap">
-        <div style={{ position: "relative", marginBottom: 28 }}>
-          <div ref={tabsRef} className="tabs tabs--scroll">
+        {/* ScrollHintTabs sustituye a la copia inline del degradado+flecha
+            que había aquí: misma pista visual, pero la flecha es un BOTÓN
+            que desplaza la barra (la copia vieja era decorativa y el toque
+            la atravesaba — mismo bug reportado en la quiniela). */}
+        <div style={{ marginBottom: 28 }}>
+          <ScrollHintTabs>
             <button
               type="button"
               className={tab === "envivo" ? "on" : ""}
@@ -112,28 +108,7 @@ export default function LigaTabs({
             >
               Estadísticas
             </button>
-          </div>
-          {moreRight && (
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                top: 5,
-                bottom: 5,
-                right: 5,
-                width: 54,
-                pointerEvents: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                paddingRight: 8,
-                borderRadius: "var(--radius)",
-                background: "linear-gradient(to right, transparent, var(--surface) 68%)",
-              }}
-            >
-              <span style={{ color: "var(--text-dim)", fontSize: "1.1rem", lineHeight: 1 }}>›</span>
-            </div>
-          )}
+          </ScrollHintTabs>
         </div>
 
         {tab === "envivo" && <EnVivoView competition={competition} initialToday={data.today} />}

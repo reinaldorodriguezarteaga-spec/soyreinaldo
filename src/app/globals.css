@@ -908,6 +908,29 @@ select.field { appearance: none; }
    la competición) — solo visual, no afecta al layout flex de los botones. */
 .tabs__divider { flex: none; align-self: stretch; width: 1px; margin: 4px 3px; background: var(--line); }
 .tabs--scroll .tabs__divider { flex: 0 0 auto; }
+
+/* Botón "hay más pestañas →" de ScrollHintTabs: degradado + flecha, y al
+   tocarlo desplaza la barra (antes era decorativo con pointer-events:none
+   y el toque atravesaba al control de debajo). */
+.tabs__more {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  right: 5px;
+  width: 54px;
+  border: 0;
+  padding: 0 10px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: var(--radius);
+  background: linear-gradient(to right, transparent, var(--surface) 68%);
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tabs__more:hover, .tabs__more:active { color: var(--text); }
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
 .tabs a:active, .tabs button:active { background: var(--surface-2); }
