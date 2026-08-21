@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import DonationBlock from "@/components/DonationBlock";
 import HomeScoreboard from "@/components/HomeScoreboard";
+import HomeAnalysisCard from "@/components/HomeAnalysisCard";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
 import RailStandings from "@/components/RailStandings";
@@ -12,7 +13,6 @@ import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
-import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 
 const MARQUEE = [
   "Culé",
@@ -149,8 +149,14 @@ export default async function Home() {
               </Suspense>
             </aside>
 
-            <div className="home3col__main">
+            <div className="home3col__main" style={{ display: "grid", gap: 20 }}>
               <HomeScoreboard />
+              {/* Últimos análisis publicados — debajo del calendario y FUERA
+                  de su caja de scroll (.hmcal-scroll), para que no quede
+                  atrapado dentro. Si no hay nada publicado, no pinta nada. */}
+              <Suspense fallback={null}>
+                <HomeAnalysisCard />
+              </Suspense>
             </div>
 
             <aside className="home3col__side home3col__right">
