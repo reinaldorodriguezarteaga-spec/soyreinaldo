@@ -50,7 +50,15 @@ function formatKickoff(iso: string) {
   return { day, time: TIME_FMT.format(d) };
 }
 
-export default function LqMatchCard({ match }: { match: LqMatchCardData }) {
+export default function LqMatchCard({
+  match,
+  maxPuntos,
+}: {
+  match: LqMatchCardData;
+  /** Puntos del marcador exacto en esta liga: decide qué acierto se pinta
+   * como pleno (verde) y cuál como acierto simple. */
+  maxPuntos: number;
+}) {
   const [home, setHome] = useState(String(match.prediction?.home ?? ""));
   const [away, setAway] = useState(String(match.prediction?.away ?? ""));
   const [savedHome, setSavedHome] = useState(String(match.prediction?.home ?? ""));
@@ -170,9 +178,9 @@ export default function LqMatchCard({ match }: { match: LqMatchCardData }) {
           {isFinal && match.points != null && (
             <span
               className={`badge ${
-                match.points === 3
+                match.points === maxPuntos
                   ? "badge--ok"
-                  : match.points === 1
+                  : match.points > 0
                     ? "badge--accent"
                     : ""
               }`}

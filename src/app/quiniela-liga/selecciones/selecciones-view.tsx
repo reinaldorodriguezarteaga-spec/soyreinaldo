@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { puntosPronostico, type Baremo } from "@/lib/quiniela-liga/scoring";
 
 /**
  * Vista "Selecciones" de la quiniela de clubes: por cada partido ya empezado
@@ -25,11 +26,10 @@ export type SeleccionMatch = {
   picks: Map<string, { home: number; away: number }>;
 };
 
-function computePoints(sh: number, sa: number, ph: number, pa: number): number {
-  if (sh === ph && sa === pa) return 3;
-  if (Math.sign(sh - sa) === Math.sign(ph - pa)) return 1;
-  return 0;
-}
+// Puntuación: SIEMPRE la librería compartida con el baremo de la liga activa.
+// La copia local que había aquí llevaba 3/1 a fuego y mentía en cuanto una
+// liga cambiaba sus normas (CONOS pasó a 5/2 y las tarjetas seguían en +3/+1
+// mientras la clasificación, que calcula en SQL, iba bien).
 
 const TIME_FMT = new Intl.DateTimeFormat("es-ES", {
   timeZone: "Europe/Madrid",
@@ -47,10 +47,13 @@ export default function SeleccionesView({
   matches,
   members,
   currentUserId,
+  baremo,
 }: {
   matches: SeleccionMatch[];
   members: SeleccionMember[];
   currentUserId: string;
+  /** Normas de la liga ACTIVA — cada quiniela puntúa con las suyas. */
+  baremo: Baremo;
 }) {
   if (members.length === 0) return <EmptyPanel>Aún no hay nadie en la quiniela.</EmptyPanel>;
   if (matches.length === 0) {
@@ -77,6 +80,7 @@ export default function SeleccionesView({
           match={m}
           members={members}
           currentUserId={currentUserId}
+          baremo={baremo}
           defaultOpen={m.live || (!anyLive && i === 0)}
         />
       ))}
@@ -88,11 +92,13 @@ function MatchBlock({
   match,
   members,
   currentUserId,
+  baremo,
   defaultOpen,
 }: {
   match: SeleccionMatch;
   members: SeleccionMember[];
   currentUserId: string;
+  baremo: Baremo;
   defaultOpen: boolean;
 }) {
   const hasScore = match.scoreHome != null && match.scoreAway != null;
@@ -102,7 +108,7 @@ function MatchBlock({
       const pick = match.picks.get(mem.userId) ?? null;
       const pts =
         hasScore && pick
-          ? computePoints(match.scoreHome!, match.scoreAway!, pick.home, pick.away)
+          ? puntosPronostico(pick, { home: match.scoreHome!, away: match.scoreAway! }, baremo)
           : null;
       return { mem, idx, pick, pts };
     })
@@ -178,14 +184,14 @@ function MatchBlock({
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
                     {pick ? (
-                      <b className="tabular-nums" style={{ color: pickColor(pts) }}>
+                      <b className="tabular-nums" style={{ color: pickColor(pts, baremo) }}>
                         {pick.home}–{pick.away}
                       </b>
                     ) : (
                       <span style={{ color: "var(--text-dim)" }}>—</span>
                     )}
                     {pts != null && (
-                      <span className={`badge ${pts === 3 ? "badge--ok" : pts === 1 ? "badge--accent" : ""}`}>
+                      <span className={`badge ${pts === baremo.exacto ? "badge--ok" : pts > 0 ? "badge--accent" : ""}`}>
                         {match.finished ? "" : "va "}
                         {pts > 0 ? `+${pts}` : pts}
                       </span>
@@ -201,11 +207,11 @@ function MatchBlock({
   );
 }
 
-function pickColor(pts: number | null): string {
-  if (pts === 3) return "#4ade80";
-  if (pts === 1) return "var(--accent)";
-  if (pts === 0) return "var(--text-dim)";
-  return "var(--text)";
+function pickColor(pts: number | null, baremo: Baremo): string {
+  if (pts === null) return "var(--text)";
+  if (pts === baremo.exacto) return "#4ade80";
+  if (pts > 0) return "var(--accent)";
+  return "var(--text-dim)";
 }
 
 function EmptyPanel({ children }: { children: React.ReactNode }) {

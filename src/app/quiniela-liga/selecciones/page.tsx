@@ -9,6 +9,7 @@ import {
   pickLeague,
 } from "@/lib/quiniela-liga/leagues";
 import LeagueSwitcher from "../league-switcher";
+import { getBaremoDeLiga } from "@/lib/quiniela-liga/baremo";
 
 export const metadata = {
   title: "Selecciones · Quiniela LaLiga 2026-27 | Soy Reinaldo",
@@ -66,6 +67,9 @@ export default async function QuinielaLigaSeleccionesPage({
       .limit(30)
       .returns<MatchRow[]>(),
   ]);
+
+  // Las normas de ESTA liga: los puntos de cada pick se pintan con su baremo.
+  const baremo = await getBaremoDeLiga(active?.id ?? PUBLIC_LEAGUE_ID);
 
   const members: SeleccionMember[] = ((lb ?? []) as LbRow[]).map((r) => ({
     userId: r.user_id,
@@ -133,6 +137,7 @@ export default async function QuinielaLigaSeleccionesPage({
             matches={seleccionMatches}
             members={members}
             currentUserId={user.id}
+            baremo={baremo}
           />
         </div>
       </section>
