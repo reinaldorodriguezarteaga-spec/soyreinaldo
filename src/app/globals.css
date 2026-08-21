@@ -931,6 +931,15 @@ select.field { appearance: none; }
   cursor: pointer;
 }
 .tabs__more:hover, .tabs__more:active { color: var(--text); }
+/* Espejo hacia la izquierda: aparece en cuanto la barra ya no está al
+   principio, para volver sin tener que arrastrar. */
+.tabs__more--left {
+  right: auto;
+  left: 5px;
+  padding: 0 0 0 10px;
+  justify-content: flex-start;
+  background: linear-gradient(to left, transparent, var(--surface) 68%);
+}
 .tabs a, .tabs button { flex: 1; padding: 11px 14px; border: 0; background: transparent; color: var(--text-dim); font-family: var(--font-mono-stack); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-radius: calc(var(--radius) - 1px); transition: all 0.15s ease; text-align: center; white-space: nowrap; cursor: pointer; }
 .tabs a.on, .tabs button.on { background: var(--accent); color: var(--on-accent); }
 .tabs a:active, .tabs button:active { background: var(--surface-2); }
