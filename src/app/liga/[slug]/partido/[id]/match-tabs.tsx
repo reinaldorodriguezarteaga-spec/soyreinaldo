@@ -107,7 +107,7 @@ export default function MatchTabs({
 
       {timelineOpened && (
         <div hidden={tab !== "timeline"}>
-          <TimelinePanel fixtureId={fixtureId} home={home} away={away} />
+          <TimelinePanel fixtureId={fixtureId} home={home} />
         </div>
       )}
 
@@ -137,11 +137,11 @@ export default function MatchTabs({
 function TimelinePanel({
   fixtureId,
   home,
-  away,
 }: {
   fixtureId: number;
+  /** Solo hace falta el local: la cronología alinea cada evento a un lado
+   * comparando con su id. */
   home: Team;
-  away: Team;
 }) {
   const [events, setEvents] = useState<TimelineEvent[] | null | "loading">("loading");
 

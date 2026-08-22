@@ -42,11 +42,21 @@ export default function TeamFixturesList({
 }) {
   const pages = Math.max(1, Math.ceil(fixtures.length / PER_PAGE));
 
-  // Página inicial: la que contiene el primer partido por jugarse.
-  const now = Date.now();
-  const nextIdx = fixtures.findIndex((f) => new Date(f.fixture.date).getTime() > now);
-  const initialPage = nextIdx >= 0 ? Math.floor(nextIdx / PER_PAGE) : pages - 1;
-  const [page, setPage] = useState(initialPage);
+  // Página inicial: la que contiene el primer partido por jugarse. Se
+  // calcula en el inicializador perezoso de useState —que corre una sola
+  // vez— y no en el cuerpo del render: leer la hora en cada render es
+  // impuro y podría mover la página sola al recomponer.
+  // La hora de referencia se fija UNA vez al montar (inicializador perezoso):
+  // sirve para la página inicial y para los rótulos hoy/ayer/mañana, y así no
+  // se lee el reloj en cada render.
+  const [ahora] = useState(() => Date.now());
+  const [page, setPage] = useState(() => {
+    const now = ahora;
+    const nextIdx = fixtures.findIndex(
+      (f) => new Date(f.fixture.date).getTime() > now,
+    );
+    return nextIdx >= 0 ? Math.floor(nextIdx / PER_PAGE) : pages - 1;
+  });
 
   if (fixtures.length === 0) {
     return (
@@ -62,9 +72,9 @@ export default function TeamFixturesList({
   const start = page * PER_PAGE;
   const slice = fixtures.slice(start, start + PER_PAGE);
 
-  const todayKey = dayKey(new Date().toISOString());
-  const tomorrowKey = dayKey(new Date(now + 86400000).toISOString());
-  const yesterdayKey = dayKey(new Date(now - 86400000).toISOString());
+  const todayKey = dayKey(new Date(ahora).toISOString());
+  const tomorrowKey = dayKey(new Date(ahora + 86400000).toISOString());
+  const yesterdayKey = dayKey(new Date(ahora - 86400000).toISOString());
 
   // Agrupar los 10 de la página por día (para los rótulos).
   const groups: { key: string; label: string; items: Fixture[] }[] = [];

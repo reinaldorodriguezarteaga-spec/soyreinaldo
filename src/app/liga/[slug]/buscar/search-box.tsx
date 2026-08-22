@@ -24,10 +24,17 @@ export default function SearchBox({
 }) {
   const base = `/liga/${competition.slug}`;
   const [q, setQ] = useState("");
-  const [players, setPlayers] = useState<PlayerSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Los resultados guardan de qué término son: así no se enseñan los de la
+  // búsqueda anterior mientras se teclea, y el efecto no necesita limpiarlos
+  // con un setState síncrono (que dispara renders en cascada).
+  const [hecho, setHecho] = useState<{
+    term: string;
+    players: PlayerSearchResult[];
+  } | null>(null);
 
   const term = q.trim().toLowerCase();
+  const players = hecho?.term === term ? hecho.players : [];
+  const loading = term.length >= 3 && hecho?.term !== term;
 
   const teamHits = useMemo(() => {
     if (term.length < 2) return [];
@@ -35,31 +42,23 @@ export default function SearchBox({
   }, [teams, term]);
 
   useEffect(() => {
-    if (term.length < 3) {
-      setPlayers([]);
-      setLoading(false);
-      return;
-    }
+    if (term.length < 3) return;
     let cancelled = false;
-    setLoading(true);
     const id = setTimeout(() => {
-      fetch(`/api/sports/search-players?q=${encodeURIComponent(q.trim())}&competition=${competition.slug}`)
+      fetch(`/api/sports/search-players?q=${encodeURIComponent(term)}&competition=${competition.slug}`)
         .then((r) => (r.ok ? r.json() : []))
         .then((d: PlayerSearchResult[]) => {
-          if (!cancelled) setPlayers(Array.isArray(d) ? d : []);
+          if (!cancelled) setHecho({ term, players: Array.isArray(d) ? d : [] });
         })
         .catch(() => {
-          if (!cancelled) setPlayers([]);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
+          if (!cancelled) setHecho({ term, players: [] });
         });
     }, 350);
     return () => {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [q, term, competition.slug]);
+  }, [term, competition.slug]);
 
   return (
     <div>

@@ -18,23 +18,29 @@ function suggestCode(name: string) {
 export default function CreateLeagueForm() {
   const [state, action, pending] = useActionState(createLeague, initialState);
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [codeTouched, setCodeTouched] = useState(false);
+  // `codeManual` solo existe cuando el usuario ha escrito el código a mano;
+  // mientras no lo toque, se DERIVA del nombre en el propio render. Antes se
+  // sincronizaba con un efecto + setState, que provocaba un render de más
+  // por cada tecla.
+  const [codeManual, setCodeManual] = useState<string | null>(null);
+  const code = codeManual ?? suggestCode(name);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Sugerir código a partir del nombre mientras el usuario no lo edita manualmente
-  useEffect(() => {
-    if (!codeTouched) setCode(suggestCode(name));
-  }, [name, codeTouched]);
-
-  // Reset on success
-  useEffect(() => {
+  // Al crearse la liga, vaciar el formulario. Los campos son controlados, así
+  // que hay que limpiar el estado además del DOM: el estado se ajusta durante
+  // el render (patrón de react.dev) y el reset() del DOM, que sí es un efecto
+  // secundario de verdad, se queda en su useEffect.
+  const [prevStatus, setPrevStatus] = useState(state.status);
+  if (prevStatus !== state.status) {
+    setPrevStatus(state.status);
     if (state.status === "success") {
-      formRef.current?.reset();
       setName("");
-      setCode("");
-      setCodeTouched(false);
+      setCodeManual(null);
     }
+  }
+
+  useEffect(() => {
+    if (state.status === "success") formRef.current?.reset();
   }, [state.status]);
 
   return (
@@ -53,10 +59,7 @@ export default function CreateLeagueForm() {
           name="code"
           placeholder="REINALDO-FAM"
           value={code}
-          onChange={(v) => {
-            setCode(v);
-            setCodeTouched(true);
-          }}
+          onChange={setCodeManual}
           disabled={pending}
           mono
         />

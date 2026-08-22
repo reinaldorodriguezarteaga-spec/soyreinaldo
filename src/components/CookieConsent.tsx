@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "cookie-consent";
 
@@ -37,7 +37,17 @@ function gtag(...args: unknown[]) {
  * comportamiento hasta que haya Publisher ID real.
  */
 export default function CookieConsent() {
-  const [visible, setVisible] = useState(false);
+  // Lo que hay guardado se LEE del almacenamiento (useSyncExternalStore
+  // devuelve null en el servidor, sin desajuste de hidratación); lo que el
+  // usuario acaba de elegir vive en estado. El banner sale si no hay ni una
+  // cosa ni la otra. Antes esto era un setState dentro de un efecto.
+  const guardado = useSyncExternalStore(
+    () => () => {},
+    () => localStorage.getItem(STORAGE_KEY),
+    () => null,
+  );
+  const [recienElegido, setRecienElegido] = useState<Choice | null>(null);
+  const visible = !guardado && !recienElegido;
 
   function applyConsent(choice: Choice) {
     gtag("consent", "update", {
@@ -48,19 +58,16 @@ export default function CookieConsent() {
     });
   }
 
+  // Aplicar la decisión ya guardada a Google Consent Mode: efecto de verdad
+  // (habla con un script externo), sin tocar estado.
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Choice | null;
-    if (saved === "granted" || saved === "denied") {
-      applyConsent(saved);
-    } else {
-      setVisible(true);
-    }
-  }, []);
+    if (guardado === "granted" || guardado === "denied") applyConsent(guardado);
+  }, [guardado]);
 
   function choose(choice: Choice) {
     localStorage.setItem(STORAGE_KEY, choice);
     applyConsent(choice);
-    setVisible(false);
+    setRecienElegido(choice);
   }
 
   if (!visible) return null;
