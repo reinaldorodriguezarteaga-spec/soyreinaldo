@@ -260,8 +260,7 @@ img {
   transform: translateY(14px);
   pointer-events: none;
 }
-.nav__in { position: relative; }
-.navsearch { display: flex; align-items: center; min-width: 0; }
+.navsearch { position: relative; display: flex; align-items: center; min-width: 0; }
 /* Con la barra abierta, el bloque de la derecha se estira y la barra ocupa
    el hueco libre — así se encoge sola en pantallas estrechas en vez de
    empujar fuera al botón de menú. */
@@ -310,10 +309,13 @@ img {
 }
 .navsearch__cerrar:hover { color: var(--text); }
 .navsearch__panel {
+  /* Justo debajo de la barra y alineado con ella. */
   position: absolute;
-  right: 0;
-  top: calc(100% - 8px);
-  width: min(420px, 84vw);
+  left: 0;
+  top: calc(100% + 8px);
+  /* Mismo ancho que la barra (que tiene su propio máximo). */
+  width: min(100%, 420px);
+  min-width: 260px;
   max-height: min(60vh, 460px);
   overflow-y: auto;
   background: var(--surface);
@@ -353,9 +355,15 @@ img {
      se aparta (sigue en el menú): así la barra tiene sitio para escribir. */
   .nav__in:has(.navsearch__caja) .brand span:last-child { display: none; }
   .nav__cta:has(.navsearch__caja) .btn--ghost { display: none; }
-  /* A todo el ancho del header: anclado a la cajita se salía por la
-     izquierda en pantallas estrechas. */
-  .navsearch__panel { left: 0; right: 0; width: auto; }
+  /* En pantallas estrechas se ancla a la ventana: colgado de la cajita se
+     salía por la izquierda. */
+  .navsearch__panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: 68px;
+    width: auto;
+  }
 }
 
 /* Desplegables del nav */
