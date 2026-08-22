@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Ctx = "inapp" | "standalone" | null;
 
@@ -12,23 +12,33 @@ type Ctx = "inapp" | "standalone" | null;
  *    otro contenedor y la sesión no vuelve a la app.
  * En ambos casos avisamos y pedimos abrir la web en el navegador de verdad.
  */
+/** En qué está abierta la página: el navegador dentro de una app
+ * (Instagram, WhatsApp…), la web instalada, o un navegador normal. Es una
+ * LECTURA del entorno, no un estado que cambie — por eso se resuelve una
+ * vez y se cachea, en vez de copiarse a estado desde un efecto. */
+let ctxCache: Ctx | undefined;
+function leerCtx(): Ctx {
+  if (ctxCache !== undefined) return ctxCache;
+  const ua = navigator.userAgent;
+  const inApp =
+    /instagram|fbav|fb_iab|fban|whatsapp|tiktok|musical_ly|micromessenger|line\//i.test(
+      ua,
+    );
+  const standalone =
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    // iOS Safari legacy
+    (navigator as unknown as { standalone?: boolean }).standalone === true;
+  ctxCache = inApp ? "inapp" : standalone ? "standalone" : null;
+  return ctxCache;
+}
+
 export default function ContextWarning() {
-  const [ctx, setCtx] = useState<Ctx>(null);
-
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    const inApp =
-      /instagram|fbav|fb_iab|fban|whatsapp|tiktok|musical_ly|micromessenger|line\//i.test(
-        ua,
-      );
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)")?.matches ||
-      // iOS Safari legacy
-      (navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (inApp) setCtx("inapp");
-    else if (standalone) setCtx("standalone");
-  }, []);
+  // null en el servidor: el aviso solo puede decidirse en el navegador.
+  const ctx = useSyncExternalStore(
+    () => () => {},
+    leerCtx,
+    () => null as Ctx,
+  );
 
   if (!ctx) return null;
 

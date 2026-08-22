@@ -4,11 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import LqMatchCard, { type LqMatchCardData } from "../match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 
+// La descripción no cita puntos a propósito: el baremo lo fija cada liga en
+// la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
 export const metadata = {
   title: "Pronósticos · Quiniela LaLiga 2026-27 | Soy Reinaldo",
   description:
-    "Pronostica los resultados de LaLiga 2026-27. Marcador exacto 3 pts, acertar el ganador 1 pt. Gratis.",
+    "Pronostica los resultados de LaLiga 2026-27 jornada a jornada y compite en la clasificación pública. Gratis.",
 };
 
 const COMPETITION = "laliga";
@@ -31,11 +34,9 @@ type MatchRow = {
   away: TeamRow | null;
 };
 
-function computePoints(sh: number, sa: number, ph: number, pa: number): number {
-  if (sh === ph && sa === pa) return 3;
-  if (Math.sign(sh - sa) === Math.sign(ph - pa)) return 1;
-  return 0;
-}
+// Los puntos de las tarjetas salen de la librería compartida con el baremo
+// real de la liga pública (la copia local que había aquí llevaba 3/1 a fuego
+// y desmentía a la clasificación cuando el baremo pasó a 5/2).
 
 async function currentJornada(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -112,6 +113,10 @@ export default async function QuinielaLigaPartidosPage({
     .eq("user_id", user.id);
 
   const compName = COMPETITIONS_BY_SLUG[COMPETITION]?.name ?? "LaLiga";
+  // Server Component: se renderiza una vez por petición, así que leer la
+  // hora aquí es correcto y necesario (decide qué partidos están cerrados).
+  // La regla apunta a componentes de cliente, donde sí rompería el render.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   const cards: LqMatchCardData[] = matches
@@ -122,7 +127,11 @@ export default async function QuinielaLigaPartidosPage({
       const hasScore = m.score_home != null && m.score_away != null;
       const points =
         m.finished && hasScore && pred
-          ? computePoints(m.score_home!, m.score_away!, pred.home, pred.away)
+          ? puntosPronostico(
+              pred,
+              { home: m.score_home!, away: m.score_away! },
+              baremo,
+            )
           : null;
       return {
         id: m.id,
@@ -198,7 +207,7 @@ export default async function QuinielaLigaPartidosPage({
           ) : (
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               {cards.map((c) => (
-                <LqMatchCard key={c.id} match={c} />
+                <LqMatchCard key={c.id} match={c} maxPuntos={baremo.exacto} />
               ))}
             </div>
           )}

@@ -15,7 +15,12 @@ export type KoStructureEntry = { label: string; re: RegExp; slots: number };
 
 /** Agrupación del nav "Competiciones": por país, salvo las UEFA (sin país,
  * "Internacional"). */
-export type CompetitionRegion = "España" | "Inglaterra" | "Italia" | "Internacional";
+export type CompetitionRegion =
+  | "España"
+  | "Inglaterra"
+  | "Italia"
+  | "Francia"
+  | "Internacional";
 
 export type Competition = {
   /** Usado en las rutas /liga/[slug]/... */
@@ -33,6 +38,12 @@ export type Competition = {
   archivedSeasons?: number[];
   /** País para agrupar el desplegable "Competiciones" del nav. */
   region: CompetitionRegion;
+  /** Si está, en el CALENDARIO DE PORTADA solo salen los partidos donde
+   * juegue uno de estos equipos. El hub /liga/[slug] no se toca: allí se ve
+   * la competición entera. Sirve para las ligas que están por sus equipos
+   * grandes, no por sí mismas (Ligue 1 → PSG y Lyon, pedido del dueño:
+   * "solo juegos del PSG en el calendario del front page"). */
+  calendarOnlyTeamIds?: number[];
 };
 
 /**
@@ -231,6 +242,26 @@ export const SERIE_A: Competition = {
   region: "Italia",
 };
 
+/**
+ * Ligue 1 francesa: tabla plana, sin eliminatorias. Verificado contra la API
+ * (id 61, season 2026 marcada como actual): arrancó el 21-ago-2026, 306
+ * partidos publicados y con clasificación disponible.
+ *
+ * ⚠️ En el CALENDARIO de la portada solo salen PSG y Lyon
+ * (`calendarOnlyTeamIds`): la liga entera llenaría la lista de cruces que
+ * aquí nadie busca. El hub /liga/ligue-1 sí la muestra completa.
+ */
+export const LIGUE_1: Competition = {
+  slug: "ligue-1",
+  leagueId: 61,
+  season: 2026,
+  name: "Ligue 1",
+  standingsMode: "table",
+  archivedSeasons: [2025],
+  region: "Francia",
+  calendarOnlyTeamIds: [85, 80],
+};
+
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
 const WORLD_CUP_KO_STRUCTURE: KoStructureEntry[] = [
   { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
@@ -265,6 +296,7 @@ export const COMPETITIONS: Competition[] = [
   EUROPA_LEAGUE,
   CONFERENCE_LEAGUE,
   SERIE_A,
+  LIGUE_1,
 ];
 
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
@@ -278,7 +310,13 @@ export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntr
  * los países es fijo: España, Inglaterra, Italia, y por último Internacional
  * (las UEFA, sin país propio).
  */
-const REGION_ORDER: CompetitionRegion[] = ["España", "Inglaterra", "Italia", "Internacional"];
+const REGION_ORDER: CompetitionRegion[] = [
+  "España",
+  "Inglaterra",
+  "Italia",
+  "Francia",
+  "Internacional",
+];
 
 export const COMPETITION_GROUPS: { region: CompetitionRegion; competitions: Competition[] }[] =
   REGION_ORDER.map((region) => ({
@@ -300,8 +338,8 @@ export type FeaturedTeam = {
   /** Slug de la Competition doméstica del equipo, para enlazar su ficha
    * (/liga/[slug]/equipo/[id]) — la ficha de equipo no depende de que el
    * partido en sí sea de esa competición, solo necesita el fixture id.
-   * `null` = equipo sin hub natural en el sitio (PSG/Lyon: no seguimos la
-   * Ligue 1) → sus filas del calendario van sin enlace. */
+   * `null` = equipo sin hub natural en el sitio → sus filas del calendario
+   * van sin enlace. */
   homeCompetitionSlug: string | null;
 };
 
@@ -313,9 +351,10 @@ export const FEATURED_TEAMS: FeaturedTeam[] = [
   { id: 50, name: "Manchester City", homeCompetitionSlug: "premier" },
   { id: 40, name: "Liverpool", homeCompetitionSlug: "premier" },
   // Pedido 18-ago: TODOS los partidos de PSG y Lyon en el calendario (ids
-  // verificados contra /teams?league=61). Sin hub francés → sin enlace.
-  { id: 85, name: "PSG", homeCompetitionSlug: null },
-  { id: 80, name: "Lyon", homeCompetitionSlug: null },
+  // verificados contra /teams?league=61). Desde el 22-ago la Ligue 1 es una
+  // Competition, así que ya tienen hub y sus filas enlazan.
+  { id: 85, name: "PSG", homeCompetitionSlug: "ligue-1" },
+  { id: 80, name: "Lyon", homeCompetitionSlug: "ligue-1" },
 ];
 
 /* ---------------------------------------------------------------------- *

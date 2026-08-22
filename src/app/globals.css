@@ -243,7 +243,128 @@ img {
 }
 .nav__links a:hover::after,
 .nav__links a.is-active::after { width: 100%; }
-.nav__cta { display: flex; align-items: center; gap: 12px; }
+.nav__cta { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* ---- Buscador desplegable del header --------------------------------- *
+ * Al tocar la lupa, la barra se abre EN el header (sin cambiar de página)
+ * y los enlaces del nav se apartan HACIA ABAJO, que es lo que pidió el
+ * dueño: "que lo que está al lado de la barra se oculte abajo".
+ * ---------------------------------------------------------------------- */
+.nav__links { transition: opacity 0.18s ease, transform 0.18s ease; }
+.nav__links--fuera {
+  /* Fuera del flujo además de invisible: si solo se atenúa, sigue ocupando
+     su hueco y la barra empuja al botón de sesión fuera de la pantalla. */
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+.navsearch { position: relative; display: flex; align-items: center; min-width: 0; }
+/* Con la barra abierta, el bloque de la derecha se estira y la barra ocupa
+   el hueco libre — así se encoge sola en pantallas estrechas en vez de
+   empujar fuera al botón de menú. */
+.nav__cta:has(.navsearch__caja) { flex: 1 1 auto; }
+.nav__cta:has(.navsearch__caja) .navsearch { flex: 1 1 auto; }
+.navsearch__caja {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Se adapta al hueco libre: nunca debe empujar fuera al botón de sesión
+     ni al de menú. */
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface);
+  animation: navsearch-abre 0.18s ease;
+}
+@keyframes navsearch-abre {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.navsearch__lupa { color: var(--text-dim); flex: 0 0 auto; }
+.navsearch__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+.navsearch__input::-webkit-search-cancel-button { display: none; }
+.navsearch__cerrar {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 4px;
+}
+.navsearch__cerrar:hover { color: var(--text); }
+.navsearch__panel {
+  /* Justo debajo de la barra y alineado con ella. */
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  /* Mismo ancho que la barra (que tiene su propio máximo). */
+  width: min(100%, 420px);
+  min-width: 260px;
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 60;
+  animation: dropfade 0.14s ease;
+}
+/* Filas de resultado, compartidas con la página /buscar */
+.srch__titulo {
+  margin: 8px 10px 4px;
+  font-family: var(--font-mono-stack);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.srch__aviso { padding: 14px 12px; margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+.srch__fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+}
+.srch__fila:hover { background: var(--surface-2); }
+.srch__nombre { font-weight: 600; min-width: 0; }
+.srch__meta { margin-left: auto; color: var(--text-dim); font-size: 0.8rem; flex: 0 0 auto; }
+
+/* En móvil, el logotipo cede sitio para que quepan barra y botón de menú. */
+@media (max-width: 640px) {
+  /* Mientras se busca, el logotipo se queda en la marca y el botón de sesión
+     se aparta (sigue en el menú): así la barra tiene sitio para escribir. */
+  .nav__in:has(.navsearch__caja) .brand span:last-child { display: none; }
+  .nav__cta:has(.navsearch__caja) .btn--ghost { display: none; }
+  /* En pantallas estrechas se ancla a la ventana: colgado de la cajita se
+     salía por la izquierda. */
+  .navsearch__panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: 68px;
+    width: auto;
+  }
+}
 
 /* Desplegables del nav */
 .navdrop { position: relative; }

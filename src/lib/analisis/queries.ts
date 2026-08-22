@@ -12,10 +12,14 @@ export type Articulo = {
   team_id: number | null;
   published_at: string | null;
   updated_at: string;
+  /** Lecturas contadas desde el navegador (los bots se descartan en el RPC). */
+  view_count: number;
+  /** Veces que alguien pulsó un botón de compartir. */
+  share_count: number;
 };
 
 const CAMPOS =
-  "id, slug, title, excerpt, body, cover_url, fixture_id, competition_slug, team_id, published_at, updated_at";
+  "id, slug, title, excerpt, body, cover_url, fixture_id, competition_slug, team_id, published_at, updated_at, view_count, share_count";
 
 /** Publicados, del más reciente al más antiguo. La RLS ya esconde borradores. */
 export async function listarPublicados(limite = 30): Promise<Articulo[]> {

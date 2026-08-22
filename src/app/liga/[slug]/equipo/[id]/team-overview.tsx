@@ -58,10 +58,15 @@ export default function TeamOverview({
 }) {
   const finished = fixtures.filter(isFinal);
   const last5 = finished.slice(-5);
+  // Server Component: se renderiza una vez por petición, así que comparar
+  // con la hora actual aquí es correcto. La regla de pureza apunta a
+  // componentes de cliente, donde sí rompería el render.
+  // eslint-disable-next-line react-hooks/purity
+  const ahora = Date.now();
   const next =
     fixtures.find((f) => isLive(f)) ??
     fixtures.find(
-      (f) => !isFinal(f) && new Date(f.fixture.date).getTime() > Date.now(),
+      (f) => !isFinal(f) && new Date(f.fixture.date).getTime() > ahora,
     ) ??
     null;
 

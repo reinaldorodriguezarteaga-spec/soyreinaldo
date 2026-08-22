@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 export default function CopyJoinLink({ code }: { code: string }) {
-  const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
+  // El enlace se PINTA (en el input), así que el origin hace falta ya en el
+  // render. useSyncExternalStore es la vía correcta para leer algo que solo
+  // existe en el navegador: devuelve "" en el servidor —sin desajuste de
+  // hidratación— y el valor real en el cliente, sin el setState-en-efecto
+  // que disparaba un render de más.
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => "",
+  );
 
   const url = origin ? `${origin}/unirse/${encodeURIComponent(code)}` : "";
 

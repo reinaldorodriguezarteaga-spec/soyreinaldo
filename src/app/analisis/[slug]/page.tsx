@@ -6,6 +6,7 @@ import { porSlug } from "@/lib/analisis/queries";
 import { markdownAHtml, minutosDeLectura } from "@/lib/analisis/markdown";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import ShareArticle from "@/components/ShareArticle";
+import ViewPing from "@/components/ViewPing";
 
 export const revalidate = 300;
 
@@ -83,6 +84,7 @@ export default async function AnalisisPage({
           </h1>
           <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.7rem", letterSpacing: "0.12em", marginTop: 10 }}>
             {fecha ? fecha.toUpperCase() : ""} · {minutosDeLectura(a.body)} MIN DE LECTURA
+            {a.view_count >= 20 ? ` · ${a.view_count} LECTURAS` : ""}
           </p>
         </div>
       </section>
@@ -116,7 +118,16 @@ export default async function AnalisisPage({
             </p>
           )}
 
-          <ShareArticle title={a.title} url={absolute(`/analisis/${a.slug}`)} />
+          <ShareArticle
+            title={a.title}
+            url={absolute(`/analisis/${a.slug}`)}
+            slug={a.slug}
+            shareCount={a.share_count}
+          />
+
+          {/* Cuenta la lectura desde el navegador y con retardo: así no
+              cuentan los rastreadores, que aquí son legión. */}
+          <ViewPing slug={a.slug} />
         </div>
       </section>
     </main>

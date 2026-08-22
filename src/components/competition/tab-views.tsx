@@ -22,7 +22,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   isFinal,
   isLive,
@@ -977,8 +977,12 @@ function PlayerRow({
 export function JugadoresView({ competition }: { competition: Competition }) {
   const [players, setPlayers] = useState<AllPlayer[] | null>(null);
   const [q, setQ] = useState("");
-  const [live, setLive] = useState<AllPlayer[]>([]);
-  const [searching, setSearching] = useState(false);
+  // Igual que en los buscadores: los resultados guardan de qué término son,
+  // así no se enseñan los anteriores mientras se teclea y el efecto no tiene
+  // que limpiarlos con un setState síncrono (renders en cascada).
+  const [hecho, setHecho] = useState<{ term: string; live: AllPlayer[] } | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -997,26 +1001,20 @@ export function JugadoresView({ competition }: { competition: Competition }) {
 
   const term = q.trim();
   const liveMode = term.length >= 3;
+  const live = hecho?.term === term ? hecho.live : [];
+  const searching = liveMode && hecho?.term !== term;
 
   useEffect(() => {
-    if (!liveMode) {
-      setLive([]);
-      setSearching(false);
-      return;
-    }
+    if (!liveMode) return;
     let cancelled = false;
-    setSearching(true);
     const id = setTimeout(() => {
       fetch(`/api/sports/search-players?q=${encodeURIComponent(term)}&competition=${competition.slug}`)
         .then((r) => (r.ok ? r.json() : []))
         .then((d: AllPlayer[]) => {
-          if (!cancelled) setLive(Array.isArray(d) ? d : []);
+          if (!cancelled) setHecho({ term, live: Array.isArray(d) ? d : [] });
         })
         .catch(() => {
-          if (!cancelled) setLive([]);
-        })
-        .finally(() => {
-          if (!cancelled) setSearching(false);
+          if (!cancelled) setHecho({ term, live: [] });
         });
     }, 350);
     return () => {

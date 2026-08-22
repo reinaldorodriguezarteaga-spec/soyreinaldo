@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /**
  * Botón compacto con icono "compartir" que copia el link de invitación
@@ -10,17 +10,13 @@ import { useEffect, useState } from "react";
  * Tras copiar muestra un tick animado durante ~1.5s para feedback inmediato.
  */
 export default function CopyInviteIcon({ code }: { code: string }) {
-  const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
-
-  const url = origin ? `${origin}/unirse/${encodeURIComponent(code)}` : "";
-
+  // El origin se lee AL PULSAR, no en un efecto de montaje: aquí no se
+  // pinta en ningún sitio, así que no hacía falta estado (y ese setState
+  // dentro de useEffect provocaba un render extra en cada tarjeta).
   async function copy() {
-    if (!url) return;
+    const url = `${window.location.origin}/unirse/${encodeURIComponent(code)}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -34,7 +30,6 @@ export default function CopyInviteIcon({ code }: { code: string }) {
     <button
       type="button"
       onClick={copy}
-      disabled={!url}
       className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-60 ${
         copied
           ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
