@@ -282,6 +282,22 @@ function orderHomeForDisplay(fixtures: HomeFixture[]): HomeFixture[] {
  * `get()`-wrapped/`unstable_cache`-backed de `api-football.ts` — cero
  * `fetch` crudo nuevo.
  */
+/**
+ * Aplica `calendarOnlyTeamIds` de una competición: en la PORTADA solo salen
+ * los partidos de esos equipos (Ligue 1 → PSG y Lyon). El hub /liga/[slug]
+ * no pasa por aquí, así que allí se sigue viendo la competición entera.
+ */
+function soloEquiposDePortada<T extends Fixture>(
+  fixtures: T[],
+  c: Competition,
+): T[] {
+  const ids = c.calendarOnlyTeamIds;
+  if (!ids) return fixtures;
+  return fixtures.filter(
+    (f) => ids.includes(f.teams.home.id) || ids.includes(f.teams.away.id),
+  );
+}
+
 export async function getHomeWidgetData(
   competitions: Competition[],
 ): Promise<HomeWidgetData> {
@@ -289,10 +305,12 @@ export async function getHomeWidgetData(
 
   const results = await Promise.all(
     competitions.map(async (c) => {
-      const [windowRaw, finishedRaw] = await Promise.all([
+      const [windowAll, finishedAll] = await Promise.all([
         getCompetitionFixturesWindow(c),
         getCompetitionFinishedFixtures(c),
       ]);
+      const windowRaw = soloEquiposDePortada(windowAll, c);
+      const finishedRaw = soloEquiposDePortada(finishedAll, c);
 
       const windowTagged = tagCompetition(windowRaw, c);
       const windowWithEvents = await attachEvents(windowTagged);
@@ -429,8 +447,14 @@ export async function getUpcomingCalendar(
   const perCompetition = await Promise.all(
     competitions.map(async (c): Promise<CalendarFixture[]> => {
       try {
-        const fixtures = await getCompetitionUpcomingFixtures(c, 6);
-        return fixtures
+        // Con filtro de equipos pedimos más fixturas, para que el corte no
+        // deje fuera los partidos que SÍ queremos (misma llamada a la API,
+        // solo cambia el `next`) — mismo truco que en las ligas extra.
+        const fixtures = await getCompetitionUpcomingFixtures(
+          c,
+          c.calendarOnlyTeamIds ? 12 : 6,
+        );
+        return soloEquiposDePortada(fixtures, c)
           // Rondas previas de las competiciones UEFA fuera del CALENDARIO
           // (pedido 18-ago, "lo más comercial posible"): los playoffs de
           // clasificación llenan la lista de cruces tipo Górnik-Mónaco o

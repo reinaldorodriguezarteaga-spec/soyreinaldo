@@ -23,7 +23,7 @@ import { updateSession } from "@/lib/supabase/middleware";
  * diseño) — esto es para los bots que lo ignoran.
  */
 const HEAVY_PATH_RE =
-  /^\/liga\/[^/]+\/(?:jugador|partido|equipo|comparar)\//;
+  /^\/(?:liga\/[^/]+\/(?:jugador|partido|equipo|comparar)|jugador)\//;
 
 /** Rutas que SÍ queremos que Google indexe: las fichas de las competiciones
  * vivas. Se abrieron el 20-ago — hasta entonces estaban cerradas a cal y canto

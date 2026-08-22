@@ -2566,3 +2566,165 @@ export async function getTeamRecentTransfers(
   }
   return [...byKey.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
+
+/* ---------------------------------------------------------------------- *
+ * BÚSQUEDA UNIVERSAL (22-ago-2026)
+ *
+ * El buscador vivía dentro de cada competición: buscar "chelsea" desde
+ * LaLiga no daba nada, porque la lista de equipos era la de esa liga y el
+ * endpoint de jugadores exige `league`. Esto busca en TODO el fútbol con
+ * una sola llamada por tipo.
+ * ---------------------------------------------------------------------- */
+
+/** Equipo encontrado en la búsqueda global. */
+export type TeamSearchResult = {
+  id: number;
+  name: string;
+  logo: string;
+  country: string | null;
+};
+
+type TeamSearchRow = {
+  team: { id: number; name: string; logo: string; country?: string | null };
+};
+
+/** Filiales, juveniles y equipos femeninos fuera del buscador: buscar
+ * "chelsea" debe dar el Chelsea, no su sub-19 antes que él. */
+function isReserveOrYouthTeam(name: string): boolean {
+  return /\b(U-?\d{1,2}|B|II|W|Women|Reserves?|Academy)\b/i.test(name);
+}
+
+/**
+ * Busca equipos por nombre en TODAS las ligas (`/teams?search=`, mínimo 3
+ * letras que exige la API). Caché de 1 día: los nombres de los equipos no
+ * cambian, y así una búsqueda repetida no gasta cuota.
+ */
+export async function searchTeamsGlobal(
+  query: string,
+  n = 8,
+): Promise<TeamSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  try {
+    const r = await get<TeamSearchRow>("/teams", { search: q }, 86400);
+    const term = q.toLowerCase();
+    return r.response
+      .map((row) => ({
+        id: row.team.id,
+        name: row.team.name,
+        logo: row.team.logo,
+        country: row.team.country ?? null,
+      }))
+      .filter((t) => !isReserveOrYouthTeam(t.name))
+      // Orden por relevancia, porque la API devuelve por orden interno y
+      // dejaba al Manchester de Gibraltar por delante del United:
+      //   1) el que empieza por lo tecleado;
+      //   2) a igualdad, el id más bajo. Heurística, pero muy fiable: los
+      //      clubes grandes entraron los primeros en API-Football y tienen
+      //      ids de dos o tres cifras (United 33, City 50, PSG 85), mientras
+      //      los homónimos menores rondan los cinco (Manchester 62 → 16136).
+      .sort((a, b) => {
+        const empieza = (t: TeamSearchResult) =>
+          t.name.toLowerCase().startsWith(term) ? 0 : 1;
+        const d = empieza(a) - empieza(b);
+        return d !== 0 ? d : a.id - b.id;
+      })
+      .slice(0, n);
+  } catch {
+    return [];
+  }
+}
+
+type PlayerProfileRow = {
+  player: {
+    id: number;
+    name: string;
+    firstname: string | null;
+    lastname: string | null;
+    photo: string | null;
+    nationality: string | null;
+  };
+};
+
+/** Jugador encontrado en la búsqueda global (sin equipo: el endpoint de
+ * perfiles no lo trae; se resuelve al abrir su ficha). */
+export type PlayerGlobalSearchResult = {
+  id: number;
+  name: string;
+  photo: string | null;
+  nationality: string | null;
+};
+
+/**
+ * Busca jugadores por nombre en todo el fútbol (`/players/profiles?search=`).
+ * A diferencia de `/players?search=`, este NO exige liga — que era justo lo
+ * que ataba el buscador a una competición.
+ */
+export async function searchPlayersGlobal(
+  query: string,
+  n = 10,
+): Promise<PlayerGlobalSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  try {
+    const r = await get<PlayerProfileRow>(
+      "/players/profiles",
+      { search: q },
+      86400,
+    );
+    const term = q.toLowerCase();
+    return r.response
+      .map((row) => ({
+        id: row.player.id,
+        name: row.player.name,
+        photo: row.player.photo ?? null,
+        nationality: row.player.nationality ?? null,
+      }))
+      // La API mezcla coincidencias de nombre y apellido sin ordenar por
+      // relevancia: "yamal" devolvía a Lamine Yamal el tercero. Delante el
+      // que empieza por lo tecleado.
+      .sort((a, b) => {
+        const score = (nombre: string) => {
+          const l = nombre.toLowerCase();
+          if (l.startsWith(term)) return 0;
+          if (l.split(/\s+/).some((w) => w.startsWith(term))) return 1;
+          return 2;
+        };
+        const d = score(a.name) - score(b.name);
+        return d !== 0 ? d : a.name.length - b.name.length;
+      })
+      .slice(0, n);
+  } catch {
+    return [];
+  }
+}
+
+type PlayerLeaguesRow = {
+  statistics: { league: { id: number } }[];
+};
+
+/**
+ * Ligas en las que un jugador tiene estadísticas esta temporada
+ * (`/players?id=&season=`, que sí funciona sin `league`). La ficha de
+ * jugador es /liga/[slug]/jugador/[id] y necesita saber a qué competición
+ * pertenece: con esto, un jugador encontrado en la búsqueda global se
+ * enlaza a la nuestra que le corresponda.
+ */
+export async function getPlayerLeagueIds(
+  playerId: number,
+  season: number,
+): Promise<number[]> {
+  try {
+    const r = await get<PlayerLeaguesRow>(
+      "/players",
+      { id: playerId, season },
+      86400,
+    );
+    const ids = new Set<number>();
+    for (const row of r.response)
+      for (const s of row.statistics ?? []) ids.add(s.league.id);
+    return [...ids];
+  } catch {
+    return [];
+  }
+}

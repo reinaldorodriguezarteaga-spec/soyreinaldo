@@ -106,10 +106,10 @@ export default function Header({
 
             {hasLiveMatch && (
               <Link
-                href="/"
+                href="/en-vivo"
                 className="navlive"
                 onClick={() => setMobileOpen(false)}
-                title="Hay partido en juego — ver el marcador en vivo"
+                title="Hay partidos en juego — verlos todos"
               >
                 <span className="livepulse" />
                 EN VIVO
@@ -219,7 +219,7 @@ export default function Header({
 
             <div className="nav__cta">
               <Link
-                href="/liga/laliga/buscar"
+                href="/buscar"
                 aria-label="Buscar equipo o jugador"
                 title="Buscar equipo o jugador"
                 className="grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"

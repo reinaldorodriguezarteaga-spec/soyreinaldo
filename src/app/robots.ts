@@ -31,6 +31,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [
         "/liga/*/comparar",
+        // El buscador no tiene contenido propio, y /jugador/ es solo un
+        // redirector que gasta una llamada a API-Football por visita.
+        "/buscar",
+        "/jugador/",
         "/api/",
         "/admin/",
         "/quiniela-liga/liga/",
