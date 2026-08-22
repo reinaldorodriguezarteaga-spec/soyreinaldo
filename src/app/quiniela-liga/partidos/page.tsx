@@ -113,6 +113,10 @@ export default async function QuinielaLigaPartidosPage({
     .eq("user_id", user.id);
 
   const compName = COMPETITIONS_BY_SLUG[COMPETITION]?.name ?? "LaLiga";
+  // Server Component: se renderiza una vez por petición, así que leer la
+  // hora aquí es correcto y necesario (decide qué partidos están cerrados).
+  // La regla apunta a componentes de cliente, donde sí rompería el render.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   const cards: LqMatchCardData[] = matches

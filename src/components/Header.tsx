@@ -84,12 +84,17 @@ export default function Header({
     return () => document.removeEventListener("mousedown", onDown);
   }, [openMenu]);
 
-  // Cerrar todo al navegar
-  useEffect(() => {
+  // Cerrar todo al navegar. Ajuste DURANTE EL RENDER (patrón de react.dev
+  // "adjusting state when props change") en vez de un efecto: hacerlo con
+  // setState dentro de useEffect provoca renders en cascada — y además así
+  // los menús no llegan a pintarse abiertos un frame en la página nueva.
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
     setOpenMenu(null);
     setMobileOpen(false);
     setMAcc(null);
-  }, [pathname]);
+  }
 
   const isActive = (href: string) => pathname === href;
 
