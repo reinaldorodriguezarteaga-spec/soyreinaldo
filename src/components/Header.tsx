@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import HeaderSearch from "@/components/HeaderSearch";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -23,9 +24,27 @@ const PRODUCTOS = [
 const NAV_LINKS = [
   { href: "/analisis", label: "Análisis" },
   { href: "/quiniela-liga", label: "Quiniela" },
-  { href: "/estadios", label: "Estadios" },
-  { href: "/redes", label: "Redes" },
-  { href: "/contacto", label: "Contáctame" },
+];
+
+/** Estadios, Redes y Contáctame se agrupan aquí: sueltos eran tres enlaces
+ * de los siete de la barra, y el nav se había quedado largo (pedido del
+ * dueño: "hay muchas opciones"). */
+const CONTACTO = [
+  {
+    href: "/redes",
+    label: "Redes",
+    desc: "YouTube, Instagram, TikTok, Facebook y Threads",
+  },
+  {
+    href: "/contacto",
+    label: "Contáctame",
+    desc: "Colaboraciones, prensa o cualquier consulta",
+  },
+  {
+    href: "/estadios",
+    label: "Estadios",
+    desc: "Mapa de los estadios que hemos visitado",
+  },
 ];
 
 function Caret() {
@@ -65,12 +84,15 @@ export default function Header({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<
-    "favoritos" | "competiciones" | "productos" | null
+    "favoritos" | "competiciones" | "contacto" | "productos" | null
   >(null);
   const [mAcc, setMAcc] = useState<
-    "favoritos" | "competiciones" | "productos" | null
+    "favoritos" | "competiciones" | "contacto" | "productos" | null
   >(null);
   const linksRef = useRef<HTMLDivElement>(null);
+  // Buscador desplegable del header: mientras está abierto, los enlaces del
+  // nav se apartan hacia abajo y la barra ocupa su sitio.
+  const [buscando, setBuscando] = useState(false);
 
   // Cerrar dropdowns al hacer click fuera
   useEffect(() => {
@@ -94,6 +116,7 @@ export default function Header({
     setOpenMenu(null);
     setMobileOpen(false);
     setMAcc(null);
+    setBuscando(false);
   }
 
   const isActive = (href: string) => pathname === href;
@@ -121,7 +144,10 @@ export default function Header({
               </Link>
             )}
 
-            <div className="nav__links" ref={linksRef}>
+            <div
+              className={`nav__links${buscando ? " nav__links--fuera" : ""}`}
+              ref={linksRef}
+            >
               {/* Favoritos — primero, así lo tuyo se ve antes que las 9 competiciones */}
               {favorites.length > 0 && (
                 <div className="navdrop">
@@ -197,6 +223,30 @@ export default function Header({
                 </Link>
               ))}
 
+              {/* Contacto y redes */}
+              <div className="navdrop">
+                <button
+                  type="button"
+                  className="navdrop__btn"
+                  aria-expanded={openMenu === "contacto"}
+                  onClick={() =>
+                    setOpenMenu((m) => (m === "contacto" ? null : "contacto"))
+                  }
+                >
+                  Contacto y redes <Caret />
+                </button>
+                {openMenu === "contacto" && (
+                  <div className="navdrop__menu">
+                    {CONTACTO.map((c) => (
+                      <Link key={c.href} href={c.href} className="navdrop__item">
+                        {c.label}
+                        <span className="d">{c.desc}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Productos */}
               <div className="navdrop">
                 <button
@@ -223,17 +273,11 @@ export default function Header({
             </div>
 
             <div className="nav__cta">
-              <Link
-                href="/buscar"
-                aria-label="Buscar equipo o jugador"
-                title="Buscar equipo o jugador"
-                className="grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <circle cx="11" cy="11" r="7" />
-                  <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
-                </svg>
-              </Link>
+              <HeaderSearch
+                abierto={buscando}
+                onAbrir={() => setBuscando(true)}
+                onCerrar={() => setBuscando(false)}
+              />
               {initialUser ? (
                 <UserMenu initialUser={initialUser} isAdmin={isAdmin} />
               ) : (
@@ -319,6 +363,27 @@ export default function Header({
                     {n.label}
                   </MobileLink>
                 ))}
+
+                {/* Contacto y redes acordeón */}
+                <button
+                  type="button"
+                  className="navacc__btn"
+                  aria-expanded={mAcc === "contacto"}
+                  onClick={() =>
+                    setMAcc((m) => (m === "contacto" ? null : "contacto"))
+                  }
+                >
+                  Contacto y redes <Caret />
+                </button>
+                {mAcc === "contacto" && (
+                  <div className="navacc__sub">
+                    {CONTACTO.map((c) => (
+                      <Link key={c.href} href={c.href}>
+                        {c.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
                 {/* Productos acordeón */}
                 <button
