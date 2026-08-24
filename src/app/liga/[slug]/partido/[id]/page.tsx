@@ -21,6 +21,7 @@ import {
   type FixtureGoal,
   type StandingRow,
   getTeamVenue,
+  mismoEstadio,
   type TeamVenue,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
@@ -102,12 +103,31 @@ function matchJsonLd(
     logo: t.logo,
   });
 
-  const sede = fx.fixture.venue.name
-    ? { name: fx.fixture.venue.name, city: fx.fixture.venue.city ?? null }
-    : sedeDeRespaldo;
-  // Sin sede no hay evento válido para Google: preferimos no publicar datos
-  // estructurados a publicarlos rotos.
-  if (!sede) return null;
+  // Google exige `location` CON `address`: un estadio a secas no le vale (la
+  // validación del 24-ago falló justo por eso, con partidos que traían nombre
+  // de campo pero no ciudad). Se compone la sede más completa posible:
+  //  - el nombre que dé el partido, si lo da;
+  //  - y la dirección de la ficha del equipo local, siempre que sea SU campo
+  //    (comparación laxa: "Stade Pierre-Mauroy" y "Decathlon Arena - Stade
+  //    Pierre-Mauroy" son el mismo). En sede neutral no se mezcla: sería
+  //    inventarse una dirección.
+  const nombreDelPartido = fx.fixture.venue.name ?? null;
+  const esSuCampo =
+    !nombreDelPartido ||
+    mismoEstadio(nombreDelPartido, sedeDeRespaldo?.name ?? null);
+
+  const sede = {
+    name: nombreDelPartido ?? sedeDeRespaldo?.name ?? null,
+    street: esSuCampo ? (sedeDeRespaldo?.street ?? null) : null,
+    city:
+      fx.fixture.venue.city ?? (esSuCampo ? (sedeDeRespaldo?.city ?? null) : null),
+    country: esSuCampo ? (sedeDeRespaldo?.country ?? null) : null,
+  };
+
+  // Sin nombre o sin ciudad no hay `address` que valga, y unos datos
+  // estructurados incompletos son peores que ninguno: Google los rechaza
+  // entero y encima lo apunta como error.
+  if (!sede.name || !sede.city) return null;
 
   // Un partido de fútbol dura 90 minutos más descanso y añadido: dos horas es
   // la estimación estándar, y Google acepta una hora de fin aproximada.
@@ -133,14 +153,12 @@ function matchJsonLd(
     location: {
       "@type": "Place",
       name: sede.name,
-      ...(sede.city
-        ? {
-            address: {
-              "@type": "PostalAddress",
-              addressLocality: sede.city,
-            },
-          }
-        : {}),
+      address: {
+        "@type": "PostalAddress",
+        ...(sede.street ? { streetAddress: sede.street } : {}),
+        addressLocality: sede.city,
+        ...(sede.country ? { addressCountry: sede.country } : {}),
+      },
     },
     homeTeam: equipo(home),
     awayTeam: equipo(away),
@@ -342,11 +360,10 @@ export default async function LigaPartidoPage({
 
   const base = `/liga/${competition.slug}`;
 
-  // Si el partido no trae estadio, el del equipo local (ahí se juega). Solo se
-  // consulta cuando falta, y la respuesta se cachea 30 días.
-  const sedeDeRespaldo = fx.fixture.venue.name
-    ? null
-    : await getTeamVenue(home.id).catch(() => null);
+  // La ficha del equipo local da la dirección del campo. Se consulta siempre
+  // —no solo cuando falta el nombre— porque el partido a veces trae estadio
+  // pero no ciudad, y sin ciudad Google descarta el evento. Cacheada 30 días.
+  const sedeDeRespaldo = await getTeamVenue(home.id).catch(() => null);
   const datosEstructurados = matchJsonLd(fx, competition, played, sedeDeRespaldo);
 
   return (
