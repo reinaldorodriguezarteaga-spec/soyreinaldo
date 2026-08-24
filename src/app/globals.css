@@ -885,7 +885,42 @@ img {
   background: color-mix(in oklch, var(--live, #ff4d57) 26%, transparent);
   transform: translateY(-1px);
 }
-.match.locked { opacity: 0.55; }
+
+/* El aviso de "en vivo": en escritorio vive en el header; en MÓVIL baja a una
+ * pastilla flotante centrada (`.livepill`, renderizada fuera del <nav>).
+ * Motivo medido: dentro del header, al abrir el buscador en una pantalla de
+ * 375 px la barra se quedaba en 124 px — inusable. Abajo cae, además, en la
+ * zona del pulgar. */
+.livepill { display: none; }
+
+@media (max-width: 640px) {
+  .navlive { display: none; }
+  .livepill {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Hueco para el indicador de inicio del iPhone y para un posible
+       anuncio de ancla de AdSense. */
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--live, #ff4d57) 90%, black);
+    border: 1px solid color-mix(in oklch, var(--live, #ff4d57) 60%, white);
+    color: #fff;
+    font-family: var(--font-mono-stack);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+  .livepill:active { transform: translateX(-50%) translateY(1px); }
+}.match.locked { opacity: 0.55; }
 .match__meta { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .match__when { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
 .match__grp { font-family: var(--font-mono-stack); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; }

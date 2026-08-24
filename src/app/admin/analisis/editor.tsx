@@ -1,7 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { guardarAnalisis, type EstadoAnalisis } from "./actions";
+import { useActionState, useEffect, useState } from "react";
+import {
+  equiposDeCompeticion,
+  guardarAnalisis,
+  partidosDeEquipo,
+  type EquipoOpcion,
+  type EstadoAnalisis,
+  type PartidoOpcion,
+} from "./actions";
 import { markdownAHtml, minutosDeLectura } from "@/lib/analisis/markdown";
 
 const inicial: EstadoAnalisis = { status: "idle" };
@@ -39,6 +46,56 @@ export default function Editor({ borrador }: { borrador?: Borrador }) {
   const [cuerpo, setCuerpo] = useState(borrador?.body ?? "");
   const [vista, setVista] = useState<"escribir" | "previa">("escribir");
   const [conPartido, setConPartido] = useState(!!borrador?.fixture_id);
+
+  // Enganchar a un partido: competición → equipo → partido. Antes había que
+  // copiar a mano el número del final de la URL del partido.
+  const [competicion, setCompeticion] = useState(
+    borrador?.competition_slug ?? "laliga",
+  );
+  const [equipos, setEquipos] = useState<EquipoOpcion[]>([]);
+  const [equipo, setEquipo] = useState("");
+  // Los partidos guardan de QUÉ equipo son: así "cargando" se deduce
+  // (comparando con el equipo elegido) en vez de fijarse dentro del efecto,
+  // que provoca renders en cascada.
+  const [cargados, setCargados] = useState<{
+    equipo: string;
+    partidos: PartidoOpcion[];
+  } | null>(null);
+  const partidos = cargados?.equipo === equipo ? cargados.partidos : [];
+  const cargandoPartidos = !!equipo && cargados?.equipo !== equipo;
+  // Al editar un análisis ya enganchado sabemos el id pero no el equipo, así
+  // que se conserva tal cual hasta que se elija otro.
+  const [partido, setPartido] = useState(String(borrador?.fixture_id ?? ""));
+  const [esBorrador, setEsBorrador] = useState(
+    borrador?.id ? !borrador?.published_at : false,
+  );
+
+  useEffect(() => {
+    if (!conPartido) return;
+    let vivo = true;
+    equiposDeCompeticion(competicion)
+      .then((e) => vivo && setEquipos(e))
+      .catch(() => vivo && setEquipos([]));
+    return () => {
+      vivo = false;
+    };
+  }, [competicion, conPartido]);
+
+  useEffect(() => {
+    if (!equipo) return;
+    let vivo = true;
+    partidosDeEquipo(Number(equipo))
+      .then((p) => {
+        if (!vivo) return;
+        setCargados({ equipo, partidos: p });
+        // Por defecto, el último jugado: es sobre lo que se suele escribir.
+        if (p.length > 0) setPartido(String(p[0].id));
+      })
+      .catch(() => vivo && setCargados({ equipo, partidos: [] }));
+    return () => {
+      vivo = false;
+    };
+  }, [equipo]);
 
   return (
     <form action={accion} className="space-y-5">
@@ -149,26 +206,17 @@ export default function Editor({ borrador }: { borrador?: Borrador }) {
         </p>
 
         {conPartido && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={etiqueta}>Id del partido</label>
-              <input
-                className={campo}
-                name="fixture_id"
-                defaultValue={borrador?.fixture_id ?? ""}
-                placeholder="1570345"
-                disabled={enviando}
-              />
-              <p className="mt-1 text-xs text-zinc-500">
-                Es el número del final de la URL del partido.
-              </p>
-            </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
               <label className={etiqueta}>Competición</label>
               <select
                 className={campo}
                 name="competition_slug"
-                defaultValue={borrador?.competition_slug ?? "laliga"}
+                value={competicion}
+                onChange={(e) => {
+                  setCompeticion(e.target.value);
+                  setEquipo("");
+                }}
                 disabled={enviando}
               >
                 {COMPETICIONES.map(([valor, nombre]) => (
@@ -178,18 +226,72 @@ export default function Editor({ borrador }: { borrador?: Borrador }) {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className={etiqueta}>Equipo</label>
+              <select
+                className={campo}
+                value={equipo}
+                onChange={(e) => setEquipo(e.target.value)}
+                disabled={enviando || equipos.length === 0}
+              >
+                <option value="">
+                  {equipos.length === 0 ? "Cargando…" : "Elige un equipo"}
+                </option>
+                {equipos.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={etiqueta}>Partido</label>
+              <select
+                className={campo}
+                name="fixture_id"
+                value={partido}
+                onChange={(e) => setPartido(e.target.value)}
+                disabled={enviando || (partidos.length === 0 && !partido)}
+              >
+                {/* Al editar, el partido ya enganchado sigue seleccionado
+                    aunque todavía no se haya elegido equipo. */}
+                {partido && !partidos.some((p) => String(p.id) === partido) && (
+                  <option value={partido}>Partido actual (#{partido})</option>
+                )}
+                <option value="">
+                  {cargandoPartidos
+                    ? "Cargando partidos…"
+                    : equipo
+                      ? "Sin partidos cercanos"
+                      : "Elige antes un equipo"}
+                </option>
+                {partidos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.etiqueta}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-500">
+                El último jugado y los dos próximos.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
+      {/* Al revés que antes: guardar PUBLICA. La casilla es para el caso
+          raro de querer dejarlo escondido. */}
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          name="publicar"
-          defaultChecked={!!borrador?.published_at}
+          name="borrador"
+          checked={esBorrador}
+          onChange={(e) => setEsBorrador(e.target.checked)}
           disabled={enviando}
         />
-        Publicar · si lo dejas sin marcar se guarda como borrador y no lo ve nadie
+        Guardar como borrador · no lo verá nadie hasta que lo publiques
       </label>
 
       <div className="flex items-center gap-3">
@@ -198,7 +300,7 @@ export default function Editor({ borrador }: { borrador?: Borrador }) {
           disabled={enviando}
           className="rounded-xl bg-indigo-300 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200 disabled:opacity-60"
         >
-          {enviando ? "Guardando…" : "Guardar"}
+          {enviando ? "Guardando…" : esBorrador ? "Guardar borrador" : "Guardar y publicar"}
         </button>
         {estado.status === "error" && (
           <span className="text-sm text-red-300">{estado.message}</span>

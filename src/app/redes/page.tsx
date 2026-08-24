@@ -8,6 +8,7 @@ import {
 } from "@/components/social-logos";
 
 export const metadata = {
+  alternates: { canonical: "/redes" },
   title: "Mis redes | Soy Reinaldo",
   description:
     "Todas las redes de @SoyReinaldoR: YouTube, Instagram, TikTok, Facebook y Threads.",

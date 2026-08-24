@@ -416,6 +416,23 @@ export default function Header({
           )}
         </div>
       </nav>
+
+      {/* Móvil: el aviso de "en vivo" vive abajo, no en el header. Dentro del
+          header ahogaba al buscador (medido: la barra caía de 235 a 124 px en
+          una pantalla de 375). Va FUERA del <nav> a propósito: el
+          backdrop-filter del header lo convierte en marco de referencia de los
+          elementos fijos, y anclado ahí dentro la pastilla se quedaba arriba. */}
+      {hasLiveMatch && (
+        <Link
+          href="/en-vivo"
+          className="livepill"
+          onClick={() => setMobileOpen(false)}
+          title="Hay partidos en juego — verlos todos"
+        >
+          <span className="livepulse" />
+          EN VIVO
+        </Link>
+      )}
     </>
   );
 }

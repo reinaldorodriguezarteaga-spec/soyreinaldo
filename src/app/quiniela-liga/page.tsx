@@ -6,6 +6,7 @@ import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 
 export const metadata = {
+  alternates: { canonical: "/quiniela-liga" },
   title: "Elige tu quiniela | Soy Reinaldo",
   description:
     "Entra a la quiniela general de LaLiga o a la quiniela privada de tu comunidad.",

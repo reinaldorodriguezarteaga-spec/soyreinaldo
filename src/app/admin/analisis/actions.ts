@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { aSlug } from "@/lib/analisis/markdown";
+import {
+  getCompetitionStandings,
+  getTeamFixtures,
+  type Fixture,
+  type StandingRow,
+} from "@/lib/sports/api-football";
+import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 
 export type EstadoAnalisis = {
   status: "idle" | "success" | "error";
@@ -39,7 +46,10 @@ export async function guardarAnalisis(
   const slugManual = (formData.get("slug") as string | null)?.trim() || "";
   const partido = (formData.get("fixture_id") as string | null)?.trim() || "";
   const competicion = (formData.get("competition_slug") as string | null)?.trim() || null;
-  const publicar = formData.get("publicar") === "on";
+  // Guardar PUBLICA por defecto (pedido del dueño 23-ago: lo normal es
+  // publicar; dejarlo en borrador es la excepción). La casilla marca el caso
+  // raro, no el habitual.
+  const publicar = formData.get("borrador") !== "on";
 
   if (titulo.length < 3) {
     return { status: "error", message: "El título es demasiado corto." };
@@ -112,4 +122,62 @@ export async function borrarAnalisis(formData: FormData) {
   await supabase.from("articles").delete().eq("id", id);
   revalidatePath("/analisis");
   revalidatePath("/admin/analisis");
+}
+
+/* ---------------------------------------------------------------------- *
+ * Selector de partido del editor (23-ago). Antes había que ir a la web,
+ * abrir el partido y copiar el número del final de la URL. Ahora se elige
+ * competición → equipo → partido, que es como lo piensa quien escribe.
+ * ---------------------------------------------------------------------- */
+
+export type EquipoOpcion = { id: number; nombre: string };
+export type PartidoOpcion = { id: number; etiqueta: string; jugado: boolean };
+
+/** Equipos de una competición, para el desplegable. Sale de la clasificación,
+ * que ya está cacheada — no gasta cuota extra. */
+export async function equiposDeCompeticion(slug: string): Promise<EquipoOpcion[]> {
+  await exigirAdmin();
+  const competition = COMPETITIONS_BY_SLUG[slug];
+  if (!competition) return [];
+  try {
+    const filas = (await getCompetitionStandings(competition)) as StandingRow[] | null;
+    const porId = new Map<number, EquipoOpcion>();
+    for (const f of filas ?? []) {
+      if (!porId.has(f.team.id)) porId.set(f.team.id, { id: f.team.id, nombre: f.team.name });
+    }
+    return [...porId.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  } catch {
+    return [];
+  }
+}
+
+const FECHA_CORTA = new Intl.DateTimeFormat("es-ES", {
+  timeZone: "Europe/Madrid",
+  day: "numeric",
+  month: "short",
+});
+
+/**
+ * Partidos de un equipo para enganchar el análisis: el último jugado y los
+ * dos siguientes. Nada más — un análisis se escribe sobre lo que acaba de
+ * pasar o sobre lo que viene ya, no sobre la jornada 30.
+ */
+export async function partidosDeEquipo(teamId: number): Promise<PartidoOpcion[]> {
+  await exigirAdmin();
+  if (!Number.isFinite(teamId) || teamId <= 0) return [];
+  try {
+    const { recent, upcoming } = await getTeamFixtures(teamId, { last: 1, next: 2 });
+    const etiqueta = (f: Fixture, jugado: boolean) => {
+      const cuando = FECHA_CORTA.format(new Date(f.fixture.date));
+      const marcador = jugado ? ` (${f.goals.home ?? 0}-${f.goals.away ?? 0})` : "";
+      const cara = jugado ? "Jugado" : "Próximo";
+      return `${cara} · ${cuando} · ${f.teams.home.name} - ${f.teams.away.name}${marcador}`;
+    };
+    return [
+      ...recent.slice(-1).map((f) => ({ id: f.fixture.id, etiqueta: etiqueta(f, true), jugado: true })),
+      ...upcoming.slice(0, 2).map((f) => ({ id: f.fixture.id, etiqueta: etiqueta(f, false), jugado: false })),
+    ];
+  } catch {
+    return [];
+  }
 }

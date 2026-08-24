@@ -8,6 +8,7 @@ import {
 } from "@/components/social-logos";
 
 export const metadata = {
+  alternates: { canonical: "/contacto" },
   title: "Contáctame | Soy Reinaldo",
   description:
     "Contacta con Reinaldo Rodríguez (@SoyReinaldoR) para colaboraciones de marca, prensa o consultas.",
