@@ -2729,33 +2729,79 @@ export async function getPlayerLeagueIds(
   }
 }
 
-/** Estadio de un equipo (el suyo, el de casa). */
-export type TeamVenue = { name: string; city: string | null };
-
-type TeamVenueRow = {
-  team: { id: number };
-  venue: { name: string | null; city: string | null };
+/** Estadio de un equipo (el suyo, el de casa), con dirección completa. */
+export type TeamVenue = {
+  name: string;
+  street: string | null;
+  city: string | null;
+  country: string | null;
 };
 
+type TeamVenueRow = {
+  team: { id: number; country: string | null };
+  venue: {
+    name: string | null;
+    address: string | null;
+    city: string | null;
+  };
+};
+
+/** La API devuelve entidades HTML en los textos ("d&apos;Ascq"), que en unos
+ * datos estructurados se verían tal cual. */
+function decodificaHtml(t: string | null): string | null {
+  if (!t) return null;
+  return t
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
 /**
- * Estadio del equipo, para cuando el partido no lo trae.
+ * Estadio del equipo, para completar lo que el partido no trae.
  *
- * API-Football deja `fixture.venue` vacío en bastantes jornadas de liga aún
- * por disputar (111 de 380 en LaLiga 26-27, comprobado). Sin `location`,
- * Google descarta los datos estructurados del partido — era el error crítico
- * que reportó Search Console.
+ * API-Football deja `fixture.venue` a medias muy a menudo: sin nombre en 111
+ * de los 380 partidos de LaLiga 26-27, y con nombre pero SIN CIUDAD en otros
+ * (el Lille, por ejemplo). Google exige `location.address` en los datos
+ * estructurados de un evento, así que con el nombre pelado no basta —
+ * era lo que hacía fallar la validación de Search Console.
  *
- * Cacheado 30 días: un equipo no cambia de estadio a media temporada, así que
- * esto son unas pocas llamadas por temporada y no toca la cuota en la práctica.
+ * Cacheado 30 días: un equipo no cambia de estadio a media temporada.
  */
 export async function getTeamVenue(teamId: number): Promise<TeamVenue | null> {
   if (!Number.isFinite(teamId) || teamId <= 0) return null;
   try {
     const r = await get<TeamVenueRow>("/teams", { id: teamId }, 2_592_000);
-    const v = r.response[0]?.venue;
-    if (!v?.name) return null;
-    return { name: v.name, city: v.city ?? null };
+    const fila = r.response[0];
+    const nombre = decodificaHtml(fila?.venue?.name ?? null);
+    if (!nombre) return null;
+    return {
+      name: nombre,
+      street: decodificaHtml(fila.venue.address ?? null),
+      city: decodificaHtml(fila.venue.city ?? null),
+      country: decodificaHtml(fila.team?.country ?? null),
+    };
   } catch {
     return null;
   }
+}
+
+/** ¿Son el mismo estadio? El partido y la ficha del equipo lo escriben
+ * distinto ("Stade Pierre-Mauroy" vs "Decathlon Arena - Stade
+ * Pierre-Mauroy"), así que se comparan de forma laxa: si uno contiene al
+ * otro, es el mismo campo y podemos completar su dirección. */
+export function mismoEstadio(a: string | null, b: string | null): boolean {
+  if (!a || !b) return false;
+  const limpia = (t: string) =>
+    t
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const x = limpia(a);
+  const y = limpia(b);
+  return x === y || x.includes(y) || y.includes(x);
 }
