@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 
 export const metadata = {
+  alternates: { canonical: "/quiniela-liga/reglas" },
   title: "Reglas · Quiniela LaLiga 2026-27 | Soy Reinaldo",
   description:
     "Cómo se puntúa la Quiniela de LaLiga: pronósticos, picks especiales y fechas límite.",

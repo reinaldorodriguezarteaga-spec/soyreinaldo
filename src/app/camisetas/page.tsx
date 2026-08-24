@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 export const metadata = {
+  alternates: { canonical: "/camisetas" },
   title: "Camisetas con descuento | Soy Reinaldo",
   description:
     "Camisetas de fútbol con descuento usando el código REY15. Selección de mi tienda partner.",

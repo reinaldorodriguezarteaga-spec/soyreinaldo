@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -13,6 +14,12 @@ import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+
+/** La portada es la URL que más señales recibe (ápice, http, enlaces de
+ * redes): sin canónica propia, Google las trataba como versiones sueltas. */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const MARQUEE = [
   "Culé",

@@ -10,6 +10,14 @@ const PROTECTED_PREFIXES = ["/quiniela"];
 // disputas — pronosticar sí exige login.
 const PUBLIC_EXCEPTIONS = [
   "/quiniela/puntos",
+  // El SELECTOR de quinielas es la puerta de entrada: la portada enlaza aquí
+  // con "Jugar gratis" y hasta el 23-ago rebotaba al login, así que el
+  // visitante nuevo se estrellaba contra un muro (y Google lo veía como una
+  // redirección, sin indexarlo). La página ya trata al anónimo —le enseña la
+  // liga pública y su propio botón de registro— y la BD también (migración
+  // 048). Solo faltaba esta excepción: "/quiniela-liga" empieza por
+  // "/quiniela", así que caía en el prefijo protegido sin quererlo.
+  "/quiniela-liga",
   "/quiniela-liga/ranking",
   "/quiniela-liga/reglas",
 ];

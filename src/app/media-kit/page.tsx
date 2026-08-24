@@ -9,6 +9,7 @@ import {
 import { getSocialStats } from "@/lib/social-stats";
 
 export const metadata = {
+  alternates: { canonical: "/media-kit" },
   title: "Media Kit | Soy Reinaldo",
   description:
     "Media Kit oficial de @SoyReinaldoR. Audiencia, métricas, formatos publicitarios y tarifas para colaboraciones con marcas en el mundo del fútbol.",

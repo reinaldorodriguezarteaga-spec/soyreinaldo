@@ -3,6 +3,7 @@ import Link from "next/link";
 import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
+  alternates: { canonical: "/asesorias" },
   title: "Asesoría 1:1 con Reinaldo | Soy Reinaldo",
   description:
     "Sesión 1:1 de 2-3 horas para impulsar tus redes sociales: análisis de tus videos, edición en CapCut, trucos y recomendaciones personalizadas. 75€.",

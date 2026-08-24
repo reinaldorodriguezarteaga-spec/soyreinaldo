@@ -31,6 +31,10 @@ export async function generateMetadata({
   return {
     title: `${competition.name} | Soy Reinaldo`,
     description: `${competition.name}: próximos partidos, tabla de clasificación y estadísticas en vivo — goleadores, asistencias y más.`,
+    // Sin canónica, cada pestaña (?v=tabla, ?v=jugadores…) y cada ?season=
+    // se ven como páginas distintas con el mismo contenido — el aviso
+    // "Duplicada: el usuario no ha indicado ninguna versión canónica".
+    alternates: { canonical: `/liga/${competition.slug}` },
   };
 }
 
