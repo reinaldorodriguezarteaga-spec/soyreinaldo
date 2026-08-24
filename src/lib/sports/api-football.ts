@@ -2728,3 +2728,34 @@ export async function getPlayerLeagueIds(
     return [];
   }
 }
+
+/** Estadio de un equipo (el suyo, el de casa). */
+export type TeamVenue = { name: string; city: string | null };
+
+type TeamVenueRow = {
+  team: { id: number };
+  venue: { name: string | null; city: string | null };
+};
+
+/**
+ * Estadio del equipo, para cuando el partido no lo trae.
+ *
+ * API-Football deja `fixture.venue` vacío en bastantes jornadas de liga aún
+ * por disputar (111 de 380 en LaLiga 26-27, comprobado). Sin `location`,
+ * Google descarta los datos estructurados del partido — era el error crítico
+ * que reportó Search Console.
+ *
+ * Cacheado 30 días: un equipo no cambia de estadio a media temporada, así que
+ * esto son unas pocas llamadas por temporada y no toca la cuota en la práctica.
+ */
+export async function getTeamVenue(teamId: number): Promise<TeamVenue | null> {
+  if (!Number.isFinite(teamId) || teamId <= 0) return null;
+  try {
+    const r = await get<TeamVenueRow>("/teams", { id: teamId }, 2_592_000);
+    const v = r.response[0]?.venue;
+    if (!v?.name) return null;
+    return { name: v.name, city: v.city ?? null };
+  } catch {
+    return null;
+  }
+}

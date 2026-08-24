@@ -20,6 +20,8 @@ import {
   type Fixture,
   type FixtureGoal,
   type StandingRow,
+  getTeamVenue,
+  type TeamVenue,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
@@ -74,12 +76,24 @@ export async function generateMetadata({
 }
 
 /** schema.org/SportsEvent — lo que permite a Google enseñar el marcador
- * directamente en los resultados de búsqueda. */
+ * directamente en los resultados de búsqueda.
+ *
+ * Search Console (24-ago) marcó como CRÍTICO "falta el campo location": la
+ * API deja `fixture.venue` vacío en muchas jornadas por disputar (111 de 380
+ * en LaLiga 26-27). Sin sede no hay resultado enriquecido, así que se
+ * completa con el estadio del equipo local —que es donde se juega, no un
+ * invento— y, si ni aun así se sabe, no se emiten datos estructurados: mejor
+ * ninguno que unos incompletos.
+ *
+ * `offers` se queda fuera A PROPÓSITO aunque Google lo sugiera: no vendemos
+ * entradas, y declarar una oferta que no existe sería mentirle a Google.
+ */
 function matchJsonLd(
   fx: Fixture,
   competition: Competition,
   played: boolean,
-): Record<string, unknown> {
+  sedeDeRespaldo: TeamVenue | null,
+): Record<string, unknown> | null {
   const home = fx.teams.home;
   const away = fx.teams.away;
   const equipo = (t: { name: string; logo: string }) => ({
@@ -87,12 +101,25 @@ function matchJsonLd(
     name: t.name,
     logo: t.logo,
   });
+
+  const sede = fx.fixture.venue.name
+    ? { name: fx.fixture.venue.name, city: fx.fixture.venue.city ?? null }
+    : sedeDeRespaldo;
+  // Sin sede no hay evento válido para Google: preferimos no publicar datos
+  // estructurados a publicarlos rotos.
+  if (!sede) return null;
+
+  // Un partido de fútbol dura 90 minutos más descanso y añadido: dos horas es
+  // la estimación estándar, y Google acepta una hora de fin aproximada.
+  const fin = new Date(new Date(fx.fixture.date).getTime() + 2 * 60 * 60 * 1000);
+
   return {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: `${home.name} - ${away.name}`,
     description: `${home.name} contra ${away.name} en ${competition.name}.`,
     startDate: fx.fixture.date,
+    endDate: fin.toISOString(),
     eventStatus:
       fx.fixture.status.short === "PST"
         ? "https://schema.org/EventPostponed"
@@ -102,25 +129,25 @@ function matchJsonLd(
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     sport: "Soccer",
     url: absolute(`/liga/${competition.slug}/partido/${fx.fixture.id}`),
-    ...(fx.fixture.venue.name
-      ? {
-          location: {
-            "@type": "Place",
-            name: fx.fixture.venue.name,
-            ...(fx.fixture.venue.city
-              ? {
-                  address: {
-                    "@type": "PostalAddress",
-                    addressLocality: fx.fixture.venue.city,
-                  },
-                }
-              : {}),
-          },
-        }
-      : {}),
+    image: [home.logo, away.logo].filter(Boolean),
+    location: {
+      "@type": "Place",
+      name: sede.name,
+      ...(sede.city
+        ? {
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: sede.city,
+            },
+          }
+        : {}),
+    },
     homeTeam: equipo(home),
     awayTeam: equipo(away),
     competitor: [equipo(home), equipo(away)],
+    // Quien "actúa" en un partido son los dos equipos.
+    performer: [equipo(home), equipo(away)],
+    organizer: { "@type": "SportsOrganization", name: competition.name },
     superEvent: { "@type": "SportsOrganization", name: competition.name },
     ...(played
       ? {
@@ -315,9 +342,16 @@ export default async function LigaPartidoPage({
 
   const base = `/liga/${competition.slug}`;
 
+  // Si el partido no trae estadio, el del equipo local (ahí se juega). Solo se
+  // consulta cuando falta, y la respuesta se cachea 30 días.
+  const sedeDeRespaldo = fx.fixture.venue.name
+    ? null
+    : await getTeamVenue(home.id).catch(() => null);
+  const datosEstructurados = matchJsonLd(fx, competition, played, sedeDeRespaldo);
+
   return (
     <main className="page">
-      <JsonLd data={matchJsonLd(fx, competition, played)} />
+      {datosEstructurados && <JsonLd data={datosEstructurados} />}
       {liveNow && <LiveRefresh />}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
