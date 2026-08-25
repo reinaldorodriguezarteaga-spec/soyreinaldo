@@ -54,6 +54,9 @@ export default async function AdminLayout({
             <Link href="/admin/seguidores" className="hover:text-white">
               Redes
             </Link>
+            <Link href="/admin/imagenes" className="hover:text-white">
+              Imágenes
+            </Link>
           </nav>
         </div>
       </div>
