@@ -165,8 +165,19 @@ function matchJsonLd(
     competitor: [equipo(home), equipo(away)],
     // Quien "actúa" en un partido son los dos equipos.
     performer: [equipo(home), equipo(away)],
-    organizer: { "@type": "SportsOrganization", name: competition.name },
-    superEvent: { "@type": "SportsOrganization", name: competition.name },
+    // `url` es la web del organizador de verdad (laliga.com, uefa.com…), no
+    // una página nuestra: Search Console la pedía y poner la nuestra sería
+    // afirmar que LaLiga vive en soyreinaldo.com.
+    organizer: {
+      "@type": "SportsOrganization",
+      name: competition.name,
+      ...(competition.officialUrl ? { url: competition.officialUrl } : {}),
+    },
+    superEvent: {
+      "@type": "SportsOrganization",
+      name: competition.name,
+      ...(competition.officialUrl ? { url: competition.officialUrl } : {}),
+    },
     ...(played
       ? {
           // El marcador, en el formato que Google sabe leer.
