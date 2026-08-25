@@ -1,6 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  clasificarImagen,
+  type CategoriaImagen,
+} from "@/lib/imagenes/clasificar";
 
 type ImagenExtraida = {
   url: string;
@@ -71,19 +75,37 @@ export default function ExtractorImagenes() {
   const [error, setError] = useState<string | null>(null);
   const [datos, setDatos] = useState<Resultado | null>(null);
   const [minPx, setMinPx] = useState<number>(300);
+  const [categoria, setCategoria] = useState<CategoriaImagen | "todas">("foto");
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [zipEnCurso, setZipEnCurso] = useState(false);
   const [avisoZip, setAvisoZip] = useState<string | null>(null);
 
+  const clasificadas = useMemo(
+    () =>
+      (datos?.imagenes ?? []).map((img) => ({
+        ...img,
+        categoria: clasificarImagen(img),
+      })),
+    [datos],
+  );
+
+  const cuentas = useMemo(
+    () => ({
+      foto: clasificadas.filter((i) => i.categoria === "foto").length,
+      grafico: clasificadas.filter((i) => i.categoria === "grafico").length,
+    }),
+    [clasificadas],
+  );
+
   const visibles = useMemo(() => {
-    if (!datos) return [];
-    return datos.imagenes.filter((img) => {
+    return clasificadas.filter((img) => {
+      if (categoria !== "todas" && img.categoria !== categoria) return false;
       if (minPx === 0) return true;
       // Sin dimensiones conocidas las dejamos pasar: mejor enseñar de más.
       if (img.ancho === null || img.alto === null) return true;
       return Math.max(img.ancho, img.alto) >= minPx;
     });
-  }, [datos, minPx]);
+  }, [clasificadas, categoria, minPx]);
 
   async function extraer(e: React.FormEvent) {
     e.preventDefault();
@@ -211,20 +233,46 @@ export default function ExtractorImagenes() {
                 </span>
               )}
             </div>
-            <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 text-xs">
-              {FILTROS.map((f) => (
-                <button
-                  key={f.min}
-                  onClick={() => setMinPx(f.min)}
-                  className={`rounded-md px-3 py-1.5 transition ${
-                    minPx === f.min
-                      ? "bg-zinc-800 text-white"
-                      : "text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  {f.etiqueta}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 text-xs">
+                {(
+                  [
+                    { clave: "foto", etiqueta: `Fotos (${cuentas.foto})` },
+                    {
+                      clave: "grafico",
+                      etiqueta: `Gráficos (${cuentas.grafico})`,
+                    },
+                    { clave: "todas", etiqueta: "Todas" },
+                  ] as const
+                ).map((c) => (
+                  <button
+                    key={c.clave}
+                    onClick={() => setCategoria(c.clave)}
+                    className={`rounded-md px-3 py-1.5 transition ${
+                      categoria === c.clave
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {c.etiqueta}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1 text-xs">
+                {FILTROS.map((f) => (
+                  <button
+                    key={f.min}
+                    onClick={() => setMinPx(f.min)}
+                    className={`rounded-md px-3 py-1.5 transition ${
+                      minPx === f.min
+                        ? "bg-zinc-800 text-white"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {f.etiqueta}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -251,6 +299,9 @@ export default function ExtractorImagenes() {
           {visibles.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/50 p-8 text-center text-sm text-zinc-500">
               No hay imágenes con este filtro.
+              {categoria === "foto" &&
+                cuentas.grafico > 0 &&
+                " Prueba la pestaña Gráficos o Todas."}
               {datos.descartadas > 0 &&
                 ` (${datos.descartadas} candidatas no respondieron a la sonda.)`}
             </div>
