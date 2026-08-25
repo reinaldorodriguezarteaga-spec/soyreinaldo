@@ -590,8 +590,8 @@ export function PartidosView({
                 <Image
                   src={fx.teams.home.logo}
                   alt=""
-                  width={30}
-                  height={30}
+                  width={44}
+                  height={44}
                   unoptimized
                 />
               </span>
@@ -627,8 +627,8 @@ export function PartidosView({
                 <Image
                   src={fx.teams.away.logo}
                   alt=""
-                  width={30}
-                  height={30}
+                  width={44}
+                  height={44}
                   unoptimized
                 />
               </span>

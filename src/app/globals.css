@@ -963,7 +963,12 @@ img {
 /* Escudo de club, no bandera de selección: cuadrado, más grande y sin la
    cajita con borde, que lo encogía y lo hacía difícil de reconocer. */
 .team .flag--crest {
-  width: 38px; height: 38px; border: 0; background: transparent; border-radius: 0;
+  /* 48 px: la columna del equipo mide ~245 y el contenido ocupaba 141, así
+     que sobraba espacio y el escudo se veía pequeño. Con 48 el nombre más
+     largo de LaLiga ("Deportivo La Coruna", 152 px) sigue entrando sin
+     cortarse. Más grande empezaría a comerse el nombre, que es el dato
+     principal de la tarjeta. */
+  width: 48px; height: 48px; border: 0; background: transparent; border-radius: 0;
 }
 /* La barra de probabilidades ocupa la tarjeta entera (`.match` es una rejilla
    de tres columnas y, sin esto, caía dentro de la primera). */
