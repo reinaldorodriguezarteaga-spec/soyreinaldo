@@ -1,262 +1,88 @@
 @AGENTS.md
 
-# Memoria del proyecto — soyreinaldo.com
+# soyreinaldo.com
 
-Web personal de **Reinaldo Rodríguez (@SoyReinaldoR)**, creador de contenido
-culé (FC Barcelona). Combina marca personal, una **quiniela del Mundial 2026**,
-marcadores de fútbol en vivo, asesorías 1:1 de pago, donaciones y un media kit.
+Web de **Reinaldo Rodríguez (@SoyReinaldoR)**, creador de contenido culé.
+App de fútbol multi-liga (estilo FotMob): marcadores en vivo, calendario,
+clasificaciones y fichas de 10 competiciones, más quiniela, análisis propios,
+asesorías de pago y donaciones.
 
-Este archivo es la memoria de arranque: léelo entero antes de tocar nada. Está
-pensado para retomar el trabajo desde cualquier PC (incluida "claude win").
+> **El historial (incidentes, decisiones, estado de cada cosa) NO está aquí**:
+> vive en la memoria del proyecto, que ya se carga sola en cada sesión. Este
+> archivo es solo lo operativo — lo que hace falta para no romper nada.
 
 ## Stack
 
-- **Next.js 16.2.4** (App Router) + **React 19.2.4** + TypeScript.
-  ⚠️ Esta versión de Next tiene breaking changes: lee `node_modules/next/dist/docs/`
-  antes de escribir código (ver `AGENTS.md`).
-- **Tailwind CSS v4** (vía `@tailwindcss/postcss`). Estilos globales en
-  `src/app/globals.css`; mucha UI usa clases propias (`.hero`, `.card`, …).
-- **Supabase** (Postgres + Auth + RLS) — `@supabase/ssr` y `@supabase/supabase-js`.
-- **Stripe** (`stripe` v22) — donaciones y asesorías.
-- **Resend** (`resend` v6) — emails (recordatorios, SMTP de Supabase).
-- **Leaflet** / `react-leaflet` — mapa de estadios.
-- **API-Football** (api-sports.io v3) — fixtures, marcadores en vivo, estadísticas.
-- Hospedaje: **Vercel** (plan gratuito → cuidado con CPU; ver "Notas de coste").
-- Fuentes Google: Saira Condensed, Archivo, Space Mono.
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind v4 ·
+Supabase (Postgres + Auth + RLS) · Stripe · Resend · API-Football (api-sports.io v3) ·
+Vercel.
+
+⚠️ Next 16 tiene breaking changes respecto a lo que "sabes" de Next: lee
+`node_modules/next/dist/docs/` antes de escribir código (ver `AGENTS.md`).
 
 ## Comandos
 
 ```bash
 npm run dev      # desarrollo (localhost:3000)
 npm run build    # build producción
-npm run start    # servir build
-npm run lint     # eslint
+npm run lint     # eslint — el proyecto está a CERO avisos, mantenlo así
+npm test         # vitest
 
-# SQL contra Supabase (lee DATABASE_URL de .env.local, usa Session Pooler):
-node scripts/db.mjs file supabase/migrations/0XX-...sql
+# SQL contra Supabase (lee DATABASE_URL de .env.local):
+node scripts/db.mjs file supabase/migrations/0XX-....sql
 node scripts/db.mjs query "SELECT ..."
 ```
-
-## Variables de entorno
-
-Copiar `.env.local.example` → `.env.local`. Variables usadas en el código:
-
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — cliente Supabase.
-- `NEXT_PUBLIC_SITE_URL` — base para magic-links/redirects (`https://soyreinaldo.com` en prod).
-- `SUPABASE_SERVICE_ROLE_KEY` — **secreto**; cron de recordatorios y operaciones admin.
-- `DATABASE_URL` — Postgres directo (Session Pooler) para `scripts/db.mjs`.
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY` — Stripe (test en dev, LIVE en prod).
-- `STRIPE_WEBHOOK_SECRET` — verificación del webhook de Stripe.
-- `STRIPE_ASESORIA_PRICE_ID` — price de la asesoría 1:1.
-- `RESEND_API_KEY` — envío de emails.
-- `CRON_SECRET` — header que Vercel manda al cron de recordatorios.
-- `API_FOOTBALL_KEY` — **secreto**, solo server-side; key de api-sports.io.
-  (Ojo: no está en `.env.local.example`, añadirla a mano.)
 
 ## Estructura
 
 ```
-src/app/            # rutas (App Router)
-  api/              # route handlers (ver abajo)
-  admin/            # panel admin (ligas, partidos, resultado-final, seguidores)
-  quiniela/         # quiniela: grupos, bracket, picks, puntos, ranking, jugador
-  mundial/          # hub Mundial 2026 + detalle de partido en vivo
-  asesorias/        # landing + agendar (tras pago Stripe)
-  ...               # login, signup, perfil, redes, camisetas, estadios, media-kit,
-                    # contacto, privacidad, bot, donaciones/*, eliminar-datos, etc.
-src/components/     # Header, Footer, MatchWidget, StadiumMap, DonationBlock, ...
+src/app/          rutas (App Router) + api/*/route.ts
+src/components/   UI compartida
 src/lib/
-  supabase/         # client.ts, server.ts, middleware.ts
-  sports/           # api-football.ts, live-standings.ts, widget-data.ts
-  quiniela/         # phases.ts, bracket-layout.ts, venues.ts, reminder-email.ts
-  stripe/server.ts
-  social-stats.ts
-src/data/stadiums.ts
-supabase/           # schema.sql, quiniela.sql, donations.sql, seed-mundial-2026.sql,
-                    # migrations/001..024
-scripts/            # db.mjs, backfill-fixture-ids.mjs, generate-mundial-seed.mjs
-docs/               # asesorias-cuestionario.md (borrador cuestionario pre-asesoría)
-public/branding/    # retrato, avatar, camisetas, etc.
+  sports/         api-football.ts (cliente + caché), competitions.ts (config
+                  declarativa por competición), widget-data.ts (portada),
+                  sports-cache.ts (caché precalculada por cron)
+  quiniela-liga/  scoring.ts, baremo.ts, leagues.ts
+  analisis/       queries.ts, markdown.ts
+  supabase/       client.ts, server.ts, middleware.ts
+supabase/migrations/   numeradas; la última manda
+scripts/db.mjs    ejecutar SQL
 ```
 
-### Rutas API (`src/app/api/*/route.ts`)
-- `sports/widget` — datos del marcador de portada (`MatchWidget`).
-- `sports/ingest` — ingesta de fixtures de API-Football.
-- `sports/match-events` — eventos (goles, tarjetas) por partido.
-- `sports/player` — ficha/estadísticas de jugador.
-- `donations/checkout` — crea sesión de Stripe Checkout para donar.
-- `asesorias/checkout` — Stripe Checkout para la asesoría 1:1.
-- `stripe/webhook` — recibe eventos de Stripe (verifica `STRIPE_WEBHOOK_SECRET`).
-- `cron/reminders` — cron diario (Vercel, **21:00 UTC**, ver `vercel.json`); manda
-  emails de recordatorio vía Resend. Protegido por `CRON_SECRET`.
-- `health` — healthcheck.
+## Reglas que evitan incidentes ya vividos
 
-## Base de datos (Supabase / Postgres)
-
-Orden de aplicación: `schema.sql` → `quiniela.sql` → `donations.sql` → `migrations/001..024`.
-Tablas principales:
-- `profiles` (trigger `handle_new_user` al registrarse), con username y phone.
-- `leagues`, `league_members` (RLS; `join_league_by_code()`, `normalize_league_code()`).
-- `teams`, `matches` (enum `match_phase`), `predictions`, `user_picks`,
-  `pichichi_candidates`, `tournament_results`.
-- `donations`, y tabla de consultas/asesorías (migración 018).
-- Helpers SQL: `is_admin()`, `tournament_started()`.
-- Migraciones notables: RLS de miembros, ajustes de puntos, picks libres,
-  leaderboard, bracket resolution, recordatorios, estado en vivo de partidos,
-  hardening de pagos, bloqueo de predicciones (30 min antes), tercer lugar = 3 pts.
-
-⚠️ RLS activo en casi todo. Para correr SQL usa `scripts/db.mjs`. Migraciones
-nuevas: numéralas siguiendo la serie (`025-...sql`) y aplícalas con `db.mjs file`.
-
-## Dominios funcionales clave
-
-- **Quiniela Mundial 2026**: ligas privadas (código de invitación `/unirse/[code]`),
-  predicciones por partido, picks extra (pichichi, etc.), puntos y ranking por liga.
-  Las predicciones se **bloquean 30 min antes** del partido (migración 024).
-- **Mundial / marcadores en vivo**: `/mundial` y `/mundial/partido/[id]` con
-  auto-refresco. Datos de API-Football cacheados con `next.revalidate` para no
-  quemar quota. Constantes en `src/lib/sports/api-football.ts`
-  (`WORLD_CUP`: leagueId 1, season 2026, 11 jun–19 jul 2026; Barça=529, Madrid=541).
-- **Asesorías 1:1**: pago Stripe → acceso a `/asesorias/agendar`. Cuestionario
-  pre-asesoría en `docs/asesorias-cuestionario.md` (aún borrador, no implementado).
-- **Donaciones**: "invítame a un café" vía Stripe Checkout (`DonationBlock`).
-- **Redes / Media kit / Camisetas**: marca personal; código de descuento `REY15`.
-- **Admin**: gestiona ligas, resultados de partidos, resultado final del torneo y
-  estadísticas de seguidores (alimentan `getSocialStats()` de la portada).
-
-## Convenciones
-
-- Idioma del producto y de los commits: **español**.
-- ⚠️ **Caché en Next 16:** `fetch` + `next.revalidate` NO cachea → usar `unstable_cache` SIEMPRE para cachear llamadas a API-Football (lección del PR #27).
-- Server Components por defecto; Stripe/Supabase service-role/API-Football solo
-  server-side — nunca exponer secretos al cliente.
-- `next.config.ts`: redirect permanente `/laliga → /mundial` (LaLiga se reconvirtió
-  en el hub del Mundial).
-- Auth por Supabase (magic link / OAuth); middleware en `src/lib/supabase/middleware.ts`.
-
-## Notas de coste (Vercel plan gratis)
-
-Hay commits recientes que **suben intervalos de refresco en vivo** y evitan
-llamadas extra para reducir CPU. Al tocar refresco en vivo o ingestas, mantén
-los intervalos altos y reutiliza caché; no reintroduzcas polling agresivo.
+- **Caché (Next 16)**: `fetch` + `next.revalidate` NO cachea. Usa
+  `unstable_cache` SIEMPRE para llamadas a API-Football, con el try/catch
+  DENTRO (si no, un fallo dispara tormenta de reintentos).
+- **Cuota de API-Football**: han pasado tres incidentes por consumo
+  descontrolado. Al tocar refresco en vivo o ingestas: intervalos altos,
+  reutilizar caché, nunca polling agresivo. Rutas caras protegidas por el
+  escudo anti-scraping de `src/middleware.ts` (UA + desafío de cookie + rate
+  limit por IP) — por eso `curl` sin User-Agent de navegador recibe un 302.
+- **IDs de API-Football**: verifícalos contra la API real antes de escribirlos
+  en el código. Nunca hardcodees códigos de liga de la BD: son renombrables,
+  usa el id.
+- **RLS activa en casi todo.** Migraciones nuevas: siguiente número de la
+  serie, aplicadas con `db.mjs file`.
+- **La puntuación de la quiniela sale de `lib/quiniela-liga/scoring.ts`** con
+  el baremo de la liga (cada liga tiene el suyo). No la reimplementes en un
+  componente: pasó, y las tarjetas mentían mientras la clasificación acertaba.
+- Server Components por defecto. Stripe, service-role y API-Football, solo
+  en servidor.
+- Producto y commits, en **español**.
 
 ## Despliegue
 
-- Push a la rama → PR → merge a `main` → Vercel despliega.
-- Cron de recordatorios configurado en `vercel.json`.
-- Rama de trabajo actual del agente: `claude/youthful-babbage-u80jvw`.
-- Flujo de trabajo del agente: rama → PR **draft** → esperar preview de Vercel →
-  el usuario dice "merge" → squash-merge a `main`. Los PR se mergean con **squash**,
-  así que al seguir trabajando hay que **rebasar la rama sobre `origin/main`**
-  (`git rebase --onto origin/main <prev-head>`) para no arrastrar commits ya
-  mergeados y evitar conflictos.
+Rama → PR → merge a `main` cuando el dueño lo diga → **Vercel despliega solo**.
+Plan B manual: `npx --no-install vercel deploy --prod --yes` (CLI ya
+autenticado). ⚠️ **UN PR por sesión con muchos commits** — GitHub suspendió la
+cuenta en agosto por abrir PRs demasiado seguidos.
 
----
+## Herramientas de contexto
 
-# Bitácora — sesión julio 2026 (features + incidente de quota)
-
-## Features añadidas esta sesión (todas en prod)
-
-- **Ranking de liga con pestañas** (`/quiniela/ranking/[liga]`, `?vista=`):
-  - **Clasificación** (tabla de siempre).
-  - **👀 Selecciones** (`?vista=selecciones`, `selecciones.tsx`): por cada partido
-    en vivo/jugado, el pick de **cada miembro** + puntos provisionales. Cada partido
-    es **desplegable** (`<details>`; abiertos los en vivo). Auto-refresco con
-    `LiveRefresher`. RLS: solo se ven picks de partidos ya empezados.
-  - **📋 Mis predicciones** (`?vista=mias`, `mis-predicciones.tsx`): lista personal,
-    **solo partidos jugados/en vivo**, del más reciente al más antiguo, con puntos.
-- **Detalle de partido con pestañas** (`/mundial/partido/[id]`, `match-tabs.tsx`):
-  **Estadísticas** + **Cara a cara** (H2H). H2H vía `getHeadToHead` (API `/fixtures/headtohead`,
-  caché 1 día) servido bajo demanda por `/api/sports/h2h`. Falta **Noticias**
-  (acordado: Google News RSS, gratis) — pendiente.
-- **Ficha de equipo** (`/mundial/equipo/[id]`, `getTeamFixtures`): historial de
-  partidos. Los equipos son **tappables** desde el detalle, grupos, tablas de stats,
-  próximos, etc.
-- **Cuenta atrás** en partidos por jugarse (`countdown.tsx`): al tocar el partido
-  (portada, Próximos, Marcador en vivo) se abre el detalle con temporizador.
-- **Botón físico "← Atrás"** global (`BackButton.tsx`, sticky bajo el header, en
-  todas las páginas menos `/`) + botón **"🏆 Quiniela"** al lado en páginas de
-  quiniela/mundial.
-- **Gestos táctiles** (`Gestures.tsx`, montado en `layout.tsx`): en dispositivos
-  táctiles (`pointer: coarse`) — deslizar borde izq→der = atrás, der→izq = adelante,
-  tirar hacia abajo arriba del todo = recargar. En navegador el gesto del borde lo
-  intercepta el nativo; dentro de la app instalada actúa el nuestro.
-
-## Marcadores en vivo — cómo funciona (importante)
-
-- La **quiniela** (Selecciones/Mis predicciones) lee marcador/estado de la tabla
-  `matches` de Supabase (NO de API-Football directo). Esa tabla la actualiza la
-  ingesta.
-- **Ingesta** (`/api/sports/ingest`): la dispara un **cron EXTERNO (cron-job.org)**
-  cada minuto con `Authorization: Bearer CRON_SECRET` (NO está en `vercel.json`).
-  Selecciona partidos con la RPC `matches_pending_ingest` (requiere
-  `api_football_fixture_id IS NOT NULL` y ventana de tiempo). Hace 1 llamada a
-  API-Football por tick (`/fixtures?ids=...`, `no-store`).
-- ⚠️ **Los partidos de eliminatoria nacen SIN `api_football_fixture_id`** (eran
-  placeholders hasta resolver el bracket). Sin ese id, la ingesta NO los ve → sin
-  marcador en vivo ni registro del resultado. La ingesta ahora **se auto-repara**
-  (`backfillMissingFixtureIds`): busca partidos con equipos asignados pero sin id
-  (ventana [-6h,+26h]) y lo rellena casando por hora/equipo local contra
-  `/fixtures?league=1&season=2026` (misma lógica que `scripts/backfill-fixture-ids.mjs`).
-  Si un cruce futuro se queda sin datos en vivo, revisar esto primero.
-
-## Incidente de quota API-Football (5 jul 2026) — LEER
-
-- **Qué pasó:** la web se quedó **sin datos del Mundial** (todo vacío) porque
-  API-Football llegó al **Plan Limit** (~7.500 del plan Pro). El tráfico web era
-  bajo y **no había bot** en las páginas nuevas (verificado en logs de Vercel), así
-  que fue **consumo acumulado del torneo**, no un bug ni ataque.
-- **Solución del usuario:** subió a **plan Ultra (75.000/día)**. Resuelto.
-- **Fallback a BD** (`wc-fallback.ts` + `mundial-fallback.tsx`): si API-Football
-  devuelve TODO vacío, `/mundial` muestra calendario/resultados/grupos desde la BD
-  (con banderas, sin escudos ni stats en vivo) en vez de quedarse en blanco. Se
-  activa solo cuando la API falla.
-- **Instrumentación** (`api-football.ts` `get()` y el backfill de la ingesta):
-  cada llamada loguea `[apif] <endpoint> status=<n> remaining=<quota>` en los
-  runtime logs de Vercel. Para investigar consumo: **Vercel → Runtime Logs →
-  buscar `[apif]`**.
-- **PISTA abierta (por confirmar):** en la 1ª lectura de logs, la **portada `/`**
-  hace 2 llamadas a API-Football por hit (`/fixtures?...from-to` y `?next=6`, vía
-  `getWidgetData`/MatchWidget) y `remaining` **baja en cada hit** → esas llamadas
-  **NO parecen cachearse** como deberían. Además hay **peticiones `HEAD /`** (bots/
-  monitores) que también las disparan. Sospecha: un bot/monitor pegando a `/` quema
-  quota. **Pendiente:** confirmar por qué no cachea `getWorldCupFixturesWindow`
-  (revalidate 60) en la portada y, si procede, cachear/gating de bots.
-- **Seguimiento acordado:** revisar `[apif]` a las ~2h y **mañana 10:00** para ver
-  si a la franja del pico de ayer (≈04-06h) se repite. (Los recordatorios por cron
-  son solo de esta sesión; si se pierde la sesión, retomar esto manualmente.)
-
-## Operaciones manuales en BD hechas esta sesión (para el registro)
-
-- Metí a Conos (`CONOS2026`, id `95641710-...`) a 8 usuarios que habían pronosticado
-  sin unirse a ninguna liga (huérfanos): freibyse, pedromagirena, andreslameda12,
-  odnamra1, manuelbideau95, josesitobaut2007, leimanazael1991, unitedjairo29.
-  **Causa raíz sin arreglar:** la app deja pronosticar sin liga → quedan huérfanos.
-- **Marcos87** (`garciamarcos3087@gmail.com`) → metido a **Intentos de Padel**
-  (`4a2ceaef-...`). Tenía cuenta duplicada `marcos87garcia87@gmail.com` ("Marcos"):
-  **dupliqué todo** (predicciones+picks+ligas) al de Marcos87 y **borré** la antigua.
-- `ransesd24` → inserté a mano su pick Canadá 1–Marruecos 2 (partido 90) saltando el
-  bloqueo de 30 min (por service-role).
-- Backfill manual de `api_football_fixture_id` de los 8 octavos (ids 89–96).
-
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships. It's built from AST + local-LLM extraction of the **code only** — nodes are entity labels (file/function/concept names) with typed relations (`references`, `calls`, etc.), not descriptions or prose. Good for structural code questions; useless for narrative/historical ones (it has no field to hold a sentence of context).
-
-Rules:
-- For codebase/structural questions ("qué llama a X", "qué depende de Y", "cómo se relacionan A y B"), first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- **Do NOT use graphify for memory/history/incident questions** ("qué pasó con...", "por qué se decidió...", operaciones manuales pasadas, bitácora). Use `memsearch query "<pregunta>"` instead (see below) — the graph does not and cannot contain that narrative content (tried once, confirmed empty of prose; see incident 14-jul-2026).
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-- graphify-out/ is code-only (memory was tried and reverted 14-jul-2026 — see bitácora below). Don't re-merge memory .md files into it; the schema can't store the content that would make it useful.
-
-## memsearch (memoria semántica — MCP propio)
-
-Herramienta propia convertida en **paquete + servidor MCP**: repo local `~/Documents/Claude/memsearch-mcp` (instalado vía `uv tool install`, ejecutables `memsearch` y `memsearch-mcp` en `~/.local/bin`). Registrado en Claude Code a nivel usuario como servidor MCP `memsearch` (tools `memory_search`, `memory_briefing`, `memory_list_projects`, `memory_reindex`, `memory_graph`). Embeddings locales (Ollama, `nomic-embed-text`) de cada bullet/párrafo de `~/.claude/projects/*/memory/*.md` — a diferencia de graphify, devuelve el texto narrativo real.
-
-- **Al arrancar sesión**: llamar `memory_briefing` (MCP) en vez de cargar MEMORY.md completos — resumen multi-proyecto en ~300-800 tokens.
-- **Preguntas de memoria/historial/incidentes**: `memory_search` (MCP) o `memsearch query "<pregunta>"` (CLI). Filtrar con `project` / `--project` (ej. `soyreinaldo`). Reindexa solo archivos cambiados (hash) automáticamente.
-- **Visualización estilo graphify**: `memory_graph` (MCP) o `memsearch graph --open` → HTML interactivo en `~/.claude/memsearch/memory-graph.html` (proyectos→archivos→recuerdos, clic muestra el texto completo, edges punteados = similitud semántica).
-- Cache por carpeta en `<memory-dir>/.memsearch_cache.json` (fuera de cualquier repo git).
-- Requiere Ollama corriendo (`brew services start ollama`) y `nomic-embed-text` (~274MB, instalado 14-jul-2026).
+- **Memoria** (`~/.claude/projects/.../memory/`): el índice se carga solo; los
+  archivos de tema se leen a demanda. Ahí va todo lo histórico.
+- **graphify** (`graphify-out/`): grafo del código, OPCIONAL. Útil solo para
+  preguntas de arquitectura ("qué depende de qué"). Para buscar dónde se usa
+  algo, grep es más barato y más preciso. Si lo usas, primero
+  `graphify update .` — se queda obsoleto enseguida.
