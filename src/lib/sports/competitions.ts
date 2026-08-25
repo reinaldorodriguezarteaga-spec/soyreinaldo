@@ -38,6 +38,13 @@ export type Competition = {
   archivedSeasons?: number[];
   /** País para agrupar el desplegable "Competiciones" del nav. */
   region: CompetitionRegion;
+  /** Web oficial de quien organiza la competición. Va en los datos
+   * estructurados de cada partido (`organizer.url`) — Search Console lo pidió
+   * el 25-ago. Es la web del organizador DE VERDAD, no una página nuestra:
+   * decir que la URL de LaLiga es soyreinaldo.com sería falso. Todas
+   * comprobadas abriéndolas (uefa.com y rfef.es bloquean peticiones
+   * automáticas, así que se verificaron en un navegador real). */
+  officialUrl?: string;
   /** Si está, en el CALENDARIO DE PORTADA solo salen los partidos donde
    * juegue uno de estos equipos. El hub /liga/[slug] no se toca: allí se ve
    * la competición entera. Sirve para las ligas que están por sus equipos
@@ -75,6 +82,7 @@ export const LALIGA: Competition = {
   standingsMode: "table",
   archivedSeasons: [2025],
   region: "España",
+  officialUrl: "https://www.laliga.com",
 };
 
 /**
@@ -109,6 +117,7 @@ export const CHAMPIONS_LEAGUE: Competition = {
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
   region: "Internacional",
+  officialUrl: "https://www.uefa.com/uefachampionsleague/",
 };
 
 export const PREMIER_LEAGUE: Competition = {
@@ -122,6 +131,7 @@ export const PREMIER_LEAGUE: Competition = {
   standingsMode: "table",
   archivedSeasons: [2025],
   region: "Inglaterra",
+  officialUrl: "https://www.premierleague.com",
 };
 
 /**
@@ -157,6 +167,7 @@ export const FA_CUP: Competition = {
   koStructure: CUP_KO_STRUCTURE,
   archivedSeasons: [2024],
   region: "Inglaterra",
+  officialUrl: "https://www.thefa.com/competitions/thefacup",
 };
 
 export const COPA_DEL_REY: Competition = {
@@ -168,6 +179,7 @@ export const COPA_DEL_REY: Competition = {
   koStructure: CUP_KO_STRUCTURE,
   archivedSeasons: [2024],
   region: "España",
+  officialUrl: "https://www.rfef.es",
 };
 
 /**
@@ -190,6 +202,7 @@ export const SUPERCOPA: Competition = {
   koStructure: SUPERCOPA_KO_STRUCTURE,
   archivedSeasons: [2025],
   region: "España",
+  officialUrl: "https://www.rfef.es",
 };
 
 /**
@@ -207,6 +220,7 @@ export const EUROPA_LEAGUE: Competition = {
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
   region: "Internacional",
+  officialUrl: "https://www.uefa.com/uefaeuropaleague/",
 };
 
 /**
@@ -226,6 +240,7 @@ export const CONFERENCE_LEAGUE: Competition = {
   koStructure: CHAMPIONS_LEAGUE_KO_STRUCTURE,
   archivedSeasons: [2025],
   region: "Internacional",
+  officialUrl: "https://www.uefa.com/uefaconferenceleague/",
 };
 
 /**
@@ -240,6 +255,7 @@ export const SERIE_A: Competition = {
   standingsMode: "table",
   archivedSeasons: [2025],
   region: "Italia",
+  officialUrl: "https://www.legaseriea.it",
 };
 
 /**
@@ -259,6 +275,7 @@ export const LIGUE_1: Competition = {
   standingsMode: "table",
   archivedSeasons: [2025],
   region: "Francia",
+  officialUrl: "https://www.ligue1.com",
   calendarOnlyTeamIds: [85, 80],
 };
 
