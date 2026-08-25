@@ -120,6 +120,32 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // /admin se corta AQUÍ, no en el layout: Next renderiza layout y página en
+  // paralelo, así que el redirect() del layout dispara cuando el HTML de la
+  // página ya está saliendo por el stream (status 200 + meta refresh). Un
+  // curl anónimo se llevaba el payload RSC entero de cualquier página admin;
+  // la RLS limitaba el daño, pero el corte real tiene que ser previo al render.
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.is_admin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   const isProtected =
     PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix)) &&
     !PUBLIC_EXCEPTIONS.includes(pathname);
