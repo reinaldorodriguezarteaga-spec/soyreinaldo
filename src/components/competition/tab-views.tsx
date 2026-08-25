@@ -185,7 +185,10 @@ export function ProbBar({
   const total = pred.home + pred.draw + pred.away || 1;
   const w = (v: number) => `${(v / total) * 100}%`;
   return (
-    <div style={{ marginTop: 8 }} title="Probabilidad estimada (API-Football)">
+    // `probbar` la hace ocupar las tres columnas de `.match`: sin eso caía
+    // dentro de la primera y se veía pegada a la izquierda, con los
+    // porcentajes apretados en media tarjeta.
+    <div className="probbar" style={{ marginTop: 8 }} title="Probabilidad estimada (API-Football)">
       <div
         style={{
           display: "flex",
@@ -248,7 +251,7 @@ export function LiveMatchCard({
 
   const meta = (
     <div className="match__meta">
-      <span className="match__grp">{fx.league.round}</span>
+      <span className="match__grp">{roundMeta(fx.league.round).label}</span>
       {live ? (
         <span className="badge badge--danger">
           <span className="livepulse" />
@@ -475,6 +478,45 @@ export function EnVivoView({
 
 /* ---------- Próximos partidos ---------- */
 
+const TZ_MADRID = "Europe/Madrid";
+
+/** Clave de día (yyyy-mm-dd en hora española) para agrupar. */
+function claveDeDia(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ_MADRID,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
+/** "Hoy", "Mañana" o "Vie 28 ago" — el mismo criterio que el calendario de
+ * la portada, para que la web hable igual en todas partes. */
+function etiquetaDeDia(clave: string): string {
+  const hoy = claveDeDia(new Date().toISOString());
+  const manana = claveDeDia(new Date(Date.now() + 86_400_000).toISOString());
+  if (clave === hoy) return "Hoy";
+  if (clave === manana) return "Mañana";
+  // Mediodía UTC: cae siempre en el mismo día español, sin saltos de huso.
+  const d = new Date(`${clave}T12:00:00Z`);
+  const f = (opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("es-ES", { timeZone: TZ_MADRID, ...opts }).format(d);
+  const dia = f({ weekday: "short" });
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${f({ day: "numeric" })} ${f({ month: "short" })}`;
+}
+
+/** Agrupa los partidos por día, respetando el orden en que vienen. */
+function agrupaPorDia(fixtures: Fixture[]): { clave: string; etiqueta: string; fixtures: Fixture[] }[] {
+  const grupos: { clave: string; etiqueta: string; fixtures: Fixture[] }[] = [];
+  for (const fx of fixtures) {
+    const clave = claveDeDia(fx.fixture.date);
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.clave === clave) ultimo.fixtures.push(fx);
+    else grupos.push({ clave, etiqueta: etiquetaDeDia(clave), fixtures: [fx] });
+  }
+  return grupos;
+}
+
 export function PartidosView({
   competition,
   fixtures,
@@ -508,16 +550,24 @@ export function PartidosView({
   if (fixtures.length === 0) {
     return <Empty>No hay partidos próximos en el calendario ahora mismo.</Empty>;
   }
+  // Agrupados por día: la lista corrida costaba de leer, sobre todo con la
+  // jornada repartida entre miércoles y sábado (pedido del dueño).
+  const porDia = agrupaPorDia(fixtures);
+
   return (
-    <div className="grid2">
-      {fixtures.map((fx) => {
+    <div className="space-y-3">
+      {porDia.map((dia) => (
+        <div key={dia.clave}>
+          <p className="daysep">{dia.etiqueta}</p>
+          <div className="grid2">
+      {dia.fixtures.map((fx) => {
         const showScore = isLive(fx) || isFinal(fx);
         const live = isLive(fx);
         const pred = !showScore ? preds[fx.fixture.id] : undefined;
         return (
           <div className="match" key={fx.fixture.id}>
             <div className="match__meta">
-              <span className="match__grp">{fx.league.round}</span>
+              <span className="match__grp">{roundMeta(fx.league.round).label}</span>
               {live ? (
                 <span className="badge badge--danger">
                   <span className="livepulse" />
@@ -536,12 +586,12 @@ export function PartidosView({
               className="team"
               style={{ color: "inherit", textDecoration: "none" }}
             >
-              <span className="flag">
+              <span className="flag flag--crest">
                 <Image
                   src={fx.teams.home.logo}
                   alt=""
-                  width={20}
-                  height={20}
+                  width={44}
+                  height={44}
                   unoptimized
                 />
               </span>
@@ -573,12 +623,12 @@ export function PartidosView({
               style={{ color: "inherit", textDecoration: "none" }}
             >
               <span className="tn">{fx.teams.away.name}</span>
-              <span className="flag">
+              <span className="flag flag--crest">
                 <Image
                   src={fx.teams.away.logo}
                   alt=""
-                  width={20}
-                  height={20}
+                  width={44}
+                  height={44}
                   unoptimized
                 />
               </span>
@@ -597,6 +647,9 @@ export function PartidosView({
           </div>
         );
       })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -737,7 +790,7 @@ export function FinishedCard({
       style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
     >
       <div className="match__meta">
-        <span className="match__grp">{fx.league.round}</span>
+        <span className="match__grp">{roundMeta(fx.league.round).label}</span>
         <span className="badge">Final</span>
       </div>
       <div className="team">

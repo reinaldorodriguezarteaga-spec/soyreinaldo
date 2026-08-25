@@ -960,6 +960,38 @@ img {
   width: 34px; height: 24px; border-radius: 3px; background: var(--surface-2);
   border: 1px solid var(--line); flex: none; display: grid; place-items: center; font-size: 1rem;
 }
+/* Escudo de club, no bandera de selección: cuadrado, más grande y sin la
+   cajita con borde, que lo encogía y lo hacía difícil de reconocer. */
+.team .flag--crest {
+  /* 48 px: la columna del equipo mide ~245 y el contenido ocupaba 141, así
+     que sobraba espacio y el escudo se veía pequeño. Con 48 el nombre más
+     largo de LaLiga ("Deportivo La Coruna", 152 px) sigue entrando sin
+     cortarse. Más grande empezaría a comerse el nombre, que es el dato
+     principal de la tarjeta. */
+  width: 48px; height: 48px; border: 0; background: transparent; border-radius: 0;
+}
+/* La barra de probabilidades ocupa la tarjeta entera (`.match` es una rejilla
+   de tres columnas y, sin esto, caía dentro de la primera). */
+.match > .probbar { grid-column: 1 / -1; }
+
+/* Cabecera de día en las listas de partidos ("Hoy", "Sáb 29 ago"). */
+.daysep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+  font-family: var(--font-mono-stack);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.daysep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
 .team .tn { font-family: var(--font-display-stack); font-weight: 800; text-transform: uppercase; font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .score { display: flex; align-items: center; gap: 8px; }
 .score input {
