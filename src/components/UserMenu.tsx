@@ -6,13 +6,21 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/login/actions";
 import type { User } from "@supabase/supabase-js";
 
-const ADMIN_LINKS = [
+const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
   // Escribir va primero: es lo que más se usa y lo único que no puede copiar
   // la competencia.
   { href: "/admin/analisis", label: "Escribir análisis" },
   { href: "/admin/ligas", label: "Ligas" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
+  { href: "/admin/imagenes", label: "Imágenes (extractor)" },
+  // Apps hermanas fuera de esta web, aquí solo como acceso rápido del dueño.
+  { href: "https://chat.soyreinaldo.com", label: "Multichat (directos)", externo: true },
+  {
+    href: "https://chat.soyreinaldo.com/marcador/control",
+    label: "Marcador en vivo (control)",
+    externo: true,
+  },
 ];
 
 export default function UserMenu({
@@ -144,16 +152,29 @@ export default function UserMenu({
               </button>
               {adminOpen && (
                 <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
-                  {ADMIN_LINKS.map((a) => (
-                    <Link
-                      key={a.href}
-                      href={a.href}
-                      onClick={closeMenu}
-                      className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
-                    >
-                      {a.label}
-                    </Link>
-                  ))}
+                  {ADMIN_LINKS.map((a) =>
+                    a.externo ? (
+                      <a
+                        key={a.href}
+                        href={a.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={closeMenu}
+                        className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+                      >
+                        {a.label} ↗
+                      </a>
+                    ) : (
+                      <Link
+                        key={a.href}
+                        href={a.href}
+                        onClick={closeMenu}
+                        className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+                      >
+                        {a.label}
+                      </Link>
+                    ),
+                  )}
                 </div>
               )}
             </>
