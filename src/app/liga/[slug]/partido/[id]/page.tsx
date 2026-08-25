@@ -393,7 +393,7 @@ export default async function LigaPartidoPage({
 
           <div className="panel" style={{ marginTop: 16, padding: "24px 20px" }}>
             <div className="match__meta" style={{ marginBottom: 14 }}>
-              <span className="match__grp">{fx.league.round}</span>
+              <span className="match__grp">{roundLabelEs(fx.league.round, competition.name)}</span>
               {live ? (
                 <span className="badge badge--danger">
                   <span className="livepulse" />
