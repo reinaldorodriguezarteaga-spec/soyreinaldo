@@ -849,11 +849,34 @@ export function StandingsTableView({
   standings: StandingRow[];
 }) {
   const base = basePath(competition);
+  // "Tabla completa" añade columnas que YA vienen en la respuesta de
+  // /standings y hasta ahora tirábamos: goles a favor y en contra, y el
+  // desglose de local y visitante. Cero llamadas extra a la API.
+  const [completa, setCompleta] = useState(false);
+
   if (standings.length === 0) {
     return <Empty>La tabla aparecerá en cuanto arranque la temporada.</Empty>;
   }
+
+  const dim = { color: "var(--text-dim)" } as const;
+
   return (
-    <div className="panel" style={{ overflowX: "auto" }}>
+    <>
+      <div className="tablabar">
+        <span className="tablabar__t">
+          {completa ? "Tabla completa" : "Tabla"}
+        </span>
+        <button
+          type="button"
+          className="backbtn"
+          onClick={() => setCompleta((v) => !v)}
+          aria-expanded={completa}
+        >
+          {completa ? "Ver menos ←" : "Tabla completa →"}
+        </button>
+      </div>
+
+      <div className="panel" style={{ overflowX: "auto" }}>
       <table className="board">
         <thead>
           <tr>
@@ -863,6 +886,18 @@ export function StandingsTableView({
             <th className="hidden text-right sm:table-cell">G</th>
             <th className="hidden text-right sm:table-cell">E</th>
             <th className="hidden text-right sm:table-cell">P</th>
+            {completa && (
+              <>
+                <th className="text-right" title="Goles a favor">GF</th>
+                <th className="text-right" title="Goles en contra">GC</th>
+                <th className="text-right" title="Como local: ganados-empatados-perdidos">
+                  Casa
+                </th>
+                <th className="text-right" title="Como visitante: ganados-empatados-perdidos">
+                  Fuera
+                </th>
+              </>
+            )}
             <th className="text-right">DG</th>
             <th className="text-right">Pts</th>
           </tr>
@@ -905,6 +940,26 @@ export function StandingsTableView({
               >
                 {r.all.lose}
               </td>
+              {completa && (
+                <>
+                  <td className="text-right tabular-nums" style={dim}>
+                    {r.all.goals.for}
+                  </td>
+                  <td className="text-right tabular-nums" style={dim}>
+                    {r.all.goals.against}
+                  </td>
+                  <td className="text-right tabular-nums" style={dim}>
+                    {r.home
+                      ? `${r.home.win}-${r.home.draw}-${r.home.lose}`
+                      : "—"}
+                  </td>
+                  <td className="text-right tabular-nums" style={dim}>
+                    {r.away
+                      ? `${r.away.win}-${r.away.draw}-${r.away.lose}`
+                      : "—"}
+                  </td>
+                </>
+              )}
               <td
                 className="text-right tabular-nums"
                 style={{
@@ -924,7 +979,8 @@ export function StandingsTableView({
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 

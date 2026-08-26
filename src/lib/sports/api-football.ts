@@ -423,6 +423,23 @@ export type StandingRow = {
     lose: number;
     goals: { for: number; against: number };
   };
+  /** Desglose local/visitante. Viene YA en la misma respuesta de
+   * `/standings` — no cuesta ninguna llamada extra, solo que hasta ahora lo
+   * tirábamos. */
+  home?: {
+    played: number;
+    win: number;
+    draw: number;
+    lose: number;
+    goals: { for: number; against: number };
+  };
+  away?: {
+    played: number;
+    win: number;
+    draw: number;
+    lose: number;
+    goals: { for: number; against: number };
+  };
   form: string | null;
 };
 

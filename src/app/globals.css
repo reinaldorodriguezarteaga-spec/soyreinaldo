@@ -974,6 +974,22 @@ img {
    de tres columnas y, sin esto, caía dentro de la primera). */
 .match > .probbar { grid-column: 1 / -1; }
 
+/* Barra sobre la tabla: título + botón para desplegar la versión completa. */
+.tablabar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.tablabar__t {
+  font-family: var(--font-mono-stack);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
 /* Cabecera de día en las listas de partidos ("Hoy", "Sáb 29 ago"). */
 .daysep {
   display: flex;
