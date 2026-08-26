@@ -36,6 +36,7 @@ import {
   type AllPlayer,
   type TournamentRecords,
   type GameRecords,
+  type TeamExtras,
 } from "@/lib/sports/api-football";
 import type { Competition } from "@/lib/sports/competitions";
 import type { FixtureEvents, WcFixture } from "@/lib/sports/widget-data";
@@ -849,10 +850,30 @@ export function StandingsTableView({
   standings: StandingRow[];
 }) {
   const base = basePath(competition);
-  // "Tabla completa" añade columnas que YA vienen en la respuesta de
-  // /standings y hasta ahora tirábamos: goles a favor y en contra, y el
-  // desglose de local y visitante. Cero llamadas extra a la API.
+  // "Tabla completa": goles a favor/en contra (ya venían en /standings y los
+  // tirábamos) + tarjetas, porterías a cero y racha, que SÍ cuestan llamadas
+  // y por eso se piden solo al desplegar, nunca al cargar la página.
   const [completa, setCompleta] = useState(false);
+  // Toda la liga / solo como local / solo como visitante. Gratis: sale del
+  // desglose que la propia clasificación ya trae.
+  const [donde, setDonde] = useState<"todos" | "casa" | "fuera">("todos");
+  const [extras, setExtras] = useState<Record<number, TeamExtras> | null>(null);
+
+  useEffect(() => {
+    if (!completa || extras) return;
+    let vivo = true;
+    fetch(`/api/sports/standings-extra?competition=${competition.slug}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((d: Record<number, TeamExtras>) => {
+        if (vivo) setExtras(d ?? {});
+      })
+      .catch(() => {
+        if (vivo) setExtras({});
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [completa, extras, competition.slug]);
 
   if (standings.length === 0) {
     return <Empty>La tabla aparecerá en cuanto arranque la temporada.</Empty>;
@@ -860,12 +881,51 @@ export function StandingsTableView({
 
   const dim = { color: "var(--text-dim)" } as const;
 
+  // En "Casa"/"Fuera" hay que recalcular puntos y reordenar: la API solo da
+  // la clasificación general.
+  const filas =
+    donde === "todos"
+      ? standings.map((r) => ({ r, d: r.all, pts: r.points, dg: r.goalsDiff }))
+      : standings
+          .map((r) => {
+            const d = (donde === "casa" ? r.home : r.away) ?? {
+              played: 0,
+              win: 0,
+              draw: 0,
+              lose: 0,
+              goals: { for: 0, against: 0 },
+            };
+            return {
+              r,
+              d,
+              pts: d.win * 3 + d.draw,
+              dg: d.goals.for - d.goals.against,
+            };
+          })
+          .sort(
+            (a, b) => b.pts - a.pts || b.dg - a.dg || b.d.goals.for - a.d.goals.for,
+          );
+
   return (
     <>
       <div className="tablabar">
-        <span className="tablabar__t">
-          {completa ? "Tabla completa" : "Tabla"}
-        </span>
+        <div className="tablabar__filtros">
+          {([
+            ["todos", "Toda la liga"],
+            ["casa", "Como local"],
+            ["fuera", "Como visitante"],
+          ] as const).map(([valor, texto]) => (
+            <button
+              key={valor}
+              type="button"
+              className={`chip${donde === valor ? " chip--on" : ""}`}
+              onClick={() => setDonde(valor)}
+              aria-pressed={donde === valor}
+            >
+              {texto}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className="backbtn"
@@ -890,11 +950,14 @@ export function StandingsTableView({
               <>
                 <th className="text-right" title="Goles a favor">GF</th>
                 <th className="text-right" title="Goles en contra">GC</th>
-                <th className="text-right" title="Como local: ganados-empatados-perdidos">
-                  Casa
+                <th className="text-right" title="Partidos sin encajar (toda la temporada)">
+                  🧤
                 </th>
-                <th className="text-right" title="Como visitante: ganados-empatados-perdidos">
-                  Fuera
+                <th className="text-right" title="Tarjetas amarillas (toda la temporada)">
+                  🟨
+                </th>
+                <th className="text-right" title="Tarjetas rojas (toda la temporada)">
+                  🟥
                 </th>
               </>
             )}
@@ -903,10 +966,12 @@ export function StandingsTableView({
           </tr>
         </thead>
         <tbody>
-          {standings.map((r) => (
+          {filas.map(({ r, d, pts, dg }, i) => (
             <tr key={r.team.id}>
               <td className="pos">
-                <RankPill rank={r.rank} />
+                {/* En "Casa"/"Fuera" el puesto es el de ESA tabla, no el
+                    general: si no, saldrían números desordenados. */}
+                <RankPill rank={donde === "todos" ? r.rank : i + 1} />
               </td>
               <td className="who">
                 <Link
@@ -920,43 +985,45 @@ export function StandingsTableView({
                 {r.form && <FormMini form={r.form} />}
               </td>
               <td className="text-right tabular-nums" style={{ color: "var(--text-dim)" }}>
-                {r.all.played}
+                {d.played}
               </td>
               <td
                 className="hidden text-right tabular-nums sm:table-cell"
                 style={{ color: "var(--text-dim)" }}
               >
-                {r.all.win}
+                {d.win}
               </td>
               <td
                 className="hidden text-right tabular-nums sm:table-cell"
                 style={{ color: "var(--text-dim)" }}
               >
-                {r.all.draw}
+                {d.draw}
               </td>
               <td
                 className="hidden text-right tabular-nums sm:table-cell"
                 style={{ color: "var(--text-dim)" }}
               >
-                {r.all.lose}
+                {d.lose}
               </td>
               {completa && (
                 <>
                   <td className="text-right tabular-nums" style={dim}>
-                    {r.all.goals.for}
+                    {d.goals.for}
                   </td>
                   <td className="text-right tabular-nums" style={dim}>
-                    {r.all.goals.against}
+                    {d.goals.against}
+                  </td>
+                  {/* Tarjetas y porterías a cero son de TODA la temporada: la
+                      API no las desglosa por local/visitante. Un "·" mientras
+                      llegan. */}
+                  <td className="text-right tabular-nums" style={dim}>
+                    {extras ? (extras[r.team.id]?.cleanSheets ?? 0) : "·"}
                   </td>
                   <td className="text-right tabular-nums" style={dim}>
-                    {r.home
-                      ? `${r.home.win}-${r.home.draw}-${r.home.lose}`
-                      : "—"}
+                    {extras ? (extras[r.team.id]?.yellow ?? 0) : "·"}
                   </td>
                   <td className="text-right tabular-nums" style={dim}>
-                    {r.away
-                      ? `${r.away.win}-${r.away.draw}-${r.away.lose}`
-                      : "—"}
+                    {extras ? (extras[r.team.id]?.red ?? 0) : "·"}
                   </td>
                 </>
               )}
@@ -964,17 +1031,13 @@ export function StandingsTableView({
                 className="text-right tabular-nums"
                 style={{
                   color:
-                    r.goalsDiff > 0
-                      ? "#4ade80"
-                      : r.goalsDiff < 0
-                        ? "#ff8a8a"
-                        : "var(--text-dim)",
+                    dg > 0 ? "#4ade80" : dg < 0 ? "#ff8a8a" : "var(--text-dim)",
                 }}
               >
-                {r.goalsDiff > 0 ? "+" : ""}
-                {r.goalsDiff}
+                {dg > 0 ? "+" : ""}
+                {dg}
               </td>
-              <td className="pts">{r.points}</td>
+              <td className="pts">{pts}</td>
             </tr>
           ))}
         </tbody>

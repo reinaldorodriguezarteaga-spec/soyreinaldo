@@ -2822,3 +2822,84 @@ export function mismoEstadio(a: string | null, b: string | null): boolean {
   const y = limpia(b);
   return x === y || x.includes(y) || y.includes(x);
 }
+
+/** Datos de temporada que NO vienen en la clasificación: tarjetas, porterías
+ * a cero y racha. */
+export type TeamExtras = {
+  yellow: number;
+  red: number;
+  cleanSheets: number;
+  failedToScore: number;
+  /** Mejor racha de victorias de la temporada. */
+  streakWins: number;
+};
+
+type TeamStatsRow = {
+  form: string | null;
+  clean_sheet: { total: number | null } | null;
+  failed_to_score: { total: number | null } | null;
+  biggest: { streak: { wins: number | null } | null } | null;
+  cards: {
+    yellow: Record<string, { total: number | null } | null> | null;
+    red: Record<string, { total: number | null } | null> | null;
+  } | null;
+};
+
+function sumaTarjetas(
+  tramos: Record<string, { total: number | null } | null> | null | undefined,
+): number {
+  if (!tramos) return 0;
+  return Object.values(tramos).reduce((n, t) => n + (t?.total ?? 0), 0);
+}
+
+/**
+ * Tarjetas, porterías a cero y racha de cada equipo de una competición.
+ *
+ * ⚠️ Cuesta UNA llamada POR EQUIPO (20 en una liga), así que:
+ *  - se pide en lotes de 5, no las 20 de golpe;
+ *  - se cachea 12 h (estos números solo cambian cuando se juega una jornada);
+ *  - y sobre todo, solo se pide cuando alguien despliega la tabla completa,
+ *    no en cada visita a la página.
+ * Con eso son ~2 pasadas al día por competición, muy lejos de los picos que
+ * provocaron los incidentes de cuota.
+ */
+export async function getTeamsExtras(
+  competition: Competition,
+  teamIds: number[],
+): Promise<Record<number, TeamExtras>> {
+  const salida: Record<number, TeamExtras> = {};
+  const LOTE = 5;
+  for (let i = 0; i < teamIds.length; i += LOTE) {
+    const lote = teamIds.slice(i, i + LOTE);
+    await Promise.all(
+      lote.map(async (id) => {
+        try {
+          const r = await get<TeamStatsRow>(
+            "/teams/statistics",
+            { league: competition.leagueId, season: competition.season, team: id },
+            43_200,
+          );
+          // ⚠️ A diferencia del resto de endpoints, /teams/statistics devuelve
+          // un OBJETO en `response`, no una lista. `get()` lo tipa como lista,
+          // así que leerlo con [0] daba siempre undefined y las tarjetas
+          // salían todas a cero. Se contemplan las dos formas por si acaso.
+          const bruto = r.response as unknown;
+          const d = (Array.isArray(bruto) ? bruto[0] : bruto) as
+            | TeamStatsRow
+            | undefined;
+          if (!d) return;
+          salida[id] = {
+            yellow: sumaTarjetas(d.cards?.yellow),
+            red: sumaTarjetas(d.cards?.red),
+            cleanSheets: d.clean_sheet?.total ?? 0,
+            failedToScore: d.failed_to_score?.total ?? 0,
+            streakWins: d.biggest?.streak?.wins ?? 0,
+          };
+        } catch {
+          // Un equipo sin datos no debe tumbar la tabla entera.
+        }
+      }),
+    );
+  }
+  return salida;
+}
