@@ -40,11 +40,16 @@ export default function LiveList({ inicial }: { inicial: LiveGroup[] }) {
 
   const total = grupos.reduce((n, g) => n + g.fixtures.length, 0);
 
+  // A ancho completo del `.wrap` (hasta 1240px) las filas compactas quedaban
+  // ilegibles: columna acotada + variante ampliada de la fila (--lg).
+  const columna = { maxWidth: 780, margin: "0 auto" } as const;
+
   if (total === 0) {
     return (
       <div
         className="panel"
         style={{
+          ...columna,
           padding: 32,
           textAlign: "center",
           borderStyle: "dashed",
@@ -58,7 +63,7 @@ export default function LiveList({ inicial }: { inicial: LiveGroup[] }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" style={columna}>
       {grupos.map((g) => (
         <div key={g.slug} className="panel" style={{ overflow: "hidden" }}>
           <div
@@ -81,7 +86,7 @@ export default function LiveList({ inicial }: { inicial: LiveGroup[] }) {
             </span>
           </div>
           <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
-            <div className="hmrowlist">
+            <div className="hmrowlist hmrowlist--lg">
               {g.fixtures.map((fx) => (
                 <CompactMatchRow
                   key={fx.fixture.id}
