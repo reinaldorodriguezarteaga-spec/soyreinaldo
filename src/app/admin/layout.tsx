@@ -57,6 +57,9 @@ export default async function AdminLayout({
             <Link href="/admin/imagenes" className="hover:text-white">
               Imágenes
             </Link>
+            <Link href="/admin/sorteo" className="hover:text-white">
+              Sorteo Champions
+            </Link>
           </nav>
         </div>
       </div>
