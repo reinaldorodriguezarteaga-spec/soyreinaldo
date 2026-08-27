@@ -954,6 +954,18 @@ img {
 .hmrow__name { font-size: 0.8rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hmrow__score { font-family: var(--font-display-stack); font-weight: 900; font-size: 0.9rem; white-space: nowrap; min-width: 30px; text-align: center; }
 
+/* Variante ampliada (/en-vivo): la fila es la protagonista de la página, no
+   un desplegable denso. En móvil solo gana algo de aire (con tipografía
+   mayor los nombres se truncaban); desde 640px suben escudos y letra. */
+.hmrowlist--lg .hmrow { padding: 12px 4px; }
+@media (min-width: 640px) {
+  .hmrowlist--lg .hmrow { grid-template-columns: 52px 1fr auto 1fr; gap: 12px; padding: 14px 6px; }
+  .hmrowlist--lg .hmrow__time { font-size: 0.72rem; }
+  .hmrowlist--lg .hmrow__crest { width: 22px; height: 22px; }
+  .hmrowlist--lg .hmrow__name { font-size: 0.95rem; }
+  .hmrowlist--lg .hmrow__score { font-size: 1.1rem; min-width: 42px; }
+}
+
 .team { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .team.right { justify-content: flex-end; }
 .team .flag {
