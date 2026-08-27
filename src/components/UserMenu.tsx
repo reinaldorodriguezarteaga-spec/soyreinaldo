@@ -14,6 +14,7 @@ const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
   { href: "/admin/imagenes", label: "Imágenes (extractor)" },
+  { href: "/admin/sorteo", label: "Sorteo Champions" },
   // Apps hermanas fuera de esta web, aquí solo como acceso rápido del dueño.
   { href: "https://chat.soyreinaldo.com", label: "Multichat (directos)", externo: true },
   {
