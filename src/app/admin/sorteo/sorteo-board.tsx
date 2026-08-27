@@ -81,20 +81,61 @@ export default function SorteoBoard({
     }
   }, [board, hydrated]);
 
+  const potById = useMemo(
+    () => new Map(potTeams.map((t) => [t.id, t])),
+    [potTeams],
+  );
+
   const assign = (potId: number, side: Side, index: number, team: PoolTeam) =>
     setBoard((prev) => {
-      const card = prev[potId] ?? emptyCard();
+      const next = { ...prev };
+      const card = next[potId] ?? emptyCard();
       const column = card[side].slice();
       column[index] = team;
-      return { ...prev, [potId]: { ...card, [side]: column } };
+      next[potId] = { ...card, [side]: column };
+
+      // Espejo: si el rival también es del bombo 1, se le rellena el cruce
+      // inverso (mi casa = su fuera) en su primer hueco libre — salvo que ya
+      // lo tuviera puesto o no le quede sitio.
+      const owner = potById.get(potId);
+      if (owner && potById.has(team.id) && team.id !== potId) {
+        const rivalCard = next[team.id] ?? emptyCard();
+        const already = [...rivalCard.home, ...rivalCard.away].some(
+          (t) => t?.id === potId,
+        );
+        const oppSide: Side = side === "home" ? "away" : "home";
+        const oppColumn = rivalCard[oppSide].slice();
+        const free = oppColumn.findIndex((t) => !t);
+        if (!already && free !== -1) {
+          oppColumn[free] = owner;
+          next[team.id] = { ...rivalCard, [oppSide]: oppColumn };
+        }
+      }
+      return next;
     });
 
   const clearSlot = (potId: number, side: Side, index: number) =>
     setBoard((prev) => {
-      const card = prev[potId] ?? emptyCard();
+      const next = { ...prev };
+      const card = next[potId] ?? emptyCard();
       const column = card[side].slice();
+      const removed = column[index];
       column[index] = null;
-      return { ...prev, [potId]: { ...card, [side]: column } };
+      next[potId] = { ...card, [side]: column };
+
+      // Espejo del borrado: quitar también este equipo de la columna
+      // contraria del rival del bombo 1.
+      if (removed && potById.has(removed.id)) {
+        const rivalCard = next[removed.id];
+        const oppSide: Side = side === "home" ? "away" : "home";
+        const at = rivalCard?.[oppSide].findIndex((t) => t?.id === potId) ?? -1;
+        if (rivalCard && at !== -1) {
+          const oppColumn = rivalCard[oppSide].slice();
+          oppColumn[at] = null;
+          next[removed.id] = { ...rivalCard, [oppSide]: oppColumn };
+        }
+      }
+      return next;
     });
 
   const clearAll = () => {
