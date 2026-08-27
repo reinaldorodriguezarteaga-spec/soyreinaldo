@@ -494,17 +494,10 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
-          <Suspense fallback={null}>
-            <MatchQuiniela
-              fixtureId={fixtureId}
-              played={played}
-              goles={{ home: fx.goals.home, away: fx.goals.away }}
-            />
-          </Suspense>
         </div>
       </section>
 
-      <section className="section" style={{ paddingTop: 20 }}>
+      <section className="section" style={{ paddingTop: 20, paddingBottom: 0 }}>
         <div className="wrap">
           <MatchTabs
             fixtureId={fixtureId}
@@ -578,6 +571,20 @@ export default async function LigaPartidoPage({
             </div>
           )}
           </MatchTabs>
+        </div>
+      </section>
+
+      {/* Al final a propósito: la quiniela es solo para quien juega, y antes
+          empujaba las estadísticas —lo que busca todo el mundo— hacia abajo. */}
+      <section className="section" style={{ paddingTop: 36 }}>
+        <div className="wrap">
+          <Suspense fallback={null}>
+            <MatchQuiniela
+              fixtureId={fixtureId}
+              played={played}
+              goles={{ home: fx.goals.home, away: fx.goals.away }}
+            />
+          </Suspense>
         </div>
       </section>
     </main>
