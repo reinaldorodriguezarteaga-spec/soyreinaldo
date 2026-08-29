@@ -32,6 +32,37 @@ const INVITE_CODE_RE = /^[A-Z0-9_-]{1,32}$/;
 const AUTH_CODE_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// La noche del 27–28-ago-2026 un incidente de Supabase ("Increased response
+// times") dejó getUser() colgado y Vercel mata el middleware edge a los 25 s:
+// 504 en toda la web para usuarios con sesión (los anónimos no llevan cookie,
+// getUser no toca la red y no lo notaban). Cada llamada de red del middleware
+// va acotada: sin veredicto a tiempo se degrada a anónimo, salvo /admin y los
+// prefijos protegidos, que cierran a /login (fail-closed).
+const SUPABASE_TIMEOUT_MS = 5_000;
+
+// Sentinela para distinguir "venció el timeout" de un resultado real: en
+// /admin el timeout manda a /login, pero un no-admin de verdad manda a la raíz.
+const TIMED_OUT = Symbol("timed-out");
+
+async function withTimeout<T>(
+  promise: PromiseLike<T>,
+): Promise<T | typeof TIMED_OUT> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<typeof TIMED_OUT>((resolve) => {
+        timer = setTimeout(() => resolve(TIMED_OUT), SUPABASE_TIMEOUT_MS);
+      }),
+    ]);
+  } catch {
+    // Un fallo de red tampoco da veredicto: mismo trato que el timeout.
+    return TIMED_OUT;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function updateSession(request: NextRequest) {
   // GoTrue valida el redirect_to contra su allow-list; si no pasa, cae al
   // Site URL (la raíz) y el usuario aterriza en /?code=... donde nadie canjea
@@ -84,9 +115,13 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authResult = await withTimeout(supabase.auth.getUser());
+  if (authResult === TIMED_OUT) {
+    console.error(
+      `[middleware] supabase.auth.getUser() sin respuesta en ${SUPABASE_TIMEOUT_MS} ms (${request.nextUrl.pathname})`,
+    );
+  }
+  const user = authResult === TIMED_OUT ? null : authResult.data.user;
 
   const pathname = request.nextUrl.pathname;
 
@@ -133,12 +168,20 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
-    if (!profile?.is_admin) {
+    const profileResult = await withTimeout(
+      supabase.from("profiles").select("is_admin").eq("id", user.id).single(),
+    );
+    if (profileResult === TIMED_OUT) {
+      console.error(
+        `[middleware] consulta a profiles sin respuesta en ${SUPABASE_TIMEOUT_MS} ms (${pathname})`,
+      );
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
+    if (!profileResult.data?.is_admin) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       url.search = "";
