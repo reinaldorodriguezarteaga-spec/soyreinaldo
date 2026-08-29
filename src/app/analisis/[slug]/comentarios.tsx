@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ComentarioForm from "./comentario-form";
 import BorrarComentario from "./borrar-comentario";
@@ -104,25 +103,11 @@ export default async function Comentarios({
         </p>
       )}
 
+      {/* El cuadro se enseña también sin sesión: que la gente escriba
+          primero y se le pida la cuenta al darle a publicar — a quien ya
+          invirtió en escribir le compensa mucho más registrarse. */}
       <div style={{ marginTop: 18 }}>
-        {user ? (
-          <ComentarioForm slug={slug} />
-        ) : (
-          <div
-            className="panel"
-            style={{ padding: 22, borderStyle: "dashed", textAlign: "center" }}
-          >
-            <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-              ¿Quieres dejar tu opinión? Inicia sesión y entra al tablón.
-            </p>
-            <Link
-              href={`/login?redirect=/analisis/${slug}`}
-              className="btn btn--accent"
-            >
-              Iniciar sesión <span className="arr">→</span>
-            </Link>
-          </div>
-        )}
+        <ComentarioForm slug={slug} autenticado={!!user} />
       </div>
     </div>
   );
