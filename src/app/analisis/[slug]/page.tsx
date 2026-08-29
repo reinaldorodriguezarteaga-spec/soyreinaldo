@@ -1,12 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { porSlug } from "@/lib/analisis/queries";
 import { markdownAHtml, minutosDeLectura } from "@/lib/analisis/markdown";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import ShareArticle from "@/components/ShareArticle";
 import ViewPing from "@/components/ViewPing";
+import Comentarios from "./comentarios";
 
 export const revalidate = 300;
 
@@ -124,6 +126,11 @@ export default async function AnalisisPage({
             slug={a.slug}
             shareCount={a.share_count}
           />
+
+          {/* El tablón: que el artículo pinte sin esperar a los comentarios. */}
+          <Suspense fallback={null}>
+            <Comentarios articleId={a.id} slug={a.slug} />
+          </Suspense>
 
           {/* Cuenta la lectura desde el navegador y con retardo: así no
               cuentan los rastreadores, que aquí son legión. */}
