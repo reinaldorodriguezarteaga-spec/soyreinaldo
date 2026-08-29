@@ -58,11 +58,15 @@ export default function TeamFixturesList({
     return nextIdx >= 0 ? Math.floor(nextIdx / PER_PAGE) : pages - 1;
   });
 
+  // A ancho completo del `.wrap` (hasta 1240px) las filas compactas quedaban
+  // ilegibles: columna acotada + variante ampliada (--lg), como en /en-vivo.
+  const columna = { maxWidth: 780, margin: "0 auto" } as const;
+
   if (fixtures.length === 0) {
     return (
       <div
         className="panel"
-        style={{ padding: 28, textAlign: "center", borderStyle: "dashed", color: "var(--text-dim)" }}
+        style={{ ...columna, padding: 28, textAlign: "center", borderStyle: "dashed", color: "var(--text-dim)" }}
       >
         No hay partidos de este equipo.
       </div>
@@ -86,7 +90,7 @@ export default function TeamFixturesList({
   }
 
   return (
-    <div>
+    <div style={columna}>
       <div className="panel" style={{ overflow: "hidden" }}>
         {groups.map((g) => (
           <div key={g.key}>
@@ -105,7 +109,7 @@ export default function TeamFixturesList({
             >
               {g.label}
             </p>
-            <div className="hmrowlist" style={{ padding: "0 8px" }}>
+            <div className="hmrowlist hmrowlist--lg" style={{ padding: "0 8px" }}>
               {g.items.map((f) => (
                 <CompactMatchRow
                   key={f.fixture.id}
