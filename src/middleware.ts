@@ -36,12 +36,18 @@ const HEAVY_PATH_RE =
 const INDEXABLE_PATH_RE =
   /^\/liga\/[^/]+\/(?:jugador|partido|equipo)\//;
 
-/** Buscadores a los que abrimos esas fichas. Va por User-Agent, que es
- * falsificable: por eso siguen pasando por su propio límite por IP, más
- * estrecho que el de una persona. Un impostor que se haga pasar por Googlebot
- * gana saltarse el desafío de cookie, no barrer la web entera. */
+/** Buscadores y crawlers de anuncios a los que abrimos esas fichas. Va por
+ * User-Agent, que es falsificable: por eso siguen pasando por su propio
+ * límite por IP, más estrecho que el de una persona. Un impostor que se haga
+ * pasar por Googlebot gana saltarse el desafío de cookie, no barrer la web.
+ *
+ * mediapartners-google y adsbot-google son los crawlers de AdSense: sin
+ * ellos, Google no puede leer las fichas ni para la revisión del sitio ni
+ * para servir anuncios (Auto Ads) una vez aprobado. Hasta el 29-ago comían
+ * 403 aquí — adsbot cae en BAD_BOT_RE por el "bot" — y para los sistemas de
+ * anuncios media web no existía. */
 const SEARCH_BOT_RE =
-  /googlebot|bingbot|google-inspectiontool|duckduckbot|applebot(?!.*extended)/i;
+  /googlebot|bingbot|google-inspectiontool|duckduckbot|applebot(?!.*extended)|mediapartners-google|adsbot-google/i;
 
 /** Presupuesto por minuto para buscadores. Google rastrea despacio y en
  * ráfagas cortas; 30/min le sobra y a un impostor no le da para vaciar la
