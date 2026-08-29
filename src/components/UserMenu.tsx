@@ -22,6 +22,13 @@ const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
     label: "Marcador en vivo (control)",
     externo: true,
   },
+  // La URL que se pega en OBS como fuente de navegador (overlay 1920×200).
+  // Pedida a mano cada directo hasta ahora; aquí queda siempre a un clic.
+  {
+    href: "https://chat.soyreinaldo.com/marcador",
+    label: "Marcador overlay (URL para OBS)",
+    externo: true,
+  },
 ];
 
 export default function UserMenu({
