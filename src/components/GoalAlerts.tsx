@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { esIOS, estaInstalada } from "@/lib/pwa";
 
 /**
  * Interruptor de los avisos de gol.
@@ -10,7 +11,8 @@ import { useEffect, useState } from "react";
  *
  * En iPhone las notificaciones web solo funcionan si la página está añadida a
  * la pantalla de inicio — limitación de Apple, no nuestra — así que ahí se
- * explica el paso en vez de ofrecer un botón que no haría nada.
+ * explica el paso en vez de ofrecer un botón que no haría nada. El banner de
+ * instalación (`InstallBanner`) ofrece ese mismo paso antes de llegar aquí.
  */
 
 type Estado =
@@ -20,18 +22,6 @@ type Estado =
   | "bloqueado"
   | "apagado"
   | "encendido";
-
-function esIOS(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-
-function estaInstalada(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // Safari en iOS usa esta propiedad, fuera del estándar.
-    (window.navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-}
 
 /** La clave pública viene en base64url y `subscribe` la quiere en bytes.
  * Devuelve ArrayBuffer y no Uint8Array porque el tipado de `applicationServerKey`
@@ -53,10 +43,10 @@ export default function GoalAlerts() {
   useEffect(() => {
     (async () => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        setEstado(esIOS() && !estaInstalada() ? "ios-sin-instalar" : "no-soportado");
+        setEstado(esIOS(navigator.userAgent) && !estaInstalada() ? "ios-sin-instalar" : "no-soportado");
         return;
       }
-      if (esIOS() && !estaInstalada()) {
+      if (esIOS(navigator.userAgent) && !estaInstalada()) {
         setEstado("ios-sin-instalar");
         return;
       }
