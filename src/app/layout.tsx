@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
+import InstallBanner from "@/components/InstallBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
@@ -165,6 +166,10 @@ export default async function RootLayout({
           favorites={favorites}
           isAdmin={isAdmin}
         />
+        {/* En flujo normal, no fixed: aparece bajo el header sticky al
+            cargar y se va con el scroll como cualquier otro contenido —
+            nada compite con el banner de cookies, que sí es fixed abajo. */}
+        <InstallBanner />
         <Gestures />
         <BackButton />
         {children}
