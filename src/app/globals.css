@@ -1691,8 +1691,36 @@ select.field { appearance: none; }
 .ficha__tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
 .ficha__stage { display: flex; justify-content: center; }
 .ficha__stage:fullscreen { background: var(--bg); align-items: center; padding: 24px; overflow: auto; }
+/* Fallback para navegadores sin Fullscreen API real (iOS Safari no la
+   implementa en absoluto): mismo resultado que :fullscreen de arriba, pero
+   forzado por CSS en vez de por el navegador. */
+.ficha__stage--fake {
+  position: fixed; inset: 0; z-index: 100; margin: 0;
+  background: var(--bg); align-items: center; padding: 24px; overflow: auto;
+}
+.ficha__closefake {
+  position: fixed; top: 16px; right: 16px; z-index: 101;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  font-size: 1rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
 .ficha {
   width: 720px; max-width: 100%;
+  /* @container, no @media, en el breakpoint de más abajo: el layout de dos
+     columnas debe depender de cuánto ancho tiene REALMENTE la tarjeta, no
+     del viewport del navegador. En modo captura (ficha-fullscreen.tsx) se
+     fuerza un ancho de 720px reales y se escala visualmente con transform
+     para que quepa en pantallas pequeñas — con @media eso no serviría de
+     nada, porque un media query siempre pregunta por el viewport, nunca
+     por el contenedor, así que la tarjeta se apilaba igual en móvil
+     aunque el wrapper ya midiera 720px. */
+  /* container-type: inline-size mide el CONTENT-BOX (sin este border de
+     1px), así que el ancho "real" que ve el @container de más abajo es
+     718px, no 720 — un breakpoint de exactamente 720px nunca coincidiría
+     con su propio ancho de diseño completo. El breakpoint usa 700px con
+     margen a propósito, no por precisión. */
+  container-type: inline-size;
   display: flex; flex-direction: column;
   background: linear-gradient(180deg, var(--surface), var(--bg));
   border: 1px solid var(--line-strong); border-radius: 8px;
@@ -1769,7 +1797,12 @@ select.field { appearance: none; }
 .ficha__subout { color: #ff8a8a; }
 .ficha__foot { display: flex; justify-content: space-between; padding: 8px 20px 10px; border-top: 1px solid var(--line); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
 
-@media (max-width: 720px) {
+/* Contenedor, no viewport: ver el comentario en .ficha más arriba. 700px
+   y no 720: container-type mide el content-box (718px en el ancho de
+   diseño completo, por el border de 1px de .ficha) — un breakpoint de
+   720px exactos nunca sería menor que eso, y la tarjeta se apilaba igual
+   estando ya a su ancho completo en modo captura. */
+@container (max-width: 700px) {
   .ficha__body { grid-template-columns: 1fr; }
   .ficha__pitchcol { height: 560px; }
 }
