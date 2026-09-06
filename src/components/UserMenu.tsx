@@ -6,24 +6,31 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/login/actions";
 import type { User } from "@supabase/supabase-js";
 
-const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
-  // Escribir va primero: es lo que más se usa y lo único que no puede copiar
-  // la competencia.
+type AdminLink = { href: string; label: string; externo?: boolean };
+
+// Escribir va primero: es lo que más se usa y lo único que no puede copiar
+// la competencia. El resto de apps y URLs de un directo (multichat,
+// marcadores para OBS) van aparte, en la subpestaña "Directos" — de aquí
+// no se toca nada más entre partido y partido.
+const ADMIN_LINKS: AdminLink[] = [
   { href: "/admin/analisis", label: "Escribir análisis" },
   { href: "/admin/ligas", label: "Ligas" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
   { href: "/admin/imagenes", label: "Imágenes (extractor)" },
-  { href: "/admin/sorteo", label: "Sorteo Champions" },
-  // Apps hermanas fuera de esta web, aquí solo como acceso rápido del dueño.
-  { href: "https://chat.soyreinaldo.com", label: "Multichat (directos)", externo: true },
+];
+
+// Apps hermanas fuera de esta web y URLs para pegar en OBS — todo lo que
+// hace falta a mano durante un directo, agrupado aparte porque antes había
+// que ir pidiéndolo enlace a enlace.
+const DIRECTOS_LINKS: AdminLink[] = [
+  { href: "https://chat.soyreinaldo.com", label: "Multichat", externo: true },
   {
     href: "https://chat.soyreinaldo.com/marcador/control",
     label: "Marcador en vivo (control)",
     externo: true,
   },
   // La URL que se pega en OBS como fuente de navegador (overlay 1920×200).
-  // Pedida a mano cada directo hasta ahora; aquí queda siempre a un clic.
   {
     href: "https://chat.soyreinaldo.com/marcador",
     label: "Marcador overlay (URL para OBS)",
@@ -38,6 +45,29 @@ const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
   },
 ];
 
+function AdminLinkItem({ a, onClick }: { a: AdminLink; onClick: () => void }) {
+  const className =
+    "rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white";
+  if (a.externo) {
+    return (
+      <a
+        href={a.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClick}
+        className={className}
+      >
+        {a.label} ↗
+      </a>
+    );
+  }
+  return (
+    <Link href={a.href} onClick={onClick} className={className}>
+      {a.label}
+    </Link>
+  );
+}
+
 export default function UserMenu({
   initialUser,
   isAdmin = false,
@@ -48,6 +78,7 @@ export default function UserMenu({
   const [user, setUser] = useState<User | null>(initialUser);
   const [open, setOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [directosOpen, setDirectosOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,6 +96,7 @@ export default function UserMenu({
   function closeMenu() {
     setOpen(false);
     setAdminOpen(false);
+    setDirectosOpen(false);
   }
 
   useEffect(() => {
@@ -167,28 +199,39 @@ export default function UserMenu({
               </button>
               {adminOpen && (
                 <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
-                  {ADMIN_LINKS.map((a) =>
-                    a.externo ? (
-                      <a
-                        key={a.href}
-                        href={a.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={closeMenu}
-                        className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
-                      >
-                        {a.label} ↗
-                      </a>
-                    ) : (
-                      <Link
-                        key={a.href}
-                        href={a.href}
-                        onClick={closeMenu}
-                        className="rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
-                      >
-                        {a.label}
-                      </Link>
-                    ),
+                  {ADMIN_LINKS.map((a) => (
+                    <AdminLinkItem key={a.href} a={a} onClick={closeMenu} />
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setDirectosOpen((o) => !o)}
+                    aria-expanded={directosOpen}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+                  >
+                    <span>Directos</span>
+                    <svg
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        directosOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {directosOpen && (
+                    <div className="ml-2 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
+                      {DIRECTOS_LINKS.map((a) => (
+                        <AdminLinkItem key={a.href} a={a} onClick={closeMenu} />
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
