@@ -57,9 +57,18 @@ export default async function AdminLayout({
             <Link href="/admin/imagenes" className="hover:text-white">
               Imágenes
             </Link>
-            <Link href="/admin/sorteo" className="hover:text-white">
-              Sorteo Champions
-            </Link>
+            {/* Marcador completo del Multichat (fuente de navegador en OBS):
+                enlace externo, por eso <a> y no <Link>. El sorteo de la
+                Champions salió de aquí a petición del dueño (la página sigue
+                en /admin/sorteo). */}
+            <a
+              href="https://chat.soyreinaldo.com/marcador/completo"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-white"
+            >
+              Marcador completo ↗
+            </a>
           </nav>
         </div>
       </div>
