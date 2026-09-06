@@ -45,7 +45,11 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
     const el = cardRef.current;
     if (!el) return;
     setNatural({ w: el.scrollWidth, h: el.scrollHeight });
-    setViewport({ w: window.innerWidth, h: window.innerHeight });
+    // visualViewport es el tamaño VISUAL real en iOS Safari — con la barra
+    // de direcciones colapsándose o un position:fixed recién aplicado,
+    // window.innerWidth/innerHeight pueden ir un paso por detrás.
+    const vv = window.visualViewport;
+    setViewport({ w: vv?.width ?? window.innerWidth, h: vv?.height ?? window.innerHeight });
   }, []);
 
   // Mientras se está capturando, re-medir en cada cambio de tamaño (rotar el
@@ -54,15 +58,34 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
   // llegando y la cabecera puede crecer).
   useEffect(() => {
     if (!capturing) return;
-    measure();
+    // No measure() directo en el mismo tick: al activar el modo captura, el
+    // cambio de CSS (width:max-content, @container, position:fixed del modo
+    // simulado) todavía no ha terminado su reflow — medir ahí mismo capturaba
+    // tamaños a medio aplicar (visto en un iPhone real: la columna de
+    // estadísticas se salía de la pantalla porque el scale se calculó sobre
+    // un ancho más angosto del que la tarjeta acabó ocupando).
+    //
+    // requestAnimationFrame sería la forma "correcta" de esperar ese reflow,
+    // pero NO se dispara si la pestaña no está pintando en primer plano en
+    // ese instante (confirmado: se queda colgado sin límite) — un riesgo
+    // real de dejar la tarjeta invisible para siempre si el usuario cambia
+    // de app justo al tocar el botón. setTimeout sí corre pase lo que pase;
+    // dos disparos (rápido y de respaldo) por si el primero mide antes de
+    // que el layout asiente del todo.
+    const t1 = setTimeout(measure, 60);
+    const t2 = setTimeout(measure, 250);
     const ro = new ResizeObserver(measure);
     if (cardRef.current) ro.observe(cardRef.current);
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
+    window.visualViewport?.addEventListener("resize", measure);
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
       ro.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
     };
   }, [capturing, measure]);
 
@@ -129,8 +152,13 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
       >
         <div
           style={
-            capturing && natural
-              ? { width: natural.w * scale, height: natural.h * scale, overflow: "hidden" }
+            capturing
+              ? natural
+                ? { width: natural.w * scale, height: natural.h * scale, overflow: "hidden" }
+                // Antes de la primera medición (mientras esperamos el doble
+                // rAF de más arriba): oculto, no a tamaño 0 — así no hay un
+                // parpadeo con la tarjeta a tamaño completo sin escalar.
+                : { opacity: 0 }
               : undefined
           }
         >
