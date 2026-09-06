@@ -1257,6 +1257,44 @@ export async function getFixtureSubs(
   return { inKeys, outKeys };
 }
 
+/** Un cambio con minuto y nombres (para la ficha visual del partido). */
+export type FixtureSubEvent = {
+  minute: number | null;
+  extra: number | null;
+  teamId: number;
+  /** quien ENTRA (`assist` del API) */
+  inName: string | null;
+  inId: number | null;
+  /** quien SALE (`player` del API) */
+  outName: string | null;
+  outId: number | null;
+};
+
+/** Cambios del partido con minuto, en orden cronológico. Misma llamada (y
+ * misma caché) que `getFixtureSubs`: no gasta cuota extra. */
+export async function getFixtureSubEvents(
+  id: number,
+  revalidate = 600,
+): Promise<FixtureSubEvent[]> {
+  const r = await get<FixtureEvent>(
+    "/fixtures/events",
+    { fixture: id, type: "subst" },
+    revalidate,
+  );
+  return r.response
+    .filter((e) => e.type === "subst")
+    .map((e) => ({
+      minute: e.time.elapsed,
+      extra: e.time.extra,
+      teamId: e.team.id,
+      inName: e.assist?.name ?? null,
+      inId: e.assist?.id ?? null,
+      outName: e.player?.name ?? null,
+      outId: e.player?.id ?? null,
+    }))
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
 /** Estadística detallada de un jugador en un partido (nulos = no registrado). */
 export type PlayerMatchStats = {
   shotsTotal: number | null;

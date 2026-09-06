@@ -1684,3 +1684,92 @@ select.field { appearance: none; }
 @media (max-height: 560px) {
   .hmcal-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; }
 }
+
+/* ====================== FICHA VISUAL DEL PARTIDO (pestaña "Ficha") ====================== */
+/* La misma tarjeta que el marcador completo del Multichat, con el tema de la
+   web: pensada para capturarla y comentarla en los vídeos. */
+.ficha__tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.ficha__stage { display: flex; justify-content: center; }
+.ficha__stage:fullscreen { background: var(--bg); align-items: center; padding: 24px; overflow: auto; }
+.ficha {
+  width: 720px; max-width: 100%;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--surface), var(--bg));
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  box-shadow: var(--shadow), var(--glow);
+  color: var(--text); overflow: hidden;
+}
+.ficha__head { padding: 16px 20px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.ficha__meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.ficha__status { font-family: var(--font-display-stack); font-size: 0.95rem; letter-spacing: 0.06em; color: var(--on-accent); background: var(--accent); border-radius: 4px; padding: 3px 12px; }
+.ficha__teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.ficha__team { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ficha__team--away { flex-direction: row-reverse; text-align: right; }
+.ficha__logo { width: 52px; height: 52px; object-fit: contain; flex: none; }
+.ficha__teamtxt { display: flex; flex-direction: column; min-width: 0; }
+.ficha__name { font-family: var(--font-display-stack); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ficha__formation { font-family: var(--font-mono-stack); font-size: 0.72rem; color: var(--text-dim); }
+.ficha__score { display: flex; align-items: center; gap: 8px; font-family: var(--font-display-stack); font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ficha__dash { opacity: 0.35; font-weight: 500; }
+.ficha__goals { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.78rem; color: var(--text-dim); }
+.ficha__goals ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.ficha__goals--away { text-align: right; }
+
+.ficha__body { display: grid; grid-template-columns: 400px 1fr; align-items: stretch; }
+/* el campo fija la altura y las estadísticas se reparten para llegar
+   exactamente a la misma altura (620: un poco más compacto, pedido del dueño
+   para que con muchos goles arriba la tarjeta no se alargue) */
+.ficha__pitchcol { position: relative; height: 620px; }
+.ficha__statscol { padding: 14px 16px 16px 8px; display: flex; flex-direction: column; gap: 6px; }
+.ficha__h { margin: 0 0 4px; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+.ficha__empty { color: var(--text-dim); font-size: 0.85rem; }
+
+.ficha__pitch {
+  position: absolute; inset: 14px 10px 14px 14px; border-radius: 8px;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0 10%, transparent 10% 20%), linear-gradient(180deg, #1f5b34, #17492a);
+  border: 2px solid rgba(255,255,255,0.35); overflow: hidden;
+}
+.ficha__pitch--empty { display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.7); font-weight: 700; }
+.ficha__lines > * { position: absolute; border: 2px solid rgba(255,255,255,0.35); }
+.ficha__box { left: 22%; width: 56%; height: 12%; }
+.ficha__box--top { top: -2px; border-top: 0; }
+.ficha__box--bottom { bottom: -2px; border-bottom: 0; }
+.ficha__circle { left: 50%; top: 50%; width: 22%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); }
+.ficha__midline { left: 0; right: 0; top: 50%; border-width: 1px 0 0; }
+
+.ficha__chip { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; width: 88px; }
+.ficha__avatar { position: relative; width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; color: #0b0f1a; font-weight: 900; font-size: 0.85rem; box-shadow: 0 3px 8px rgba(0,0,0,0.5); }
+.ficha__avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.ficha__rating { position: absolute; top: -7px; right: -12px; font-size: 0.62rem; font-weight: 900; padding: 2px 5px; border-radius: 6px; color: #fff; background: #64748b; font-variant-numeric: tabular-nums; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+.ficha__rating[data-tier="good"] { background: #16a34a; }
+.ficha__rating[data-tier="ok"] { background: #d97706; }
+.ficha__rating[data-tier="bad"] { background: #dc2626; }
+.ficha__card { position: absolute; top: -4px; left: -8px; width: 9px; height: 13px; border-radius: 2px; background: #facc15; box-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.ficha__card--red { background: #dc2626; }
+.ficha__goalmark { position: absolute; bottom: -6px; right: -10px; font-size: 0.68rem; font-weight: 900; background: #fff; color: #0b0f1a; border-radius: 8px; padding: 0 3px; line-height: 15px; }
+.ficha__submark { position: absolute; bottom: -6px; left: -10px; font-size: 0.56rem; font-weight: 800; color: #4ade80; background: #0b0f1a; border-radius: 6px; padding: 0 3px; line-height: 13px; }
+.ficha__chipname { font-size: 0.68rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-shadow: 0 1px 2px #000, 0 0 4px rgba(0,0,0,0.8); }
+.ficha__chipname b { color: #cbd5e1; margin-right: 2px; }
+
+.ficha__stats { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+.ficha__statvals { display: grid; grid-template-columns: 44px 1fr 44px; align-items: baseline; font-size: 0.92rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ficha__statvals span:last-child { text-align: right; }
+.ficha__statvals span[data-lead="true"] { color: var(--accent-2); }
+.ficha__statlabel { text-align: center; font-size: 0.72rem; font-weight: 600; color: var(--text-dim); }
+.ficha__bar { display: flex; gap: 2px; height: 6px; margin-top: 3px; }
+.ficha__bar span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.ficha__bar span:last-child { background: #ff5b8a; }
+
+.ficha__subs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.74rem; }
+.ficha__subs li { display: grid; grid-template-columns: 30px 1fr; grid-template-rows: 18px 18px; column-gap: 6px; padding-left: 6px; border-left: 3px solid var(--accent); line-height: 18px; }
+.ficha__subs li[data-side="away"] { border-left-color: #ff5b8a; }
+.ficha__subs li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ficha__submin { grid-row: 1 / span 2; font-weight: 800; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.ficha__subin { color: #4ade80; }
+.ficha__subout { color: #ff8a8a; }
+.ficha__foot { display: flex; justify-content: space-between; padding: 8px 20px 10px; border-top: 1px solid var(--line); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+
+@media (max-width: 720px) {
+  .ficha__body { grid-template-columns: 1fr; }
+  .ficha__pitchcol { height: 560px; }
+}

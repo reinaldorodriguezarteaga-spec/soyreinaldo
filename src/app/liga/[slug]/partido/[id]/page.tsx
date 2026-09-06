@@ -11,6 +11,7 @@ import {
   getFixtureNotes,
   getFixturePlayers,
   getFixtureStatistics,
+  getFixtureSubEvents,
   getFixtureSubs,
   isFinal,
   isLive,
@@ -33,6 +34,7 @@ import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
 import MatchTabs from "./match-tabs";
+import MatchFicha from "./match-ficha";
 
 /**
  * Etiqueta ES de una ronda. Sin config por competición: LaLiga solo tiene
@@ -251,7 +253,7 @@ export default async function LigaPartidoPage({
   const liveNow = isLive(fx);
   const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
 
-  const [rawGoals, cards, stats, players, lineups, notes, subs] =
+  const [rawGoals, cards, stats, players, lineups, notes, subs, subEvents] =
     await Promise.all([
       getFixtureGoals(fixtureId, rv),
       getFixtureCards(fixtureId, rv),
@@ -260,6 +262,8 @@ export default async function LigaPartidoPage({
       getFixtureLineups(fixtureId, rv),
       getFixtureNotes(fixtureId, rv),
       getFixtureSubs(fixtureId, rv),
+      // misma llamada cacheada que getFixtureSubs: sin cuota extra
+      getFixtureSubEvents(fixtureId, rv),
     ]);
   const cameInKeys = new Set(subs.inKeys);
 
@@ -505,6 +509,31 @@ export default async function LigaPartidoPage({
             home={{ id: home.id, name: home.name, logo: home.logo }}
             away={{ id: away.id, name: away.name, logo: away.logo }}
             initialTab={played ? "stats" : "preview"}
+            ficha={
+              played && hasLineups ? (
+                <MatchFicha
+                  fx={fx}
+                  roundLabel={roundLabelEs(fx.league.round, competition.name)}
+                  home={{ id: home.id, name: home.name, logo: home.logo }}
+                  away={{ id: away.id, name: away.name, logo: away.logo }}
+                  homeLineup={homeLineup}
+                  awayLineup={awayLineup}
+                  homePlayers={homePlayers}
+                  awayPlayers={awayPlayers}
+                  rows={rows}
+                  homeGoals={homeLines.filter((e) => e.icon === "⚽").map((e) => ({ minute: e.minute, player: e.player, tag: e.tag }))}
+                  awayGoals={awayLines.filter((e) => e.icon === "⚽").map((e) => ({ minute: e.minute, player: e.player, tag: e.tag }))}
+                  subs={subEvents}
+                  statusLabel={
+                    live
+                      ? fx.fixture.status.elapsed != null
+                        ? `${fx.fixture.status.elapsed}'`
+                        : "En vivo"
+                      : "Final"
+                  }
+                />
+              ) : undefined
+            }
           >
           <div className="shead">
             <h2>Estadísticas</h2>

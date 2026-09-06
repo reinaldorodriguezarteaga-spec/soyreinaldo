@@ -29,6 +29,13 @@ const ADMIN_LINKS: { href: string; label: string; externo?: boolean }[] = [
     label: "Marcador overlay (URL para OBS)",
     externo: true,
   },
+  // Marcador completo vertical (720×1280): alineaciones, estadísticas y
+  // cambios, también como fuente de navegador en OBS.
+  {
+    href: "https://chat.soyreinaldo.com/marcador/completo",
+    label: "Marcador completo (URL para OBS)",
+    externo: true,
+  },
 ];
 
 export default function UserMenu({
