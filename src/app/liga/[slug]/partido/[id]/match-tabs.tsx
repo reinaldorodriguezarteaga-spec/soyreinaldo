@@ -40,6 +40,7 @@ export default function MatchTabs({
   away,
   competitionSlug,
   initialTab = "stats",
+  ficha,
   children,
 }: {
   fixtureId: number;
@@ -49,9 +50,11 @@ export default function MatchTabs({
   competitionSlug: string;
   /** Pestaña inicial: "preview" para partidos por jugarse (Estadísticas vacía). */
   initialTab?: "stats" | "preview";
+  /** Ficha visual (server): tarjeta con alineaciones + estadísticas para capturar. */
+  ficha?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [tab, setTab] = useState<"stats" | "timeline" | "preview" | "h2h">(initialTab);
+  const [tab, setTab] = useState<"stats" | "ficha" | "timeline" | "preview" | "h2h">(initialTab);
   const [previewOpened, setPreviewOpened] = useState(initialTab === "preview");
   const [h2hOpened, setH2hOpened] = useState(false);
   const [timelineOpened, setTimelineOpened] = useState(false);
@@ -69,6 +72,15 @@ export default function MatchTabs({
         >
           Estadísticas
         </button>
+        {ficha && (
+          <button
+            type="button"
+            className={tab === "ficha" ? "on" : ""}
+            onClick={() => setTab("ficha")}
+          >
+            Ficha
+          </button>
+        )}
         {showTimeline && (
           <button
             type="button"
@@ -104,6 +116,8 @@ export default function MatchTabs({
       </div>
 
       <div hidden={tab !== "stats"}>{children}</div>
+
+      {ficha && <div hidden={tab !== "ficha"}>{ficha}</div>}
 
       {timelineOpened && (
         <div hidden={tab !== "timeline"}>
