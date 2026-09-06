@@ -252,7 +252,7 @@ function place(chips: Chip[], mirrored: boolean) {
   for (const [row, ps] of rows) {
     const sorted = ps.slice().sort((a, b) => col(a) - col(b));
     sorted.forEach((p, i) => {
-      const yHalf = 8 + ((row - 1) / Math.max(nRows - 1, 1)) * 35; // 8%..43% de cada mitad
+      const yHalf = 8 + ((row - 1) / Math.max(nRows - 1, 1)) * 36; // 8%..44% de cada mitad
       const x = ((i + 0.5) / sorted.length) * 100;
       out.push({ p, x: mirrored ? 100 - x : x, y: mirrored ? 100 - yHalf : yHalf });
     });

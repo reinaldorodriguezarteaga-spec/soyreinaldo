@@ -1716,9 +1716,10 @@ select.field { appearance: none; }
 .ficha__goals--away { text-align: right; }
 
 .ficha__body { display: grid; grid-template-columns: 400px 1fr; align-items: stretch; }
-/* el campo fija la altura (640px) y las estadísticas se reparten para llegar
-   exactamente a la misma altura */
-.ficha__pitchcol { position: relative; height: 660px; }
+/* el campo fija la altura y las estadísticas se reparten para llegar
+   exactamente a la misma altura (620: un poco más compacto, pedido del dueño
+   para que con muchos goles arriba la tarjeta no se alargue) */
+.ficha__pitchcol { position: relative; height: 620px; }
 .ficha__statscol { padding: 14px 16px 16px 8px; display: flex; flex-direction: column; gap: 6px; }
 .ficha__h { margin: 0 0 4px; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
 .ficha__empty { color: var(--text-dim); font-size: 0.85rem; }
