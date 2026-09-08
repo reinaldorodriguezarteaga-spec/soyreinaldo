@@ -7,8 +7,14 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
+    // Default ignores de eslint-config-next, pero con "**/" delante: el
+    // patrón sin él solo ignora el .next/node_modules DE LA RAÍZ del repo,
+    // no los anidados dentro de un worktree suelto (p.ej.
+    // .claude/worktrees/*/.next) — cuando hay uno, `npm run lint` sin
+    // argumentos escaneaba su código YA COMPILADO y reportaba cientos de
+    // falsos positivos ajenos al proyecto.
+    "**/.next/**",
+    "**/node_modules/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
