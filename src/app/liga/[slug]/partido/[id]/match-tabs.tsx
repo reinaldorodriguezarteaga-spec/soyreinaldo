@@ -16,12 +16,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { H2HData } from "@/app/api/sports/h2h/route";
 import type { PreviewData } from "@/app/api/sports/preview/route";
+import type { StandingsResponse } from "@/app/api/sports/standings/route";
 import type {
   Injury,
   LineupTeam,
   MatchOdds,
   MatchPrediction,
-  StandingRow,
   TimelineEvent,
 } from "@/lib/sports/api-football";
 import { subKey } from "@/lib/sports/api-football";
@@ -588,17 +588,17 @@ function StandingsPanel({
   homeId: number;
   awayId: number;
 }) {
-  const [standings, setStandings] = useState<StandingRow[] | "loading">("loading");
+  const [data, setData] = useState<StandingsResponse | "loading">("loading");
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/sports/standings?competition=${competitionSlug}`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d: StandingRow[]) => {
-        if (!cancelled) setStandings(Array.isArray(d) ? d : []);
+      .then((r) => (r.ok ? r.json() : { standings: [], live: [] }))
+      .then((d: StandingsResponse) => {
+        if (!cancelled) setData(d);
       })
       .catch(() => {
-        if (!cancelled) setStandings([]);
+        if (!cancelled) setData({ standings: [], live: [] });
       });
     return () => {
       cancelled = true;
@@ -607,7 +607,7 @@ function StandingsPanel({
 
   const competition = COMPETITIONS_BY_SLUG[competitionSlug];
 
-  if (standings === "loading") {
+  if (data === "loading") {
     return (
       <div className="space-y-2" aria-busy>
         <SkeletonCard />
@@ -622,8 +622,9 @@ function StandingsPanel({
   return (
     <StandingsTableView
       competition={competition}
-      standings={standings}
+      standings={data.standings}
       highlightTeamIds={[homeId, awayId]}
+      liveFixtures={data.live}
     />
   );
 }

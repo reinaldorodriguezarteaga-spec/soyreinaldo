@@ -114,7 +114,13 @@ export default function LigaTabs({
         {tab === "envivo" && <EnVivoView competition={competition} initialToday={data.today} />}
         {tab === "partidos" && <PartidosView competition={competition} fixtures={data.fixtures} />}
         {tab === "finalizados" && <FinalizadosView competition={competition} fixtures={data.finished} />}
-        {tab === "tabla" && <StandingsTableView competition={competition} standings={data.standings} />}
+        {tab === "tabla" && (
+          <StandingsTableView
+            competition={competition}
+            standings={data.standings}
+            liveFixtures={data.today}
+          />
+        )}
         {tab === "jugadores" && <JugadoresView competition={competition} />}
         {tab === "stats" && (
           <StatsView

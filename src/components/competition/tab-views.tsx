@@ -40,6 +40,7 @@ import {
 } from "@/lib/sports/api-football";
 import type { Competition } from "@/lib/sports/competitions";
 import type { FixtureEvents, WcFixture } from "@/lib/sports/widget-data";
+import { mergeLiveStandingsFlat, pendingFixtures, type LiveRow } from "@/lib/sports/live-standings";
 import MatchCardEvents from "@/components/MatchCardEvents";
 import { SkeletonBar } from "@/components/Skeleton";
 import PlayerExtrasBlock from "@/components/PlayerExtras";
@@ -846,6 +847,7 @@ export function StandingsTableView({
   competition,
   standings,
   highlightTeamIds,
+  liveFixtures,
 }: {
   competition: Competition;
   standings: StandingRow[];
@@ -853,6 +855,15 @@ export function StandingsTableView({
    * o los dos equipos de un partido, para ubicarlos de un vistazo en la
    * tabla completa. */
   highlightTeamIds?: number[];
+  /** Partidos de la competición ahora mismo (en juego o de la ventana del
+   * día) — si se pasa, la tabla fusiona los marcadores parciales sobre la
+   * clasificación oficial mientras se juega, en vez de esperar a que el API
+   * actualice /standings al terminar cada partido (podía tardar minutos).
+   * Sin este prop la tabla se ve tal cual vino del último refresco del
+   * cron/caché, como antes. Solo afecta a "Toda la liga": los desgloses
+   * "Como local"/"Como visitante" siguen viniendo de la clasificación
+   * oficial — la fusión en vivo no separa resultados por local/visitante. */
+  liveFixtures?: Fixture[];
 }) {
   const base = basePath(competition);
   // "Tabla completa": goles a favor/en contra (ya venían en /standings y los
@@ -886,11 +897,16 @@ export function StandingsTableView({
 
   const dim = { color: "var(--text-dim)" } as const;
 
+  // Fusión en vivo: solo afecta a "Toda la liga" (ver comentario del prop).
+  const pending = liveFixtures ? pendingFixtures(liveFixtures, new Set<number>()) : [];
+  const live = pending.length > 0 ? mergeLiveStandingsFlat(standings, pending) : null;
+  const rowsBase: (StandingRow | LiveRow)[] = donde === "todos" && live ? live : standings;
+
   // En "Casa"/"Fuera" hay que recalcular puntos y reordenar: la API solo da
   // la clasificación general.
   const filas =
     donde === "todos"
-      ? standings.map((r) => ({ r, d: r.all, pts: r.points, dg: r.goalsDiff }))
+      ? rowsBase.map((r) => ({ r, d: r.all, pts: r.points, dg: r.goalsDiff }))
       : standings
           .map((r) => {
             const d = (donde === "casa" ? r.home : r.away) ?? {
@@ -941,6 +957,23 @@ export function StandingsTableView({
         </button>
       </div>
 
+      {donde === "todos" && live && (
+        <p
+          className="mono"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            color: "var(--text-dim)",
+            fontSize: "0.68rem",
+            margin: "0 0 12px",
+          }}
+        >
+          <span className="livepulse" />
+          Clasificación provisional — incluye los resultados en directo
+        </p>
+      )}
+
       <div className="panel" style={{ overflowX: "auto" }}>
       <table className="board">
         <thead>
@@ -977,9 +1010,28 @@ export function StandingsTableView({
               className={highlightTeamIds?.includes(r.team.id) ? "me" : undefined}
             >
               <td className="pos">
-                {/* En "Casa"/"Fuera" el puesto es el de ESA tabla, no el
-                    general: si no, saldrían números desordenados. */}
-                <RankPill rank={donde === "todos" ? r.rank : i + 1} />
+                <div className="flex items-center gap-1">
+                  {/* En "Casa"/"Fuera" el puesto es el de ESA tabla, no el
+                      general: si no, saldrían números desordenados. */}
+                  <RankPill rank={donde === "todos" ? r.rank : i + 1} />
+                  {"delta" in r && r.delta !== 0 && (
+                    <span
+                      className="mono tabular-nums"
+                      title={
+                        r.delta > 0
+                          ? `Sube ${r.delta} puesto${r.delta === 1 ? "" : "s"} con el marcador en directo`
+                          : `Baja ${-r.delta} puesto${r.delta === -1 ? "" : "s"} con el marcador en directo`
+                      }
+                      style={{
+                        fontSize: "0.62rem",
+                        color: r.delta > 0 ? "#4ade80" : "#ff8a8a",
+                      }}
+                    >
+                      {r.delta > 0 ? "▲" : "▼"}
+                      {Math.abs(r.delta)}
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="who">
                 <Link
@@ -989,6 +1041,9 @@ export function StandingsTableView({
                 >
                   <Image src={r.team.logo} alt="" width={22} height={22} unoptimized />
                   {r.team.name}
+                  {"isPlaying" in r && r.isPlaying && (
+                    <span className="livepulse" title="Jugando ahora mismo" />
+                  )}
                 </Link>
                 {r.form && <FormMini form={r.form} />}
               </td>

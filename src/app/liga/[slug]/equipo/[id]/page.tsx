@@ -9,7 +9,9 @@ import {
   getTeamSquad,
   getTeamStatistics,
   getCompetitionStandings,
+  getCompetitionFixturesWindow,
   type Coach,
+  type Fixture,
   type SquadPlayer,
   type StandingRow,
 } from "@/lib/sports/api-football";
@@ -60,17 +62,22 @@ export default async function LigaEquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const [{ team, recent, upcoming }, stats, squad, coach, standings] = await Promise.all([
-    getTeamFixtures(teamId, { last: 40, next: 40 }),
-    getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(
-      () => null,
-    ),
-    getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
-    getTeamCoach(teamId).catch(() => null as Coach | null),
-    // null si la competición no tiene tabla (Copa del Rey y demás KO puros)
-    // — TeamTabs oculta la pestaña "Clasificación" en ese caso.
-    getCompetitionStandings(competition).catch(() => null) as Promise<StandingRow[] | null>,
-  ]);
+  const [{ team, recent, upcoming }, stats, squad, coach, standings, liveFixtures] =
+    await Promise.all([
+      getTeamFixtures(teamId, { last: 40, next: 40 }),
+      getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(
+        () => null,
+      ),
+      getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
+      getTeamCoach(teamId).catch(() => null as Coach | null),
+      // null si la competición no tiene tabla (Copa del Rey y demás KO puros)
+      // — TeamTabs oculta la pestaña "Clasificación" en ese caso.
+      getCompetitionStandings(competition).catch(() => null) as Promise<StandingRow[] | null>,
+      // Ventana de partidos de la competición (caché 45s, ya compartida con
+      // el widget de portada) — StandingsTableView la usa para fusionar los
+      // marcadores en directo sobre la tabla mientras se juega.
+      getCompetitionFixturesWindow(competition).catch(() => [] as Fixture[]),
+    ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
 
@@ -225,6 +232,7 @@ export default async function LigaEquipoPage({
                   competition={competition}
                   standings={standings}
                   highlightTeamIds={[teamId]}
+                  liveFixtures={liveFixtures}
                 />
               ) : undefined
             }

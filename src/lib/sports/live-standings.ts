@@ -129,3 +129,20 @@ export function mergeLiveStandings(
     };
   });
 }
+
+/**
+ * Igual que `mergeLiveStandings`, pero para una tabla PLANA
+ * (`standingsMode: "table"` — LaLiga, Champions, etc., no el Mundial por
+ * grupos). Todos los equipos de la competición caben en un único grupo
+ * sintético: como `mergeLiveStandings` no hace nada específico de grupos
+ * aparte de emparejar rivales dentro de sus `teamIds`, envolver y
+ * desenvolver un array de un elemento reutiliza toda la lógica sin
+ * duplicarla.
+ */
+export function mergeLiveStandingsFlat(
+  standings: StandingRow[],
+  pending: Fixture[],
+): LiveRow[] {
+  const [merged] = mergeLiveStandings([{ group: "", rows: standings }], pending);
+  return merged.rows;
+}
