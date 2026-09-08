@@ -21,9 +21,12 @@ import type {
   LineupTeam,
   MatchOdds,
   MatchPrediction,
+  StandingRow,
   TimelineEvent,
 } from "@/lib/sports/api-football";
 import { subKey } from "@/lib/sports/api-football";
+import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { StandingsTableView } from "@/components/competition/tab-views";
 import { SkeletonCard } from "@/components/Skeleton";
 
 const DATE_FMT = new Intl.DateTimeFormat("es-ES", {
@@ -54,13 +57,18 @@ export default function MatchTabs({
   ficha?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [tab, setTab] = useState<"stats" | "ficha" | "timeline" | "preview" | "h2h">(initialTab);
+  const [tab, setTab] = useState<
+    "stats" | "ficha" | "timeline" | "preview" | "h2h" | "standings"
+  >(initialTab);
   const [previewOpened, setPreviewOpened] = useState(initialTab === "preview");
   const [h2hOpened, setH2hOpened] = useState(false);
   const [timelineOpened, setTimelineOpened] = useState(false);
+  const [standingsOpened, setStandingsOpened] = useState(false);
   // La cronología solo tiene sentido en partidos jugados/en vivo (los que abren
   // en "Estadísticas"); en los próximos aún no hay eventos.
   const showTimeline = initialTab === "stats";
+  // Copa del Rey y demás torneos de puro KO no tienen tabla — sin pestaña.
+  const hasStandings = COMPETITIONS_BY_SLUG[competitionSlug]?.standingsMode === "table";
 
   return (
     <>
@@ -113,6 +121,18 @@ export default function MatchTabs({
         >
           Cara a cara
         </button>
+        {hasStandings && (
+          <button
+            type="button"
+            className={tab === "standings" ? "on" : ""}
+            onClick={() => {
+              setTab("standings");
+              setStandingsOpened(true);
+            }}
+          >
+            Clasificación
+          </button>
+        )}
       </div>
 
       <div hidden={tab !== "stats"}>{children}</div>
@@ -140,6 +160,12 @@ export default function MatchTabs({
             homeName={home.name}
             awayName={away.name}
           />
+        </div>
+      )}
+
+      {standingsOpened && (
+        <div hidden={tab !== "standings"}>
+          <StandingsPanel competitionSlug={competitionSlug} homeId={home.id} awayId={away.id} />
         </div>
       )}
     </>
@@ -543,6 +569,62 @@ function H2HPanel({
         })}
       </div>
     </div>
+  );
+}
+
+/* ---------- Clasificación ---------- */
+
+/**
+ * Tabla de la competición con los dos equipos del partido resaltados —
+ * pedida bajo demanda al abrir la pestaña, igual que Previa/Cara a cara.
+ * Reutiliza `StandingsTableView` (la misma tabla de `/liga/[slug]?v=tabla`).
+ */
+function StandingsPanel({
+  competitionSlug,
+  homeId,
+  awayId,
+}: {
+  competitionSlug: string;
+  homeId: number;
+  awayId: number;
+}) {
+  const [standings, setStandings] = useState<StandingRow[] | "loading">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/sports/standings?competition=${competitionSlug}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: StandingRow[]) => {
+        if (!cancelled) setStandings(Array.isArray(d) ? d : []);
+      })
+      .catch(() => {
+        if (!cancelled) setStandings([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [competitionSlug]);
+
+  const competition = COMPETITIONS_BY_SLUG[competitionSlug];
+
+  if (standings === "loading") {
+    return (
+      <div className="space-y-2" aria-busy>
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
+  }
+
+  if (!competition) return null;
+
+  return (
+    <StandingsTableView
+      competition={competition}
+      standings={standings}
+      highlightTeamIds={[homeId, awayId]}
+    />
   );
 }
 
