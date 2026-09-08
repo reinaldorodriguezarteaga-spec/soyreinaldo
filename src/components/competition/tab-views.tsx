@@ -845,9 +845,14 @@ export function FinishedCard({
 export function StandingsTableView({
   competition,
   standings,
+  highlightTeamIds,
 }: {
   competition: Competition;
   standings: StandingRow[];
+  /** Resalta esas filas (fondo tenue) — el equipo cuya ficha se está viendo,
+   * o los dos equipos de un partido, para ubicarlos de un vistazo en la
+   * tabla completa. */
+  highlightTeamIds?: number[];
 }) {
   const base = basePath(competition);
   // "Tabla completa": goles a favor/en contra (ya venían en /standings y los
@@ -967,7 +972,10 @@ export function StandingsTableView({
         </thead>
         <tbody>
           {filas.map(({ r, d, pts, dg }, i) => (
-            <tr key={r.team.id}>
+            <tr
+              key={r.team.id}
+              className={highlightTeamIds?.includes(r.team.id) ? "me" : undefined}
+            >
               <td className="pos">
                 {/* En "Casa"/"Fuera" el puesto es el de ESA tabla, no el
                     general: si no, saldrían números desordenados. */}

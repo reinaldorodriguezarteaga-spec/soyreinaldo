@@ -8,13 +8,16 @@ import {
   getAllCompetitionPlayers,
   getTeamSquad,
   getTeamStatistics,
+  getCompetitionStandings,
   type Coach,
   type SquadPlayer,
+  type StandingRow,
 } from "@/lib/sports/api-football";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import { isFavorited } from "@/app/actions/favorites";
 import FavoriteStar from "@/components/FavoriteStar";
+import { StandingsTableView } from "@/components/competition/tab-views";
 import TeamStats from "./team-stats";
 import TeamTabs from "./team-tabs";
 import TeamFixturesList from "./fixtures-list";
@@ -57,13 +60,16 @@ export default async function LigaEquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const [{ team, recent, upcoming }, stats, squad, coach] = await Promise.all([
+  const [{ team, recent, upcoming }, stats, squad, coach, standings] = await Promise.all([
     getTeamFixtures(teamId, { last: 40, next: 40 }),
     getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(
       () => null,
     ),
     getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
     getTeamCoach(teamId).catch(() => null as Coach | null),
+    // null si la competición no tiene tabla (Copa del Rey y demás KO puros)
+    // — TeamTabs oculta la pestaña "Clasificación" en ese caso.
+    getCompetitionStandings(competition).catch(() => null) as Promise<StandingRow[] | null>,
   ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) notFound();
@@ -213,6 +219,15 @@ export default async function LigaEquipoPage({
             hasSquad={squadFinal.length > 0}
             jugadores={<SquadList competition={competition} squad={squadFinal} />}
             partidos={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}
+            clasificacion={
+              standings && standings.length > 0 ? (
+                <StandingsTableView
+                  competition={competition}
+                  standings={standings}
+                  highlightTeamIds={[teamId]}
+                />
+              ) : undefined
+            }
           />
         </div>
       </section>
