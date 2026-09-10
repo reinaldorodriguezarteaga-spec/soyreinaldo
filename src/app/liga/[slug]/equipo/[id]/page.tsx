@@ -229,7 +229,13 @@ export default async function LigaEquipoPage({
             clasificacion={
               standings && standings.length > 0 ? (
                 <StandingsTableView
-                  competition={competition}
+                  // koStructure trae RegExp (bracket de eliminatorias) —
+                  // rompe la serialización Server→Client Component en las
+                  // competiciones que lo tienen (Champions/Europa/
+                  // Conference/Copa del Rey/FA Cup/Supercopa). Mismo
+                  // idioma que ya usan `/liga/[slug]/page.tsx`, `buscar` y
+                  // `comparar` al cruzar una Competition a un "use client".
+                  competition={{ ...competition, koStructure: undefined }}
                   standings={standings}
                   highlightTeamIds={[teamId]}
                   liveFixtures={liveFixtures}
