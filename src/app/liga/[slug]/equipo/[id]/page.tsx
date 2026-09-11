@@ -114,17 +114,26 @@ export default async function LigaEquipoPage({
   const favorited = await isFavorited("team", String(teamId));
 
   // Historial + calendario en una sola lista cronológica ascendente (FotMob).
-  const seenIds = new Set<number>();
-  const allFixtures = [...recent, ...upcoming]
-    .filter((f) => {
-      if (seenIds.has(f.fixture.id)) return false;
-      seenIds.add(f.fixture.id);
-      return true;
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
-    );
+  //
+  // `recent`/`upcoming` vienen de una caché que puede tener hasta 30 min
+  // (sin cron precalculado para esta combinación last:40/next:40 — ver
+  // comentario en el fetch de arriba) — recién acabado un partido, el
+  // dueño reportó que tardaba en aparecer aquí. `liveFixtures` (la ventana
+  // ±12h/+14h que ya se pide para la clasificación en directo, caché de
+  // 45s) tiene el estado real de cualquier partido de este equipo jugado
+  // en las últimas 12h, así que se usa para PISAR la versión vieja (o
+  // añadirla si `recent` todavía no la tenía) antes de dedupear.
+  const byId = new Map<number, Fixture>();
+  for (const f of [...recent, ...upcoming]) byId.set(f.fixture.id, f);
+  for (const f of liveFixtures) {
+    if (f.teams.home.id === teamId || f.teams.away.id === teamId) {
+      byId.set(f.fixture.id, f);
+    }
+  }
+  const allFixtures = [...byId.values()].sort(
+    (a, b) =>
+      new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+  );
 
   const base = `/liga/${competition.slug}`;
 
@@ -229,7 +238,13 @@ export default async function LigaEquipoPage({
             clasificacion={
               standings && standings.length > 0 ? (
                 <StandingsTableView
-                  competition={competition}
+                  // koStructure trae RegExp (bracket de eliminatorias) —
+                  // rompe la serialización Server→Client Component en las
+                  // competiciones que lo tienen (Champions/Europa/
+                  // Conference/Copa del Rey/FA Cup/Supercopa). Mismo
+                  // idioma que ya usan `/liga/[slug]/page.tsx`, `buscar` y
+                  // `comparar` al cruzar una Competition a un "use client".
+                  competition={{ ...competition, koStructure: undefined }}
                   standings={standings}
                   highlightTeamIds={[teamId]}
                   liveFixtures={liveFixtures}
