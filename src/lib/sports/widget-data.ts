@@ -85,14 +85,17 @@ function orderForDisplay(fixtures: Fixture[]): Fixture[] {
 
 /**
  * Adjunta goles y expulsiones a los partidos en juego/terminados. Los demás
- * (próximos) van con `ev: null`. Caché corta para los live (15s), larga para
- * los terminados (600s).
+ * (próximos) van con `ev: null`. Caché corta para los live (45s — nada en
+ * la web pide esto más seguido: el poll más rápido ya es de 30s, y
+ * `LiveRefresh` de 60s; cachear a 15s solo multiplicaba llamadas a la API
+ * sin que nadie llegara a ver esa frescura extra), larga para los
+ * terminados (600s).
  */
 export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
   return Promise.all(
     fixtures.map(async (f): Promise<WcFixture> => {
       if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
-      const rv = isLive(f) ? 15 : 600;
+      const rv = isLive(f) ? 45 : 600;
       try {
         const [rawGoals, cards] = await Promise.all([
           getFixtureGoals(f.fixture.id, rv),
