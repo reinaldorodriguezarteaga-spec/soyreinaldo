@@ -248,10 +248,17 @@ export default async function LigaPartidoPage({
 
   // Primero el partido (caché corta) para saber si está en juego; si lo está,
   // el resto se pide con caché corta y se auto-refresca la página.
-  const fx = await getFixtureById(fixtureId, 15);
+  //
+  // 45s, no 15s: `LiveRefresh` (más abajo) ya solo dispara cada 60s — con
+  // estos 8 fetchers a 15s, cada uno de esos refrescos igual pegaba en vivo
+  // a la API (la caché de 15s ya había caducado), así que subir el
+  // intervalo de LiveRefresh sin tocar esto no habría bajado la carga real.
+  // 45s dentro del margen de 60s y sin quedarse corto para nadie: nada en
+  // la web pide un partido en vivo más seguido que cada 30s.
+  const fx = await getFixtureById(fixtureId, 45);
   if (!fx) notFound();
   const liveNow = isLive(fx);
-  const rv = liveNow ? 15 : undefined; // undefined = caché por defecto del fetcher
+  const rv = liveNow ? 45 : undefined; // undefined = caché por defecto del fetcher
 
   const [rawGoals, cards, stats, players, lineups, notes, subs, subEvents] =
     await Promise.all([
