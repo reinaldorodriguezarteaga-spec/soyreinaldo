@@ -8,6 +8,7 @@ import {
   getCompetitionFixturesWindow,
   getCompetitionPlayerStats,
   teamAttackDefenseFromFixtures,
+  isFinal,
   isLive,
   type Fixture,
   type PlayerStatLeader,
@@ -94,7 +95,19 @@ export default async function LigaPage({
       getCompetitionPlayerStats(effectiveCompetition, 10),
     ]);
     fixtures = fixturesR;
-    finished = finishedR;
+    // `finished` viene de una caché que el cron refresca cada ~10 min — el
+    // dueño reportó que un partido recién acabado tardaba en aparecer aquí
+    // (y en la ficha de equipo, mismo síntoma). `today` es la ventana
+    // ±12h/+14h con caché de 45s (la misma que usa la clasificación en
+    // directo): se usa para PISAR/añadir la versión más fresca de cualquier
+    // partido ya terminado dentro de esas 12h, antes de reordenar.
+    const finishedById = new Map<number, Fixture>(finishedR.map((f) => [f.fixture.id, f]));
+    for (const f of todayR) {
+      if (isFinal(f)) finishedById.set(f.fixture.id, f);
+    }
+    finished = [...finishedById.values()].sort(
+      (a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
+    );
     // competition.standingsMode === "table" para todo lo que hay en COMPETITIONS
     // hoy (solo LaLiga) → siempre fila plana, nunca por grupos.
     standings = (standingsR as StandingRow[] | null) ?? [];
