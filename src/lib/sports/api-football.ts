@@ -2470,14 +2470,25 @@ export async function getFixtureInjuries(
   revalidate = 1800,
 ): Promise<Injury[]> {
   const r = await get<InjuriesResponse>("/injuries", { fixture: id }, revalidate);
-  return r.response.map((x) => ({
-    playerId: x.player.id,
-    player: x.player.name,
-    photo: x.player.photo ?? null,
-    teamId: x.team.id,
-    type: x.player.type ?? null,
-    reason: x.player.reason ?? null,
-  }));
+  // El propio API-Football devuelve cada baja DOS VECES (verificado 12-sep con
+  // el Madrid: 24 resultados, 12 jugadores reales, entradas idénticas por
+  // duplicado) — no es un fallo nuestro, pero hay que filtrarlo antes de que
+  // llegue a la pestaña "Previa" o cada jugador saldría repetido.
+  const seen = new Set<number>();
+  const out: Injury[] = [];
+  for (const x of r.response) {
+    if (seen.has(x.player.id)) continue;
+    seen.add(x.player.id);
+    out.push({
+      playerId: x.player.id,
+      player: x.player.name,
+      photo: x.player.photo ?? null,
+      teamId: x.team.id,
+      type: x.player.type ?? null,
+      reason: x.player.reason ?? null,
+    });
+  }
+  return out;
 }
 
 /** Cuotas de varios mercados de la primera casa disponible. */
