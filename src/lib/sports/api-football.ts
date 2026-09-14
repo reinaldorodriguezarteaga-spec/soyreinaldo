@@ -102,9 +102,17 @@ export function isFinal(f: Fixture) {
  * cinco llamadas, tres rechazadas. El síntoma era que la pestaña "Jugadores"
  * de un equipo aparecía y desaparecía según la visita.
  *
- * Con un carril de tres, la ráfaga se ordena sola y la latencia apenas cambia.
+ * Este carril lo comparte TODO el código, incluido el cron de sports_cache —
+ * y ese cron, aunque ya corre en paralelo (PR #136), sigue lanzando decenas
+ * de llamadas seguidas. Con el carril en 3, mientras el cron está en marcha
+ * ocupa los tres huecos casi todo el rato: un visitante real que caiga en la
+ * misma instancia se queda encolado detrás de esas decenas de llamadas —
+ * síntoma reportado el 14-sep, picos de 20-30s que se resolvían solos en
+ * cuanto el cron terminaba. Subido a 6: sigue muy por debajo de la ráfaga sin
+ * control que causó el incidente original, pero deja hueco para que el
+ * tráfico real no se quede detrás de todo el cron.
  */
-const MAX_SIMULTANEAS = 3;
+const MAX_SIMULTANEAS = 6;
 let enVuelo = 0;
 const cola: Array<() => void> = [];
 
