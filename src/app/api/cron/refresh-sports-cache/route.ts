@@ -24,8 +24,9 @@ import { readCache, writeCache } from "@/lib/sports/sports-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// 9 competiciones × 3 llamadas + 6 equipos destacados, secuenciado en lotes
-// pequeños — de sobra en unos segundos, pero por si acaso.
+// 60 es el máximo del plan gratis de Vercel para funciones serverless — no
+// se puede subir. El propio handler se corta antes (BUDGET_MS, más abajo)
+// para devolver un JSON parcial en vez de que Vercel lo mate a lo bruto.
 export const maxDuration = 60;
 
 /**
@@ -54,6 +55,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Presupuesto de tiempo PROPIO, algo por debajo de maxDuration=60: en una
+  // noche con varias competiciones jugando a la vez, todo lo de aquí abajo
+  // seguía devolviendo 200 (no era un problema de rate-limit) pero la suma de
+  // latencias empujaba el total por encima de los 60s y Vercel mataba la
+  // función a lo bruto, sin ni siquiera devolver el JSON parcial. Cortar
+  // solos en 50s deja escribir en `sports_cache` lo que ya se consiguió y
+  // devolver una respuesta real en vez de un 504.
+  const startedAt = Date.now();
+  const BUDGET_MS = 50_000;
+  const timeLeft = () => BUDGET_MS - (Date.now() - startedAt);
+
   const errors: string[] = [];
   let competitionsDone = 0;
   let teamsDone = 0;
@@ -64,6 +76,7 @@ export async function GET(request: Request) {
   // minuto de la API.
   async function runBatches<T>(items: T[], size: number, fn: (item: T) => Promise<void>) {
     for (let i = 0; i < items.length; i += size) {
+      if (timeLeft() <= 0) return;
       await Promise.all(
         items.slice(i, i + size).map(async (item) => {
           try {
@@ -76,41 +89,48 @@ export async function GET(request: Request) {
     }
   }
 
-  await runBatches(COMPETITIONS, 3, async (c) => {
-    const [standings, upcoming, all] = await Promise.all([
-      getCompetitionStandings(c, { forceLive: true }),
-      getCompetitionUpcomingFixtures(c, 12, { forceLive: true }),
-      getCompetitionAllFixtures(c, { forceLive: true }),
-    ]);
-    await Promise.all([
-      standings ? writeCache(standingsCacheKey(c), standings) : Promise.resolve(),
-      writeCache(upcomingCacheKey(c), upcoming),
-      writeCache(allFixturesCacheKey(c), all),
-    ]);
-    competitionsDone++;
-  });
+  // Las tres fases de abajo son independientes entre sí (compiten por la
+  // misma cuota de la API, pero no por los mismos datos) — antes se
+  // esperaban una a la otra en serie, lo que multiplicaba por tres el tiempo
+  // de ida y vuelta de red. En paralelo, el tiempo total lo marca la fase más
+  // lenta, no la suma de las tres.
+  await Promise.all([
+    runBatches(COMPETITIONS, 3, async (c) => {
+      const [standings, upcoming, all] = await Promise.all([
+        getCompetitionStandings(c, { forceLive: true }),
+        getCompetitionUpcomingFixtures(c, 12, { forceLive: true }),
+        getCompetitionAllFixtures(c, { forceLive: true }),
+      ]);
+      await Promise.all([
+        standings ? writeCache(standingsCacheKey(c), standings) : Promise.resolve(),
+        writeCache(upcomingCacheKey(c), upcoming),
+        writeCache(allFixturesCacheKey(c), all),
+      ]);
+      competitionsDone++;
+    }),
 
-  await runBatches(FEATURED_TEAMS, 3, async (team) => {
-    const { recent, upcoming } = await getTeamFixtures(team.id, {
-      next: 4,
-      forceLive: true,
-    });
-    await Promise.all([
-      writeCache(teamFixturesLastCacheKey(team.id, 20), recent),
-      writeCache(teamFixturesNextCacheKey(team.id, 4), upcoming),
-    ]);
-    teamsDone++;
-  });
+    runBatches(FEATURED_TEAMS, 3, async (team) => {
+      const { recent, upcoming } = await getTeamFixtures(team.id, {
+        next: 4,
+        forceLive: true,
+      });
+      await Promise.all([
+        writeCache(teamFixturesLastCacheKey(team.id, 20), recent),
+        writeCache(teamFixturesNextCacheKey(team.id, 4), upcoming),
+      ]);
+      teamsDone++;
+    }),
 
-  // Ligas/copas extra del calendario (solo próximos partidos, 1 llamada c/u).
-  await runBatches(CALENDAR_EXTRA_LEAGUES, 3, async (entry) => {
-    // n=12 con filtro de equipos — ver nota en getUpcomingCalendar.
-    const fixtures = await getExtraLeagueUpcoming(entry, entry.onlyTeamIds ? 12 : 6, {
-      forceLive: true,
-    });
-    await writeCache(upcomingExtraCacheKey(entry.leagueId), fixtures);
-    extrasDone++;
-  });
+    // Ligas/copas extra del calendario (solo próximos partidos, 1 llamada c/u).
+    runBatches(CALENDAR_EXTRA_LEAGUES, 3, async (entry) => {
+      // n=12 con filtro de equipos — ver nota en getUpcomingCalendar.
+      const fixtures = await getExtraLeagueUpcoming(entry, entry.onlyTeamIds ? 12 : 6, {
+        forceLive: true,
+      });
+      await writeCache(upcomingExtraCacheKey(entry.leagueId), fixtures);
+      extrasDone++;
+    }),
+  ]);
 
   // PLANTILLAS. La ficha de equipo lanzaba esta llamada en la misma ráfaga que
   // otras cuatro y API-Football la rechazaba por su límite POR MINUTO, así que
@@ -120,18 +140,21 @@ export async function GET(request: Request) {
   //
   // Solo se rellenan las que faltan o llevan más de 12h, y como mucho SQUAD_MAX
   // por vuelta: con el cron cada 10 min, una competición entera se completa en
-  // dos vueltas y luego el coste en régimen es casi cero.
+  // dos vueltas y luego el coste en régimen es casi cero. Va DESPUÉS de las
+  // tres fases de arriba (que importan más: tabla/calendario en vivo) y
+  // respeta el mismo presupuesto de tiempo, así que en una noche lenta se
+  // sacrifica esto antes que lo demás.
   const SQUAD_MAX = 12;
   const SQUAD_FRESCA_S = 60 * 60 * 12;
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   for (const c of COMPETITIONS) {
-    if (squadsDone >= SQUAD_MAX) break;
+    if (squadsDone >= SQUAD_MAX || timeLeft() <= 0) break;
     if (c.standingsMode === "none") continue;
     try {
       const refs = await getCompetitionTeamRefs(c);
       for (const t of refs) {
-        if (squadsDone >= SQUAD_MAX) break;
+        if (squadsDone >= SQUAD_MAX || timeLeft() <= 0) break;
         const fresca = await readCache<unknown[]>(
           teamSquadCacheKey(t.id),
           SQUAD_FRESCA_S,
@@ -155,6 +178,7 @@ export async function GET(request: Request) {
     squadsDone,
     teamsDone,
     extrasDone,
+    tookMs: Date.now() - startedAt,
     total:
       COMPETITIONS.length + FEATURED_TEAMS.length + CALENDAR_EXTRA_LEAGUES.length,
     errors: errors.slice(0, 10),
