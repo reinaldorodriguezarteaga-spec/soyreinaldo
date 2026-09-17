@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import {
   allFixturesCacheKey,
   getCompetitionAllFixtures,
+  getCompetitionFixturesWindow,
   getCompetitionStandings,
   getCompetitionUpcomingFixtures,
   getCompetitionTeamRefs,
   getExtraLeagueUpcoming,
+  getFixtureById,
   getTeamFixtures,
   getTeamSquadLive,
+  isLive,
   standingsCacheKey,
   teamFixturesLastCacheKey,
   teamFixturesNextCacheKey,
@@ -71,6 +74,7 @@ export async function GET(request: Request) {
   let teamsDone = 0;
   let squadsDone = 0;
   let extrasDone = 0;
+  let liveWarmed = 0;
 
   // Lotes pequeños (3 a la vez): rápido, sin ráfaga contra el límite por
   // minuto de la API.
@@ -130,6 +134,24 @@ export async function GET(request: Request) {
       await writeCache(upcomingExtraCacheKey(entry.leagueId), fixtures);
       extrasDone++;
     }),
+
+    // Ficha de partido EN VIVO (`getFixtureById`, 45s): a diferencia de las
+    // fases de arriba, esa caché NO la mantiene el cron — solo se refresca
+    // cuando alguien VISITA esa ficha en concreto. Con poco tráfico en un
+    // partido, nadie la vuelve a pedir justo después de que caduquen los 45s
+    // y se queda congelada en el último minuto que alguien vio (pasó el
+    // 16-sep: Barcelona-Racing se quedó en el 65' hasta horas después).
+    // `getCompetitionFixturesWindow` sí es siempre en vivo (la usa la
+    // portada) — se usa aquí solo para saber QUÉ partidos están en juego
+    // ahora mismo, no se escribe en sports_cache.
+    runBatches(COMPETITIONS, 3, async (c) => {
+      const enJuego = (await getCompetitionFixturesWindow(c)).filter(isLive);
+      for (const fx of enJuego) {
+        if (timeLeft() <= 0) return;
+        await getFixtureById(fx.fixture.id, 45);
+        liveWarmed++;
+      }
+    }),
   ]);
 
   // PLANTILLAS. La ficha de equipo lanzaba esta llamada en la misma ráfaga que
@@ -175,6 +197,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: errors.length === 0,
     competitionsDone,
+    liveWarmed,
     squadsDone,
     teamsDone,
     extrasDone,
