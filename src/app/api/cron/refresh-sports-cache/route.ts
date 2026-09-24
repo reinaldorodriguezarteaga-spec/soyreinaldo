@@ -23,7 +23,7 @@ import {
   COMPETITIONS,
   FEATURED_TEAMS,
 } from "@/lib/sports/competitions";
-import { readCache, writeCache } from "@/lib/sports/sports-cache";
+import { freshCacheKeys, writeCache } from "@/lib/sports/sports-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -153,6 +153,7 @@ export async function GET(request: Request) {
       }
     }),
   ]);
+  const fasesMs = Date.now() - startedAt;
 
   // PLANTILLAS. La ficha de equipo lanzaba esta llamada en la misma ráfaga que
   // otras cuatro y API-Football la rechazaba por su límite POR MINUTO, así que
@@ -170,27 +171,33 @@ export async function GET(request: Request) {
   const SQUAD_FRESCA_S = 60 * 60 * 12;
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  for (const c of COMPETITIONS) {
-    if (squadsDone >= SQUAD_MAX || timeLeft() <= 0) break;
-    if (c.standingsMode === "none") continue;
-    try {
-      const refs = await getCompetitionTeamRefs(c);
-      for (const t of refs) {
-        if (squadsDone >= SQUAD_MAX || timeLeft() <= 0) break;
-        const fresca = await readCache<unknown[]>(
-          teamSquadCacheKey(t.id),
-          SQUAD_FRESCA_S,
-        );
-        if (fresca && fresca.length > 0) continue;
-        const sq = await getTeamSquadLive(t.id);
+  if (timeLeft() > 0) {
+    const refsPorComp = await Promise.all(
+      COMPETITIONS.filter((c) => c.standingsMode !== "none").map((c) =>
+        getCompetitionTeamRefs(c).catch((e) => {
+          errors.push(e instanceof Error ? e.message : String(e));
+          return [];
+        }),
+      ),
+    );
+    const teamIds = [...new Set(refsPorComp.flat().map((t) => t.id))];
+    const frescas = await freshCacheKeys(
+      teamIds.map(teamSquadCacheKey),
+      SQUAD_FRESCA_S,
+    );
+    for (const id of teamIds) {
+      if (squadsDone >= SQUAD_MAX || timeLeft() <= 0) break;
+      if (frescas.has(teamSquadCacheKey(id))) continue;
+      try {
+        const sq = await getTeamSquadLive(id);
         if (sq.length > 0) {
-          await writeCache(teamSquadCacheKey(t.id), sq);
+          await writeCache(teamSquadCacheKey(id), sq);
           squadsDone++;
         }
-        await sleep(250);
+      } catch (e) {
+        errors.push(e instanceof Error ? e.message : String(e));
       }
-    } catch (e) {
-      errors.push(e instanceof Error ? e.message : String(e));
+      await sleep(250);
     }
   }
 
@@ -201,6 +208,7 @@ export async function GET(request: Request) {
     squadsDone,
     teamsDone,
     extrasDone,
+    fasesMs,
     tookMs: Date.now() - startedAt,
     total:
       COMPETITIONS.length + FEATURED_TEAMS.length + CALENDAR_EXTRA_LEAGUES.length,

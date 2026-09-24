@@ -51,6 +51,32 @@ export async function readCache<T>(
   }
 }
 
+/**
+ * De `keys`, cuáles tienen una entrada más nueva que `maxAgeSeconds`. Una
+ * sola consulta y sin traer `data`: comprobar ~150 plantillas una a una con
+ * `readCache` (bajando cada JSON entero) se comía buena parte del
+ * presupuesto de tiempo del cron.
+ */
+export async function freshCacheKeys(
+  keys: string[],
+  maxAgeSeconds: number,
+): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  try {
+    const supabase = anonClient();
+    if (!supabase) return new Set();
+    const since = new Date(Date.now() - maxAgeSeconds * 1000).toISOString();
+    const { data } = await supabase
+      .from("sports_cache")
+      .select("cache_key")
+      .in("cache_key", keys)
+      .gte("updated_at", since);
+    return new Set((data ?? []).map((r) => r.cache_key as string));
+  } catch {
+    return new Set();
+  }
+}
+
 /** Escribe (upsert) una entrada de `sports_cache`. Solo la usa el cron —
  * requiere la service-role key, que salta la RLS de solo-lectura. */
 export async function writeCache(key: string, data: unknown): Promise<void> {
