@@ -176,10 +176,19 @@ export async function signInWithPassword(
   const supabase = await createClient();
 
   // Si el identifier no parece un email, asumimos username y resolvemos su
-  // email a través del RPC público
+  // email con la service role: el RPC NO es público (daba el email de
+  // cualquier usuario a quien lo pidiera sin sesión).
   let email = identifier.toLowerCase();
   if (!email.includes("@")) {
-    const { data, error: rpcError } = await supabase.rpc(
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) {
+      return { status: "error", message: "Usuario o contraseña incorrectos." };
+    }
+    const admin = createAdminClient(url, serviceKey, {
+      auth: { persistSession: false },
+    });
+    const { data, error: rpcError } = await admin.rpc(
       "lookup_email_by_username",
       { p_username: email },
     );
