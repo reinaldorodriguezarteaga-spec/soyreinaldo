@@ -38,7 +38,7 @@ import {
   type GameRecords,
   type TeamExtras,
 } from "@/lib/sports/api-football";
-import type { Competition } from "@/lib/sports/competitions";
+import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import type { FixtureEvents, WcFixture } from "@/lib/sports/widget-data";
 import { mergeLiveStandingsFlat, pendingFixtures, type LiveRow } from "@/lib/sports/live-standings";
 import MatchCardEvents from "@/components/MatchCardEvents";
@@ -384,7 +384,7 @@ export function EnVivoView({
       if (document.hidden) return;
       try {
         const res = await fetch(
-          `/api/sports/competition-window?slug=${competition.slug}`,
+          `/api/sports/competition-window?slug=${competition.slug}&season=${competition.season}`,
           { cache: "no-store" },
         );
         if (!res.ok || cancelled) return;
@@ -406,7 +406,7 @@ export function EnVivoView({
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [polling, competition.slug]);
+  }, [polling, competition.slug, competition.season]);
 
   const byKickoff = (a: Fixture, b: Fixture) =>
     new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime();
@@ -878,7 +878,7 @@ export function StandingsTableView({
   useEffect(() => {
     if (!completa || extras) return;
     let vivo = true;
-    fetch(`/api/sports/standings-extra?competition=${competition.slug}`)
+    fetch(`/api/sports/standings-extra?competition=${competition.slug}&season=${competition.season}`)
       .then((r) => (r.ok ? r.json() : {}))
       .then((d: Record<number, TeamExtras>) => {
         if (vivo) setExtras(d ?? {});
@@ -889,7 +889,7 @@ export function StandingsTableView({
     return () => {
       vivo = false;
     };
-  }, [completa, extras, competition.slug]);
+  }, [completa, extras, competition.slug, competition.season]);
 
   if (standings.length === 0) {
     return <Empty>La tabla aparecerá en cuanto arranque la temporada.</Empty>;
@@ -1221,7 +1221,7 @@ export function JugadoresView({ competition }: { competition: Competition }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/sports/all-players?competition=${competition.slug}`)
+    fetch(`/api/sports/all-players?competition=${competition.slug}&season=${competition.season}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((d: AllPlayer[]) => {
         if (!cancelled) setPlayers(Array.isArray(d) ? d : []);
@@ -1232,7 +1232,7 @@ export function JugadoresView({ competition }: { competition: Competition }) {
     return () => {
       cancelled = true;
     };
-  }, [competition.slug]);
+  }, [competition.slug, competition.season]);
 
   const term = q.trim();
   const liveMode = term.length >= 3;
@@ -1243,7 +1243,7 @@ export function JugadoresView({ competition }: { competition: Competition }) {
     if (!liveMode) return;
     let cancelled = false;
     const id = setTimeout(() => {
-      fetch(`/api/sports/search-players?q=${encodeURIComponent(term)}&competition=${competition.slug}`)
+      fetch(`/api/sports/search-players?q=${encodeURIComponent(term)}&competition=${competition.slug}&season=${competition.season}`)
         .then((r) => (r.ok ? r.json() : []))
         .then((d: AllPlayer[]) => {
           if (!cancelled) setHecho({ term, live: Array.isArray(d) ? d : [] });
@@ -1256,7 +1256,7 @@ export function JugadoresView({ competition }: { competition: Competition }) {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [term, liveMode, competition.slug]);
+  }, [term, liveMode, competition.slug, competition.season]);
 
   if (players === null) {
     return (
@@ -1296,6 +1296,14 @@ export function JugadoresView({ competition }: { competition: Competition }) {
           <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", margin: "0 0 12px" }}>
             {players.length} jugadores · agrupados por equipo · o escribe un nombre para buscar
           </p>
+          {COMPETITIONS_BY_SLUG[competition.slug] &&
+            COMPETITIONS_BY_SLUG[competition.slug].season !== competition.season && (
+              // API-Football solo da la plantilla ACTUAL de cada equipo: los
+              // equipos sí son los de esa temporada, los jugadores no.
+              <p className="mono" style={{ color: "var(--text-dim)", fontSize: "0.62rem", margin: "-6px 0 12px" }}>
+                Equipos de esa temporada con su plantilla actual — el histórico de plantillas no está disponible.
+              </p>
+            )}
           <div className="space-y-2">
             {byTeam.map((g) => (
               <details key={g.team.name} className="panel" style={{ overflow: "hidden" }}>
@@ -1446,7 +1454,7 @@ function GameRecordsSection({ competition }: { competition: Competition }) {
   const [gr, setGr] = useState<GameRecords | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/sports/game-records?competition=${competition.slug}`)
+    fetch(`/api/sports/game-records?competition=${competition.slug}&season=${competition.season}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: GameRecords | null) => {
         if (!cancelled) setGr(d);
@@ -1457,7 +1465,7 @@ function GameRecordsSection({ competition }: { competition: Competition }) {
     return () => {
       cancelled = true;
     };
-  }, [competition.slug]);
+  }, [competition.slug, competition.season]);
 
   if (!gr || (!gr.topPossession && !gr.topShots && !gr.topShotsOnTarget)) return null;
 
@@ -1856,7 +1864,7 @@ function PlayerSeasonModal({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    fetch(`/api/sports/player?id=${id}&competition=${competition.slug}`)
+    fetch(`/api/sports/player?id=${id}&competition=${competition.slug}&season=${competition.season}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: Payload | null) => {
         if (!cancelled) setP(d ?? null);
@@ -1869,7 +1877,7 @@ function PlayerSeasonModal({
       document.body.style.overflow = "";
       document.removeEventListener("keydown", onKey);
     };
-  }, [id, onClose, competition.slug]);
+  }, [id, onClose, competition.slug, competition.season]);
 
   return (
     <div className="pmodal-backdrop" onClick={onClose} role="dialog" aria-modal>

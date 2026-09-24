@@ -111,31 +111,35 @@ export default function LigaTabs({
           </ScrollHintTabs>
         </div>
 
-        {tab === "envivo" && <EnVivoView competition={competition} initialToday={data.today} />}
-        {tab === "partidos" && <PartidosView competition={competition} fixtures={data.fixtures} />}
-        {tab === "finalizados" && <FinalizadosView competition={competition} fixtures={data.finished} />}
-        {tab === "tabla" && (
-          <StandingsTableView
-            competition={competition}
-            standings={data.standings}
-            liveFixtures={data.today}
-          />
-        )}
-        {tab === "jugadores" && <JugadoresView competition={competition} />}
-        {tab === "stats" && (
-          <StatsView
-            competition={competition}
-            data={{
-              scorers: data.scorers,
-              assists: data.assists,
-              ratings: data.ratings,
-              cards: data.cards,
-              attackDefense: data.attackDefense,
-              standings: data.standings,
-              finished: data.finished,
-            }}
-          />
-        )}
+        {/* key por temporada: al cambiar de temporada se vuelven a montar las
+            vistas, sin arrastrar jugadores/récords/extras de la anterior. */}
+        <div key={competition.season}>
+          {tab === "envivo" && <EnVivoView competition={competition} initialToday={data.today} />}
+          {tab === "partidos" && <PartidosView competition={competition} fixtures={data.fixtures} />}
+          {tab === "finalizados" && <FinalizadosView competition={competition} fixtures={data.finished} />}
+          {tab === "tabla" && (
+            <StandingsTableView
+              competition={competition}
+              standings={data.standings}
+              liveFixtures={data.today}
+            />
+          )}
+          {tab === "jugadores" && <JugadoresView competition={competition} />}
+          {tab === "stats" && (
+            <StatsView
+              competition={competition}
+              data={{
+                scorers: data.scorers,
+                assists: data.assists,
+                ratings: data.ratings,
+                cards: data.cards,
+                attackDefense: data.attackDefense,
+                standings: data.standings,
+                finished: data.finished,
+              }}
+            />
+          )}
+        </div>
       </div>
     </section>
   );

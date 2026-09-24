@@ -10,7 +10,8 @@ export const maxDuration = 60;
  *
  * Por qué hace falta: cuando LaLiga aplaza un partido, API-Football le cambia
  * la fecha pero `lq_matches.kickoff_at` se queda con la vieja. Y la ventana de
- * la ingesta en vivo (`lq_matches_pending_ingest`, de −4h a +5min) se calcula
+ * la ingesta en vivo (`lq_matches_pending_ingest`, de −4h a +5min, más los que
+ * sigan en juego — migración 052) se calcula
  * sobre NUESTRA fecha — así que el partido pasa desapercibido el día que se
  * juega de verdad y se queda sin marcador para siempre. Le pasó a
  * Celta-Osasuna de la jornada 1, movido del 16 al 27 de agosto.

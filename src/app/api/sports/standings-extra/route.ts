@@ -5,7 +5,7 @@ import {
   type StandingRow,
   type TeamExtras,
 } from "@/lib/sports/api-football";
-import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { competitionFromParams } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 
@@ -18,8 +18,7 @@ export const runtime = "nodejs";
  * entra solo a mirar la clasificación. La caché de 12 h vive en la librería.
  */
 export async function GET(req: Request) {
-  const slug = new URL(req.url).searchParams.get("competition") ?? "";
-  const competition = COMPETITIONS_BY_SLUG[slug];
+  const competition = competitionFromParams(new URL(req.url).searchParams);
   if (!competition) {
     return NextResponse.json({} as Record<number, TeamExtras>, { status: 404 });
   }

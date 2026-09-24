@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchCompetitionPlayers } from "@/lib/sports/api-football";
-import { WORLD_CUP_2026, COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { WORLD_CUP_2026, competitionFromParams } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 
@@ -13,8 +13,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const q = sp.get("q") ?? "";
-  const slug = sp.get("competition");
-  const competition = (slug && COMPETITIONS_BY_SLUG[slug]) || WORLD_CUP_2026;
+  const competition = competitionFromParams(sp) ?? WORLD_CUP_2026;
   try {
     return NextResponse.json(await searchCompetitionPlayers(q, competition));
   } catch {

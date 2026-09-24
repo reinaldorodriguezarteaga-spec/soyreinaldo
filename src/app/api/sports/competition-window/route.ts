@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCompetitionFixturesWindow } from "@/lib/sports/api-football";
 import { attachEvents } from "@/lib/sports/widget-data";
-import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { competitionFromParams } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 
@@ -14,8 +14,7 @@ export const runtime = "nodejs";
  *   GET /api/sports/competition-window?slug=laliga  → { fixtures: WcFixture[] }
  */
 export async function GET(req: Request) {
-  const slug = new URL(req.url).searchParams.get("slug") ?? "";
-  const competition = COMPETITIONS_BY_SLUG[slug];
+  const competition = competitionFromParams(new URL(req.url).searchParams, "slug");
   if (!competition) {
     return NextResponse.json({ fixtures: [] }, { status: 404 });
   }

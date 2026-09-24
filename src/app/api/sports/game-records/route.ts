@@ -3,7 +3,7 @@ import {
   getGameRecords,
   getCompetitionFinishedFixtures,
 } from "@/lib/sports/api-football";
-import { WORLD_CUP_2026, COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { WORLD_CUP_2026, competitionFromParams } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 export const revalidate = 3600;
@@ -16,8 +16,8 @@ export const revalidate = 3600;
  *   GET /api/sports/game-records?competition=laliga  → esa competición
  */
 export async function GET(req: Request) {
-  const slug = new URL(req.url).searchParams.get("competition");
-  const competition = (slug && COMPETITIONS_BY_SLUG[slug]) || WORLD_CUP_2026;
+  const competition =
+    competitionFromParams(new URL(req.url).searchParams) ?? WORLD_CUP_2026;
   try {
     const finished = await getCompetitionFinishedFixtures(competition);
     return NextResponse.json(await getGameRecords(finished));

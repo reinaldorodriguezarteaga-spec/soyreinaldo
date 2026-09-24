@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPlayerExtras, getPlayerSeasonStats } from "@/lib/sports/api-football";
-import { WORLD_CUP_2026, COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import { WORLD_CUP_2026, competitionFromParams } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 
@@ -16,8 +16,7 @@ export async function GET(req: Request) {
   if (!Number.isFinite(id)) {
     return NextResponse.json(null, { status: 400 });
   }
-  const slug = sp.get("competition");
-  const competition = (slug && COMPETITIONS_BY_SLUG[slug]) || WORLD_CUP_2026;
+  const competition = competitionFromParams(sp) ?? WORLD_CUP_2026;
   try {
     const [season, extras] = await Promise.all([
       getPlayerSeasonStats(id, competition),

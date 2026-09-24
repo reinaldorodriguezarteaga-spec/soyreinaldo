@@ -55,5 +55,11 @@ export default async function HomeScoreboard() {
     getUpcomingCalendar(COMPETITIONS, FEATURED_TEAMS, favorites).catch(() => null),
   ]);
 
-  return <HomeScoreboardTabs widgetData={widgetData} calendarDays={calendarDays} />;
+  return (
+    <HomeScoreboardTabs
+      widgetData={widgetData}
+      calendarDays={calendarDays}
+      favoriteTeamIds={favorites.map((f) => f.id)}
+    />
+  );
 }

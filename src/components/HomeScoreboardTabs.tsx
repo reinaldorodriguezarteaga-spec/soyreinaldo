@@ -13,9 +13,11 @@ import HomeCalendarView from "@/components/HomeCalendarView";
 export default function HomeScoreboardTabs({
   widgetData,
   calendarDays,
+  favoriteTeamIds,
 }: {
   widgetData: HomeWidgetData | null;
   calendarDays: CalendarDay[] | null;
+  favoriteTeamIds: number[];
 }) {
   const hasLive = !!widgetData && widgetData.groups.length > 0;
   const hasCalendar = !!calendarDays && calendarDays.length > 0;
@@ -23,7 +25,7 @@ export default function HomeScoreboardTabs({
   if (!hasLive && !hasCalendar) return null;
 
   const liveCard = hasLive ? (
-    <HomeMatchWidgetClient initial={widgetData!} liveOnly />
+    <HomeMatchWidgetClient initial={widgetData!} liveOnly favoriteTeamIds={favoriteTeamIds} />
   ) : undefined;
 
   if (!hasCalendar) {
