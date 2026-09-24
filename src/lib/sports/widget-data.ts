@@ -6,8 +6,7 @@ import {
   getCompetitionFixturesWindow,
   getCompetitionUpcomingFixtures,
   getExtraLeagueUpcoming,
-  getFixtureCards,
-  getFixtureGoals,
+  getFixturesEvents,
   getRelevantFixtureForTeam,
   getTeamFixtures,
   getWorldCupFixturesWindow,
@@ -92,28 +91,30 @@ function orderForDisplay(fixtures: Fixture[]): Fixture[] {
  * terminados (600s).
  */
 export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
-  return Promise.all(
-    fixtures.map(async (f): Promise<WcFixture> => {
-      if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
-      const rv = isLive(f) ? 45 : 600;
-      try {
-        const [rawGoals, cards] = await Promise.all([
-          getFixtureGoals(f.fixture.id, rv),
-          getFixtureCards(f.fixture.id, rv),
-        ]);
-        // Descarta goles anulados/fantasma reconciliando con el marcador real.
-        const goals = reconcileGoals(rawGoals, {
-          homeId: f.teams.home.id,
-          awayId: f.teams.away.id,
-          scoreHome: f.goals.home,
-          scoreAway: f.goals.away,
-        });
-        return { ...f, ev: { goals, reds: cards.filter((c) => c.expulsion) } };
-      } catch {
-        return { ...f, ev: null };
-      }
-    }),
-  );
+  // Por lotes (`getFixturesEvents`): una llamada cada 20 partidos, no dos por
+  // partido. En juego con TTL corto; terminados, 10 min.
+  const vivos = fixtures.filter(isLive).map((f) => f.fixture.id);
+  const terminados = fixtures.filter(isFinal).map((f) => f.fixture.id);
+  type Eventos = Awaited<ReturnType<typeof getFixturesEvents>>;
+  const vacio: Eventos = new Map();
+  const [evVivos, evTerminados] = await Promise.all([
+    vivos.length ? getFixturesEvents(vivos, 45) : vacio,
+    terminados.length ? getFixturesEvents(terminados, 600) : vacio,
+  ]).catch((): [Eventos, Eventos] => [vacio, vacio]);
+
+  return fixtures.map((f): WcFixture => {
+    if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
+    const ev = (isLive(f) ? evVivos : evTerminados).get(f.fixture.id);
+    if (!ev) return { ...f, ev: null };
+    // Descarta goles anulados/fantasma reconciliando con el marcador real.
+    const goals = reconcileGoals(ev.goals, {
+      homeId: f.teams.home.id,
+      awayId: f.teams.away.id,
+      scoreHome: f.goals.home,
+      scoreAway: f.goals.away,
+    });
+    return { ...f, ev: { goals, reds: ev.cards.filter((c) => c.expulsion) } };
+  });
 }
 
 /**
