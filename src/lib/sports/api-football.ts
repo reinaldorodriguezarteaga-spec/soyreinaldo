@@ -144,25 +144,64 @@ function esRateLimit(errs: unknown): boolean {
 const ESPERA_RATE_LIMIT_MS = 1500;
 const REINTENTOS_RATE_LIMIT = 2;
 
+/**
+ * Llamadas en marcha por URL. Si varios componentes (o varias visitas en la
+ * misma instancia) piden a la vez un dato que no está en caché, todos
+ * esperan a la MISMA llamada en vez de lanzar una cada uno. Sin esto, la
+ * ficha de partido pedía los goles del mismo partido 6 veces en una sola
+ * carga (24-sep): ráfagas duplicadas que disparaban el límite por minuto y
+ * llenaban el carril, y la portada y el perfil se quedaban en cola.
+ */
+const enCurso = new Map<string, Promise<{ response: unknown[]; errors: unknown }>>();
+
 async function rawGet<T>(
   url: string,
   path: string,
   paramStr: string,
 ): Promise<{ response: T[]; errors: unknown }> {
-  await tomarCarril();
-  try {
-    return await rawGetSinCarril<T>(url, path, paramStr);
-  } finally {
-    soltarCarril();
-  }
+  const yaEnCurso = enCurso.get(url);
+  if (yaEnCurso) return yaEnCurso as Promise<{ response: T[]; errors: unknown }>;
+  const p = rawGetConReintentos<T>(url, path, paramStr).finally(() => {
+    enCurso.delete(url);
+  });
+  enCurso.set(url, p as Promise<{ response: unknown[]; errors: unknown }>);
+  return p;
 }
 
-async function rawGetSinCarril<T>(
+async function rawGetConReintentos<T>(
   url: string,
   path: string,
   paramStr: string,
-  intento = 0,
 ): Promise<{ response: T[]; errors: unknown }> {
+  for (let intento = 0; ; intento++) {
+    // El hueco del carril se ocupa solo mientras dura la petición: la espera
+    // antes de un reintento va FUERA, para no bloquear a los demás 1,5-4,5 s.
+    await tomarCarril();
+    let r: Awaited<ReturnType<typeof unIntento<T>>>;
+    try {
+      r = await unIntento<T>(url, path, paramStr);
+    } finally {
+      soltarCarril();
+    }
+    if (r.ok) return r.json;
+    if (intento >= REINTENTOS_RATE_LIMIT) {
+      if (r.http429) throw new Error(`apif http 429 ${path}`);
+      throw new Error(`apif errors ${path}: ${JSON.stringify(r.json.errors)}`);
+    }
+    if (!r.http429) console.log(`[apif] ${path} rate-limited, reintento ${intento + 1}`);
+    await new Promise((res) => setTimeout(res, ESPERA_RATE_LIMIT_MS * (intento + 1)));
+  }
+}
+
+/** Una sola petición. `ok: false` = la API pide que esperemos (rate limit). */
+async function unIntento<T>(
+  url: string,
+  path: string,
+  paramStr: string,
+): Promise<
+  | { ok: true; json: { response: T[]; errors: unknown } }
+  | { ok: false; http429: boolean; json: { response: T[]; errors: unknown } }
+> {
   const key = process.env.API_FOOTBALL_KEY;
   if (!key) throw new Error("API_FOOTBALL_KEY missing");
 
@@ -179,10 +218,7 @@ async function rawGetSinCarril<T>(
     `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
   );
 
-  if (res.status === 429 && intento < REINTENTOS_RATE_LIMIT) {
-    await new Promise((r) => setTimeout(r, ESPERA_RATE_LIMIT_MS * (intento + 1)));
-    return rawGetSinCarril<T>(url, path, paramStr, intento + 1);
-  }
+  if (res.status === 429) return { ok: false, http429: true, json: { response: [], errors: {} } };
   if (!res.ok) throw new Error(`apif http ${res.status} ${path}`);
 
   const json = (await res.json()) as { response: T[]; errors: unknown };
@@ -191,17 +227,13 @@ async function rawGetSinCarril<T>(
   // La API contesta 200 con `errors.rateLimit` cuando vamos demasiado rápido.
   // No es un fallo de verdad: es "espera un momento". Se espera y se repite,
   // en vez de devolver vacío y dejar media ficha sin datos.
-  if (esRateLimit(errs) && intento < REINTENTOS_RATE_LIMIT) {
-    console.log(`[apif] ${path} rate-limited, reintento ${intento + 1}`);
-    await new Promise((r) => setTimeout(r, ESPERA_RATE_LIMIT_MS * (intento + 1)));
-    return rawGetSinCarril<T>(url, path, paramStr, intento + 1);
-  }
+  if (esRateLimit(errs)) return { ok: false, http429: false, json };
   const hasErr = Array.isArray(errs)
     ? errs.length > 0
     : !!errs && typeof errs === "object" && Object.keys(errs).length > 0;
   if (hasErr) throw new Error(`apif errors ${path}: ${JSON.stringify(errs)}`);
 
-  return json;
+  return { ok: true, json };
 }
 
 /** Cada cuánto se reintenta una llamada que quedó cacheada como fallo. */
@@ -1106,7 +1138,11 @@ export async function getFixtureGoals(
     { fixture: id, type: "Goal" },
     revalidate,
   );
-  return r.response
+  return goalsFromEvents(r.response);
+}
+
+function goalsFromEvents(events: FixtureEvent[]): FixtureGoal[] {
+  return events
     .filter((e) => e.type === "Goal" && e.detail !== "Missed Penalty")
     .map((e) => ({
       minute: e.time.elapsed,
@@ -1178,7 +1214,11 @@ export async function getFixtureCards(
     { fixture: id, type: "Card" },
     revalidate,
   );
-  return r.response
+  return cardsFromEvents(r.response);
+}
+
+function cardsFromEvents(events: FixtureEvent[]): FixtureCard[] {
+  return events
     .filter((e) => e.type === "Card")
     .map((e) => {
       const d = e.detail || "";
@@ -1191,6 +1231,76 @@ export async function getFixtureCards(
       };
     })
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
+/** Máximo de ids que acepta `/fixtures?ids=`. */
+const IDS_POR_LOTE = 20;
+
+/**
+ * Goles y tarjetas de muchos partidos a la vez: `/fixtures?ids=` trae los
+ * eventos de hasta 20 partidos en UNA llamada. Antes la portada pedía goles y
+ * tarjetas por separado de cada partido en juego o terminado hoy — un jueves
+ * de Europa League + Conference eran ~140 llamadas a la vez, que se quedaban
+ * en cola en el carril y chocaban con el límite por minuto: el marcador de la
+ * portada llegó a tardar ~2 min (24-sep).
+ *
+ * Solo se cachea lo extraído (goles/tarjetas): la respuesta entera trae
+ * alineaciones y estadísticas y pasaría del límite de 2 MB por entrada de
+ * unstable_cache. Un partido que falte en el resultado (lote fallido) no
+ * sale en el Map y el llamador lo trata como "sin eventos".
+ */
+export async function getFixturesEvents(
+  ids: number[],
+  revalidate: number,
+): Promise<Map<number, { goals: FixtureGoal[]; cards: FixtureCard[] }>> {
+  const unicos = [...new Set(ids)].sort((a, b) => a - b);
+  const lotes: number[][] = [];
+  for (let i = 0; i < unicos.length; i += IDS_POR_LOTE) {
+    lotes.push(unicos.slice(i, i + IDS_POR_LOTE));
+  }
+
+  const resultados = await Promise.all(
+    lotes.map((lote) => {
+      const idsParam = lote.join("-");
+      const url = new URL(BASE + "/fixtures");
+      url.searchParams.set("ids", idsParam);
+      // null = fallo (se cachea igual, para no repetir la llamada en cada
+      // visita durante una caída; ver `get()`).
+      const pedir = async () => {
+        try {
+          const r = await rawGet<{ fixture: { id: number }; events?: FixtureEvent[] }>(
+            url.toString(),
+            "/fixtures",
+            `ids=${idsParam}`,
+          );
+          return r.response.map((f) => ({
+            id: f.fixture.id,
+            goals: goalsFromEvents(f.events ?? []),
+            cards: cardsFromEvents(f.events ?? []),
+          }));
+        } catch {
+          return null;
+        }
+      };
+      return (async () => {
+        const res = await unstable_cache(pedir, ["apif-eventos-lote", idsParam], {
+          revalidate,
+        })().catch(() => null);
+        if (res !== null || revalidate <= FAILURE_RETRY_S) return res ?? [];
+        // Igual que `get()`: un éxito dura su TTL, un fallo se reintenta cada
+        // FAILURE_RETRY_S con clave por ventana de tiempo.
+        const ventana = Math.floor(Date.now() / (FAILURE_RETRY_S * 1000));
+        const r2 = await unstable_cache(
+          pedir,
+          ["apif-eventos-lote-retry", idsParam, String(ventana)],
+          { revalidate: FAILURE_RETRY_S },
+        )().catch(() => null);
+        return r2 ?? [];
+      })();
+    }),
+  );
+
+  return new Map(resultados.flat().map((r) => [r.id, { goals: r.goals, cards: r.cards }]));
 }
 
 /** Evento notable que NO cuenta en el marcador: penalti fallado o gol anulado. */
