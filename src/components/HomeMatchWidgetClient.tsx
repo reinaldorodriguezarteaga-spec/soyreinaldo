@@ -110,12 +110,17 @@ function CompetitionAccordion({ group }: { group: CompetitionGroup }) {
 export default function HomeMatchWidgetClient({
   initial,
   liveOnly = false,
+  favoriteTeamIds = [],
 }: {
   initial: HomeWidgetData;
   /** true → una sola tarjeta "En vivo" con SOLO los partidos en juego
    * (badge de competición por fila), para incrustar encima del calendario.
    * Mantiene el mismo polling de 30s que el widget completo. */
   liveOnly?: boolean;
+  /** Equipos ⭐ del usuario: sus partidos van primero. Se ordena aquí y no
+   * en el servidor porque el poll (`/api/sports/home-widget`) es igual para
+   * todos y no sabe quién mira. */
+  favoriteTeamIds?: number[];
 }) {
   const [data, setData] = useState<HomeWidgetData>(initial);
 
@@ -149,18 +154,34 @@ export default function HomeMatchWidgetClient({
     };
   }, [data.needsPolling]);
 
-  const { groups } = data;
+  const favs = new Set(favoriteTeamIds);
+  const isFav = (fx: CompetitionGroup["live"][number]) =>
+    favs.has(fx.teams.home.id) || favs.has(fx.teams.away.id);
+  // sort() es estable: dentro de favoritos y de no favoritos se conserva el
+  // orden que ya traía cada lista.
+  const favFirst = <T extends { fx: CompetitionGroup["live"][number] }>(rows: T[]) =>
+    favs.size === 0 ? rows : [...rows].sort((a, b) => Number(isFav(b.fx)) - Number(isFav(a.fx)));
+  const groups =
+    favs.size === 0
+      ? data.groups
+      : [...data.groups].sort(
+          (a, b) =>
+            Number([...b.live, ...b.finishedToday].some(isFav)) -
+            Number([...a.live, ...a.finishedToday].some(isFav)),
+        );
   if (groups.length === 0) return null;
+  const badgeFor = (fx: CompetitionGroup["live"][number], name: string) =>
+    isFav(fx) ? `⭐ ${name}` : name;
 
   if (liveOnly) {
-    const liveRows = groups.flatMap((g) =>
-      g.live.map((fx) => ({ fx, competition: g.competition })),
+    const liveRows = favFirst(
+      groups.flatMap((g) => g.live.map((fx) => ({ fx, competition: g.competition }))),
     );
     // Sin la vista de acordeones (las pestañas se retiraron), los
     // resultados de HOY también viven en esta tarjeta — debajo de los
     // partidos en juego.
-    const finishedRows = groups.flatMap((g) =>
-      g.finishedToday.map((fx) => ({ fx, competition: g.competition })),
+    const finishedRows = favFirst(
+      groups.flatMap((g) => g.finishedToday.map((fx) => ({ fx, competition: g.competition }))),
     );
     if (liveRows.length === 0 && finishedRows.length === 0) return null;
     const anyLive = liveRows.length > 0;
@@ -187,7 +208,7 @@ export default function HomeMatchWidgetClient({
                   key={fx.fixture.id}
                   fx={fx}
                   href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
-                  badge={competition.name}
+                  badge={badgeFor(fx, competition.name)}
                 />
               ))}
             </div>
@@ -201,7 +222,7 @@ export default function HomeMatchWidgetClient({
                     key={fx.fixture.id}
                     fx={fx}
                     href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
-                    badge={competition.name}
+                    badge={badgeFor(fx, competition.name)}
                   />
                 ))}
               </div>

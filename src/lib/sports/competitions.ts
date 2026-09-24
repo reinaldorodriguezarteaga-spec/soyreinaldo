@@ -71,6 +71,22 @@ export function resolveSeason(
   return competition.season;
 }
 
+/**
+ * Competición de una ruta `/api/sports/*` a partir de `?<slugParam>=` y
+ * `?season=`, con la temporada validada por `resolveSeason`. Sin `season`
+ * (o con una que no toca) es la competición tal cual; `undefined` si el
+ * slug no existe.
+ */
+export function competitionFromParams(
+  sp: URLSearchParams,
+  slugParam = "competition",
+): Competition | undefined {
+  const c = COMPETITIONS_BY_SLUG[sp.get(slugParam) ?? ""];
+  if (!c) return undefined;
+  const season = resolveSeason(c, sp.get("season") ?? undefined);
+  return season === c.season ? c : { ...c, season };
+}
+
 export const LALIGA: Competition = {
   slug: "laliga",
   leagueId: 140,

@@ -9,6 +9,7 @@
 
 import { unstable_cache } from "next/cache";
 import {
+  COMPETITIONS_BY_SLUG,
   WORLD_CUP_2026,
   type CalendarExtraLeague,
   type Competition,
@@ -471,11 +472,25 @@ export type WcGroup = { group: string; rows: StandingRow[] };
  * refrescarla cada 10 min ya provocaba ráfagas de rate-limit (429) contra la
  * API tras cada deploy (caché en frío).
  */
+/**
+ * Sufijo de temporada para las claves de `sports_cache`. El cron solo escribe
+ * la temporada configurada, con la clave de siempre (sin sufijo). Una
+ * temporada archivada (`?season=` en /liga/[slug]) lleva sufijo propio que
+ * el cron nunca escribe, así que cae a la llamada en vivo — sin él, ver la
+ * 2025 enseñaba la tabla y el calendario de la actual.
+ */
+function seasonSuffix(competition: Competition): string {
+  const configured = COMPETITIONS_BY_SLUG[competition.slug]?.season;
+  return configured === undefined || configured === competition.season
+    ? ""
+    : `:${competition.season}`;
+}
+
 /** Clave de sports_cache para la tabla de una competición — exportada para
  * que el cron (/api/cron/refresh-sports-cache) escriba bajo la misma clave
  * que lee esta función. */
 export function standingsCacheKey(competition: Competition): string {
-  return `standings:${competition.slug}`;
+  return `standings:${competition.slug}${seasonSuffix(competition)}`;
 }
 
 export async function getCompetitionStandings(
@@ -547,7 +562,7 @@ const UPCOMING_CACHE_N = 12;
 /** Clave de sports_cache para las próximas fixturas de una competición
  * (siempre las UPCOMING_CACHE_N primeras — ver nota arriba). */
 export function upcomingCacheKey(competition: Competition): string {
-  return `upcoming:${competition.slug}`;
+  return `upcoming:${competition.slug}${seasonSuffix(competition)}`;
 }
 
 /** Clave de sports_cache para las próximas fixturas de una liga EXTRA del
@@ -800,7 +815,7 @@ export async function getFixtureTimeline(
  */
 /** Clave de sports_cache para el calendario completo de una competición. */
 export function allFixturesCacheKey(competition: Competition): string {
-  return `allFixtures:${competition.slug}`;
+  return `allFixtures:${competition.slug}${seasonSuffix(competition)}`;
 }
 
 export async function getCompetitionAllFixtures(
