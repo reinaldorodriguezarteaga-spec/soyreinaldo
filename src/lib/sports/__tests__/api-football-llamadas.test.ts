@@ -53,6 +53,25 @@ describe("llamadas a API-Football", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("cada llamada lleva tiempo máximo, y una fallida no bloquea a la siguiente", async () => {
+    let primera = true;
+    const fetchMock = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      if (primera) {
+        primera = false;
+        throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+      }
+      return respuesta({ errors: [], response: [{ fixture: { id: 9 } }] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    // La primera se corta (get() lo convierte en "sin datos"); la segunda ya
+    // no espera a la colgada: vuelve a llamar y trae el partido.
+    expect(await getFixtureById(9, 45)).toBeNull();
+    expect((await getFixtureById(9, 45))?.fixture.id).toBe(9);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("getFixturesEvents saca goles y tarjetas de varios partidos en una llamada", async () => {
     const ev = (type: string, detail: string, minute: number, player: string) => ({
       time: { elapsed: minute, extra: null },

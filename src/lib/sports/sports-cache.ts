@@ -11,18 +11,32 @@ import { createClient } from "@supabase/supabase-js";
  * cuántos visitantes (o un bot) entren a la vez. Ver migración 033.
  */
 
+/**
+ * Supabase con tiempo máximo por petición: una lectura de la caché colgada
+ * bloqueaba la página entera (y el cron) sin límite. 5 s sobran — responde
+ * en 0,1-0,2 s. Si se corta, `readCache` devuelve null y se cae a la API.
+ */
+const conTiempoMax: typeof fetch = (input, init) =>
+  fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(5_000) });
+
 function anonClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(url, key, {
+    auth: { persistSession: false },
+    global: { fetch: conTiempoMax },
+  });
 }
 
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(url, key, {
+    auth: { persistSession: false },
+    global: { fetch: conTiempoMax },
+  });
 }
 
 /**

@@ -142,6 +142,16 @@ function esRateLimit(errs: unknown): boolean {
 }
 
 const ESPERA_RATE_LIMIT_MS = 1500;
+
+/**
+ * Tiempo máximo de UNA petición a API-Football. Sin él, una petición que se
+ * quedaba colgada retenía su hueco del carril para siempre, y con unas pocas
+ * colgadas todo lo que iba detrás en esa instancia esperaba: el cron llegaba
+ * a los 60 s de Vercel a media vuelta y la portada a los 300 s (27-sep).
+ * Encima, con `enCurso`, todas las visitas que pedían esa misma URL esperaban
+ * a la colgada. Las respuestas normales tardan 0,1-0,5 s.
+ */
+const TIEMPO_MAX_LLAMADA_MS = 10_000;
 const REINTENTOS_RATE_LIMIT = 2;
 
 /**
@@ -208,6 +218,7 @@ async function unIntento<T>(
   const res = await fetch(url, {
     headers: { "x-apisports-key": key },
     cache: "no-store", // el único caché es unstable_cache (capa de abajo)
+    signal: AbortSignal.timeout(TIEMPO_MAX_LLAMADA_MS),
   });
 
   const remaining =
