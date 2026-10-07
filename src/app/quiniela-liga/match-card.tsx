@@ -3,8 +3,25 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { savePrediction } from "./actions";
+import type { FormaEquipo } from "@/lib/quiniela-liga/forma";
+import { ANFITRION_NOMBRE, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
 
-export type ClubTeam = { id: number; name: string; logo: string | null };
+export type ClubTeam = {
+  id: number;
+  name: string;
+  logo: string | null;
+  /** Puesto, DG y racha (solo en partidos por jugar). */
+  forma?: FormaEquipo | null;
+};
+
+/** El enfrentamiento terminado más reciente entre los dos equipos. */
+export type CaraACara = {
+  fecha: string;
+  local: string;
+  visitante: string;
+  golesLocal: number;
+  golesVisitante: number;
+};
 
 export type LqMatchCardData = {
   id: number;
@@ -25,6 +42,10 @@ export type LqMatchCardData = {
   };
   /** Puntos de este usuario en este partido (null si no jugado / sin pronóstico). */
   points: number | null;
+  /** Pronóstico de Reinaldo ("¿Le ganas a Reinaldo?"); null para él mismo. */
+  anfitrion?: PronosticoAnfitrion | null;
+  /** Solo en partidos por jugar. */
+  caraACara?: CaraACara | null;
 };
 
 const LIVE_STATES = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE"]);
@@ -196,6 +217,9 @@ export default function LqMatchCard({
         </p>
       )}
 
+      {match.caraACara && <LineaCaraACara c={match.caraACara} />}
+      {match.anfitrion && <LineaAnfitrion p={match.anfitrion} />}
+
       <footer className="gamecard__foot">
         {match.locked && !showScoreBlock && <span>🔒 Cerrado · falta &lt;30min</span>}
         {!match.locked && status === "saving" && <span>Guardando…</span>}
@@ -228,12 +252,132 @@ function TeamRow({
             "⚽"
           )}
         </span>
-        <span className="gamerow__name" title={team.name}>
-          {team.name}
+        <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <span className="gamerow__name" title={team.name}>
+            {team.name}
+          </span>
+          {team.forma && <LineaForma forma={team.forma} />}
         </span>
       </div>
       {children}
     </div>
+  );
+}
+
+/** "🎙️ Reinaldo: 2–1", o solo si ya pronosticó (el marcador, desde el
+ * pitido inicial, como el de cualquiera). */
+function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
+  return (
+    <p
+      style={{
+        margin: "8px 0 0",
+        textAlign: "center",
+        fontSize: "0.82rem",
+        color: "var(--text-dim)",
+      }}
+    >
+      🎙️{" "}
+      {p.home != null && p.away != null ? (
+        <>
+          {ANFITRION_NOMBRE} dijo{" "}
+          <b style={{ color: "var(--text)" }}>
+            {p.home}–{p.away}
+          </b>
+        </>
+      ) : p.hecho ? (
+        <>{ANFITRION_NOMBRE} ya ha pronosticado. ¿Le ganas?</>
+      ) : (
+        <>{ANFITRION_NOMBRE} aún no ha pronosticado</>
+      )}
+    </p>
+  );
+}
+
+const COLOR_RESULTADO = { V: "#22c55e", E: "#9aa4d6", D: "#ef4444" } as const;
+const TITULO_RESULTADO = { V: "Ganó", E: "Empató", D: "Perdió" } as const;
+
+/** "3º · DG +12" y debajo la racha (V E D V V, la última a la derecha):
+ * lo justo para decidir sin salir de la quiniela. */
+function LineaForma({ forma }: { forma: FormaEquipo }) {
+  const partes: React.ReactNode[] = [];
+  if (forma.puesto != null) partes.push(<span key="p">{forma.puesto}º</span>);
+  if (forma.dg != null) {
+    partes.push(
+      <span key="d" title="Diferencia de goles">
+        DG {forma.dg > 0 ? `+${forma.dg}` : forma.dg}
+      </span>,
+    );
+  }
+  if (partes.length === 0 && forma.racha.length === 0) return null;
+  return (
+    <span
+      className="mono"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        color: "var(--text-dim)",
+        fontSize: "0.66rem",
+        marginTop: 2,
+      }}
+    >
+      {partes.length > 0 && (
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {partes.flatMap((x, i) => (i === 0 ? [x] : [<span key={`s${i}`} aria-hidden>·</span>, x]))}
+        </span>
+      )}
+      {forma.racha.length > 0 && (
+        <span
+          style={{ display: "flex", gap: 2 }}
+          aria-label={`Últimos partidos: ${forma.racha.map((r) => TITULO_RESULTADO[r]).join(", ")}`}
+        >
+          {forma.racha.map((r, i) => (
+            <span
+              key={i}
+              aria-hidden
+              title={i === forma.racha.length - 1 ? `Último: ${TITULO_RESULTADO[r]}` : TITULO_RESULTADO[r]}
+              style={{
+                display: "inline-grid",
+                placeItems: "center",
+                width: 14,
+                height: 14,
+                borderRadius: 3,
+                fontSize: "0.56rem",
+                fontWeight: 700,
+                color: "#fff",
+                background: COLOR_RESULTADO[r],
+                opacity: i === forma.racha.length - 1 ? 1 : 0.8,
+              }}
+            >
+              {r}
+            </span>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** "Último cara a cara: Barça 2–1 Madrid · mar 2026". */
+function LineaCaraACara({ c }: { c: CaraACara }) {
+  const fecha = new Intl.DateTimeFormat("es-ES", { month: "short", year: "numeric" }).format(
+    new Date(c.fecha),
+  );
+  return (
+    <p
+      style={{
+        margin: "8px 0 0",
+        textAlign: "center",
+        fontSize: "0.78rem",
+        color: "var(--text-dim)",
+      }}
+    >
+      Último cara a cara:{" "}
+      <span style={{ color: "var(--text)" }}>
+        {c.local} <b>{c.golesLocal}–{c.golesVisitante}</b> {c.visitante}
+      </span>{" "}
+      · {fecha}
+    </p>
   );
 }
 

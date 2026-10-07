@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
+import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 
 /**
  * La quiniela, dentro de la ficha del partido.
@@ -27,10 +28,12 @@ export default async function MatchQuiniela({
   fixtureId,
   played,
   goles,
+  equipos,
 }: {
   fixtureId: number;
   played: boolean;
   goles: { home: number | null; away: number | null };
+  equipos: { local: string; visitante: string };
 }) {
   const supabase = await createClient();
 
@@ -42,9 +45,45 @@ export default async function MatchQuiniela({
     .maybeSingle<{ id: number; counts_for_scoring: boolean }>();
   if (!partido) return null;
 
+  // Lo que pronostica la comunidad: solo totales (función de la migración
+  // 056); el marcador más repetido solo aparece tras el pitido inicial.
+  const { data: comunidadData } = await supabase
+    .rpc("lq_pronostico_comunidad", { p_match_id: fixtureId })
+    .maybeSingle<Comunidad>();
+  const comunidad =
+    comunidadData && comunidadData.total >= MIN_PARA_COMUNIDAD ? comunidadData : null;
+  // "¿Le ganas a Reinaldo?": su pronóstico (marcador solo desde el pitido).
+  const { data: anfData } = await supabase.rpc("lq_pronosticos_anfitrion", {
+    p_match_ids: [fixtureId],
+  });
+  const anf = ((anfData ?? []) as { hecho: boolean; score_home: number | null; score_away: number | null }[])[0];
+  const lineaAnfitrion = anf ? (
+    <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
+      🎙️{" "}
+      {anf.score_home != null && anf.score_away != null ? (
+        <>
+          {ANFITRION_NOMBRE} dijo{" "}
+          <strong style={{ color: "var(--text)" }}>
+            {anf.score_home}–{anf.score_away}
+          </strong>
+        </>
+      ) : anf.hecho ? (
+        <>{ANFITRION_NOMBRE} ya ha pronosticado este partido. ¿Le ganas?</>
+      ) : (
+        <>{ANFITRION_NOMBRE} aún no lo ha pronosticado.</>
+      )}
+    </p>
+  ) : null;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const bloqueComunidad = (
+    <>
+      {comunidad && <BloqueComunidad c={comunidad} equipos={equipos} />}
+      {user?.id !== ANFITRION_ID && lineaAnfitrion}
+    </>
+  );
 
   if (!user) {
     return (
@@ -53,6 +92,7 @@ export default async function MatchQuiniela({
           Este partido entra en la quiniela. Pronostica el marcador y compite
           con tu gente en una clasificación propia.
         </p>
+        {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
           Ver la quiniela <span className="arr">→</span>
         </Link>
@@ -78,6 +118,7 @@ export default async function MatchQuiniela({
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
           Este partido entra en la quiniela y aún no estás en ninguna.
         </p>
+        {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
           Entrar a la quiniela <span className="arr">→</span>
         </Link>
@@ -186,10 +227,84 @@ export default async function MatchQuiniela({
         </div>
       )}
 
+      {bloqueComunidad}
+
       <Link href={enlaceQuiniela} className="btn">
         {played ? "Ver la quiniela" : "Pronosticar"} <span className="arr">→</span>
       </Link>
     </Caja>
+  );
+}
+
+type Comunidad = {
+  total: number;
+  local: number;
+  empate: number;
+  visitante: number;
+  marcador: string | null;
+  marcador_n: number | null;
+};
+
+/** Con menos pronósticos el porcentaje no dice nada. */
+const MIN_PARA_COMUNIDAD = 3;
+
+function BloqueComunidad({
+  c,
+  equipos,
+}: {
+  c: Comunidad;
+  equipos: { local: string; visitante: string };
+}) {
+  const pct = (n: number) => Math.round((n / c.total) * 100);
+  const filas = [
+    { etiqueta: `Gana ${equipos.local}`, n: c.local },
+    { etiqueta: "Empate", n: c.empate },
+    { etiqueta: `Gana ${equipos.visitante}`, n: c.visitante },
+  ];
+  return (
+    <div style={{ margin: "0 0 16px" }}>
+      <p
+        className="mono"
+        style={{
+          margin: "0 0 8px",
+          color: "var(--text-dim)",
+          fontSize: "0.66rem",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+        }}
+      >
+        Lo que pronostica la comunidad · {c.total} pronósticos
+      </p>
+      {filas.map((f) => (
+        <div key={f.etiqueta} style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+          <span className="truncate" style={{ width: 150, flexShrink: 0, fontSize: "0.9rem" }}>
+            {f.etiqueta}
+          </span>
+          <span
+            aria-hidden
+            style={{ flex: 1, height: 8, borderRadius: 4, background: "var(--line)", overflow: "hidden" }}
+          >
+            <span
+              style={{
+                display: "block",
+                height: "100%",
+                width: `${pct(f.n)}%`,
+                background: "var(--accent)",
+              }}
+            />
+          </span>
+          <span className="tabular-nums" style={{ width: 42, textAlign: "right", fontSize: "0.9rem" }}>
+            {pct(f.n)}%
+          </span>
+        </div>
+      ))}
+      {c.marcador && c.marcador_n && (
+        <p style={{ margin: "8px 0 0", fontSize: "0.88rem", color: "var(--text-dim)" }}>
+          Marcador más repetido: <strong style={{ color: "var(--text)" }}>{c.marcador.replace("-", "–")}</strong>{" "}
+          ({c.marcador_n} {c.marcador_n === 1 ? "vez" : "veces"})
+        </p>
+      )}
+    </div>
   );
 }
 

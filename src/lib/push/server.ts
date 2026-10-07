@@ -42,28 +42,17 @@ async function configurar(): Promise<boolean> {
   return true;
 }
 
-/**
- * Avisa a quien tenga ese equipo en favoritos. Devuelve cuántos avisos
- * salieron. Las suscripciones muertas (404/410: el navegador se desinstaló o
- * el usuario revocó el permiso) se borran solas.
- */
-export async function notificarEquipo(
-  teamId: number,
+type Destino = { endpoint: string; p256dh: string; auth: string };
+
+/** Envía a una lista de suscripciones; borra las muertas (404/410: el
+ * navegador se desinstaló o el usuario revocó el permiso). */
+async function enviar(
+  supabase: NonNullable<ReturnType<typeof admin>>,
+  destinos: Destino[],
   payload: PushPayload,
+  ttl: number,
 ): Promise<number> {
-  const supabase = admin();
-  if (!supabase || !(await configurar())) return 0;
-
-  const { data } = await supabase.rpc("push_targets_for_team", {
-    p_team_id: String(teamId),
-  });
-  const destinos = (data ?? []) as {
-    endpoint: string;
-    p256dh: string;
-    auth: string;
-  }[];
   if (destinos.length === 0) return 0;
-
   const cuerpo = JSON.stringify(payload);
   let enviados = 0;
   const muertas: string[] = [];
@@ -74,7 +63,7 @@ export async function notificarEquipo(
         await webpush.sendNotification(
           { endpoint: d.endpoint, keys: { p256dh: d.p256dh, auth: d.auth } },
           cuerpo,
-          { TTL: 900 }, // 15 min: un gol de hace media hora ya no es noticia.
+          { TTL: ttl },
         );
         enviados++;
       } catch (e) {
@@ -88,4 +77,42 @@ export async function notificarEquipo(
     await supabase.from("push_subscriptions").delete().in("endpoint", muertas);
   }
   return enviados;
+}
+
+/**
+ * Avisa a quien tenga ese equipo en favoritos. Devuelve cuántos avisos
+ * salieron.
+ */
+export async function notificarEquipo(
+  teamIds: number | number[],
+  payload: PushPayload,
+): Promise<number> {
+  const supabase = admin();
+  if (!supabase || !(await configurar())) return 0;
+  // Varios equipos (los dos de un partido): cada dispositivo una sola vez,
+  // aunque tenga a los dos en favoritos.
+  const porEndpoint = new Map<string, Destino>();
+  for (const id of Array.isArray(teamIds) ? teamIds : [teamIds]) {
+    const { data } = await supabase.rpc("push_targets_for_team", {
+      p_team_id: String(id),
+    });
+    for (const d of (data ?? []) as Destino[]) porEndpoint.set(d.endpoint, d);
+  }
+  // 15 min: un gol de hace media hora ya no es noticia.
+  return enviar(supabase, [...porEndpoint.values()], payload, 900);
+}
+
+/** Avisa a TODOS los dispositivos de un usuario (recordatorio de la quiniela). */
+export async function notificarUsuario(
+  userId: string,
+  payload: PushPayload,
+  ttl = 6 * 3600,
+): Promise<number> {
+  const supabase = admin();
+  if (!supabase || !(await configurar())) return 0;
+  const { data } = await supabase
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth")
+    .eq("user_id", userId);
+  return enviar(supabase, (data ?? []) as Destino[], payload, ttl);
 }

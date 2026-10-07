@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notificarEquipo } from "@/lib/push/server";
+import { eventoPartido } from "@/lib/push/eventos-partido";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,12 +79,13 @@ export async function GET(request: Request) {
       const { data: previas } = await supabase
         .from("lq_matches")
         .select(
-          `id, score_home, score_away, team_home, team_away,
+          `id, status, score_home, score_away, team_home, team_away,
            home:team_home(name), away:team_away(name)`,
         )
         .in("id", lqIds);
       type Previa = {
         id: number;
+        status: string | null;
         score_home: number | null;
         score_away: number | null;
         team_home: number;
@@ -151,14 +153,39 @@ export async function GET(request: Request) {
                 };
                 try {
                   // A los dos bandos: al que marcó y al que encajó.
-                  await notificarEquipo(equipoQueMarco, payload);
                   await notificarEquipo(
-                    localMarco ? prev.team_away : prev.team_home,
+                    [equipoQueMarco, localMarco ? prev.team_away : prev.team_home],
                     payload,
                   );
                 } catch {
                   // no rompe la ingesta
                 }
+              }
+            }
+
+            // ¿Empieza o termina? Mismo público que los goles.
+            const evento = prev ? eventoPartido(prev.status, st) : null;
+            if (prev && evento) {
+              const nLocal = prev.home?.name ?? "Local";
+              const nVisitante = prev.away?.name ?? "Visitante";
+              const payload =
+                evento === "inicio"
+                  ? {
+                      title: `🟢 Empieza ${nLocal} – ${nVisitante}`,
+                      body: "Sigue el partido en directo en soyreinaldo.com",
+                      url: `/liga/laliga/partido/${fx.fixture.id}`,
+                      tag: `inicio-${fx.fixture.id}`,
+                    }
+                  : {
+                      title: `🏁 Final: ${nLocal} ${fx.goals.home ?? 0}–${fx.goals.away ?? 0} ${nVisitante}`,
+                      body: "Mira el resumen, las notas y cómo va la quiniela",
+                      url: `/liga/laliga/partido/${fx.fixture.id}`,
+                      tag: `final-${fx.fixture.id}`,
+                    };
+              try {
+                await notificarEquipo([prev.team_home, prev.team_away], payload);
+              } catch {
+                // no rompe la ingesta
               }
             }
           }

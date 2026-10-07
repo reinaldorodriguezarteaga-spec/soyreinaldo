@@ -5,6 +5,9 @@ import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import LqMatchCard, { type LqMatchCardData } from "../match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
+import { cargarForma } from "@/lib/quiniela-liga/forma-datos";
+import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
+import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
 
 // La descripción no cita puntos a propósito: el baremo lo fija cada liga en
 // la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
@@ -112,12 +115,43 @@ export default async function QuinielaLigaPartidosPage({
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  // Forma de cada equipo (puesto, DG, último resultado) para ayudar a
+  // decidir. Tabla oficial de la caché del cron (sin gastar cuota); si no la
+  // hay, se calcula con nuestros resultados. Ver lib/quiniela-liga/forma.ts.
+  const forma = await cargarForma(supabase, COMPETITION, SEASON);
+
+  // "¿Le ganas a Reinaldo?" (función de la migración 057). No a él mismo.
+  const anfitrionPorPartido = new Map<number, PronosticoAnfitrion>();
+  if (user.id !== ANFITRION_ID && matchIds.length > 0) {
+    const { data: anf } = await supabase.rpc("lq_pronosticos_anfitrion", {
+      p_match_ids: matchIds,
+    });
+    for (const a of (anf ?? []) as {
+      match_id: number;
+      hecho: boolean;
+      score_home: number | null;
+      score_away: number | null;
+    }[]) {
+      anfitrionPorPartido.set(a.match_id, { hecho: a.hecho, home: a.score_home, away: a.score_away });
+    }
+  }
+
   const compName = COMPETITIONS_BY_SLUG[COMPETITION]?.name ?? "LaLiga";
   // Server Component: se renderiza una vez por petición, así que leer la
   // hora aquí es correcto y necesario (decide qué partidos están cerrados).
   // La regla apunta a componentes de cliente, donde sí rompería el render.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+
+  // Último cara a cara de los partidos por jugar (caché de un día y archivado
+  // en la BD: no gasta cuota en cada visita).
+  const caraACara = new Map(
+    await Promise.all(
+      matches
+        .filter((m) => m.home && m.away && new Date(m.kickoff_at).getTime() > now)
+        .map(async (m) => [m.id, await ultimoCaraACara(m.home!.id, m.away!.id)] as const),
+    ),
+  );
 
   const cards: LqMatchCardData[] = matches
     .filter((m) => m.home && m.away)
@@ -137,8 +171,9 @@ export default async function QuinielaLigaPartidosPage({
         id: m.id,
         kickoffAt: m.kickoff_at,
         compLabel: `${compName} · J${m.matchday ?? jornada}`,
-        home: m.home!,
-        away: m.away!,
+        // La forma solo antes de empezar: es para decidir el pronóstico.
+        home: { ...m.home!, forma: kickoff > now ? (forma.get(m.home!.id) ?? null) : null },
+        away: { ...m.away!, forma: kickoff > now ? (forma.get(m.away!.id) ?? null) : null },
         prediction: pred,
         locked: kickoff - LOCK_LEAD_MS <= now,
         live: {
@@ -149,6 +184,8 @@ export default async function QuinielaLigaPartidosPage({
           minute: m.live_minute,
         },
         points,
+        anfitrion: anfitrionPorPartido.get(m.id) ?? null,
+        caraACara: caraACara.get(m.id) ?? null,
       };
     });
 
