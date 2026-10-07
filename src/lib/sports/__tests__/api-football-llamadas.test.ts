@@ -5,7 +5,8 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
 }));
 
-const { getFixtureById, getFixturesEvents } = await import("../api-football");
+const { getFixtureById, getFixturesEvents, getTeamCoach, enModoAhorro, _fijarRestanteParaPruebas } =
+  await import("../api-football");
 
 function respuesta(body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -17,6 +18,7 @@ function respuesta(body: unknown) {
 describe("llamadas a API-Football", () => {
   beforeEach(() => {
     process.env.API_FOOTBALL_KEY = "test";
+    _fijarRestanteParaPruebas(null);
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -109,5 +111,42 @@ describe("llamadas a API-Football", () => {
       expect.objectContaining({ player: "Central", expulsion: true }),
     ]);
     expect(mapa.get(2)).toEqual({ goals: [], cards: [] });
+  });
+
+  it("modo ahorro: con poca cuota, lo secundario no llama y lo esencial sí", async () => {
+    const fetchMock = vi.fn(async () =>
+      respuesta({ errors: [], response: [{ fixture: { id: 11 } }] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    _fijarRestanteParaPruebas(5_000);
+    expect(enModoAhorro()).toBe(true);
+
+    expect(await getTeamCoach(1234)).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect((await getFixtureById(11, 45))?.fixture.id).toBe(11);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("con cuota de sobra, lo secundario se pide normal", async () => {
+    const fetchMock = vi.fn(async () => respuesta({ errors: [], response: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    _fijarRestanteParaPruebas(60_000);
+    expect(enModoAhorro()).toBe(false);
+    await getTeamCoach(5678);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("si la API dice que la cuota del día se acabó, entra en ahorro", async () => {
+    const fetchMock = vi.fn(async () =>
+      respuesta({
+        errors: { requests: "You have reached the request limit for the day" },
+        response: [],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    expect(enModoAhorro()).toBe(false);
+    expect(await getFixtureById(12, 45)).toBeNull();
+    expect(enModoAhorro()).toBe(true);
   });
 });

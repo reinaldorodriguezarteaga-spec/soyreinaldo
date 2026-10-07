@@ -104,6 +104,20 @@ export async function middleware(request: NextRequest) {
 
   if (HEAVY_PATH_RE.test(pathname)) {
     const ua = request.headers.get("user-agent") ?? "";
+    // Quién recorre las fichas. El 7-oct algo agotó la cuota diaria barriendo
+    // miles de fichas y los logs no decían quién era (Vercel no guarda el
+    // User-Agent). Sin IP; el UA recortado basta para distinguir buscador,
+    // navegador o librería.
+    if (!request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) {
+      const tipo = SEARCH_BOT_RE.test(ua)
+        ? "buscador"
+        : PREVIEW_BOT_RE.test(ua)
+          ? "preview"
+          : request.cookies.has(CHALLENGE_COOKIE)
+            ? "cookie"
+            : "nuevo";
+      console.log(`[ficha] ${tipo} ${ua.slice(0, 90)}`);
+    }
 
     // Capa 0-bis: buscadores en las fichas que queremos indexar. Pasan sin
     // desafío de cookie (un crawler no guarda cookies y moriría en él), pero

@@ -144,6 +144,74 @@ function esRateLimit(errs: unknown): boolean {
 const ESPERA_RATE_LIMIT_MS = 1500;
 
 /**
+ * MODO AHORRO DE CUOTA. El 7-oct, un scraper que imita a un navegador (pasa
+ * el desafío de cookie y reparte IPs para no tocar el límite por IP) barrió
+ * miles de fichas de jugadores y equipos de todas las ligas a ~7.000
+ * llamadas/hora y agotó las 75.000 del día antes de las 19:00 UTC: desde ahí,
+ * NI marcadores ni quiniela podían refrescarse hasta medianoche.
+ *
+ * Cada respuesta trae cuántas llamadas quedan en el día; si baja de la
+ * reserva, los datos SECUNDARIOS de las fichas (palmarés, traspasos,
+ * lesiones, estadísticas de temporada/equipo, historial de un equipo,
+ * entrenador, pronósticos…) dejan de pedirse y lo que queda se guarda para
+ * lo esencial: marcadores, eventos, alineaciones, clasificación y el cron.
+ * Estado por instancia (cada una aprende de sus propias respuestas); caduca
+ * a los 15 min para no quedarse en ahorro tras el reinicio diario de la cuota.
+ */
+const RESERVA_ESENCIAL = 15_000;
+const ESTADO_CUOTA_VALIDO_MS = 15 * 60_000;
+let restante: { n: number; t: number } | null = null;
+
+function anotarRestante(raw: string): void {
+  const n = Number(raw);
+  if (Number.isFinite(n)) restante = { n, t: Date.now() };
+}
+
+function esCuotaAgotada(errs: unknown): boolean {
+  return (
+    !!errs &&
+    typeof errs === "object" &&
+    !Array.isArray(errs) &&
+    "requests" in (errs as Record<string, unknown>)
+  );
+}
+
+/** Endpoints de los que se puede prescindir cuando aprieta la cuota. */
+const SECUNDARIOS = new Set([
+  "/players",
+  "/players/profiles",
+  "/trophies",
+  "/transfers",
+  "/sidelined",
+  "/coachs",
+  "/teams/statistics",
+  "/fixtures/headtohead",
+  "/predictions",
+  "/odds",
+  "/injuries",
+]);
+
+export function enModoAhorro(): boolean {
+  return (
+    restante !== null &&
+    restante.n < RESERVA_ESENCIAL &&
+    Date.now() - restante.t < ESTADO_CUOTA_VALIDO_MS
+  );
+}
+
+function esSecundario(path: string, params: Record<string, string | number>): boolean {
+  if (SECUNDARIOS.has(path)) return true;
+  // Historial completo de un equipo (ficha de equipo: last/next 40). Los
+  // partidos en juego (`live`) y por id siguen siendo esenciales.
+  return path === "/fixtures" && "team" in params && !("live" in params);
+}
+
+/** Solo para las pruebas. */
+export function _fijarRestanteParaPruebas(n: number | null): void {
+  restante = n === null ? null : { n, t: Date.now() };
+}
+
+/**
  * Tiempo máximo de UNA petición a API-Football. Sin él, una petición que se
  * quedaba colgada retenía su hueco del carril para siempre, y con unas pocas
  * colgadas todo lo que iba detrás en esa instancia esperaba: el cron llegaba
@@ -228,6 +296,7 @@ async function unIntento<T>(
   console.log(
     `[apif] ${path}${paramStr ? `?${paramStr}` : ""} status=${res.status} remaining=${remaining}`,
   );
+  anotarRestante(remaining);
 
   if (res.status === 429) return { ok: false, http429: true, json: { response: [], errors: {} } };
   if (!res.ok) throw new Error(`apif http ${res.status} ${path}`);
@@ -239,6 +308,7 @@ async function unIntento<T>(
   // No es un fallo de verdad: es "espera un momento". Se espera y se repite,
   // en vez de devolver vacío y dejar media ficha sin datos.
   if (esRateLimit(errs)) return { ok: false, http429: false, json };
+  if (esCuotaAgotada(errs)) anotarRestante("0");
   const hasErr = Array.isArray(errs)
     ? errs.length > 0
     : !!errs && typeof errs === "object" && Object.keys(errs).length > 0;
@@ -307,8 +377,14 @@ async function get<T>(
   // hubiera reseteado, porque el tráfico normal la volvía a agotar al
   // instante). Cacheando el fallo con el MISMO TTL que un éxito, como mucho
   // se reintenta cada `revalidateSeconds` — igual que si hubiera ido bien.
+  const secundario = esSecundario(path, params);
   const cached = unstable_cache(
     async () => {
+      // Modo ahorro: se trata como un fallo más (reintento cada
+      // FAILURE_RETRY_S), así se recupera solo cuando vuelve la cuota.
+      if (secundario && enModoAhorro()) {
+        return { response: [] as T[], errors: { failed: true, ahorro: true } };
+      }
       try {
         return await rawGet<T>(urlStr, path, paramStr);
       } catch {
@@ -342,6 +418,9 @@ async function get<T>(
   const ventana = Math.floor(Date.now() / (FAILURE_RETRY_S * 1000));
   const reintento = unstable_cache(
     async () => {
+      if (secundario && enModoAhorro()) {
+        return { response: [] as T[], errors: { failed: true, ahorro: true } };
+      }
       try {
         return await rawGet<T>(urlStr, path, paramStr);
       } catch {
