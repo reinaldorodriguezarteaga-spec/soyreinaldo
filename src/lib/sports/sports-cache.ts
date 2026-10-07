@@ -143,5 +143,18 @@ export async function cachedOrLive<T>(
 ): Promise<T> {
   const cached = await readCache<T>(key, maxAgeSeconds);
   if (cached !== null) return cached;
-  return liveFetch();
+  return conUltimoBueno(key, await liveFetch());
+}
+
+/**
+ * Si lo que llega en vivo está vacío (API sin cuota, caída, límite por
+ * minuto), se sirve lo último bueno de `sports_cache` AUNQUE sea viejo: una
+ * tabla de hace unas horas es mejor que una página vacía (7-oct: sin cuota,
+ * la clasificación salió vacía hasta medianoche).
+ */
+export async function conUltimoBueno<T>(key: string, vivo: T): Promise<T> {
+  const vacio = vivo == null || (Array.isArray(vivo) && vivo.length === 0);
+  if (!vacio) return vivo;
+  const viejo = await readCache<T>(key, Number.POSITIVE_INFINITY);
+  return viejo ?? vivo;
 }
