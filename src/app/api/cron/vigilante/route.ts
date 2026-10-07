@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * cuota). Nadie se enteró porque un cron que deja de correr no hace ruido:
  * simplemente no pasa nada.
  *
- * Esto es lo que hace ruido. Comprueba tres cosas y, solo si algo falla,
+ * Esto es lo que hace ruido. Comprueba cinco cosas y, solo si algo falla,
  * manda un correo. Si todo va bien no envía nada — un vigilante que avisa
  * cuando todo está bien se acaba ignorando.
  */
@@ -26,6 +26,51 @@ const AVISAR_A = "reinaldo_r@live.com";
 const CACHE_MAX_MIN = 45;
 /** Un partido que acabó hace más de 4h y sigue sin marcador se perdió. */
 const PARTIDO_SIN_MARCADOR_H = 4;
+
+/** Margen sobre el ritmo uniforme (100% a las 24:00 UTC) antes de avisar. */
+const CUOTA_MARGEN_PUNTOS = 15;
+const CUOTA_ALERTA_PCT = 85;
+
+/** Texto del problema, o null si la cuota va bien (o no se pudo consultar). */
+async function revisarCuota(): Promise<string | null> {
+  const key = process.env.API_FOOTBALL_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch("https://v3.football.api-sports.io/status", {
+      headers: { "x-apisports-key": key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const json = (await res.json()) as {
+      errors?: unknown;
+      response?: { requests?: { current: number; limit_day: number } };
+    };
+    const errs = json.errors;
+    if (errs && typeof errs === "object" && !Array.isArray(errs) && "requests" in errs) {
+      return (
+        "La cuota diaria de API-Football está AGOTADA: marcadores, quiniela y fichas no " +
+        "pueden refrescarse hasta las 00:00 UTC. Casi siempre es un robot recorriendo fichas: " +
+        "busca las líneas [ficha] en los logs de Vercel."
+      );
+    }
+    const req = json.response?.requests;
+    if (!req || !req.limit_day) return null;
+    const pct = (req.current / req.limit_day) * 100;
+    const ahora = new Date();
+    const pctDia = ((ahora.getUTCHours() * 60 + ahora.getUTCMinutes()) / (24 * 60)) * 100;
+    if (pct >= CUOTA_ALERTA_PCT || pct > pctDia + CUOTA_MARGEN_PUNTOS) {
+      return (
+        `La cuota de API-Football va demasiado rápida: ${req.current.toLocaleString("es-ES")} de ` +
+        `${req.limit_day.toLocaleString("es-ES")} (${pct.toFixed(0)}%) cuando el día lleva un ` +
+        `${pctDia.toFixed(0)}%. A este ritmo se agota antes de medianoche UTC. Por debajo de ` +
+        `15.000 entra el modo ahorro solo; aun así, mira quién está gastando (líneas [ficha]).`
+      );
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -91,24 +136,52 @@ export async function GET(request: Request) {
     );
   }
 
-  // 3. ¿Están programados los tres crons?
+  // 4. ¿Hay tablas o calendarios VACÍOS en la caché? (7-oct: sin cuota, el
+  //    cron guardó listas vacías y la web enseñó la clasificación vacía.)
+  const { data: filasCache } = await supabase
+    .from("sports_cache")
+    .select("cache_key, data")
+    .not("cache_key", "like", "squad:%")
+    .returns<{ cache_key: string; data: unknown }[]>();
+  const vacias = (filasCache ?? [])
+    .filter((f) => Array.isArray(f.data) && f.data.length === 0)
+    .map((f) => f.cache_key);
+  if (vacias.length > 0) {
+    problemas.push(
+      `${vacias.length} entradas de la caché de deportes están vacías ` +
+        `(${vacias.slice(0, 8).join(", ")}${vacias.length > 8 ? "…" : ""}). ` +
+        `La web enseña esas tablas/calendarios en blanco.`,
+    );
+  }
+
+  // 5. ¿Cómo va la cuota de API-Football? El 7-oct se descubrió que llevaba
+  //    10 días agotándose cada tarde por un robot y nadie se enteró. `/status`
+  //    no gasta cuota.
+  const cuota = await revisarCuota();
+  if (cuota) problemas.push(cuota);
+
+  // 3. ¿Están programados los crons?
   const { data: jobsRaw } = await supabase.rpc("cron_jobs_activos");
   const jobs = (jobsRaw ?? null) as { jobname: string }[] | null;
   if (jobs) {
-    const esperados = ["ingesta-marcadores", "cache-deportes", "fechas-lq"];
+    const esperados = ["ingesta-marcadores", "cache-deportes", "fechas-lq", "recordatorio-quiniela"];
     const faltan = esperados.filter(
       (e) => !jobs.some((j) => j.jobname === e),
     );
     if (faltan.length > 0) {
       problemas.push(
         `Estos crons ya no están programados o están desactivados: ${faltan.join(", ")}. ` +
-          `Se reponen aplicando supabase/migrations/038 y 043.`,
+          `Se reponen aplicando supabase/migrations/038, 043 y 055.`,
       );
     }
   }
 
   if (problemas.length === 0) {
     return NextResponse.json({ ok: true, problemas: 0 });
+  }
+  // ?simular=1 → devuelve los problemas sin mandar el correo.
+  if (new URL(request.url).searchParams.get("simular") === "1") {
+    return NextResponse.json({ ok: false, simulacion: true, problemas });
   }
 
   // Hay algo roto: avisar.
@@ -125,7 +198,7 @@ export async function GET(request: Request) {
     const { error } = await resend.emails.send({
       from: "Vigilante <hola@soyreinaldo.com>",
       to: [AVISAR_A],
-      subject: `⚠️ soyreinaldo: ${problemas.length} problema(s) en los crons`,
+      subject: `⚠️ soyreinaldo: ${problemas.length} problema(s)`,
       html,
     });
     avisado = !error;
