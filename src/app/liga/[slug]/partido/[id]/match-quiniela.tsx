@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
+import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 
 /**
  * La quiniela, dentro de la ficha del partido.
@@ -51,13 +52,38 @@ export default async function MatchQuiniela({
     .maybeSingle<Comunidad>();
   const comunidad =
     comunidadData && comunidadData.total >= MIN_PARA_COMUNIDAD ? comunidadData : null;
-  const bloqueComunidad = comunidad ? (
-    <BloqueComunidad c={comunidad} equipos={equipos} />
+  // "¿Le ganas a Reinaldo?": su pronóstico (marcador solo desde el pitido).
+  const { data: anfData } = await supabase.rpc("lq_pronosticos_anfitrion", {
+    p_match_ids: [fixtureId],
+  });
+  const anf = ((anfData ?? []) as { hecho: boolean; score_home: number | null; score_away: number | null }[])[0];
+  const lineaAnfitrion = anf ? (
+    <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
+      🎙️{" "}
+      {anf.score_home != null && anf.score_away != null ? (
+        <>
+          {ANFITRION_NOMBRE} dijo{" "}
+          <strong style={{ color: "var(--text)" }}>
+            {anf.score_home}–{anf.score_away}
+          </strong>
+        </>
+      ) : anf.hecho ? (
+        <>{ANFITRION_NOMBRE} ya ha pronosticado este partido. ¿Le ganas?</>
+      ) : (
+        <>{ANFITRION_NOMBRE} aún no lo ha pronosticado.</>
+      )}
+    </p>
   ) : null;
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const bloqueComunidad = (
+    <>
+      {comunidad && <BloqueComunidad c={comunidad} equipos={equipos} />}
+      {user?.id !== ANFITRION_ID && lineaAnfitrion}
+    </>
+  );
 
   if (!user) {
     return (

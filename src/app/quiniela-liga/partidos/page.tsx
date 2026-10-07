@@ -6,6 +6,7 @@ import LqMatchCard, { type LqMatchCardData } from "../match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 import { formaEquipos } from "@/lib/quiniela-liga/forma";
+import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
 import { standingsCacheKey, type StandingRow } from "@/lib/sports/api-football";
 import { readCache } from "@/lib/sports/sports-cache";
 
@@ -154,6 +155,22 @@ export default async function QuinielaLigaPartidosPage({
       : null,
   );
 
+  // "¿Le ganas a Reinaldo?" (función de la migración 057). No a él mismo.
+  const anfitrionPorPartido = new Map<number, PronosticoAnfitrion>();
+  if (user.id !== ANFITRION_ID && matchIds.length > 0) {
+    const { data: anf } = await supabase.rpc("lq_pronosticos_anfitrion", {
+      p_match_ids: matchIds,
+    });
+    for (const a of (anf ?? []) as {
+      match_id: number;
+      hecho: boolean;
+      score_home: number | null;
+      score_away: number | null;
+    }[]) {
+      anfitrionPorPartido.set(a.match_id, { hecho: a.hecho, home: a.score_home, away: a.score_away });
+    }
+  }
+
   const compName = COMPETITIONS_BY_SLUG[COMPETITION]?.name ?? "LaLiga";
   // Server Component: se renderiza una vez por petición, así que leer la
   // hora aquí es correcto y necesario (decide qué partidos están cerrados).
@@ -192,6 +209,7 @@ export default async function QuinielaLigaPartidosPage({
           minute: m.live_minute,
         },
         points,
+        anfitrion: anfitrionPorPartido.get(m.id) ?? null,
       };
     });
 

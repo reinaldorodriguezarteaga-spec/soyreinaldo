@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { savePrediction } from "./actions";
 import type { FormaEquipo } from "@/lib/quiniela-liga/forma";
+import { ANFITRION_NOMBRE, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
 
 export type ClubTeam = {
   id: number;
@@ -32,6 +33,8 @@ export type LqMatchCardData = {
   };
   /** Puntos de este usuario en este partido (null si no jugado / sin pronóstico). */
   points: number | null;
+  /** Pronóstico de Reinaldo ("¿Le ganas a Reinaldo?"); null para él mismo. */
+  anfitrion?: PronosticoAnfitrion | null;
 };
 
 const LIVE_STATES = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE"]);
@@ -203,6 +206,8 @@ export default function LqMatchCard({
         </p>
       )}
 
+      {match.anfitrion && <LineaAnfitrion p={match.anfitrion} />}
+
       <footer className="gamecard__foot">
         {match.locked && !showScoreBlock && <span>🔒 Cerrado · falta &lt;30min</span>}
         {!match.locked && status === "saving" && <span>Guardando…</span>}
@@ -244,6 +249,35 @@ function TeamRow({
       </div>
       {children}
     </div>
+  );
+}
+
+/** "🎙️ Reinaldo: 2–1", o solo si ya pronosticó (el marcador, desde el
+ * pitido inicial, como el de cualquiera). */
+function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
+  return (
+    <p
+      style={{
+        margin: "8px 0 0",
+        textAlign: "center",
+        fontSize: "0.82rem",
+        color: "var(--text-dim)",
+      }}
+    >
+      🎙️{" "}
+      {p.home != null && p.away != null ? (
+        <>
+          {ANFITRION_NOMBRE} dijo{" "}
+          <b style={{ color: "var(--text)" }}>
+            {p.home}–{p.away}
+          </b>
+        </>
+      ) : p.hecho ? (
+        <>{ANFITRION_NOMBRE} ya ha pronosticado. ¿Le ganas?</>
+      ) : (
+        <>{ANFITRION_NOMBRE} aún no ha pronosticado</>
+      )}
+    </p>
   );
 }
 
