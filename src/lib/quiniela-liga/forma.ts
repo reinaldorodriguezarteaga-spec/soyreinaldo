@@ -5,12 +5,20 @@
  * Puesto y DG salen de la clasificación oficial (caché del cron) cuando la
  * hay; si no, se calculan con los resultados de `lq_matches` (puntos, luego
  * DG, luego goles a favor — LaLiga desempata por el cara a cara, así que en
- * un empate exacto podría diferir un puesto). El último resultado sale
- * siempre de `lq_matches`: es nuestro dato y no depende de la API.
+ * un empate exacto podría diferir un puesto). La racha (últimos 5, del más
+ * antiguo al más reciente) sale siempre de `lq_matches`: es nuestro dato y
+ * no depende de la API.
  */
 
 export type ResultadoCorto = "V" | "E" | "D";
-export type FormaEquipo = { puesto: number | null; dg: number | null; ultimo: ResultadoCorto | null };
+export type FormaEquipo = {
+  puesto: number | null;
+  dg: number | null;
+  /** Últimos resultados, del más antiguo al más reciente (máx. RACHA). */
+  racha: ResultadoCorto[];
+};
+
+export const RACHA = 5;
 
 export type PartidoJugado = {
   local: number;
@@ -27,7 +35,7 @@ export function formaEquipos(
   oficial: FilaOficial[] | null,
 ): Map<number, FormaEquipo> {
   const tabla = new Map<number, { pts: number; gf: number; gc: number }>();
-  const ultimo = new Map<number, { t: number; r: ResultadoCorto }>();
+  const historial = new Map<number, { t: number; r: ResultadoCorto }[]>();
   const anotar = (equipo: number, gf: number, gc: number, t: number) => {
     const fila = tabla.get(equipo) ?? { pts: 0, gf: 0, gc: 0 };
     const r: ResultadoCorto = gf > gc ? "V" : gf === gc ? "E" : "D";
@@ -35,8 +43,7 @@ export function formaEquipos(
     fila.gf += gf;
     fila.gc += gc;
     tabla.set(equipo, fila);
-    const previo = ultimo.get(equipo);
-    if (!previo || t > previo.t) ultimo.set(equipo, { t, r });
+    historial.set(equipo, [...(historial.get(equipo) ?? []), { t, r }]);
   };
   for (const p of jugados) {
     const t = Date.parse(p.kickoffAt);
@@ -61,7 +68,10 @@ export function formaEquipos(
     out.set(id, {
       puesto: fuente?.puesto ?? null,
       dg: fuente?.dg ?? null,
-      ultimo: ultimo.get(id)?.r ?? null,
+      racha: (historial.get(id) ?? [])
+        .sort((a, b) => a.t - b.t)
+        .slice(-RACHA)
+        .map((h) => h.r),
     });
   }
   return out;

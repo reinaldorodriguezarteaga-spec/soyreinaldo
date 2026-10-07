@@ -16,11 +16,19 @@ describe("forma de los equipos", () => {
     p(2, 3, 2, 1, 15), // 2 gana: último del 2 es V y del 3 es D
   ];
 
-  it("último resultado: el partido más reciente de cada equipo", () => {
+  it("racha: del más antiguo al más reciente", () => {
     const f = formaEquipos(jugados, null);
-    expect(f.get(1)?.ultimo).toBe("E");
-    expect(f.get(2)?.ultimo).toBe("V");
-    expect(f.get(3)?.ultimo).toBe("D");
+    expect(f.get(1)?.racha).toEqual(["V", "E"]);
+    expect(f.get(2)?.racha).toEqual(["D", "V"]);
+    expect(f.get(3)?.racha).toEqual(["E", "D"]);
+  });
+
+  it("racha: solo los últimos 5, aunque lleguen desordenados", () => {
+    const muchos = [10, 3, 7, 1, 5, 9, 2].map((dia) =>
+      p(1, 2, dia % 2 === 0 ? 1 : 0, 0, dia),
+    );
+    // Por fecha: 1E 2V 3E 5E 7E 9E 10V → últimos 5: 3,5,7,9,10
+    expect(formaEquipos(muchos, null).get(1)?.racha).toEqual(["E", "E", "E", "E", "V"]);
   });
 
   it("sin tabla oficial: puesto y DG calculados", () => {
@@ -36,7 +44,7 @@ describe("forma de los equipos", () => {
       { teamId: 1, puesto: 2, dg: 3 },
       { teamId: 2, puesto: 1, dg: 5 },
     ]);
-    expect(f.get(2)).toEqual({ puesto: 1, dg: 5, ultimo: "V" });
-    expect(f.get(3)).toEqual({ puesto: null, dg: null, ultimo: "D" });
+    expect(f.get(2)).toEqual({ puesto: 1, dg: 5, racha: ["D", "V"] });
+    expect(f.get(3)).toEqual({ puesto: null, dg: null, racha: ["E", "D"] });
   });
 });

@@ -31,6 +31,7 @@ import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
 import MatchAnalisis from "./match-analisis";
+import MatchPrevia from "./match-previa";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -509,6 +510,15 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
+          {!played && (
+            <Suspense fallback={null}>
+              <MatchPrevia
+                fixtureId={fixtureId}
+                home={{ id: home.id, name: home.name }}
+                away={{ id: away.id, name: away.name }}
+              />
+            </Suspense>
+          )}
         </div>
       </section>
 

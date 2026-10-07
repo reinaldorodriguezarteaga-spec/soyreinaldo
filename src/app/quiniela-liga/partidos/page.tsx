@@ -5,10 +5,9 @@ import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import LqMatchCard, { type LqMatchCardData } from "../match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
-import { formaEquipos } from "@/lib/quiniela-liga/forma";
+import { cargarForma } from "@/lib/quiniela-liga/forma-datos";
+import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
 import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
-import { standingsCacheKey, type StandingRow } from "@/lib/sports/api-football";
-import { readCache } from "@/lib/sports/sports-cache";
 
 // La descripción no cita puntos a propósito: el baremo lo fija cada liga en
 // la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
@@ -119,41 +118,7 @@ export default async function QuinielaLigaPartidosPage({
   // Forma de cada equipo (puesto, DG, último resultado) para ayudar a
   // decidir. Tabla oficial de la caché del cron (sin gastar cuota); si no la
   // hay, se calcula con nuestros resultados. Ver lib/quiniela-liga/forma.ts.
-  const competicion = COMPETITIONS_BY_SLUG[COMPETITION];
-  const [{ data: jugadosData }, oficial] = await Promise.all([
-    supabase
-      .from("lq_matches")
-      .select("team_home, team_away, score_home, score_away, kickoff_at")
-      .eq("competition", COMPETITION)
-      .eq("season", SEASON)
-      .eq("finished", true)
-      .returns<
-        {
-          team_home: number;
-          team_away: number;
-          score_home: number | null;
-          score_away: number | null;
-          kickoff_at: string;
-        }[]
-      >(),
-    competicion
-      ? readCache<StandingRow[]>(standingsCacheKey(competicion), 6 * 3600).catch(() => null)
-      : Promise.resolve(null),
-  ]);
-  const forma = formaEquipos(
-    (jugadosData ?? [])
-      .filter((m) => m.score_home != null && m.score_away != null)
-      .map((m) => ({
-        local: m.team_home,
-        visitante: m.team_away,
-        golesLocal: m.score_home!,
-        golesVisitante: m.score_away!,
-        kickoffAt: m.kickoff_at,
-      })),
-    Array.isArray(oficial)
-      ? oficial.map((f) => ({ teamId: f.team.id, puesto: f.rank, dg: f.goalsDiff }))
-      : null,
-  );
+  const forma = await cargarForma(supabase, COMPETITION, SEASON);
 
   // "¿Le ganas a Reinaldo?" (función de la migración 057). No a él mismo.
   const anfitrionPorPartido = new Map<number, PronosticoAnfitrion>();
@@ -177,6 +142,16 @@ export default async function QuinielaLigaPartidosPage({
   // La regla apunta a componentes de cliente, donde sí rompería el render.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+
+  // Último cara a cara de los partidos por jugar (caché de un día y archivado
+  // en la BD: no gasta cuota en cada visita).
+  const caraACara = new Map(
+    await Promise.all(
+      matches
+        .filter((m) => m.home && m.away && new Date(m.kickoff_at).getTime() > now)
+        .map(async (m) => [m.id, await ultimoCaraACara(m.home!.id, m.away!.id)] as const),
+    ),
+  );
 
   const cards: LqMatchCardData[] = matches
     .filter((m) => m.home && m.away)
@@ -210,6 +185,7 @@ export default async function QuinielaLigaPartidosPage({
         },
         points,
         anfitrion: anfitrionPorPartido.get(m.id) ?? null,
+        caraACara: caraACara.get(m.id) ?? null,
       };
     });
 

@@ -10,8 +10,17 @@ export type ClubTeam = {
   id: number;
   name: string;
   logo: string | null;
-  /** Puesto, DG y último resultado (solo en partidos por jugar). */
+  /** Puesto, DG y racha (solo en partidos por jugar). */
   forma?: FormaEquipo | null;
+};
+
+/** El enfrentamiento terminado más reciente entre los dos equipos. */
+export type CaraACara = {
+  fecha: string;
+  local: string;
+  visitante: string;
+  golesLocal: number;
+  golesVisitante: number;
 };
 
 export type LqMatchCardData = {
@@ -35,6 +44,8 @@ export type LqMatchCardData = {
   points: number | null;
   /** Pronóstico de Reinaldo ("¿Le ganas a Reinaldo?"); null para él mismo. */
   anfitrion?: PronosticoAnfitrion | null;
+  /** Solo en partidos por jugar. */
+  caraACara?: CaraACara | null;
 };
 
 const LIVE_STATES = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE"]);
@@ -206,6 +217,7 @@ export default function LqMatchCard({
         </p>
       )}
 
+      {match.caraACara && <LineaCaraACara c={match.caraACara} />}
       {match.anfitrion && <LineaAnfitrion p={match.anfitrion} />}
 
       <footer className="gamecard__foot">
@@ -284,7 +296,8 @@ function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
 const COLOR_RESULTADO = { V: "#22c55e", E: "#9aa4d6", D: "#ef4444" } as const;
 const TITULO_RESULTADO = { V: "Ganó", E: "Empató", D: "Perdió" } as const;
 
-/** "3º · DG +12 · V": lo justo para decidir sin salir de la quiniela. */
+/** "3º · DG +12" y debajo la racha (V E D V V, la última a la derecha):
+ * lo justo para decidir sin salir de la quiniela. */
 function LineaForma({ forma }: { forma: FormaEquipo }) {
   const partes: React.ReactNode[] = [];
   if (forma.puesto != null) partes.push(<span key="p">{forma.puesto}º</span>);
@@ -295,43 +308,76 @@ function LineaForma({ forma }: { forma: FormaEquipo }) {
       </span>,
     );
   }
-  if (forma.ultimo) {
-    partes.push(
-      <span
-        key="u"
-        title={`Último partido: ${TITULO_RESULTADO[forma.ultimo]}`}
-        aria-label={`Último partido: ${TITULO_RESULTADO[forma.ultimo]}`}
-        style={{
-          display: "inline-grid",
-          placeItems: "center",
-          width: 16,
-          height: 16,
-          borderRadius: 4,
-          fontSize: "0.6rem",
-          fontWeight: 700,
-          color: "#fff",
-          background: COLOR_RESULTADO[forma.ultimo],
-        }}
-      >
-        {forma.ultimo}
-      </span>,
-    );
-  }
-  if (partes.length === 0) return null;
+  if (partes.length === 0 && forma.racha.length === 0) return null;
   return (
     <span
       className="mono"
       style={{
         display: "flex",
-        alignItems: "center",
-        gap: 6,
+        flexDirection: "column",
+        gap: 3,
         color: "var(--text-dim)",
         fontSize: "0.66rem",
         marginTop: 2,
       }}
     >
-      {partes.flatMap((x, i) => (i === 0 ? [x] : [<span key={`s${i}`} aria-hidden>·</span>, x]))}
+      {partes.length > 0 && (
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {partes.flatMap((x, i) => (i === 0 ? [x] : [<span key={`s${i}`} aria-hidden>·</span>, x]))}
+        </span>
+      )}
+      {forma.racha.length > 0 && (
+        <span
+          style={{ display: "flex", gap: 2 }}
+          aria-label={`Últimos partidos: ${forma.racha.map((r) => TITULO_RESULTADO[r]).join(", ")}`}
+        >
+          {forma.racha.map((r, i) => (
+            <span
+              key={i}
+              aria-hidden
+              title={i === forma.racha.length - 1 ? `Último: ${TITULO_RESULTADO[r]}` : TITULO_RESULTADO[r]}
+              style={{
+                display: "inline-grid",
+                placeItems: "center",
+                width: 14,
+                height: 14,
+                borderRadius: 3,
+                fontSize: "0.56rem",
+                fontWeight: 700,
+                color: "#fff",
+                background: COLOR_RESULTADO[r],
+                opacity: i === forma.racha.length - 1 ? 1 : 0.8,
+              }}
+            >
+              {r}
+            </span>
+          ))}
+        </span>
+      )}
     </span>
+  );
+}
+
+/** "Último cara a cara: Barça 2–1 Madrid · mar 2026". */
+function LineaCaraACara({ c }: { c: CaraACara }) {
+  const fecha = new Intl.DateTimeFormat("es-ES", { month: "short", year: "numeric" }).format(
+    new Date(c.fecha),
+  );
+  return (
+    <p
+      style={{
+        margin: "8px 0 0",
+        textAlign: "center",
+        fontSize: "0.78rem",
+        color: "var(--text-dim)",
+      }}
+    >
+      Último cara a cara:{" "}
+      <span style={{ color: "var(--text)" }}>
+        {c.local} <b>{c.golesLocal}–{c.golesVisitante}</b> {c.visitante}
+      </span>{" "}
+      · {fecha}
+    </p>
   );
 }
 
