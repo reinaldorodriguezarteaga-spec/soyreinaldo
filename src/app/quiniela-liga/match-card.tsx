@@ -3,8 +3,15 @@
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { savePrediction } from "./actions";
+import type { FormaEquipo } from "@/lib/quiniela-liga/forma";
 
-export type ClubTeam = { id: number; name: string; logo: string | null };
+export type ClubTeam = {
+  id: number;
+  name: string;
+  logo: string | null;
+  /** Puesto, DG y último resultado (solo en partidos por jugar). */
+  forma?: FormaEquipo | null;
+};
 
 export type LqMatchCardData = {
   id: number;
@@ -228,12 +235,69 @@ function TeamRow({
             "⚽"
           )}
         </span>
-        <span className="gamerow__name" title={team.name}>
-          {team.name}
+        <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <span className="gamerow__name" title={team.name}>
+            {team.name}
+          </span>
+          {team.forma && <LineaForma forma={team.forma} />}
         </span>
       </div>
       {children}
     </div>
+  );
+}
+
+const COLOR_RESULTADO = { V: "#22c55e", E: "#9aa4d6", D: "#ef4444" } as const;
+const TITULO_RESULTADO = { V: "Ganó", E: "Empató", D: "Perdió" } as const;
+
+/** "3º · DG +12 · V": lo justo para decidir sin salir de la quiniela. */
+function LineaForma({ forma }: { forma: FormaEquipo }) {
+  const partes: React.ReactNode[] = [];
+  if (forma.puesto != null) partes.push(<span key="p">{forma.puesto}º</span>);
+  if (forma.dg != null) {
+    partes.push(
+      <span key="d" title="Diferencia de goles">
+        DG {forma.dg > 0 ? `+${forma.dg}` : forma.dg}
+      </span>,
+    );
+  }
+  if (forma.ultimo) {
+    partes.push(
+      <span
+        key="u"
+        title={`Último partido: ${TITULO_RESULTADO[forma.ultimo]}`}
+        aria-label={`Último partido: ${TITULO_RESULTADO[forma.ultimo]}`}
+        style={{
+          display: "inline-grid",
+          placeItems: "center",
+          width: 16,
+          height: 16,
+          borderRadius: 4,
+          fontSize: "0.6rem",
+          fontWeight: 700,
+          color: "#fff",
+          background: COLOR_RESULTADO[forma.ultimo],
+        }}
+      >
+        {forma.ultimo}
+      </span>,
+    );
+  }
+  if (partes.length === 0) return null;
+  return (
+    <span
+      className="mono"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        color: "var(--text-dim)",
+        fontSize: "0.66rem",
+        marginTop: 2,
+      }}
+    >
+      {partes.flatMap((x, i) => (i === 0 ? [x] : [<span key={`s${i}`} aria-hidden>·</span>, x]))}
+    </span>
   );
 }
 

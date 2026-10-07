@@ -5,6 +5,9 @@ import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import LqMatchCard, { type LqMatchCardData } from "../match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
+import { formaEquipos } from "@/lib/quiniela-liga/forma";
+import { standingsCacheKey, type StandingRow } from "@/lib/sports/api-football";
+import { readCache } from "@/lib/sports/sports-cache";
 
 // La descripción no cita puntos a propósito: el baremo lo fija cada liga en
 // la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
@@ -112,6 +115,45 @@ export default async function QuinielaLigaPartidosPage({
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id);
 
+  // Forma de cada equipo (puesto, DG, último resultado) para ayudar a
+  // decidir. Tabla oficial de la caché del cron (sin gastar cuota); si no la
+  // hay, se calcula con nuestros resultados. Ver lib/quiniela-liga/forma.ts.
+  const competicion = COMPETITIONS_BY_SLUG[COMPETITION];
+  const [{ data: jugadosData }, oficial] = await Promise.all([
+    supabase
+      .from("lq_matches")
+      .select("team_home, team_away, score_home, score_away, kickoff_at")
+      .eq("competition", COMPETITION)
+      .eq("season", SEASON)
+      .eq("finished", true)
+      .returns<
+        {
+          team_home: number;
+          team_away: number;
+          score_home: number | null;
+          score_away: number | null;
+          kickoff_at: string;
+        }[]
+      >(),
+    competicion
+      ? readCache<StandingRow[]>(standingsCacheKey(competicion), 6 * 3600).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+  const forma = formaEquipos(
+    (jugadosData ?? [])
+      .filter((m) => m.score_home != null && m.score_away != null)
+      .map((m) => ({
+        local: m.team_home,
+        visitante: m.team_away,
+        golesLocal: m.score_home!,
+        golesVisitante: m.score_away!,
+        kickoffAt: m.kickoff_at,
+      })),
+    Array.isArray(oficial)
+      ? oficial.map((f) => ({ teamId: f.team.id, puesto: f.rank, dg: f.goalsDiff }))
+      : null,
+  );
+
   const compName = COMPETITIONS_BY_SLUG[COMPETITION]?.name ?? "LaLiga";
   // Server Component: se renderiza una vez por petición, así que leer la
   // hora aquí es correcto y necesario (decide qué partidos están cerrados).
@@ -137,8 +179,9 @@ export default async function QuinielaLigaPartidosPage({
         id: m.id,
         kickoffAt: m.kickoff_at,
         compLabel: `${compName} · J${m.matchday ?? jornada}`,
-        home: m.home!,
-        away: m.away!,
+        // La forma solo antes de empezar: es para decidir el pronóstico.
+        home: { ...m.home!, forma: kickoff > now ? (forma.get(m.home!.id) ?? null) : null },
+        away: { ...m.away!, forma: kickoff > now ? (forma.get(m.away!.id) ?? null) : null },
         prediction: pred,
         locked: kickoff - LOCK_LEAD_MS <= now,
         live: {
