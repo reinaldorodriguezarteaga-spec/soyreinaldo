@@ -15,7 +15,8 @@ import {
   type Competition,
   type KoStructureEntry,
 } from "./competitions";
-import { cachedOrLive, readCache } from "./sports-cache";
+import { cachedOrLive, conUltimoBueno, readCache } from "./sports-cache";
+import { guardarArchivo, leerArchivo, respuestaUtil } from "./archivo";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -339,6 +340,75 @@ function failed(r: { errors: unknown }): boolean {
   );
 }
 
+/**
+ * ARCHIVO PERMANENTE (`apif_archivo`, migración 054). Con la cuota agotada,
+ * la web se quedaba sin nada; ahora cada URL de la API cae en una de tres:
+ *  - "partido": ficha y detalles de un partido. Se guarda SOLO cuando está
+ *    terminado hace más de HORAS_CIERRE_PARTIDO, y a partir de ahí se sirve
+ *    del archivo para siempre: un partido acabado no cambia.
+ *  - "ultimoBueno": todo lo demás que no es en directo (estadísticas de
+ *    temporada, palmarés, plantillas, historial de un equipo…). Se guarda la
+ *    última respuesta buena y se usa si la API falla o toca ahorrar; si es de
+ *    una temporada ya cerrada, también es definitiva.
+ *  - "nunca": lo en directo o del día (`live`, ventanas de fechas, lotes de
+ *    ids) y lo que caduca antes del partido (cuotas, pronósticos). Servir un
+ *    marcador viejo como si fuera en vivo es peor que no servir nada (el
+ *    65' congelado de sep-2026).
+ */
+type PoliticaArchivo = "partido" | "ultimoBueno" | "nunca";
+const HORAS_CIERRE_PARTIDO = 6;
+
+function politicaArchivo(
+  path: string,
+  params: Record<string, string | number>,
+): PoliticaArchivo {
+  if (["live", "from", "to", "date", "ids"].some((k) => k in params)) return "nunca";
+  if (path === "/odds" || path === "/predictions") return "nunca";
+  if (path === "/fixtures" && "id" in params) return "partido";
+  if (path.startsWith("/fixtures/") && path !== "/fixtures/headtohead" && "fixture" in params) {
+    return "partido";
+  }
+  return "ultimoBueno";
+}
+
+const TEMPORADA_ACTUAL = new Map<number, number>(
+  Object.values(COMPETITIONS_BY_SLUG).map((c) => [c.leagueId, c.season]),
+);
+
+function temporadaCerrada(params: Record<string, string | number>): boolean {
+  const actual = TEMPORADA_ACTUAL.get(Number(params.league));
+  const season = Number(params.season);
+  return actual !== undefined && Number.isFinite(season) && season < actual;
+}
+
+function partidoCerrado(f: unknown): boolean {
+  const fx = f as Fixture | undefined;
+  if (!fx?.fixture?.status || !FINAL_STATES.includes(fx.fixture.status.short)) return false;
+  return Date.parse(fx.fixture.date) + HORAS_CIERRE_PARTIDO * 3_600_000 < Date.now();
+}
+
+function urlDePartido(id: number | string): string {
+  const u = new URL(BASE + "/fixtures");
+  u.searchParams.set("id", String(id));
+  return u.toString();
+}
+
+/** ¿Lo que acaba de llegar ya no puede cambiar? */
+async function esDefinitivo(
+  politica: PoliticaArchivo,
+  path: string,
+  params: Record<string, string | number>,
+  respuesta: unknown,
+): Promise<boolean> {
+  if (politica === "ultimoBueno") return temporadaCerrada(params);
+  if (path === "/fixtures") {
+    return Array.isArray(respuesta) && respuesta.length === 1 && partidoCerrado(respuesta[0]);
+  }
+  // Detalle de un partido: definitivo si el propio partido ya está archivado
+  // como terminado (se archiva al pedir su ficha).
+  return (await leerArchivo(urlDePartido(params.fixture)))?.final === true;
+}
+
 async function get<T>(
   path: string,
   params: Record<string, string | number>,
@@ -368,7 +438,11 @@ async function get<T>(
 
   if (noCache) {
     try {
-      return await rawGet<T>(urlStr, path, paramStr);
+      const res = await rawGet<T>(urlStr, path, paramStr);
+      if (politicaArchivo(path, params) === "ultimoBueno" && respuestaUtil(res.response)) {
+        await guardarArchivo(urlStr, res.response, temporadaCerrada(params));
+      }
+      return res;
     } catch {
       return { response: [], errors: { failed: true } };
     }
@@ -388,22 +462,43 @@ async function get<T>(
   // instante). Cacheando el fallo con el MISMO TTL que un éxito, como mucho
   // se reintenta cada `revalidateSeconds` — igual que si hubiera ido bien.
   const secundario = esSecundario(path);
-  const cached = unstable_cache(
-    async () => {
-      // Modo ahorro: se trata como un fallo más (reintento cada
-      // FAILURE_RETRY_S), así se recupera solo cuando vuelve la cuota.
-      if (secundario && enModoAhorro()) {
-        return { response: [] as T[], errors: { failed: true, ahorro: true } };
+  const politica = politicaArchivo(path, params);
+  const puedeSerDefinitivo =
+    politica === "partido" || (politica === "ultimoBueno" && temporadaCerrada(params));
+
+  const pedir = async (): Promise<{ response: T[]; errors: unknown }> => {
+    // Lo que ya no puede cambiar sale del archivo, sin tocar la API.
+    const guardado = puedeSerDefinitivo ? await leerArchivo(urlStr) : null;
+    if (guardado?.final) return { response: guardado.respuesta as T[], errors: [] };
+    const ultimoBueno = async () =>
+      politica === "ultimoBueno" ? (guardado ?? (await leerArchivo(urlStr))) : null;
+
+    // Modo ahorro: lo último guardado o, si no hay, un fallo más (reintento
+    // cada FAILURE_RETRY_S), así se recupera solo cuando vuelve la cuota.
+    if (secundario && enModoAhorro()) {
+      const u = await ultimoBueno();
+      if (u) return { response: u.respuesta as T[], errors: [] };
+      return { response: [] as T[], errors: { failed: true, ahorro: true } };
+    }
+    try {
+      const res = await rawGet<T>(urlStr, path, paramStr);
+      if (politica !== "nunca" && respuestaUtil(res.response)) {
+        const definitivo = await esDefinitivo(politica, path, params, res.response);
+        // De un partido solo se guarda lo definitivo: uno a medias nunca se
+        // sirve "del archivo" (sería un marcador congelado).
+        if (politica === "ultimoBueno" || definitivo) {
+          await guardarArchivo(urlStr, res.response, definitivo);
+        }
       }
-      try {
-        return await rawGet<T>(urlStr, path, paramStr);
-      } catch {
-        return { response: [] as T[], errors: { failed: true } };
-      }
-    },
-    ["apif", urlStr],
-    { revalidate: revalidateSeconds },
-  );
+      return res;
+    } catch {
+      const u = await ultimoBueno();
+      if (u) return { response: u.respuesta as T[], errors: [] };
+      return { response: [] as T[], errors: { failed: true } };
+    }
+  };
+
+  const cached = unstable_cache(pedir, ["apif", urlStr], { revalidate: revalidateSeconds });
 
   let res: { response: T[]; errors: unknown };
   try {
@@ -426,20 +521,9 @@ async function get<T>(
   if (!fallo || revalidateSeconds <= FAILURE_RETRY_S) return res;
 
   const ventana = Math.floor(Date.now() / (FAILURE_RETRY_S * 1000));
-  const reintento = unstable_cache(
-    async () => {
-      if (secundario && enModoAhorro()) {
-        return { response: [] as T[], errors: { failed: true, ahorro: true } };
-      }
-      try {
-        return await rawGet<T>(urlStr, path, paramStr);
-      } catch {
-        return { response: [] as T[], errors: { failed: true } };
-      }
-    },
-    ["apif-retry", urlStr, String(ventana)],
-    { revalidate: FAILURE_RETRY_S },
-  );
+  const reintento = unstable_cache(pedir, ["apif-retry", urlStr, String(ventana)], {
+    revalidate: FAILURE_RETRY_S,
+  });
 
   try {
     const r2 = await reintento();
@@ -747,6 +831,7 @@ export async function getCompetitionUpcomingFixtures(
   if (n <= UPCOMING_CACHE_N) {
     const cached = await readCache<Fixture[]>(upcomingCacheKey(competition), 2400);
     if (cached) return cached.slice(0, n);
+    return (await conUltimoBueno(upcomingCacheKey(competition), await fetchLive(n))).slice(0, n);
   }
   return fetchLive(n);
 }
@@ -1993,7 +2078,7 @@ export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
     60 * 60 * 24 * 7,
   );
   if (precalculada && precalculada.length > 0) return precalculada;
-  return getTeamSquadLive(teamId);
+  return conUltimoBueno(teamSquadCacheKey(teamId), await getTeamSquadLive(teamId));
 }
 
 /** La llamada de verdad a la API. La usa el cron (para precalcular) y la

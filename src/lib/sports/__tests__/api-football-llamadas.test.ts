@@ -5,10 +5,24 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
 }));
 
+// Archivo permanente en memoria (en producción, la tabla apif_archivo).
+const archivo = new Map<string, { respuesta: unknown; final: boolean }>();
+vi.mock("../archivo", async (original) => {
+  const real = await original<typeof import("../archivo")>();
+  return {
+    respuestaUtil: real.respuestaUtil,
+    leerArchivo: async (url: string) => archivo.get(url) ?? null,
+    guardarArchivo: async (url: string, respuesta: unknown, final: boolean) => {
+      if (real.respuestaUtil(respuesta)) archivo.set(url, { respuesta, final });
+    },
+  };
+});
+
 const {
   getFixtureById,
   getFixturesEvents,
   getTeamCoach,
+  getTeamStatistics,
   getTeamFixtures,
   enModoAhorro,
   cuotaAgotada,
@@ -26,6 +40,7 @@ describe("llamadas a API-Football", () => {
   beforeEach(() => {
     process.env.API_FOOTBALL_KEY = "test";
     _fijarRestanteParaPruebas(null);
+    archivo.clear();
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -165,5 +180,40 @@ describe("llamadas a API-Football", () => {
     expect(cuotaAgotada()).toBe(false);
     await getTeamFixtures(4321, { last: 40, next: 40 });
     expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("archivo: un partido terminado hace horas se guarda y no se vuelve a pedir", async () => {
+    const terminado = {
+      fixture: { id: 21, date: new Date(Date.now() - 24 * 3_600_000).toISOString(), status: { short: "FT" } },
+    };
+    const fetchMock = vi.fn(async () => respuesta({ errors: [], response: [terminado] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect((await getFixtureById(21, 45))?.fixture.id).toBe(21);
+    expect((await getFixtureById(21, 45))?.fixture.id).toBe(21);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("archivo: un partido EN JUEGO no se guarda nunca (nada de marcadores congelados)", async () => {
+    const enJuego = {
+      fixture: { id: 22, date: new Date().toISOString(), status: { short: "2H" } },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => respuesta({ errors: [], response: [enJuego] })));
+    await getFixtureById(22, 45);
+    expect(archivo.size).toBe(0);
+  });
+
+  it("archivo: si la API falla, sirve lo último bueno", async () => {
+    const stats = { team: { id: 9 }, games: { played: 10 } };
+    vi.stubGlobal("fetch", vi.fn(async () => respuesta({ errors: [], response: stats })));
+    // /teams/statistics devuelve un objeto; get() lo guarda tal cual en response
+    await getTeamStatistics(9, { league: 140, season: 2026 });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => respuesta({ errors: { requests: "limit for the day" }, response: [] })),
+    );
+    const otra = await getTeamStatistics(9, { league: 140, season: 2026 });
+    expect(otra).toEqual(stats);
   });
 });
