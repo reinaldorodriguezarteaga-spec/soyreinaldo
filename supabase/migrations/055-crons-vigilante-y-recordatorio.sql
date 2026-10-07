@@ -40,3 +40,22 @@ select cron.schedule(
     where s.name = 'ingest_cron_secret';
   $job$
 );
+
+-- 3. Resumen de jornada (07:30 UTC): cuando una jornada termina, a cada
+--    jugador sus puntos, su puesto y el enlace a su tarjeta para compartir.
+--    Una vez por jornada (tabla lq_resumenes_enviados, migración 056).
+select cron.unschedule('resumen-jornada') where exists (
+  select 1 from cron.job where jobname = 'resumen-jornada');
+select cron.schedule(
+  'resumen-jornada',
+  '30 7 * * *',
+  $job$
+    select net.http_get(
+      url := 'https://www.soyreinaldo.com/api/cron/resumen-jornada',
+      headers := jsonb_build_object('Authorization', 'Bearer ' || s.decrypted_secret),
+      timeout_milliseconds := 55000
+    )
+    from vault.decrypted_secrets s
+    where s.name = 'ingest_cron_secret';
+  $job$
+);

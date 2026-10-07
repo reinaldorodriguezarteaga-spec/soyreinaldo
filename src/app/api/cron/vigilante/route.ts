@@ -164,7 +164,13 @@ export async function GET(request: Request) {
   const { data: jobsRaw } = await supabase.rpc("cron_jobs_activos");
   const jobs = (jobsRaw ?? null) as { jobname: string }[] | null;
   if (jobs) {
-    const esperados = ["ingesta-marcadores", "cache-deportes", "fechas-lq", "recordatorio-quiniela"];
+    const esperados = [
+      "ingesta-marcadores",
+      "cache-deportes",
+      "fechas-lq",
+      "recordatorio-quiniela",
+      "resumen-jornada",
+    ];
     const faltan = esperados.filter(
       (e) => !jobs.some((j) => j.jobname === e),
     );

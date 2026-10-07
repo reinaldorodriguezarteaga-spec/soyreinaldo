@@ -46,6 +46,43 @@ export default async function QuinielaLigaRankingPage({
   const rows = (data ?? []) as Row[];
   const meId = user?.id ?? null;
 
+  // "Compartir mi jornada": la última jornada terminada del todo (los
+  // aplazados no cuentan), si el usuario juega.
+  let tarjeta: { href: string; jornada: number } | null = null;
+  if (meId && rows.some((r) => r.user_id === meId)) {
+    const [{ data: partidos }, { data: perfil }] = await Promise.all([
+      supabase
+        .from("lq_matches")
+        .select("matchday, finished, status")
+        .eq("counts_for_scoring", true)
+        .lte("kickoff_at", new Date().toISOString())
+        .returns<{ matchday: number; finished: boolean; status: string | null }[]>(),
+      supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", meId)
+        .maybeSingle<{ username: string | null }>(),
+    ]);
+    const porJornada = new Map<number, { total: number; fin: number }>();
+    for (const m of partidos ?? []) {
+      if (m.status === "PST") continue;
+      const acc = porJornada.get(m.matchday) ?? { total: 0, fin: 0 };
+      acc.total += 1;
+      if (m.finished) acc.fin += 1;
+      porJornada.set(m.matchday, acc);
+    }
+    const terminadas = [...porJornada.entries()]
+      .filter(([, v]) => v.total > 0 && v.fin === v.total)
+      .map(([j]) => j);
+    if (terminadas.length > 0) {
+      const jornada = Math.max(...terminadas);
+      tarjeta = {
+        jornada,
+        href: `/mi-jornada/${encodeURIComponent(perfil?.username || meId)}/${jornada}`,
+      };
+    }
+  }
+
   return (
     <main className="page">
       <section className="phero" style={{ paddingBottom: 20 }}>
@@ -64,6 +101,13 @@ export default async function QuinielaLigaRankingPage({
             {active && !active.isPublic ? `${active.name} · ` : ""}
             LaLiga 2026-27 · {textoBaremo(baremo)}.
           </p>
+          {tarjeta && (
+            <p style={{ marginTop: 12 }}>
+              <Link href={tarjeta.href} className="btn btn--accent">
+                Compartir mi jornada {tarjeta.jornada} <span className="arr">→</span>
+              </Link>
+            </p>
+          )}
           {active && (!active.isPublic || active.role === "admin") && (
             <p style={{ marginTop: 12 }}>
               <Link

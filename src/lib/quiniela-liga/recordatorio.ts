@@ -65,3 +65,41 @@ export function emailRecordatorio(opts: {
 </div>`;
   return { subject, html };
 }
+
+/** Email del resumen de jornada (cron `resumen-jornada`). */
+export function emailResumenJornada(opts: {
+  nombre: string;
+  jornada: number;
+  liga: string;
+  puntos: number;
+  exactos: number;
+  aciertos: number;
+  jugados: number;
+  puestoAhora: number | null;
+  puestoAntes: number | null;
+  totalJugadores: number;
+  urlTarjeta: string;
+  urlClasificacion: string;
+  urlBaja: string;
+}): { subject: string; html: string } {
+  const mov =
+    opts.puestoAhora != null && opts.puestoAntes != null ? opts.puestoAntes - opts.puestoAhora : 0;
+  const movTexto =
+    mov > 0 ? `subes ${mov} ${mov === 1 ? "puesto" : "puestos"} ⬆️` : mov < 0 ? `bajas ${-mov} ${mov === -1 ? "puesto" : "puestos"} ⬇️` : "mantienes el puesto";
+  const subject = `🏆 Jornada ${opts.jornada}: ${opts.puntos} puntos${opts.puestoAhora ? ` · vas ${opts.puestoAhora}º` : ""}`;
+  const puestoHtml = opts.puestoAhora
+    ? `<p style="margin:0 0 6px;font-size:16px">Vas <strong>${opts.puestoAhora}º de ${opts.totalJugadores}</strong> en ${esc(opts.liga)} — ${movTexto}.</p>`
+    : "";
+  const html = `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:28px;border-radius:16px;max-width:460px;margin:auto">
+  <h2 style="margin:0 0 8px;font-size:20px">Jornada ${opts.jornada}, ${esc(opts.nombre)}</h2>
+  <p style="margin:0 0 6px;font-size:28px;font-weight:800">${opts.puntos} puntos</p>
+  <p style="margin:0 0 14px;color:#c5cbef">${opts.exactos} ${opts.exactos === 1 ? "resultado exacto" : "resultados exactos"} · ${opts.aciertos} ${opts.aciertos === 1 ? "acierto" : "aciertos"} · ${opts.jugados} ${opts.jugados === 1 ? "pronóstico" : "pronósticos"}</p>
+  ${puestoHtml}
+  <p style="margin:18px 0 0">
+    <a href="${opts.urlTarjeta}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;margin:0 8px 8px 0">Compartir mi jornada</a>
+    <a href="${opts.urlClasificacion}" style="display:inline-block;color:#9aa4d6;padding:12px 4px">Ver la clasificación</a>
+  </p>
+  <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a la quiniela de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más correos</a>.</p>
+</div>`;
+  return { subject, html };
+}

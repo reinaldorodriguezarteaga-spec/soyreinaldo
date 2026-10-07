@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import DonationBlock from "@/components/DonationBlock";
 import HomeScoreboard from "@/components/HomeScoreboard";
+import QuinielaPendientes from "@/components/QuinielaPendientes";
 import HomeAnalysisCard from "@/components/HomeAnalysisCard";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
@@ -157,6 +158,9 @@ export default async function Home() {
             </aside>
 
             <div className="home3col__main" style={{ display: "grid", gap: 20 }}>
+              <Suspense fallback={null}>
+                <QuinielaPendientes />
+              </Suspense>
               <HomeScoreboard />
               {/* Últimos análisis publicados — debajo del calendario y FUERA
                   de su caja de scroll (.hmcal-scroll), para que no quede

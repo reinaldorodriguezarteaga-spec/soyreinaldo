@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emailRecordatorio, pendientesPorUsuario } from "../recordatorio";
+import { emailRecordatorio, emailResumenJornada, pendientesPorUsuario } from "../recordatorio";
 
 const p = (id: number, local = "Barcelona", visitante = "Racing Santander") => ({
   id,
@@ -35,5 +35,26 @@ describe("recordatorio de la quiniela", () => {
     expect(html).not.toContain("<script>");
     expect(html).toContain("A &amp; B");
     expect(html).toContain("baja-recordatorios?token=t");
+  });
+
+  it("resumen de jornada: puntos, puesto y si sube o baja", () => {
+    const base = {
+      nombre: "Rei",
+      jornada: 8,
+      liga: "Conos",
+      exactos: 2,
+      aciertos: 3,
+      jugados: 10,
+      totalJugadores: 33,
+      urlTarjeta: "https://x/mi-jornada/rei/8",
+      urlClasificacion: "https://x/quiniela-liga/ranking",
+      urlBaja: "https://x/baja?token=t",
+    };
+    const sube = emailResumenJornada({ ...base, puntos: 16, puestoAhora: 5, puestoAntes: 8 });
+    expect(sube.subject).toBe("🏆 Jornada 8: 16 puntos · vas 5º");
+    expect(sube.html).toContain("subes 3 puestos");
+    expect(sube.html).toContain("mi-jornada/rei/8");
+    const baja = emailResumenJornada({ ...base, puntos: 2, puestoAhora: 9, puestoAntes: 8 });
+    expect(baja.html).toContain("bajas 1 puesto");
   });
 });

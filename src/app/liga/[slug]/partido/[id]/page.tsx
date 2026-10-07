@@ -623,6 +623,7 @@ export default async function LigaPartidoPage({
               fixtureId={fixtureId}
               played={played}
               goles={{ home: fx.goals.home, away: fx.goals.away }}
+              equipos={{ local: fx.teams.home.name, visitante: fx.teams.away.name }}
             />
           </Suspense>
         </div>
