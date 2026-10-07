@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  cuotaAgotada,
   getPlayerExtras,
   getPlayerSeasonStats,
   type PlayerExtras as PlayerExtrasData,
@@ -69,7 +70,10 @@ export default async function LigaJugadorPage({
     isFavorited("player", id),
   ]);
 
-  if (!p && extras.trophies.length === 0) notFound();
+  if (!p && extras.trophies.length === 0) {
+    if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
+    notFound();
+  }
 
   return (
     <main className="page">

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  cuotaAgotada,
   getTeamCoach,
   getTeamFixtures,
   getAllCompetitionPlayers,
@@ -79,7 +80,10 @@ export default async function LigaEquipoPage({
       getCompetitionFixturesWindow(competition).catch(() => [] as Fixture[]),
     ]);
 
-  if (!team && recent.length === 0 && upcoming.length === 0) notFound();
+  if (!team && recent.length === 0 && upcoming.length === 0) {
+    if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
+    notFound();
+  }
 
   // Respaldo de la plantilla.
   //

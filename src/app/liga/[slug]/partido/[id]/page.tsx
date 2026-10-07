@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  cuotaAgotada,
   getFixtureById,
   getFixtureCards,
   getFixtureGoals,
@@ -256,7 +257,10 @@ export default async function LigaPartidoPage({
   // 45s dentro del margen de 60s y sin quedarse corto para nadie: nada en
   // la web pide un partido en vivo más seguido que cada 30s.
   const fx = await getFixtureById(fixtureId, 45);
-  if (!fx) notFound();
+  if (!fx) {
+    if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
+    notFound();
+  }
   const liveNow = isLive(fx);
   const rv = liveNow ? 45 : undefined; // undefined = caché por defecto del fetcher
 

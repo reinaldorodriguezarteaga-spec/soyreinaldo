@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -40,25 +41,48 @@ function serviceClient() {
 }
 
 /**
+ * La fila tal cual, guardada 2 min en la caché de datos de Vercel. Antes cada
+ * render iba a Supabase y se bajaba el JSON entero: la portada lee los
+ * calendarios completos de las 10 competiciones (cientos de KB cada uno), y
+ * con un robot recorriendo la web el tráfico de salida de Supabase se fue a
+ * 11 GB de 5,5 del plan gratis (aviso de corte, sep-2026). El cron reescribe
+ * cada 10 min, así que 2 min de retraso no se notan.
+ */
+const leerFila = (key: string) =>
+  unstable_cache(
+    async (): Promise<{ data: unknown; updated_at: string } | null> => {
+      try {
+        const supabase = anonClient();
+        if (!supabase) return null;
+        const { data } = await supabase
+          .from("sports_cache")
+          .select("data, updated_at")
+          .eq("cache_key", key)
+          .maybeSingle();
+        return data ?? null;
+      } catch {
+        return null;
+      }
+    },
+    ["sports_cache", key],
+    { revalidate: 120 },
+  )();
+
+/**
  * Lee una entrada de `sports_cache`. Devuelve `null` (nunca lanza) si no
  * existe, si falla la consulta, o si `updated_at` es más vieja que
- * `maxAgeSeconds` — en ese caso el llamador debe caer a la llamada en vivo.
+ * `maxAgeSeconds`, o si está vacía (`[]`: nunca es un dato útil) — en ese caso el llamador debe caer a la llamada en vivo.
  */
 export async function readCache<T>(
   key: string,
   maxAgeSeconds: number,
 ): Promise<T | null> {
   try {
-    const supabase = anonClient();
-    if (!supabase) return null;
-    const { data } = await supabase
-      .from("sports_cache")
-      .select("data, updated_at")
-      .eq("cache_key", key)
-      .maybeSingle();
+    const data = await leerFila(key);
     if (!data) return null;
     const ageMs = Date.now() - new Date(data.updated_at).getTime();
     if (ageMs > maxAgeSeconds * 1000) return null;
+    if (Array.isArray(data.data) && data.data.length === 0) return null;
     return data.data as T;
   } catch {
     return null;
@@ -94,6 +118,12 @@ export async function freshCacheKeys(
 /** Escribe (upsert) una entrada de `sports_cache`. Solo la usa el cron —
  * requiere la service-role key, que salta la RLS de solo-lectura. */
 export async function writeCache(key: string, data: unknown): Promise<void> {
+  // Nunca pisar datos buenos con un vacío: cuando API-Football se queda sin
+  // cuota devuelve listas vacías, y el cron las guardaba encima de la tabla y
+  // los calendarios — el 7-oct la web enseñó la clasificación vacía durante
+  // horas. Sin escribir, `readCache` sigue sirviendo lo último bueno y, si
+  // envejece, cae a la API en vivo como siempre.
+  if (data == null || (Array.isArray(data) && data.length === 0)) return;
   const supabase = serviceClient();
   if (!supabase) return;
   await supabase

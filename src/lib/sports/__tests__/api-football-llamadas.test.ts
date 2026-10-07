@@ -5,8 +5,15 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
 }));
 
-const { getFixtureById, getFixturesEvents, getTeamCoach, enModoAhorro, _fijarRestanteParaPruebas } =
-  await import("../api-football");
+const {
+  getFixtureById,
+  getFixturesEvents,
+  getTeamCoach,
+  getTeamFixtures,
+  enModoAhorro,
+  cuotaAgotada,
+  _fijarRestanteParaPruebas,
+} = await import("../api-football");
 
 function respuesta(body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -148,5 +155,15 @@ describe("llamadas a API-Football", () => {
     expect(enModoAhorro()).toBe(false);
     expect(await getFixtureById(12, 45)).toBeNull();
     expect(enModoAhorro()).toBe(true);
+    expect(cuotaAgotada()).toBe(true);
+  });
+
+  it("en modo ahorro, el núcleo de las fichas (partidos de un equipo) se sigue pidiendo", async () => {
+    const fetchMock = vi.fn(async () => respuesta({ errors: [], response: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    _fijarRestanteParaPruebas(5_000);
+    expect(cuotaAgotada()).toBe(false);
+    await getTeamFixtures(4321, { last: 40, next: 40 });
+    expect(fetchMock).toHaveBeenCalled();
   });
 });

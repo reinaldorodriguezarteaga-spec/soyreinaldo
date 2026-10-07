@@ -178,7 +178,6 @@ function esCuotaAgotada(errs: unknown): boolean {
 
 /** Endpoints de los que se puede prescindir cuando aprieta la cuota. */
 const SECUNDARIOS = new Set([
-  "/players",
   "/players/profiles",
   "/trophies",
   "/transfers",
@@ -199,11 +198,22 @@ export function enModoAhorro(): boolean {
   );
 }
 
-function esSecundario(path: string, params: Record<string, string | number>): boolean {
-  if (SECUNDARIOS.has(path)) return true;
-  // Historial completo de un equipo (ficha de equipo: last/next 40). Los
-  // partidos en juego (`live`) y por id siguen siendo esenciales.
-  return path === "/fixtures" && "team" in params && !("live" in params);
+/** `/players` (estadísticas de la ficha de jugador) y `/fixtures?team=`
+ * (partidos de la ficha de equipo) NO están: son el núcleo de esas fichas, y
+ * sin ellos la página daba 404 a todo el mundo en modo ahorro (7-oct). */
+function esSecundario(path: string): boolean {
+  return SECUNDARIOS.has(path);
+}
+
+/** La API ha dicho que no queda cuota hoy: una ficha vacía NO significa que
+ * no exista. Las páginas lo usan para dar un error temporal (500) en vez de
+ * un 404, que haría a Google borrar la página del índice. */
+export function cuotaAgotada(): boolean {
+  return (
+    restante !== null &&
+    restante.n <= 0 &&
+    Date.now() - restante.t < ESTADO_CUOTA_VALIDO_MS
+  );
 }
 
 /** Solo para las pruebas. */
@@ -377,7 +387,7 @@ async function get<T>(
   // hubiera reseteado, porque el tráfico normal la volvía a agotar al
   // instante). Cacheando el fallo con el MISMO TTL que un éxito, como mucho
   // se reintenta cada `revalidateSeconds` — igual que si hubiera ido bien.
-  const secundario = esSecundario(path, params);
+  const secundario = esSecundario(path);
   const cached = unstable_cache(
     async () => {
       // Modo ahorro: se trata como un fallo más (reintento cada
