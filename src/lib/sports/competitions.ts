@@ -167,21 +167,21 @@ const CUP_KO_STRUCTURE: KoStructureEntry[] = [
 ];
 
 /**
- * FA Cup y Copa del Rey se quedan en season 2025 (la edición que acaba de
- * terminar) A PROPÓSITO: verificado que season 2026 todavía tiene 0
- * fixtures (las copas domésticas empiezan más tarde en el año que las
- * ligas/competiciones UEFA — su calendario 2026-27 aún no está publicado).
- * Mostrar el cuadro recién acabado es más útil que una página vacía;
- * revisar y subir a 2026 cuando la API publique su calendario.
+ * FA Cup y Copa del Rey: edición 2026-27 desde el 9-oct-2026. Hasta entonces
+ * se quedaron en 2025 porque la API aún no tenía el calendario nuevo; al
+ * publicarlo, seguir en 2025 dejaba el calendario de copas vacío (el cron
+ * pedía "próximos partidos" de una edición ya terminada). Las rondas
+ * previas (1/128, Qualifying…) salen en el calendario; el cuadro de
+ * eliminatorias empieza en dieciseisavos, así que se rellena en enero.
  */
 export const FA_CUP: Competition = {
   slug: "fa-cup",
   leagueId: 45,
-  season: 2025,
+  season: 2026,
   name: "FA Cup",
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
-  archivedSeasons: [2024],
+  archivedSeasons: [2025, 2024],
   region: "Inglaterra",
   officialUrl: "https://www.thefa.com/competitions/thefacup",
 };
@@ -189,11 +189,11 @@ export const FA_CUP: Competition = {
 export const COPA_DEL_REY: Competition = {
   slug: "copa-del-rey",
   leagueId: 143,
-  season: 2025,
+  season: 2026,
   name: "Copa del Rey",
   standingsMode: "none",
   koStructure: CUP_KO_STRUCTURE,
-  archivedSeasons: [2024],
+  archivedSeasons: [2025, 2024],
   region: "España",
   officialUrl: "https://www.rfef.es",
 };
