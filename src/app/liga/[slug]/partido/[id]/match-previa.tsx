@@ -3,6 +3,7 @@ import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
 import { cargarForma } from "@/lib/quiniela-liga/forma-datos";
 import { textoPrevia } from "@/lib/quiniela-liga/previa";
+import { conTildes } from "@/lib/sports/nombres";
 
 /** Por debajo de esto, el reparto de la comunidad no dice nada. */
 const MIN_PARA_COMUNIDAD = 3;
@@ -43,8 +44,8 @@ export default async function MatchPrevia({
   const anfitrion = ((anf ?? []) as { hecho: boolean }[])[0];
 
   const frases = textoPrevia({
-    local: home.name,
-    visitante: away.name,
+    local: conTildes(home.name),
+    visitante: conTildes(away.name),
     formaLocal: forma.get(home.id) ?? null,
     formaVisitante: forma.get(away.id) ?? null,
     caraACara,

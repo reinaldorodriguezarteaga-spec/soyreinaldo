@@ -1,5 +1,6 @@
 import "server-only";
 import { getHeadToHead, isFinal } from "@/lib/sports/api-football";
+import { conTildes } from "@/lib/sports/nombres";
 import type { CaraACara } from "@/app/quiniela-liga/match-card";
 
 /**
@@ -17,8 +18,8 @@ export async function ultimoCaraACara(a: number, b: number): Promise<CaraACara |
     if (!f) return null;
     return {
       fecha: f.fixture.date,
-      local: f.teams.home.name,
-      visitante: f.teams.away.name,
+      local: conTildes(f.teams.home.name),
+      visitante: conTildes(f.teams.away.name),
       golesLocal: f.goals.home!,
       golesVisitante: f.goals.away!,
     };
