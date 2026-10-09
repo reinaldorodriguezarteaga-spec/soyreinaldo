@@ -91,12 +91,22 @@ async function sbUpsert(table, rows) {
   console.log(`  ${fixtures.length} fixtures`);
 
   // Equipos (dedupe por id) desde local/visitante de cada fixture.
+  // API-Football no pone tildes; misma lista que src/lib/sports/nombres.ts.
+  const CON_TILDES = {
+    Alaves: "Alavés",
+    "Atletico Madrid": "Atlético Madrid",
+    "Deportivo La Coruna": "Deportivo La Coruña",
+    Malaga: "Málaga",
+    Cadiz: "Cádiz",
+    Leganes: "Leganés",
+    Almeria: "Almería",
+  };
   const teamsById = new Map();
   for (const f of fixtures) {
     for (const side of ["home", "away"]) {
       const t = f.teams?.[side];
       if (t?.id && !teamsById.has(t.id)) {
-        teamsById.set(t.id, { id: t.id, name: t.name, logo: t.logo ?? null });
+        teamsById.set(t.id, { id: t.id, name: CON_TILDES[t.name] ?? t.name, logo: t.logo ?? null });
       }
     }
   }

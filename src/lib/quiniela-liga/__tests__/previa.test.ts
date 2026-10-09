@@ -29,6 +29,11 @@ describe("previa automática", () => {
     expect(t[1]).toBe("Girona llega 14º (-3 de diferencia de goles) y suma 1 derrota en su último partido.");
   });
 
+  it("diferencia de goles cero", () => {
+    const t = textoPrevia({ ...base, formaVisitante: { puesto: 15, dg: 0, racha: [] } });
+    expect(t[0]).toBe("Girona llega 15º (sin diferencia de goles).");
+  });
+
   it("racha viva de 3 o más", () => {
     const t = textoPrevia({ ...base, formaLocal: { puesto: null, dg: null, racha: ["D", "V", "V", "V", "V"] } });
     expect(t[0]).toBe("Barcelona encadena 4 victorias seguidas.");

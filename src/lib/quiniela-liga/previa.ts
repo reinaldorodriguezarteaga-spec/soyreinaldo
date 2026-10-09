@@ -57,7 +57,12 @@ function resumenRacha(racha: ResultadoCorto[]): string | null {
 function fraseEquipo(nombre: string, f: FormaEquipo | null): string | null {
   if (!f) return null;
   const racha = resumenRacha(f.racha);
-  const dg = f.dg == null ? "" : ` (${f.dg > 0 ? "+" : ""}${f.dg} de diferencia de goles)`;
+  const dg =
+    f.dg == null
+      ? ""
+      : f.dg === 0
+        ? " (sin diferencia de goles)"
+        : ` (${f.dg > 0 ? "+" : ""}${f.dg} de diferencia de goles)`;
   if (f.puesto != null && racha) return `${nombre} llega ${f.puesto}º${dg} y ${racha}.`;
   if (f.puesto != null) return `${nombre} llega ${f.puesto}º${dg}.`;
   if (racha) return `${nombre} ${racha}.`;
