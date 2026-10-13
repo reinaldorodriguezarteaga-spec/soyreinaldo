@@ -870,7 +870,19 @@ export async function getCompetitionStandings(
   const parse = (r: StandingsResponse[]): StandingRow[] | WcGroup[] => {
     const groups = r[0]?.league.standings ?? [];
     if (competition.standingsMode === "table") {
-      return (groups[0] ?? []).slice().sort((a, b) => a.rank - b.rank);
+      // TODAS las tablas en una lista (cada fila lleva su `group`): las
+      // ligas de tabla única no cambian, y las de varias (MLS por
+      // conferencias, Argentina por zonas, Nations League por grupos) se
+      // agrupan al pintarlas. Así ninguna página que busca la posición de
+      // un equipo tiene que saber de grupos (13-oct).
+      // Argentina trae Apertura (terminado) y Clausura (en curso) con los
+      // mismos equipos: el torneo en curso primero, para que quien busca
+      // "la posición de este equipo" encuentre la de ahora.
+      const enCurso = (t: StandingRow[]) => Number(/^Clausura/i.test(t[0]?.group ?? ""));
+      return groups
+        .slice()
+        .sort((a, b) => enCurso(b) - enCurso(a))
+        .flatMap((t) => t.slice().sort((a, b) => a.rank - b.rank));
     }
     return groups
       .map((rows) => ({ group: rows[0]?.group ?? "", rows }))

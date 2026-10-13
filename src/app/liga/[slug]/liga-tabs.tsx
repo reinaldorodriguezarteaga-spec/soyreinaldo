@@ -117,13 +117,30 @@ export default function LigaTabs({
           {tab === "envivo" && <EnVivoView competition={competition} initialToday={data.today} />}
           {tab === "partidos" && <PartidosView competition={competition} fixtures={data.fixtures} />}
           {tab === "finalizados" && <FinalizadosView competition={competition} fixtures={data.finished} />}
-          {tab === "tabla" && (
-            <StandingsTableView
-              competition={competition}
-              standings={data.standings}
-              liveFixtures={data.today}
-            />
-          )}
+          {tab === "tabla" &&
+            porGrupo(data.standings, competition.slug).map((g) => (
+              <div key={g.nombre || "tabla"} style={{ marginBottom: g.nombre ? 28 : 0 }}>
+                {g.nombre && (
+                  <h3
+                    className="mono"
+                    style={{
+                      margin: "0 0 10px",
+                      fontSize: "0.72rem",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: "var(--text-dim)",
+                    }}
+                  >
+                    {g.nombre}
+                  </h3>
+                )}
+                <StandingsTableView
+                  competition={competition}
+                  standings={g.filas}
+                  liveFixtures={data.today}
+                />
+              </div>
+            ))}
           {tab === "jugadores" && <JugadoresView competition={competition} />}
           {tab === "stats" && (
             <StatsView
@@ -143,4 +160,35 @@ export default function LigaTabs({
       </div>
     </section>
   );
+}
+
+/**
+ * Clasificaciones de varias tablas (13-oct): la MLS por conferencias,
+ * Argentina por torneo y zona, la Nations League y las eliminatorias por
+ * grupo. Cada fila trae su `group` del API; con una sola tabla, nada cambia
+ * (un grupo sin nombre). En Argentina, el torneo en curso (Clausura) primero.
+ */
+function porGrupo(filas: LigaData["standings"], slug: string) {
+  const grupos = new Map<string, LigaData["standings"]>();
+  for (const f of filas) {
+    const g = f.group ?? "";
+    grupos.set(g, [...(grupos.get(g) ?? []), f]);
+  }
+  if (grupos.size <= 1) return [{ nombre: "", filas }];
+  const lista = [...grupos.entries()].map(([g, fs]) => ({ nombre: nombreGrupo(g, slug), filas: fs }));
+  if (slug === "liga-argentina") {
+    lista.sort((a, b) => Number(b.nombre.startsWith("Clausura")) - Number(a.nombre.startsWith("Clausura")));
+  }
+  return lista;
+}
+
+function nombreGrupo(g: string, slug: string): string {
+  const grupo = slug === "liga-argentina" ? "Zona" : "Grupo";
+  return g
+    .replace(/^Group Stage - /i, "")
+    .replace(/Western Conference/i, "Conferencia Oeste")
+    .replace(/Eastern Conference/i, "Conferencia Este")
+    .replace(/League ([A-D])/i, "Liga $1")
+    .replace(/Group ([A-Z])/i, `${grupo} $1`)
+    .replace(/ - /g, " · ");
 }
