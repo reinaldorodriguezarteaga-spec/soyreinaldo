@@ -191,13 +191,16 @@ function teamNodes(
           y = 1 - w;
         }
       } else {
-        // Local arriba, rival abajo.
+        // Local arriba, rival abajo. La columna del API va de la banda
+        // IZQUIERDA del equipo a la derecha: el local ataca hacia abajo, así
+        // que su izquierda es la derecha de la pantalla (antes estaba al
+        // revés y Koundé/Lamine salían en la banda contraria, 13-oct).
         if (side === "home") {
           y = 0.06 + d * 0.36;
-          x = w;
+          x = 1 - w;
         } else {
           y = 0.94 - d * 0.36;
-          x = 1 - w;
+          x = w;
         }
       }
       out.push({ p, x, y });
