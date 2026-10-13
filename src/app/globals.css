@@ -1795,6 +1795,25 @@ select.field { appearance: none; }
 .ficha__submin { grid-row: 1 / span 2; font-weight: 800; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .ficha__subin { color: #4ade80; }
 .ficha__subout { color: #ff8a8a; }
+/* Los que entraron (13-oct): debajo del campo y las estadísticas, a dos
+   columnas (local | visitante). */
+.ficha__bench { padding: 10px 16px 12px; border-top: 1px solid var(--line); }
+.ficha__benchcols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+.ficha__entradas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ficha__entradas li { display: grid; grid-template-columns: 34px 28px 1fr auto; align-items: center; gap: 6px; padding-left: 6px; border-left: 3px solid var(--accent); min-width: 0; }
+.ficha__entradas[data-side="away"] li { border-left-color: #ff5b8a; }
+.ficha__entmin { font-size: 0.72rem; font-weight: 800; color: #4ade80; font-variant-numeric: tabular-nums; }
+.ficha__entavatar { width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #0b0f1a; font-size: 0.7rem; font-weight: 900; overflow: hidden; }
+.ficha__entavatar img { width: 100%; height: 100%; object-fit: cover; }
+.ficha__enttxt { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.ficha__enttxt b { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ficha__enttxt small { font-size: 0.66rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ficha__entnum { color: var(--text-dim); font-weight: 700; }
+.ficha__entdatos { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; }
+.ficha__rating--inline { position: static; }
+.ficha__card--inline { position: static; display: inline-block; }
+.ficha__submark--out { color: #ff8a8a; }
+
 .ficha__foot { display: flex; justify-content: space-between; padding: 8px 20px 10px; border-top: 1px solid var(--line); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
 
 /* Contenedor, no viewport: ver el comentario en .ficha más arriba. 700px
@@ -1805,4 +1824,10 @@ select.field { appearance: none; }
 @container (max-width: 700px) {
   .ficha__body { grid-template-columns: 1fr; }
   .ficha__pitchcol { height: 560px; }
+  .ficha__benchcols { grid-template-columns: 1fr; }
+  /* En el móvil el marcador grande dejaba los nombres en "B…" y "G…". */
+  .ficha__name { font-size: 1.05rem; }
+  .ficha__logo { width: 38px; height: 38px; }
+  .ficha__score { font-size: 2.3rem; }
+  .ficha__teams { gap: 8px; }
 }

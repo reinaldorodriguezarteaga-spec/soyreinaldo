@@ -44,11 +44,15 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
   const measure = useCallback(() => {
     const el = cardRef.current;
     if (!el) return;
+    // Pellizcando para ampliar, la parte visible (visualViewport) encoge: si
+    // aquí se recalculaba la escala, la ficha se encogía a la vez y el zoom
+    // se deshacía solo (13-oct, iPhone). Con zoom puesto no se toca nada.
+    const vv = window.visualViewport;
+    if (vv && vv.scale > 1.01) return;
     setNatural({ w: el.scrollWidth, h: el.scrollHeight });
     // visualViewport es el tamaño VISUAL real en iOS Safari — con la barra
     // de direcciones colapsándose o un position:fixed recién aplicado,
     // window.innerWidth/innerHeight pueden ir un paso por detrás.
-    const vv = window.visualViewport;
     setViewport({ w: vv?.width ?? window.innerWidth, h: vv?.height ?? window.innerHeight });
   }, []);
 
@@ -159,7 +163,11 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
                 // rAF de más arriba): oculto, no a tamaño 0 — así no hay un
                 // parpadeo con la tarjeta a tamaño completo sin escalar.
                 : { opacity: 0 }
-              : undefined
+              : // Fuera del modo captura, ocupar el ancho disponible: como hijo
+                // de un flex centrado, sin esto medía lo que la ficha (720 px)
+                // y en el móvil se salía por los dos lados, con el lado
+                // izquierdo cortado e inalcanzable (13-oct).
+                { width: "100%", minWidth: 0 }
           }
         >
           <div

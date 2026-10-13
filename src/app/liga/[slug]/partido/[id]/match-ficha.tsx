@@ -13,10 +13,12 @@ import FichaFullscreen from "./ficha-fullscreen";
  * Ficha visual del partido: la misma tarjeta que el marcador completo del
  * Multichat (chat.soyreinaldo.com/marcador/completo) pero con el tema de la
  * web, pensada para capturarla y comentarla en los vídeos de análisis.
- * Marcador arriba, campo vertical con las alineaciones a la izquierda
- * (foto, dorsal, nota, goles, tarjetas, quién entró por quién) y las
+ * Marcador arriba, campo vertical con el ONCE INICIAL a la izquierda (foto,
+ * dorsal, nota, goles, tarjetas y, si salió, en qué minuto) y las
  * estadísticas con barras a la derecha, estiradas a la misma altura que el
- * campo (sin lista de cambios: el dueño la quiso fuera de esta versión).
+ * campo. Debajo, los que entraron: minuto, por quién, nota, goles y
+ * asistencias (13-oct: el dueño quiere ver cómo empezó el partido, no cómo
+ * acabó, y a los cambios aparte).
  */
 
 type Team = { id: number; name: string; logo: string };
@@ -41,8 +43,23 @@ type Chip = {
   goals: number;
   yellow: number;
   red: number;
-  /** minuto en que entró, si es un sustituto ocupando el sitio de otro */
-  subbedIn: number | null;
+  /** minuto en que salió (sustituido), o null si jugó hasta el final */
+  subbedOut: number | null;
+};
+
+/** Un jugador que entró desde el banquillo. */
+type Entrada = {
+  key: string;
+  minute: number | null;
+  name: string;
+  number: number | null;
+  photo: string | null;
+  porQuien: string | null;
+  rating: number | null;
+  goals: number;
+  assists: number;
+  yellow: number;
+  red: number;
 };
 
 export default function MatchFicha({
@@ -74,8 +91,12 @@ export default function MatchFicha({
   subs: FixtureSubEvent[];
   statusLabel: string;
 }) {
-  const homeChips = onPitch(homeLineup, homePlayers, subs.filter((s) => s.teamId === home.id));
-  const awayChips = onPitch(awayLineup, awayPlayers, subs.filter((s) => s.teamId === away.id));
+  const homeSubs = subs.filter((s) => s.teamId === home.id);
+  const awaySubs = subs.filter((s) => s.teamId === away.id);
+  const homeChips = onceInicial(homeLineup, homePlayers, homeSubs);
+  const awayChips = onceInicial(awayLineup, awayPlayers, awaySubs);
+  const homeEntradas = entradas(homeLineup, homePlayers, homeSubs);
+  const awayEntradas = entradas(awayLineup, awayPlayers, awaySubs);
 
   return (
     <FichaFullscreen>
@@ -137,10 +158,10 @@ export default function MatchFicha({
                   <div className="ficha__circle" />
                   <div className="ficha__midline" />
                 </div>
-                {place(homeChips, false).map(({ p, x, y }) => (
+                {place(homeChips, "arriba").map(({ p, x, y }) => (
                   <PlayerChip key={p.key} p={p} x={x} y={y} />
                 ))}
-                {place(awayChips, true).map(({ p, x, y }) => (
+                {place(awayChips, "abajo").map(({ p, x, y }) => (
                   <PlayerChip key={p.key} p={p} x={x} y={y} />
                 ))}
               </div>
@@ -181,6 +202,15 @@ export default function MatchFicha({
 
           </section>
         </div>
+        {(homeEntradas.length > 0 || awayEntradas.length > 0) && (
+          <section className="ficha__bench" aria-label="Cambios">
+            <h3 className="ficha__h">Cambios</h3>
+            <div className="ficha__benchcols">
+              <ListaEntradas lista={homeEntradas} lado="home" />
+              <ListaEntradas lista={awayEntradas} lado="away" />
+            </div>
+          </section>
+        )}
         <footer className="ficha__foot">
           <span className="mono">soyreinaldo.com</span>
           <span className="mono">@SoyReinaldoR</span>
@@ -190,21 +220,32 @@ export default function MatchFicha({
   );
 }
 
-/**
- * Los que están en el campo: el once inicial y, en el sitio de cada
- * sustituido, el que entró por él. Los cambios se casan por id de jugador y,
- * si el API no lo trae, por apellido (`subKey`) — solo por apellido fallaba
- * con dos "García" en el mismo equipo (Koundé entró por Eric García y la
- * ficha lo ponía en el sitio de Joan García, el portero).
- */
-function onPitch(lineup: LineupTeam | null, players: PlayerRating[], subs: FixtureSubEvent[]): Chip[] {
-  if (!lineup || lineup.startXI.length === 0) return [];
+/** Cruza cada jugador de la alineación con su valoración del partido. Por
+ * id y, si el API no lo trae, por apellido (`subKey`) — solo por apellido
+ * fallaba con dos "García" en el mismo equipo. */
+function buscador(players: PlayerRating[]) {
   const byId = new Map(players.map((p) => [p.id, p]));
   const byKey = new Map(players.map((p) => [subKey(p.name), p]));
-  const rating = (lp: LineupPlayer): PlayerRating | undefined => byId.get(lp.id) ?? byKey.get(subKey(lp.name));
+  return (id: number | null, name: string | null): PlayerRating | undefined =>
+    (id != null ? byId.get(id) : undefined) ?? (name ? byKey.get(subKey(name)) : undefined);
+}
 
-  const toChip = (lp: LineupPlayer, subbedIn: number | null): Chip => {
-    const pr = rating(lp);
+/** ¿Este cambio es la salida de este jugador? Por id o, sin id, por apellido. */
+function sale(s: FixtureSubEvent, lp: LineupPlayer): boolean {
+  if (s.outId != null) return s.outId === lp.id;
+  return !!s.outName && subKey(s.outName) === subKey(lp.name);
+}
+
+/** El once inicial tal cual empezó, con el minuto en que salió cada uno. */
+function onceInicial(
+  lineup: LineupTeam | null,
+  players: PlayerRating[],
+  subs: FixtureSubEvent[],
+): Chip[] {
+  if (!lineup || lineup.startXI.length === 0) return [];
+  const rating = buscador(players);
+  return lineup.startXI.map((lp) => {
+    const pr = rating(lp.id, lp.name);
     return {
       key: `${lp.id}-${lp.name}`,
       name: lp.name,
@@ -215,31 +256,53 @@ function onPitch(lineup: LineupTeam | null, players: PlayerRating[], subs: Fixtu
       goals: pr?.goals ?? 0,
       yellow: pr?.stats.yellow ?? 0,
       red: pr?.stats.red ?? 0,
-      subbedIn,
+      subbedOut: subs.find((s) => sale(s, lp))?.minute ?? null,
     };
-  };
-
-  // Cambios encadenados (A sale por B, luego B sale por C): se resuelve en orden.
-  const benchById = new Map(lineup.substitutes.map((p) => [p.id, p]));
-  const benchByKey = new Map(lineup.substitutes.map((p) => [subKey(p.name), p]));
-  const slots: { current: LineupPlayer; subbedIn: number | null; grid: string | null }[] =
-    lineup.startXI.map((p) => ({ current: p, subbedIn: null, grid: p.grid }));
-  for (const s of subs) {
-    const inP =
-      (s.inId != null ? benchById.get(s.inId) : undefined) ?? benchByKey.get(subKey(s.inName));
-    const slot =
-      (s.outId != null ? slots.find((sl) => sl.current.id === s.outId) : undefined) ??
-      slots.find((sl) => subKey(sl.current.name) === subKey(s.outName));
-    if (!slot || !inP) continue;
-    slot.current = inP;
-    slot.subbedIn = s.minute;
-  }
-  return slots.map((sl) => toChip({ ...sl.current, grid: sl.grid }, sl.subbedIn));
+  });
 }
 
-/** Posiciones (%) desde la rejilla "fila:columna" (fila 1 = portero). El
- * visitante va espejado para que su portero quede abajo. */
-function place(chips: Chip[], mirrored: boolean) {
+/** Los que entraron desde el banquillo, en orden, con lo que hicieron. */
+function entradas(
+  lineup: LineupTeam | null,
+  players: PlayerRating[],
+  subs: FixtureSubEvent[],
+): Entrada[] {
+  const rating = buscador(players);
+  const banquillo = buscador(
+    (lineup?.substitutes ?? []).map((p) => ({ id: p.id, name: p.name, number: p.number }) as PlayerRating),
+  );
+  return subs
+    .filter((s) => s.inName || s.inId != null)
+    .map((s, i) => {
+      const pr = rating(s.inId, s.inName);
+      const bench = banquillo(s.inId, s.inName);
+      return {
+        key: `${s.inId ?? s.inName}-${i}`,
+        minute: s.minute,
+        name: pr?.name ?? s.inName ?? "—",
+        number: pr?.number ?? bench?.number ?? null,
+        photo: pr?.photo ?? null,
+        porQuien: s.outName,
+        rating: pr?.rating ?? null,
+        goals: pr?.goals ?? 0,
+        assists: pr?.assists ?? 0,
+        yellow: pr?.stats.yellow ?? 0,
+        red: pr?.stats.red ?? 0,
+      };
+    });
+}
+
+/**
+ * Posiciones (%) desde la rejilla "fila:columna" (fila 1 = portero).
+ *
+ * La columna del API va de izquierda a derecha DESDE EL PUNTO DE VISTA DEL
+ * EQUIPO (columna 1 = su banda izquierda: el lateral izquierdo, el extremo
+ * izquierdo). El equipo de arriba ataca hacia abajo, así que su izquierda
+ * es la DERECHA de la pantalla: a él hay que darle la vuelta en horizontal.
+ * Antes se le daba al de abajo, y en todos los partidos salían los dos
+ * equipos con las bandas cambiadas (Koundé y Lamine en la izquierda, 13-oct).
+ */
+function place(chips: Chip[], lado: "arriba" | "abajo") {
   const rows = new Map<number, Chip[]>();
   for (const c of chips) {
     const r = Number((c.grid ?? "1:1").split(":")[0]);
@@ -254,10 +317,57 @@ function place(chips: Chip[], mirrored: boolean) {
     sorted.forEach((p, i) => {
       const yHalf = 8 + ((row - 1) / Math.max(nRows - 1, 1)) * 36; // 8%..44% de cada mitad
       const x = ((i + 0.5) / sorted.length) * 100;
-      out.push({ p, x: mirrored ? 100 - x : x, y: mirrored ? 100 - yHalf : yHalf });
+      out.push(
+        lado === "arriba" ? { p, x: 100 - x, y: yHalf } : { p, x, y: 100 - yHalf },
+      );
     });
   }
   return out;
+}
+
+function ListaEntradas({ lista, lado }: { lista: Entrada[]; lado: "home" | "away" }) {
+  if (lista.length === 0) return <div />;
+  const apellido = (n: string | null) =>
+    (n ?? "").replace(/^([A-Z]\.\s?)+/, "").split(" ").slice(-1)[0] || n || "";
+  return (
+    <ul className="ficha__entradas" data-side={lado}>
+      {lista.map((e) => (
+        <li key={e.key}>
+          <span className="ficha__entmin">▲{e.minute ?? "?"}&apos;</span>
+          <span className="ficha__entavatar">
+            {e.photo ? (
+              <Image src={e.photo} alt="" width={28} height={28} unoptimized />
+            ) : (
+              <span>{e.number ?? ""}</span>
+            )}
+          </span>
+          <span className="ficha__enttxt">
+            <b>
+              {e.number != null && <span className="ficha__entnum">{e.number}</span>} {apellido(e.name)}
+            </b>
+            {e.porQuien && <small>por {apellido(e.porQuien)}</small>}
+          </span>
+          <span className="ficha__entdatos">
+            {e.goals > 0 && <span title="Goles">⚽{e.goals > 1 ? e.goals : ""}</span>}
+            {e.assists > 0 && <span title="Asistencias">🅰️{e.assists > 1 ? e.assists : ""}</span>}
+            {e.red > 0 ? (
+              <span className="ficha__card ficha__card--inline ficha__card--red" />
+            ) : e.yellow > 0 ? (
+              <span className="ficha__card ficha__card--inline" />
+            ) : null}
+            {e.rating != null && (
+              <span
+                className="ficha__rating ficha__rating--inline"
+                data-tier={e.rating >= 7 ? "good" : e.rating >= 6 ? "ok" : "bad"}
+              >
+                {e.rating.toFixed(1)}
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function PlayerChip({ p, x, y }: { p: Chip; x: number; y: number }) {
@@ -284,7 +394,9 @@ function PlayerChip({ p, x, y }: { p: Chip; x: number; y: number }) {
           <span className="ficha__card" />
         ) : null}
         {p.goals > 0 && <span className="ficha__goalmark">⚽{p.goals > 1 ? p.goals : ""}</span>}
-        {p.subbedIn != null && <span className="ficha__submark">▲{p.subbedIn}&apos;</span>}
+        {p.subbedOut != null && (
+          <span className="ficha__submark ficha__submark--out">▼{p.subbedOut}&apos;</span>
+        )}
       </div>
       <span className="ficha__chipname">
         {p.number != null && <b>{p.number}</b>} {short}
