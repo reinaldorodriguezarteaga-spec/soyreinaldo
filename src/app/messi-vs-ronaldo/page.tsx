@@ -29,8 +29,10 @@ export const metadata: Metadata = {
  * cada partido; los partidos son los mismos que ya consulta ese cron.
  */
 const GOATS = [
-  { clave: "messi", nombre: "Messi", apiId: 154, season: 2026, equipos: [9568, 26] },
-  { clave: "ronaldo", nombre: "Cristiano", apiId: 874, season: 2026, equipos: [2939, 27] },
+  // Messi ya no va con Argentina (se retiró de la selección, 13-oct-2026):
+  // sus partidos pasados con ella siguen en "últimos", pero no en "próximos".
+  { clave: "messi", nombre: "Messi", apiId: 154, season: 2026, equipos: [9568, 26], sinFuturo: [26] },
+  { clave: "ronaldo", nombre: "Cristiano", apiId: 874, season: 2026, equipos: [2939, 27], sinFuturo: [] },
 ] as const;
 
 const fecha = (iso: string) =>
@@ -48,12 +50,14 @@ function enlacePartido(f: Fixture): string | null {
   return c ? `/liga/${c.slug}/partido/${f.fixture.id}` : null;
 }
 
-async function partidosDe(equipos: readonly number[]) {
+async function partidosDe(equipos: readonly number[], sinFuturo: readonly number[]) {
   const r = await Promise.all(
     equipos.map((e) => getTeamFixtures(e, { last: 5, next: 3, revalidate: 3600 }).catch(() => null)),
   );
   return {
-    proximos: r.flatMap((x) => x?.upcoming ?? []),
+    proximos: r
+      .filter((_, i) => !sinFuturo.includes(equipos[i]))
+      .flatMap((x) => x?.upcoming ?? []),
     ultimos: r.flatMap((x) => x?.recent ?? []).filter(isFinal),
   };
 }
@@ -80,7 +84,7 @@ async function Detalle() {
     GOATS.map(async (g) => {
       const [temporada, partidos] = await Promise.all([
         getTemporadaJugador(g.apiId, g.season).catch(() => [] as FilaTemporada[]),
-        partidosDe(g.equipos),
+        partidosDe(g.equipos, g.sinFuturo),
       ]);
       return { g, temporada, ...partidos };
     }),
