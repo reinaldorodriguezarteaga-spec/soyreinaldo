@@ -99,8 +99,18 @@ function rateLimited(ip: string, limit: number = RATE_LIMIT): boolean {
   return cur.n > limit;
 }
 
+/** La dirección interna de Vercel. Ningún visitante real llega por aquí:
+ * el 12-13 oct entraron por ella 190.000 peticiones del robot frente a
+ * 17.000 de www. Se redirige al dominio de verdad (con su firewall). */
+const HOST_INTERNO = "soyreinaldo.vercel.app";
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (request.headers.get("host") === HOST_INTERNO) {
+    const destino = new URL(request.nextUrl.pathname + request.nextUrl.search, "https://www.soyreinaldo.com");
+    return NextResponse.redirect(destino, 308);
+  }
 
   if (HEAVY_PATH_RE.test(pathname)) {
     const ua = request.headers.get("user-agent") ?? "";
