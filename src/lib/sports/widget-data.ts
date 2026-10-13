@@ -98,7 +98,7 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
   type Eventos = Awaited<ReturnType<typeof getFixturesEvents>>;
   const vacio: Eventos = new Map();
   const [evVivos, evTerminados] = await Promise.all([
-    vivos.length ? getFixturesEvents(vivos, 45) : vacio,
+    vivos.length ? getFixturesEvents(vivos, 20) : vacio,
     terminados.length ? getFixturesEvents(terminados, 600) : vacio,
   ]).catch((): [Eventos, Eventos] => [vacio, vacio]);
 
