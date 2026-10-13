@@ -429,7 +429,9 @@ function politicaArchivo(
  */
 const HORA = 3_600_000;
 const FRESCURA_ARCHIVO: Record<string, number> = {
-  "/players": 6 * HORA, // estadísticas de temporada: cambian tras cada partido
+  // Jugadores y estadísticas de equipo: el cron `refresco-post-partido` los
+  // pone al día al acabar cada partido; la ventana larga es solo el respaldo.
+  "/players": 48 * HORA,
   "/players/squads": 24 * HORA,
   "/players/profiles": 7 * 24 * HORA,
   "/players/topscorers": 3 * HORA,
@@ -437,7 +439,7 @@ const FRESCURA_ARCHIVO: Record<string, number> = {
   "/players/topyellowcards": 3 * HORA,
   "/players/topredcards": 3 * HORA,
   "/teams": 7 * 24 * HORA,
-  "/teams/statistics": 6 * HORA,
+  "/teams/statistics": 48 * HORA,
   "/coachs": 3 * 24 * HORA,
   "/trophies": 7 * 24 * HORA,
   "/transfers": 7 * 24 * HORA,
@@ -448,12 +450,12 @@ const FRESCURA_ARCHIVO: Record<string, number> = {
 
 /** Cuánto vale lo archivado de esta llamada (ms), o null si no aplica. */
 function frescuraArchivo(path: string, params: Record<string, string | number>): number | null {
-  // Partidos de un equipo (ficha de equipo, last/next de 20-40): cambian al
-  // jugar, 2 h basta. NO el "último/próximo partido" (last=1/next=1) de los
+  // Partidos de un equipo (ficha de equipo, last/next de 20-40): los refresca
+  // `refresco-post-partido` al acabar cada partido; 6 h de respaldo. NO el "último/próximo partido" (last=1/next=1) de los
   // widgets: justo al acabar un partido tiene que cambiar ya.
   if (path === "/fixtures") {
     const n = Number(params.last ?? params.next ?? 0);
-    return "team" in params && !("live" in params) && n > 1 ? 2 * HORA : null;
+    return "team" in params && !("live" in params) && n > 1 ? 6 * HORA : null;
   }
   return FRESCURA_ARCHIVO[path] ?? null;
 }
@@ -496,6 +498,14 @@ async function esDefinitivo(
   return (await leerArchivo(urlDePartido(params.fixture)))?.final === true;
 }
 
+/** La URL exacta de una llamada: también es la clave de su caché y de su
+ * fila en el archivo (el orden de los parámetros importa). */
+function urlApi(path: string, params: Record<string, string | number>): string {
+  const url = new URL(BASE + path);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
+  return url.toString();
+}
+
 async function get<T>(
   path: string,
   params: Record<string, string | number>,
@@ -515,9 +525,7 @@ async function get<T>(
    * legítima y reintentarla sería quemar cuota para nada. */
   retryIfEmpty = false,
 ): Promise<{ response: T[]; errors: unknown }> {
-  const url = new URL(BASE + path);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
-  const urlStr = url.toString();
+  const urlStr = urlApi(path, params);
   const paramStr = Object.entries(params)
     .filter(([k]) => k !== "key")
     .map(([k, v]) => `${k}=${v}`)
@@ -3365,4 +3373,81 @@ export async function getTeamsExtras(
     );
   }
   return salida;
+}
+
+/**
+ * Cuota real del día desde `/status` (no gasta cuota). Deja anotado lo que
+ * queda, así el modo ahorro y el freno deciden con un dato cierto aunque
+ * esta instancia no haya hecho ninguna llamada todavía.
+ */
+export async function leerCuotaReal(): Promise<{ usadas: number; limite: number } | null> {
+  const key = process.env.API_FOOTBALL_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(BASE + "/status", {
+      headers: { "x-apisports-key": key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIEMPO_MAX_LLAMADA_MS),
+    });
+    const json = (await res.json()) as {
+      errors?: unknown;
+      response?: { requests?: { current: number; limit_day: number } };
+    };
+    if (esCuotaAgotada(json.errors)) {
+      anotarRestante("0");
+      return { usadas: LIMITE_DIARIO, limite: LIMITE_DIARIO };
+    }
+    const r = json.response?.requests;
+    if (!r?.limit_day) return null;
+    anotarRestante(String(r.limit_day - r.current));
+    return { usadas: r.current, limite: r.limit_day };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Refresco tras un partido (cron `refresco-post-partido`): deja al día en el
+ * archivo lo que leen la ficha del equipo y las de sus jugadores, con las
+ * MISMAS URLs que piden ellas — así "base de datos primero" las sirve
+ * frescas sin llamar. Las estadísticas de toda la plantilla salen de
+ * `/players?team=` (20 por página, 2-3 llamadas) y se guardan una a una
+ * como si se hubiera pedido `/players?id=` (verificado el 13-oct: la entrada
+ * es idéntica byte a byte). Las llamadas van de una en una: nunca ocupa más
+ * de un hueco del carril, así que no hace esperar al directo.
+ * Devuelve cuántas llamadas ha gastado.
+ */
+export async function refrescarEquipoTrasPartido(
+  teamId: number,
+  competition: Competition,
+): Promise<number> {
+  const league = competition.leagueId;
+  const season = competition.season;
+  let llamadas = 0;
+
+  // Ficha del equipo: últimos/próximos partidos y estadísticas de temporada.
+  await get<Fixture>("/fixtures", { team: teamId, last: 40 }, 1800, true);
+  await get<Fixture>("/fixtures", { team: teamId, next: 40 }, 1800, true);
+  await get<TeamSeasonStats>("/teams/statistics", { league, season, team: teamId }, 1800, true);
+  llamadas += 3;
+
+  // Fichas de los jugadores.
+  for (let page = 1; page <= 5; page++) {
+    const r = (await get<PlayerSeasonResponse>(
+      "/players",
+      { team: teamId, league, season, page },
+      600,
+      true,
+    )) as { response: PlayerSeasonResponse[]; paging?: { total?: number } };
+    llamadas++;
+    for (const item of r.response) {
+      await guardarArchivo(
+        urlApi("/players", { id: item.player.id, league, season }),
+        [item],
+        false,
+      );
+    }
+    if (page >= (r.paging?.total ?? 1)) break;
+  }
+  return llamadas;
 }

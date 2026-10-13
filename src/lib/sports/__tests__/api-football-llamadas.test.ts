@@ -24,6 +24,8 @@ const {
   getTeamCoach,
   getTeamStatistics,
   getTeamFixtures,
+  getPlayerSeasonStats,
+  refrescarEquipoTrasPartido,
   enModoAhorro,
   cuotaAgotada,
   frenoActivo,
@@ -336,6 +338,40 @@ describe("llamadas a API-Football", () => {
       await llamarCon("74990");
       expect(frenoActivo()).toBe(false);
       expect(enModoAhorro()).toBe(false);
+    });
+  });
+
+  describe("refresco tras un partido", () => {
+    it("guarda a cada jugador donde lo busca su ficha, y la ficha ya no llama", async () => {
+      const laliga = { slug: "laliga", leagueId: 140, season: 2026, name: "LaLiga" } as never;
+      const jugador = (id: number) => ({
+        player: { id, name: `J${id}` },
+        statistics: [{ team: { id: 529, name: "Barcelona", logo: "" }, games: { appearences: 8 }, goals: {} }],
+      });
+      const urls: string[] = [];
+      const fetchMock = vi.fn(async (input: string | URL | Request) => {
+        const u = new URL(String(input));
+        urls.push(u.pathname + u.search);
+        if (u.pathname === "/players") {
+          const page = Number(u.searchParams.get("page"));
+          return respuesta({
+            errors: [],
+            paging: { current: page, total: 2 },
+            response: page === 1 ? [jugador(1), jugador(2)] : [jugador(3)],
+          });
+        }
+        return respuesta({ errors: [], response: [{ fixture: { id: 1 } }] });
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const llamadas = await refrescarEquipoTrasPartido(529, laliga);
+      expect(llamadas).toBe(5); // 2 de partidos + 1 de estadísticas + 2 páginas
+      expect(urls.filter((u) => u.startsWith("/players")).length).toBe(2);
+
+      fetchMock.mockClear();
+      const p = await getPlayerSeasonStats(3, laliga);
+      expect(p?.appearances).toBe(8);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });
