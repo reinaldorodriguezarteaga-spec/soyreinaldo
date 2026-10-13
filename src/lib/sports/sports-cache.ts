@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { equiposEnEspanol } from "./nombres";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -83,7 +84,8 @@ export async function readCache<T>(
     const ageMs = Date.now() - new Date(data.updated_at).getTime();
     if (ageMs > maxAgeSeconds * 1000) return null;
     if (Array.isArray(data.data) && data.data.length === 0) return null;
-    return data.data as T;
+    // Lo guardado antes del 13-oct puede traer nombres en inglés o sin tilde.
+    return equiposEnEspanol(data.data) as T;
   } catch {
     return null;
   }
