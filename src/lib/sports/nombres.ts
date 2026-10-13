@@ -47,3 +47,39 @@ const SELECCIONES: Record<string, string> = {
 export function conTildes(nombre: string): string {
   return CON_TILDES[nombre] ?? SELECCIONES[nombre] ?? nombre;
 }
+
+/**
+ * Pone en español los nombres de equipo de una respuesta del API (13-oct):
+ * recorre la respuesta y, en cada objeto con forma de equipo (`id` número,
+ * `name` y `logo` texto), traduce el nombre con `conTildes`. Así cabeceras,
+ * tablas, calendarios y marcadores salen bien sin tocar cada componente. Los
+ * jugadores no tienen `logo` (tienen `photo`): no se tocan. Devuelve una
+ * copia solo donde cambia algo; lo demás, el mismo objeto.
+ */
+export function equiposEnEspanol<T>(dato: T): T {
+  if (Array.isArray(dato)) {
+    let cambio = false;
+    const out = dato.map((x) => {
+      const y = equiposEnEspanol(x);
+      if (y !== x) cambio = true;
+      return y;
+    });
+    return (cambio ? out : dato) as T;
+  }
+  if (dato === null || typeof dato !== "object") return dato;
+  const o = dato as Record<string, unknown>;
+  let copia: Record<string, unknown> | null = null;
+  if (typeof o.id === "number" && typeof o.name === "string" && typeof o.logo === "string") {
+    const es = conTildes(o.name);
+    if (es !== o.name) copia = { ...o, name: es };
+  }
+  for (const [k, v] of Object.entries(o)) {
+    if (v === null || typeof v !== "object") continue;
+    const nv = equiposEnEspanol(v);
+    if (nv !== v) {
+      copia = copia ?? { ...o };
+      copia[k] = nv;
+    }
+  }
+  return (copia ?? o) as T;
+}

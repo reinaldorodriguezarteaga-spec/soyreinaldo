@@ -84,6 +84,11 @@ export default async function Home() {
             width={1509}
             height={2000}
             priority
+            // El tamaño al que se PINTA (ver .hero__bgphoto): sin esto el
+            // navegador asumía 1509 px y en pantallas retina bajaba la versión
+            // de 3840 px. Era el elemento principal de la portada y tardaba
+            // 4,8 s en móviles reales (Speed Insights, 13-oct).
+            sizes="(max-width: 960px) 100vw, min(680px, 52vw)"
           />
         </div>
         <div className="hero__scrim" />

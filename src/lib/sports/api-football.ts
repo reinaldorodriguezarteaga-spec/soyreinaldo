@@ -18,6 +18,7 @@ import {
 import { cachedOrLive, conUltimoBueno, readCache } from "./sports-cache";
 import { guardarArchivo, leerArchivo, respuestaUtil } from "./archivo";
 import { eventosDirecto, filasDirecto, superponer } from "./directo";
+import { equiposEnEspanol } from "./nombres";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -507,7 +508,20 @@ function urlApi(path: string, params: Record<string, string | number>): string {
   return url.toString();
 }
 
+/** `getCrudo` con los nombres de equipo en español (selecciones, tildes). */
 async function get<T>(
+  path: string,
+  params: Record<string, string | number>,
+  revalidateSeconds: number,
+  noCache = false,
+  retryIfEmpty = false,
+): Promise<{ response: T[]; errors: unknown }> {
+  const r = await getCrudo<T>(path, params, revalidateSeconds, noCache, retryIfEmpty);
+  const response = equiposEnEspanol(r.response);
+  return response === r.response ? r : { ...r, response };
+}
+
+async function getCrudo<T>(
   path: string,
   params: Record<string, string | number>,
   revalidateSeconds: number,

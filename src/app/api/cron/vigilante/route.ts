@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { COMPETITIONS } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,60 @@ async function revisarCuota(): Promise<string | null> {
       );
     }
     return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ¿Hay temporada nueva en el API? (13-oct-2026). Las competiciones llevan la
+ * temporada escrita en `competitions.ts` y hay que subirla a mano: las copas
+ * cada verano (el 9-oct seguían en la edición terminada y su calendario salía
+ * vacío), las eliminatorias del Mundial 2030 cuando se publiquen… Una vez al
+ * día se pregunta al API por cada una (`/leagues?id=`, ~18 llamadas) y se
+ * avisa si la temporada marcada como actual es más nueva que la nuestra.
+ * También avisa cuando aparezca la clasificación a la Euro 2028 (id 960),
+ * que aún no está en la web porque no existía.
+ */
+const EURO_CLASIFICACION = { id: 960, ultimaConocida: 2023 };
+
+async function revisarTemporadas(): Promise<string | null> {
+  const key = process.env.API_FOOTBALL_KEY;
+  if (!key) return null;
+  const leer = async (id: number) => {
+    const r = await fetch(`https://v3.football.api-sports.io/leagues?id=${id}`, {
+      headers: { "x-apisports-key": key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const j = (await r.json()) as {
+      response?: { seasons: { year: number; current: boolean }[] }[];
+    };
+    const seasons = j.response?.[0]?.seasons ?? [];
+    return {
+      actual: seasons.find((x) => x.current)?.year ?? null,
+      max: Math.max(0, ...seasons.map((x) => x.year)),
+    };
+  };
+  try {
+    const nuevas: string[] = [];
+    for (const c of COMPETITIONS) {
+      const t = await leer(c.leagueId);
+      if (t.actual != null && t.actual > c.season) {
+        nuevas.push(`${c.name} (tenemos ${c.season}, el API ya va por ${t.actual})`);
+      }
+    }
+    const euro = await leer(EURO_CLASIFICACION.id);
+    if (euro.max > EURO_CLASIFICACION.ultimaConocida) {
+      nuevas.push(
+        `la Clasificación a la Euro ya tiene la edición ${euro.max}: añadirla como competición (id 960)`,
+      );
+    }
+    if (nuevas.length === 0) return null;
+    return (
+      `Hay temporada nueva en API-Football: ${nuevas.join("; ")}. ` +
+      `Subir \`season\` (y archivar la anterior) en src/lib/sports/competitions.ts.`
+    );
   } catch {
     return null;
   }
@@ -166,6 +221,17 @@ export async function GET(request: Request) {
   //    no gasta cuota.
   const cuota = await revisarCuota();
   if (cuota) problemas.push(cuota);
+
+  // 6. Temporadas nuevas: una vez al día (la vuelta de las 07:11 UTC), o
+  //    siempre con ?temporadas=1 para probarlo.
+  const ahoraUtc = new Date();
+  if (
+    (ahoraUtc.getUTCHours() === 7 && ahoraUtc.getUTCMinutes() < 30) ||
+    new URL(request.url).searchParams.get("temporadas") === "1"
+  ) {
+    const temporadas = await revisarTemporadas();
+    if (temporadas) problemas.push(temporadas);
+  }
 
   // 3. ¿Están programados los crons?
   const { data: jobsRaw } = await supabase.rpc("cron_jobs_activos");
