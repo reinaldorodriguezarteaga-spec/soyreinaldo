@@ -217,9 +217,40 @@ export function cuotaAgotada(): boolean {
   );
 }
 
-/** Solo para las pruebas. */
-export function _fijarRestanteParaPruebas(n: number | null): void {
-  restante = n === null ? null : { n, t: Date.now() };
+/**
+ * Freno por ritmo (13-oct-2026). El modo ahorro solo salta con menos de
+ * 15.000 llamadas: demasiado tarde cuando un robot con disfraz nuevo (otra
+ * huella TLS, IPs residenciales) se cuela antes de que el firewall lo
+ * conozca — el 12-oct gastó 136.000 fichas y el 13-oct 52.000 llamadas en
+ * 6 horas. El freno mira el RITMO: si lo gastado va por delante de una curva
+ * que reparte la cuota a lo largo del día (la reserva + el resto en
+ * proporción a la hora UTC), las fichas dejan de llamar a la API y sirven lo
+ * último guardado. Un día normal (~20.000 al cierre) va muy por debajo de la
+ * curva; solo una ráfaga la cruza. No frena el cron (va por `noCache`), ni
+ * el directo (`nunca`), ni las fichas de partido (`partido`): los partidos,
+ * que es lo que mira la gente en tiempo real, no se tocan.
+ */
+const LIMITE_DIARIO = 75_000;
+
+export function frenoActivo(ahora = Date.now()): boolean {
+  if (restante === null || ahora - restante.t >= ESTADO_CUOTA_VALIDO_MS) return false;
+  const inicioDia = new Date(ahora);
+  inicioDia.setUTCHours(0, 0, 0, 0);
+  const fraccion = (ahora - inicioDia.getTime()) / 86_400_000;
+  const permitido = RESERVA_ESENCIAL + (LIMITE_DIARIO - RESERVA_ESENCIAL) * fraccion;
+  return LIMITE_DIARIO - restante.n > permitido;
+}
+
+let ultimoAvisoFreno = 0;
+function avisarFreno(): void {
+  if (Date.now() - ultimoAvisoFreno < 10 * 60_000) return;
+  ultimoAvisoFreno = Date.now();
+  console.log(`[freno] activo: quedan ${restante?.n} llamadas; las fichas sirven lo guardado`);
+}
+
+/** Solo para las pruebas. `hace` = cuánto hace que se supo (ms). */
+export function _fijarRestanteParaPruebas(n: number | null, hace = 0): void {
+  restante = n === null ? null : { n, t: Date.now() - hace };
 }
 
 /**
@@ -371,6 +402,48 @@ function politicaArchivo(
   return "ultimoBueno";
 }
 
+/**
+ * Base de datos primero (13-oct-2026). Lo que cambia poco —fichas de
+ * jugador, plantillas, estadísticas de equipo, palmarés, goleadores…— se
+ * sirve del archivo si se guardó hace menos de lo que pone aquí, sin tocar
+ * la API. Antes el archivo solo se usaba cuando la API fallaba, y cada
+ * visita a una ficha con la caché corta caducada volvía a gastar cuota:
+ * un robot recorriendo miles de fichas la agotaba aunque todo estuviera ya
+ * guardado. Ahora cada ficha cuesta como mucho una llamada por ventana.
+ * Lo que no está aquí (directo, partidos, calendarios por fecha) va como
+ * siempre.
+ */
+const HORA = 3_600_000;
+const FRESCURA_ARCHIVO: Record<string, number> = {
+  "/players": 6 * HORA, // estadísticas de temporada: cambian tras cada partido
+  "/players/squads": 24 * HORA,
+  "/players/profiles": 7 * 24 * HORA,
+  "/players/topscorers": 3 * HORA,
+  "/players/topassists": 3 * HORA,
+  "/players/topyellowcards": 3 * HORA,
+  "/players/topredcards": 3 * HORA,
+  "/teams": 7 * 24 * HORA,
+  "/teams/statistics": 6 * HORA,
+  "/coachs": 3 * 24 * HORA,
+  "/trophies": 7 * 24 * HORA,
+  "/transfers": 7 * 24 * HORA,
+  "/sidelined": 3 * 24 * HORA,
+  "/injuries": 12 * HORA,
+  "/standings": HORA,
+};
+
+/** Cuánto vale lo archivado de esta llamada (ms), o null si no aplica. */
+function frescuraArchivo(path: string, params: Record<string, string | number>): number | null {
+  // Partidos de un equipo (ficha de equipo, last/next de 20-40): cambian al
+  // jugar, 2 h basta. NO el "último/próximo partido" (last=1/next=1) de los
+  // widgets: justo al acabar un partido tiene que cambiar ya.
+  if (path === "/fixtures") {
+    const n = Number(params.last ?? params.next ?? 0);
+    return "team" in params && !("live" in params) && n > 1 ? 2 * HORA : null;
+  }
+  return FRESCURA_ARCHIVO[path] ?? null;
+}
+
 const TEMPORADA_ACTUAL = new Map<number, number>(
   Object.values(COMPETITIONS_BY_SLUG).map((c) => [c.leagueId, c.season]),
 );
@@ -466,16 +539,25 @@ async function get<T>(
   const puedeSerDefinitivo =
     politica === "partido" || (politica === "ultimoBueno" && temporadaCerrada(params));
 
+  const frescura = politica === "ultimoBueno" ? frescuraArchivo(path, params) : null;
+
   const pedir = async (): Promise<{ response: T[]; errors: unknown }> => {
     // Lo que ya no puede cambiar sale del archivo, sin tocar la API.
-    const guardado = puedeSerDefinitivo ? await leerArchivo(urlStr) : null;
+    const guardado = puedeSerDefinitivo || frescura ? await leerArchivo(urlStr) : null;
     if (guardado?.final) return { response: guardado.respuesta as T[], errors: [] };
+    // Base de datos primero: si lo guardado es reciente, ni se llama.
+    if (frescura && guardado?.actualizado && Date.now() - guardado.actualizado < frescura) {
+      return { response: guardado.respuesta as T[], errors: [] };
+    }
     const ultimoBueno = async () =>
       politica === "ultimoBueno" ? (guardado ?? (await leerArchivo(urlStr))) : null;
 
     // Modo ahorro: lo último guardado o, si no hay, un fallo más (reintento
     // cada FAILURE_RETRY_S), así se recupera solo cuando vuelve la cuota.
-    if (secundario && enModoAhorro()) {
+    // Freno por ritmo: lo mismo para todo lo que es "ficha" (último bueno).
+    const frenado = politica === "ultimoBueno" && frenoActivo();
+    if ((secundario && enModoAhorro()) || frenado) {
+      if (frenado) avisarFreno();
       const u = await ultimoBueno();
       if (u) return { response: u.respuesta as T[], errors: [] };
       return { response: [] as T[], errors: { failed: true, ahorro: true } };

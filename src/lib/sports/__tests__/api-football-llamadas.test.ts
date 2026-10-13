@@ -6,14 +6,14 @@ vi.mock("next/cache", () => ({
 }));
 
 // Archivo permanente en memoria (en producción, la tabla apif_archivo).
-const archivo = new Map<string, { respuesta: unknown; final: boolean }>();
+const archivo = new Map<string, { respuesta: unknown; final: boolean; actualizado?: number }>();
 vi.mock("../archivo", async (original) => {
   const real = await original<typeof import("../archivo")>();
   return {
     respuestaUtil: real.respuestaUtil,
     leerArchivo: async (url: string) => archivo.get(url) ?? null,
     guardarArchivo: async (url: string, respuesta: unknown, final: boolean) => {
-      if (real.respuestaUtil(respuesta)) archivo.set(url, { respuesta, final });
+      if (real.respuestaUtil(respuesta)) archivo.set(url, { respuesta, final, actualizado: Date.now() });
     },
   };
 });
@@ -26,6 +26,7 @@ const {
   getTeamFixtures,
   enModoAhorro,
   cuotaAgotada,
+  frenoActivo,
   _fijarRestanteParaPruebas,
 } = await import("../api-football");
 
@@ -44,6 +45,7 @@ describe("llamadas a API-Football", () => {
   });
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("dos peticiones simultáneas a la misma URL hacen UNA sola llamada", async () => {
@@ -174,9 +176,13 @@ describe("llamadas a API-Football", () => {
   });
 
   it("en modo ahorro, el núcleo de las fichas (partidos de un equipo) se sigue pidiendo", async () => {
+    // A última hora: con 5.000 restantes el ritmo del día es normal (sin freno).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-13T23:30:00Z"));
     const fetchMock = vi.fn(async () => respuesta({ errors: [], response: [] }));
     vi.stubGlobal("fetch", fetchMock);
     _fijarRestanteParaPruebas(5_000);
+    expect(frenoActivo()).toBe(false);
     expect(cuotaAgotada()).toBe(false);
     await getTeamFixtures(4321, { last: 40, next: 40 });
     expect(fetchMock).toHaveBeenCalled();
@@ -215,5 +221,79 @@ describe("llamadas a API-Football", () => {
     );
     const otra = await getTeamStatistics(9, { league: 140, season: 2026 });
     expect(otra).toEqual(stats);
+  });
+
+  describe("freno por ritmo", () => {
+    const a = (hora: string) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(`2026-10-13T${hora}:00Z`));
+    };
+
+    it("un día normal no frena; una ráfaga de madrugada sí", () => {
+      a("06:43");
+      _fijarRestanteParaPruebas(75_000 - 8_000); // gasto normal a esa hora
+      expect(frenoActivo()).toBe(false);
+      _fijarRestanteParaPruebas(75_000 - 52_757); // el 13-oct a las 06:43
+      expect(frenoActivo()).toBe(true);
+    });
+
+    it("al final del día la curva llega a la cuota entera menos nada", () => {
+      a("20:00");
+      _fijarRestanteParaPruebas(75_000 - 60_000); // permitido a las 20:00: 65.000
+      expect(frenoActivo()).toBe(false);
+    });
+
+    it("un dato de cuota viejo (más de 15 min) no frena", () => {
+      a("06:43");
+      _fijarRestanteParaPruebas(10_000, 20 * 60_000);
+      expect(frenoActivo()).toBe(false);
+    });
+
+    it("frenado: la ficha sirve lo guardado y no llama; el partido sí llama", async () => {
+      a("06:43");
+      const coach = [{ id: 1, name: "Flick" }];
+      const fetchMock = vi.fn(async () => respuesta({ errors: [], response: coach }));
+      vi.stubGlobal("fetch", fetchMock);
+      _fijarRestanteParaPruebas(60_000);
+      await getTeamCoach(529); // se guarda en el archivo
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      _fijarRestanteParaPruebas(20_000); // 55.000 gastadas a las 06:43 → freno
+      expect(frenoActivo()).toBe(true);
+      expect(await getTeamFixtures(529, { last: 5, next: 5 })).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(1); // ninguna llamada nueva
+
+      fetchMock.mockImplementation(async () =>
+        respuesta({ errors: [], response: [{ fixture: { id: 31 } }] }),
+      );
+      expect((await getFixtureById(31, 45))?.fixture.id).toBe(31);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("base de datos primero", () => {
+    it("una ficha guardada hace poco se sirve sin llamar; si es vieja, se refresca", async () => {
+      const coach = [{ id: 2, name: "Ancelotti" }];
+      const fetchMock = vi.fn(async () => respuesta({ errors: [], response: coach }));
+      vi.stubGlobal("fetch", fetchMock);
+
+      await getTeamCoach(541);
+      await getTeamCoach(541);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Guardado hace 4 días (el entrenador vale 3): se vuelve a pedir.
+      for (const [url, fila] of archivo) archivo.set(url, { ...fila, actualizado: Date.now() - 4 * 86_400_000 });
+      await getTeamCoach(541);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("el partido en juego nunca sale del archivo", async () => {
+      const enJuego = { fixture: { id: 41, date: new Date().toISOString(), status: { short: "1H" } } };
+      const fetchMock = vi.fn(async () => respuesta({ errors: [], response: [enJuego] }));
+      vi.stubGlobal("fetch", fetchMock);
+      await getFixtureById(41, 45);
+      await getFixtureById(41, 45);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });
