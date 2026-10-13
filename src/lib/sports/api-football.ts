@@ -165,7 +165,21 @@ let restante: { n: number; t: number } | null = null;
 
 function anotarRestante(raw: string): void {
   const n = Number(raw);
-  if (Number.isFinite(n)) restante = { n, t: Date.now() };
+  if (!Number.isFinite(n)) return;
+  const ahora = Date.now();
+  // La API manda a ratos una cabecera falsa (74.999, "casi toda la cuota")
+  // aunque se lleven 20.000+ gastadas (13-oct): con ella el modo ahorro y el
+  // freno se apagaban solos. Dentro del mismo día UTC lo que queda solo
+  // puede bajar, así que un valor que SUBE se descarta.
+  if (restante && mismoDiaUtc(restante.t, ahora) && n > restante.n) return;
+  // Una instancia recién arrancada no tiene con qué comparar: "toda la cuota
+  // menos una" pasada la primera hora del día solo puede ser la falsa.
+  if (n >= LIMITE_DIARIO - 1 && ahora % 86_400_000 > 3_600_000) return;
+  restante = { n, t: ahora };
+}
+
+function mismoDiaUtc(a: number, b: number): boolean {
+  return Math.floor(a / 86_400_000) === Math.floor(b / 86_400_000);
 }
 
 function esCuotaAgotada(errs: unknown): boolean {

@@ -296,4 +296,46 @@ describe("llamadas a API-Football", () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe("cabecera de cuota falsa (74.999)", () => {
+    const llamarCon = async (remaining: string) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          new Response(JSON.stringify({ errors: [], response: [{ fixture: { id: 51 } }] }), {
+            status: 200,
+            headers: { "x-ratelimit-requests-remaining": remaining },
+          }),
+        ),
+      );
+      await getFixtureById(51, 45);
+    };
+
+    it("un valor que sube dentro del día se descarta: el freno sigue puesto", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-13T06:43:00Z"));
+      await llamarCon("20000");
+      expect(frenoActivo()).toBe(true);
+      await llamarCon("74999");
+      expect(frenoActivo()).toBe(true);
+    });
+
+    it("una instancia nueva no se cree el 74.999 a media mañana", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-13T06:43:00Z"));
+      await llamarCon("74999");
+      await llamarCon("20000");
+      expect(frenoActivo()).toBe(true);
+    });
+
+    it("al empezar el día nuevo sí se acepta que vuelva a subir", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-13T23:50:00Z"));
+      await llamarCon("3000");
+      vi.setSystemTime(new Date("2026-10-14T00:05:00Z"));
+      await llamarCon("74990");
+      expect(frenoActivo()).toBe(false);
+      expect(enModoAhorro()).toBe(false);
+    });
+  });
 });
