@@ -279,10 +279,15 @@ function entradas(
       return {
         key: `${s.inId ?? s.inName}-${i}`,
         minute: s.minute,
-        name: pr?.name ?? s.inName ?? "—",
+        name: pr?.name ?? bench?.name ?? s.inName ?? "—",
         number: pr?.number ?? bench?.number ?? null,
         photo: pr?.photo ?? null,
-        porQuien: s.outName,
+        // Nombre corto de la alineación por id: el del evento es el completo
+        // ("Pablo Martín Páez Gavira" en vez de "Gavi", 13-oct).
+        porQuien:
+          [...(lineup?.startXI ?? []), ...(lineup?.substitutes ?? [])].find(
+            (lp) => s.outId != null && lp.id === s.outId,
+          )?.name ?? s.outName,
         rating: pr?.rating ?? null,
         goals: pr?.goals ?? 0,
         assists: pr?.assists ?? 0,

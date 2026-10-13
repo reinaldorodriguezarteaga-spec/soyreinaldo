@@ -24,7 +24,7 @@ import type {
   MatchPrediction,
   TimelineEvent,
 } from "@/lib/sports/api-football";
-import { subKey } from "@/lib/sports/api-football";
+import { enCambios } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import { StandingsTableView } from "@/components/competition/tab-views";
 import { SkeletonCard } from "@/components/Skeleton";
@@ -946,7 +946,7 @@ function TeamLineup({
                 borderBottom: "1px solid rgba(255,255,255,0.05)",
               }}
             >
-              {outKeys.has(subKey(p.name)) && <SubArrow dir="out" />}
+              {enCambios(outKeys, p) && <SubArrow dir="out" />}
               <span
                 className="mono tabular-nums"
                 style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
@@ -1007,7 +1007,7 @@ function TeamLineup({
                 <span className="truncate" style={{ color: "var(--text)" }}>
                   {p.name}
                 </span>
-                {inKeys.has(subKey(p.name)) && <SubArrow dir="in" />}
+                {enCambios(inKeys, p) && <SubArrow dir="in" />}
                 {p.pos && (
                   <span
                     className="mono"
