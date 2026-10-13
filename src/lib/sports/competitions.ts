@@ -22,7 +22,8 @@ export type CompetitionRegion =
   | "Francia"
   | "México"
   | "Argentina"
-  | "EE. UU."
+  | "EE. UU. y Canadá"
+  | "Concacaf"
   | "Arabia Saudí"
   | "Internacional"
   | "Selecciones";
@@ -345,10 +346,86 @@ export const MLS: Competition = {
   name: "MLS",
   standingsMode: "table",
   archivedSeasons: [2025],
-  region: "EE. UU.",
+  region: "EE. UU. y Canadá",
   officialUrl: "https://www.mlssoccer.com",
   // Inter Miami, LA Galaxy, LAFC
   calendarOnlyTeamIds: [9568, 1605, 1616],
+};
+
+/*
+ * Copas de los equipos de la MLS (13-oct-2026, pedido del dueño). Ids y
+ * temporadas verificados contra el API. Son torneos de eliminatorias: sin
+ * tabla. Las ya terminadas enseñan su última edición; el vigilante avisa
+ * cuando el API publique la siguiente.
+ */
+const MLS_GRANDES = [9568, 1605, 1616]; // Inter Miami, LA Galaxy, LAFC
+const MX_GRANDES = [2287, 2278, 2295, 2286, 2279, 2282];
+
+/** US Open Cup (copa de EE. UU.): 2026 en juego hasta el 22-oct. */
+export const US_OPEN_CUP: Competition = {
+  slug: "us-open-cup",
+  leagueId: 257,
+  season: 2026,
+  name: "US Open Cup",
+  standingsMode: "none",
+  archivedSeasons: [2025],
+  region: "EE. UU. y Canadá",
+  officialUrl: "https://www.ussoccer.com/us-open-cup",
+  calendarOnlyTeamIds: MLS_GRANDES,
+};
+
+/** Canadian Championship (copa de Canadá): 2026 hasta el 21-oct. */
+export const CANADIAN_CHAMPIONSHIP: Competition = {
+  slug: "canadian-championship",
+  leagueId: 259,
+  season: 2026,
+  name: "Canadian Championship",
+  standingsMode: "none",
+  archivedSeasons: [2025],
+  region: "EE. UU. y Canadá",
+  officialUrl: "https://canadasoccer.com",
+  // Toronto FC, Vancouver Whitecaps, CF Montréal
+  calendarOnlyTeamIds: [1601, 1603, 1614],
+};
+
+/** Leagues Cup (MLS contra Liga MX): 2026 se jugó del 4-ago al 7-sep. */
+export const LEAGUES_CUP: Competition = {
+  slug: "leagues-cup",
+  leagueId: 772,
+  season: 2026,
+  name: "Leagues Cup",
+  standingsMode: "none",
+  archivedSeasons: [2025],
+  region: "Concacaf",
+  officialUrl: "https://www.leaguescup.com",
+  calendarOnlyTeamIds: [...MLS_GRANDES, ...MX_GRANDES],
+};
+
+/** Concacaf Champions Cup (en el API, "CONCACAF Champions League"): 2026
+ * se jugó de febrero a mayo; la 2027 empieza en febrero. */
+export const CONCACAF_CHAMPIONS_CUP: Competition = {
+  slug: "concacaf-champions-cup",
+  leagueId: 16,
+  season: 2026,
+  name: "Concacaf Champions Cup",
+  standingsMode: "none",
+  archivedSeasons: [2025],
+  region: "Concacaf",
+  officialUrl: "https://www.concacaf.com",
+  calendarOnlyTeamIds: [...MLS_GRANDES, ...MX_GRANDES],
+};
+
+/** Campeones Cup: campeón de la MLS contra campeón de la Liga MX, partido
+ * único (2026: 17-sep). */
+export const CAMPEONES_CUP: Competition = {
+  slug: "campeones-cup",
+  leagueId: 885,
+  season: 2026,
+  name: "Campeones Cup",
+  standingsMode: "none",
+  archivedSeasons: [2025],
+  region: "Concacaf",
+  officialUrl: "https://www.concacaf.com",
 };
 
 /** Liga saudí (Saudi Pro League): season 2026 = 2026-27. Una tabla de 18. */
@@ -447,6 +524,11 @@ export const COMPETITIONS: Competition[] = [
   LIGA_MX,
   LIGA_ARGENTINA,
   MLS,
+  US_OPEN_CUP,
+  CANADIAN_CHAMPIONSHIP,
+  LEAGUES_CUP,
+  CONCACAF_CHAMPIONS_CUP,
+  CAMPEONES_CUP,
   LIGA_SAUDI,
   NATIONS_LEAGUE,
   ELIMINATORIAS_CONMEBOL,
@@ -473,7 +555,8 @@ const REGION_ORDER: CompetitionRegion[] = [
   "Selecciones",
   "México",
   "Argentina",
-  "EE. UU.",
+  "EE. UU. y Canadá",
+  "Concacaf",
   "Arabia Saudí",
 ];
 
