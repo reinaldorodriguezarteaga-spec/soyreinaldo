@@ -1489,8 +1489,26 @@ export async function getFixtureById(
     filasDirecto(),
   ]);
   const f = r.response[0] ?? null;
+  const d = directo.get(id);
   // Marcador, minuto y estado del directo en tiempo real si lo hay.
-  return f ? superponer(f, directo.get(id)) : null;
+  if (f) return superponer(f, d);
+  // La API no lo ha dado (rate limit por minuto, corte, timeout): si está en
+  // juego, la tabla del directo tiene el partido ENTERO (`live=all` trae lo
+  // mismo que `?id=`). Sin esto, la ficha daba 404 en pleno partido: pasó el
+  // 13-oct con Viking-Bayern, Arsenal-Lille y Villarreal-Napoli en la 2ª parte.
+  return d ? equiposEnEspanol(d) : null;
+}
+
+/** Un partido del calendario guardado de la competición (sports_cache, lo
+ * mantiene el cron), sin llamar a la API. Respaldo de la ficha cuando la API
+ * no contesta: el partido existe y se pinta con lo que se sabe, en vez de un
+ * 404 que además haría a Google borrar la página. */
+export async function partidoDelCalendario(
+  c: Competition,
+  fixtureId: number,
+): Promise<Fixture | null> {
+  const fx = (await calendarioGuardado(c)).find((f) => f.fixture.id === fixtureId);
+  return fx ? superponer(fx, (await filasDirecto()).get(fixtureId)) : null;
 }
 
 /** Estadísticas por equipo de un partido (posesión, tiros, xG, paradas, …). */

@@ -7,6 +7,7 @@ import {
   cuotaAgotada,
   directoTtl,
   getFixtureById,
+  partidoDelCalendario,
   getFixtureCards,
   getFixtureGoals,
   getFixtureLineups,
@@ -63,7 +64,9 @@ export async function generateMetadata({
   const competition = COMPETITIONS_BY_SLUG[slug];
   if (!competition) return {};
   const fixtureId = Number(id);
-  const fx = await getFixtureById(fixtureId, 60).catch(() => null);
+  const fx =
+    (await getFixtureById(fixtureId, 60).catch(() => null)) ??
+    (await partidoDelCalendario(competition, fixtureId));
   if (!fx) return { title: `Partido · ${competition.name} | Soy Reinaldo` };
   const home = fx.teams.home.name;
   const away = fx.teams.away.name;
@@ -255,7 +258,12 @@ export default async function LigaPartidoPage({
   // pide con caché corta y la página se recarga sola cada 20 s.
   // 13-oct: 20 s si el partido está en juego o cerca (directoTtl), 120 s si
   // no (antes 45 s siempre, con recarga cada 60 s: un gol tardaba ~2 min).
-  const fx = await getFixtureById(fixtureId, await directoTtl(competition, fixtureId, 120));
+  // Si la API no lo da (rate limit, corte), del calendario guardado: un
+  // partido que está en el calendario existe, y un 404 en pleno directo
+  // (13-oct) es lo peor que se le puede enseñar a quien entra a verlo.
+  const fx =
+    (await getFixtureById(fixtureId, await directoTtl(competition, fixtureId, 120))) ??
+    (await partidoDelCalendario(competition, fixtureId));
   if (!fx) {
     if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
     notFound();
