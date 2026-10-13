@@ -121,8 +121,11 @@ export async function GET(request: Request) {
     >();
   const { data: yaEnviados } = await db.from("boletin_envios").select("user_id").eq("edicion", ed);
   const hechos = new Set((yaEnviados ?? []).map((r: { user_id: string }) => r.user_id));
-  const candidatos = (perfiles ?? []).filter(
-    (p) => p.wants_reminders !== false && p.unsubscribe_token && (prueba ? p.id === ANFITRION_ID : !hechos.has(p.id)),
+  // La prueba va al dueño aunque él tenga los avisos desactivados.
+  const candidatos = (perfiles ?? []).filter((p) =>
+    prueba
+      ? p.id === ANFITRION_ID && p.unsubscribe_token
+      : p.wants_reminders !== false && p.unsubscribe_token && !hechos.has(p.id),
   );
 
   const datosPara = (p: (typeof candidatos)[number]) => {
