@@ -74,6 +74,8 @@ scripts/db.mjs    ejecutar SQL
 ## Despliegue
 
 Rama → PR → merge a `main` cuando el dueño lo diga → **Vercel despliega solo**.
+Funciones en **`dub1`** (`vercel.json`), junto a Supabase (eu-west-1): en
+`iad1`, el valor por defecto, cada consulta cruzaba el Atlántico (~300 ms).
 Plan B manual: `npx --no-install vercel deploy --prod --yes` (CLI ya
 autenticado). ⚠️ **UN PR por sesión con muchos commits** — GitHub suspendió la
 cuenta en agosto por abrir PRs demasiado seguidos.
