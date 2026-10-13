@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cuotaAgotada,
+  frenoActivo,
   getPlayerExtras,
   getPlayerSeasonStats,
   type PlayerExtras as PlayerExtrasData,
@@ -71,7 +72,9 @@ export default async function LigaJugadorPage({
   ]);
 
   if (!p && extras.trophies.length === 0) {
-    if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
+    if (cuotaAgotada() || frenoActivo()) {
+      throw new Error("API-Football sin cuota: ficha no disponible ahora");
+    }
     notFound();
   }
 

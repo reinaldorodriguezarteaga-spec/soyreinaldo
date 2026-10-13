@@ -15,9 +15,10 @@ export const dynamic = "force-dynamic";
  * cuota). Nadie se enteró porque un cron que deja de correr no hace ruido:
  * simplemente no pasa nada.
  *
- * Esto es lo que hace ruido. Comprueba cinco cosas y, solo si algo falla,
- * manda un correo. Si todo va bien no envía nada — un vigilante que avisa
- * cuando todo está bien se acaba ignorando.
+ * Esto es lo que hace ruido. Comprueba cinco cosas cada 30 min y, solo si
+ * algo falla, manda un correo (el mismo, como mucho cada 6 h). Si todo va
+ * bien no envía nada — un vigilante que avisa cuando todo está bien se acaba
+ * ignorando.
  */
 
 const AVISAR_A = "reinaldo_r@live.com";
@@ -30,6 +31,8 @@ const PARTIDO_SIN_MARCADOR_H = 4;
 /** Margen sobre el ritmo uniforme (100% a las 24:00 UTC) antes de avisar. */
 const CUOTA_MARGEN_PUNTOS = 15;
 const CUOTA_ALERTA_PCT = 85;
+/** El mismo aviso no se repite antes de estas horas (salvo que cambie). */
+const REPETIR_AVISO_H = 6;
 
 /** Texto del problema, o null si la cuota va bien (o no se pudo consultar). */
 async function revisarCuota(): Promise<string | null> {
@@ -62,8 +65,10 @@ async function revisarCuota(): Promise<string | null> {
       return (
         `La cuota de API-Football va demasiado rápida: ${req.current.toLocaleString("es-ES")} de ` +
         `${req.limit_day.toLocaleString("es-ES")} (${pct.toFixed(0)}%) cuando el día lleva un ` +
-        `${pctDia.toFixed(0)}%. A este ritmo se agota antes de medianoche UTC. Por debajo de ` +
-        `15.000 entra el modo ahorro solo; aun así, mira quién está gastando (líneas [ficha]).`
+        `${pctDia.toFixed(0)}%. El freno automático ya sirve las fichas de jugadores y ` +
+        `equipos desde lo guardado (partidos y directo siguen normales), pero casi seguro ` +
+        `hay un robot nuevo: busca en las métricas de Vercel la huella TLS (JA4) que más ` +
+        `fichas pide y bloquéala en el firewall.`
       );
     }
     return null;
@@ -190,7 +195,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, simulacion: true, problemas });
   }
 
-  // Hay algo roto: avisar.
+  // Hay algo roto: avisar, pero no el mismo aviso cada media hora (058).
+  // La firma ignora las cifras, que cambian de una vuelta a otra.
+  const firma = problemas
+    .map((p) => p.replace(/[\d.,%]+/g, "").slice(0, 60))
+    .sort()
+    .join("|");
+  const { data: ultimo } = await supabase
+    .from("vigilante_avisos")
+    .select("firma, enviado_at")
+    .eq("id", 1)
+    .maybeSingle<{ firma: string; enviado_at: string }>();
+  if (
+    ultimo?.firma === firma &&
+    Date.now() - Date.parse(ultimo.enviado_at) < REPETIR_AVISO_H * 3_600_000
+  ) {
+    return NextResponse.json({ ok: false, problemas, avisado: false, repetido: true });
+  }
+
   const resendKey = process.env.RESEND_API_KEY;
   let avisado = false;
   if (resendKey) {
@@ -208,6 +230,11 @@ export async function GET(request: Request) {
       html,
     });
     avisado = !error;
+  }
+  if (avisado) {
+    await supabase
+      .from("vigilante_avisos")
+      .upsert({ id: 1, firma, enviado_at: new Date().toISOString() });
   }
 
   return NextResponse.json({ ok: false, problemas, avisado });
