@@ -4,7 +4,6 @@ import {
   allFixturesCacheKey,
   cuotaAgotada,
   enModoAhorro,
-  frenoActivo,
   isFinal,
   leerCuotaReal,
   refrescarEquipoTrasPartido,
@@ -24,21 +23,21 @@ export const maxDuration = 120;
  *
  * Busca en el calendario YA guardado (`sports_cache`, lo escribe el cron de
  * caché cada 10 min; sin llamar a la API) los partidos de nuestras
- * competiciones terminados hace entre 2 h 30 min y 24 h desde el inicio —
+ * competiciones terminados hace entre 2 h 30 min y 36 h desde el inicio —
  * para entonces la API ya ha cerrado estadísticas y notas— y que aún no se
  * hayan refrescado. Para cada uno refresca los dos equipos
  * (`refrescarEquipoTrasPartido`: ~6 llamadas por equipo) y lo apunta en
  * `refrescos_post_partido` para no repetirlo.
  *
  * NO toca el directo: es una ruta aparte, no lee ni escribe marcadores, y
- * sus llamadas van de una en una. Si la cuota aprieta (modo ahorro, freno o
- * agotada), no hace nada y lo deja para la siguiente vuelta.
+ * sus llamadas van de una en una. Si la cuota aprieta de verdad (modo ahorro
+ * o agotada), no hace nada y lo deja para la siguiente vuelta.
  *
  * ?simular=1 → dice qué partidos refrescaría, sin llamar ni apuntar.
  */
 const MAX_PARTIDOS_POR_VUELTA = 8;
 const DESDE_INICIO_MIN_MS = 150 * 60_000;
-const DESDE_INICIO_MAX_MS = 24 * 3_600_000;
+const DESDE_INICIO_MAX_MS = 36 * 3_600_000;
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -87,7 +86,10 @@ export async function GET(request: Request) {
 
   // 2. ¿Hay cuota de sobra? (dato real de /status, que no gasta).
   await leerCuotaReal();
-  if (cuotaAgotada() || enModoAhorro() || frenoActivo()) {
+  // El freno NO lo para: con el freno puesto las fichas viven de lo guardado,
+  // y este refresco es justo lo que lo mantiene al día (y cuesta poco). Solo
+  // se para en modo ahorro (reserva de 15.000) o sin cuota.
+  if (cuotaAgotada() || enModoAhorro()) {
     return NextResponse.json({ ok: true, refrescados: 0, pospuesto: "cuota justa" });
   }
 
@@ -95,7 +97,7 @@ export async function GET(request: Request) {
   let llamadas = 0;
   const hechosAhora: number[] = [];
   for (const { fixture: f, competition: c } of pendientes) {
-    if (frenoActivo()) break;
+    if (enModoAhorro()) break;
     const n =
       (await refrescarEquipoTrasPartido(f.teams.home.id, c)) +
       (await refrescarEquipoTrasPartido(f.teams.away.id, c));

@@ -6,6 +6,8 @@ import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 
+const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
+
 /** Liga pública "Quiniela LaLiga 2026-27": lo que ve quien no ha entrado. */
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 
@@ -75,7 +77,8 @@ export default async function QuinielaLigaRankingPage({
     .returns<{ matchday: number; finished: boolean; status: string | null }[]>();
   const porJornada = new Map<number, { total: number; fin: number }>();
   for (const m of partidos ?? []) {
-    if (m.status === "PST") continue;
+    // Aplazados, suspendidos y cancelados no cuentan para cerrar la jornada.
+    if (m.status && SIN_JUGAR.has(m.status)) continue;
     const acc = porJornada.get(m.matchday) ?? { total: 0, fin: 0 };
     acc.total += 1;
     if (m.finished) acc.fin += 1;

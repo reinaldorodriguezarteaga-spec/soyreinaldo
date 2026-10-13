@@ -22,6 +22,8 @@ export const maxDuration = 60;
  * con &jornada=N se puede previsualizar una jornada concreta.
  */
 const DIAS_RECIENTE = 4;
+/** Aplazados, suspendidos y cancelados: no impiden cerrar la jornada. */
+const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -59,7 +61,7 @@ export async function GET(request: Request) {
   const candidatas = [...grupos.values()]
     .filter((g) => {
       if (forzada != null) return g[0].matchday === forzada;
-      const vivos = g.filter((m) => m.status !== "PST");
+      const vivos = g.filter((m) => !SIN_JUGAR.has(m.status ?? ""));
       const terminados = vivos.filter((m) => m.finished);
       if (terminados.length === 0 || terminados.length < vivos.length) return false;
       const ultimo = Math.max(...terminados.map((m) => Date.parse(m.kickoff_at)));

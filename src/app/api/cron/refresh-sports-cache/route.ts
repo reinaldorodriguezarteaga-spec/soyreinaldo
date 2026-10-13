@@ -12,6 +12,7 @@ import {
   getTeamSquadLive,
   isLive,
   standingsCacheKey,
+  type Fixture,
   teamFixturesLastCacheKey,
   teamFixturesNextCacheKey,
   teamSquadCacheKey,
@@ -23,7 +24,7 @@ import {
   COMPETITIONS,
   FEATURED_TEAMS,
 } from "@/lib/sports/competitions";
-import { freshCacheKeys, writeCache } from "@/lib/sports/sports-cache";
+import { freshCacheKeys, readCache, writeCache } from "@/lib/sports/sports-cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,13 +94,59 @@ export async function GET(request: Request) {
     }
   }
 
+  // SOLO LO QUE SE MUEVE (13-oct-2026). Antes cada vuelta (cada 10 min)
+  // volvía a pedir tabla, calendario y próximos partidos de TODO, hubiera
+  // fútbol o no: ~10.000 llamadas al día, la mitad del gasto normal. Ahora
+  // una competición (o un equipo destacado) se refresca cada vuelta solo si
+  // tiene un partido en juego o cerca —de 30 min antes del inicio a 3 h
+  // después—; si no, cada hora. Saber si hay partido sale del calendario ya
+  // guardado: no gasta llamadas. En un partido en juego nada cambia: sigue
+  // cada 10 min, como siempre.
+  const ahora = Date.now();
+  const cerca = (f: Fixture) => {
+    const t = Date.parse(f.fixture.date);
+    return isLive(f) || (ahora >= t - 30 * 60_000 && ahora <= t + 3 * 3_600_000);
+  };
+  const TRANQUILO_S = 3600;
+  const [compFrescas, equiposFrescos, extrasFrescos] = await Promise.all([
+    freshCacheKeys(COMPETITIONS.map(allFixturesCacheKey), TRANQUILO_S),
+    freshCacheKeys(FEATURED_TEAMS.map((t) => teamFixturesNextCacheKey(t.id, 4)), TRANQUILO_S),
+    freshCacheKeys(CALENDAR_EXTRA_LEAGUES.map((e) => upcomingExtraCacheKey(e.leagueId)), TRANQUILO_S),
+  ]);
+  const compActiva = new Map<string, boolean>();
+  await Promise.all(
+    COMPETITIONS.map(async (c) => {
+      const fx = (await readCache<Fixture[]>(allFixturesCacheKey(c), 7 * 86_400)) ?? [];
+      // Sin calendario guardado no se sabe: mejor refrescar.
+      compActiva.set(c.slug, fx.length === 0 || fx.some(cerca));
+    }),
+  );
+  const competicionesHoy = COMPETITIONS.filter(
+    (c) => compActiva.get(c.slug) || !compFrescas.has(allFixturesCacheKey(c)),
+  );
+  const equiposHoy: typeof FEATURED_TEAMS = [];
+  for (const t of FEATURED_TEAMS) {
+    if (!equiposFrescos.has(teamFixturesNextCacheKey(t.id, 4))) {
+      equiposHoy.push(t);
+      continue;
+    }
+    const [ult, prox] = await Promise.all([
+      readCache<Fixture[]>(teamFixturesLastCacheKey(t.id, 20), 7 * 86_400),
+      readCache<Fixture[]>(teamFixturesNextCacheKey(t.id, 4), 7 * 86_400),
+    ]);
+    if ([...(ult ?? []), ...(prox ?? [])].some(cerca)) equiposHoy.push(t);
+  }
+  const extrasHoy = CALENDAR_EXTRA_LEAGUES.filter(
+    (e) => !extrasFrescos.has(upcomingExtraCacheKey(e.leagueId)),
+  );
+
   // Las tres fases de abajo son independientes entre sí (compiten por la
   // misma cuota de la API, pero no por los mismos datos) — antes se
   // esperaban una a la otra en serie, lo que multiplicaba por tres el tiempo
   // de ida y vuelta de red. En paralelo, el tiempo total lo marca la fase más
   // lenta, no la suma de las tres.
   await Promise.all([
-    runBatches(COMPETITIONS, 3, async (c) => {
+    runBatches(competicionesHoy, 3, async (c) => {
       const [standings, upcoming, all] = await Promise.all([
         getCompetitionStandings(c, { forceLive: true }),
         getCompetitionUpcomingFixtures(c, 12, { forceLive: true }),
@@ -113,7 +160,7 @@ export async function GET(request: Request) {
       competitionsDone++;
     }),
 
-    runBatches(FEATURED_TEAMS, 3, async (team) => {
+    runBatches(equiposHoy, 3, async (team) => {
       const { recent, upcoming } = await getTeamFixtures(team.id, {
         next: 4,
         forceLive: true,
@@ -126,7 +173,7 @@ export async function GET(request: Request) {
     }),
 
     // Ligas/copas extra del calendario (solo próximos partidos, 1 llamada c/u).
-    runBatches(CALENDAR_EXTRA_LEAGUES, 3, async (entry) => {
+    runBatches(extrasHoy, 3, async (entry) => {
       // n=12 con filtro de equipos — ver nota en getUpcomingCalendar.
       const fixtures = await getExtraLeagueUpcoming(entry, entry.onlyTeamIds ? 12 : 6, {
         forceLive: true,
@@ -144,7 +191,7 @@ export async function GET(request: Request) {
     // `getCompetitionFixturesWindow` sí es siempre en vivo (la usa la
     // portada) — se usa aquí solo para saber QUÉ partidos están en juego
     // ahora mismo, no se escribe en sports_cache.
-    runBatches(COMPETITIONS, 3, async (c) => {
+    runBatches(COMPETITIONS.filter((c) => compActiva.get(c.slug)), 3, async (c) => {
       const enJuego = (await getCompetitionFixturesWindow(c)).filter(isLive);
       for (const fx of enJuego) {
         if (timeLeft() <= 0) return;
@@ -203,6 +250,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     ok: errors.length === 0,
+    activas: COMPETITIONS.filter((c) => compActiva.get(c.slug)).map((c) => c.slug),
     competitionsDone,
     liveWarmed,
     squadsDone,
