@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useDirecto } from "@/components/useDirecto";
 
 /**
  * Refresca la página de detalle (server component) mientras el partido está
@@ -24,13 +25,25 @@ import { useEffect } from "react";
  * llamada compartida y la caché va a 20 s, así que la mayoría de recargas
  * sale de caché.
  */
-export default function LiveRefresh({ intervalMs = 60000 }: { intervalMs?: number }) {
+export default function LiveRefresh({
+  intervalMs = 60000,
+  fixtureId,
+}: {
+  intervalMs?: number;
+  /** Con id, la página se recarga al momento en cada cambio del directo. */
+  fixtureId?: number;
+}) {
   const router = useRouter();
+  // Tiempo real (13-oct): cada gol, tarjeta o minuto que guarda el cron
+  // `directo` llega aquí al instante y la página se recarga. El sondeo queda
+  // de respaldo: si el tiempo real está vivo, cada 60 s; si no, el de siempre.
+  const enTiempoReal = useDirecto(() => router.refresh(), { fixtureId });
+  const cada = fixtureId && enTiempoReal ? Math.max(intervalMs, 60_000) : intervalMs;
   useEffect(() => {
     const tick = () => {
       if (!document.hidden) router.refresh();
     };
-    const id = setInterval(tick, intervalMs);
+    const id = setInterval(tick, cada);
     const onVisible = () => {
       if (!document.hidden) router.refresh();
     };
@@ -39,6 +52,6 @@ export default function LiveRefresh({ intervalMs = 60000 }: { intervalMs?: numbe
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [router, intervalMs]);
+  }, [router, cada]);
   return null;
 }

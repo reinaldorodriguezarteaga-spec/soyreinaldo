@@ -1672,7 +1672,9 @@ select.field { appearance: none; }
    una línea de sombra abajo que insinúa que hay más.
    --------------------------------------------------------------------------- */
 .hmcal-scroll {
-  max-height: min(68vh, 640px);
+  /* 1000 (13-oct; antes 640): con los favoritos arriba, los partidos en
+     vivo quedaban al fondo de la caja y el análisis los tapaba. */
+  max-height: min(88vh, 1000px);
   overflow-y: auto;
   /* Aire para que la última tarjeta no quede pegada al borde al hacer scroll. */
   padding-bottom: 4px;

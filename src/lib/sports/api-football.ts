@@ -17,6 +17,7 @@ import {
 } from "./competitions";
 import { cachedOrLive, conUltimoBueno, readCache } from "./sports-cache";
 import { guardarArchivo, leerArchivo, respuestaUtil } from "./archivo";
+import { eventosDirecto, filasDirecto, superponer } from "./directo";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -771,11 +772,14 @@ export async function getCompetitionFixturesWindow(
     // la vean 10 o 10.000), 5 min sin partidos. Ver directoTtl.
     ttl,
   );
-  return r.response.filter((f) => {
-    if (isLive(f)) return true;
-    const ko = new Date(f.fixture.date).getTime();
-    return ko >= fromMs && ko <= toMs;
-  });
+  const directo = await filasDirecto();
+  return r.response
+    .map((f) => superponer(f, directo.get(f.fixture.id)))
+    .filter((f) => {
+      if (isLive(f)) return true;
+      const ko = new Date(f.fixture.date).getTime();
+      return ko >= fromMs && ko <= toMs;
+    });
 }
 
 export function getWorldCupFixturesWindow(): Promise<Fixture[]> {
@@ -1093,7 +1097,7 @@ export function getWorldCupTopYellowCards(n = 10): Promise<PlayerStatLeader[]> {
 }
 
 /** Evento de un partido. Solo nos interesan los goles (type === "Goal"). */
-type FixtureEvent = {
+export type FixtureEvent = {
   time: { elapsed: number | null; extra: number | null };
   team: { id: number; name: string; logo: string };
   player: { id: number | null; name: string | null };
@@ -1127,11 +1131,22 @@ export type TimelineEvent = {
  * y goles anulados por VAR), ordenada por minuto. Una llamada a
  * `/fixtures/events`. Vacío si el partido aún no ha empezado.
  */
+/**
+ * Todos los eventos de un partido: del directo en tiempo real si el partido
+ * está en `partidos_directo` (va al segundo), si no de la API (una llamada
+ * compartida por goles, tarjetas, cambios, notas y cronología).
+ */
+async function eventosPartido(id: number, revalidate: number): Promise<FixtureEvent[]> {
+  const directo = await eventosDirecto(id);
+  if (directo) return directo;
+  return (await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate)).response;
+}
+
 export async function getFixtureTimeline(
   id: number,
   revalidate = 60,
 ): Promise<TimelineEvent[]> {
-  const r = await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate);
+  const r = { response: await eventosPartido(id, revalidate) };
   const out: TimelineEvent[] = [];
   for (const e of r.response) {
     const detail = (e.detail || "").toLowerCase();
@@ -1425,8 +1440,13 @@ export async function getFixtureById(
   id: number,
   revalidate = 300,
 ): Promise<Fixture | null> {
-  const r = await get<Fixture>("/fixtures", { id }, revalidate);
-  return r.response[0] ?? null;
+  const [r, directo] = await Promise.all([
+    get<Fixture>("/fixtures", { id }, revalidate),
+    filasDirecto(),
+  ]);
+  const f = r.response[0] ?? null;
+  // Marcador, minuto y estado del directo en tiempo real si lo hay.
+  return f ? superponer(f, directo.get(id)) : null;
 }
 
 /** Estadísticas por equipo de un partido (posesión, tiros, xG, paradas, …). */
@@ -1463,11 +1483,7 @@ export async function getFixtureGoals(
 ): Promise<FixtureGoal[]> {
   // Todos los eventos del partido (una llamada compartida con tarjetas,
   // cambios y notas, 13-oct) y aquí se quedan solo los goles.
-  const r = await get<FixtureEvent>(
-    "/fixtures/events",
-    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
-    revalidate,
-  );
+  const r = { response: await eventosPartido(id, revalidate) };
   return goalsFromEvents(r.response);
 }
 
@@ -1538,11 +1554,7 @@ export async function getFixtureCards(
   revalidate = 600,
 ): Promise<FixtureCard[]> {
   // Misma llamada compartida que goles, cambios y notas; aquí, las tarjetas.
-  const r = await get<FixtureEvent>(
-    "/fixtures/events",
-    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
-    revalidate,
-  );
+  const r = { response: await eventosPartido(id, revalidate) };
   return cardsFromEvents(r.response);
 }
 
@@ -1582,7 +1594,14 @@ export async function getFixturesEvents(
   ids: number[],
   revalidate: number,
 ): Promise<Map<number, { goals: FixtureGoal[]; cards: FixtureCard[] }>> {
-  const unicos = [...new Set(ids)].sort((a, b) => a - b);
+  // Los que están en el directo en tiempo real salen de ahí, sin llamar.
+  const directo = await filasDirecto();
+  const deDirecto = new Map<number, { goals: FixtureGoal[]; cards: FixtureCard[] }>();
+  for (const id of ids) {
+    const ev = directo.get(id)?.events;
+    if (ev) deDirecto.set(id, { goals: goalsFromEvents(ev), cards: cardsFromEvents(ev) });
+  }
+  const unicos = [...new Set(ids)].filter((id) => !deDirecto.has(id)).sort((a, b) => a - b);
   const lotes: number[][] = [];
   for (let i = 0; i < unicos.length; i += IDS_POR_LOTE) {
     lotes.push(unicos.slice(i, i + IDS_POR_LOTE));
@@ -1629,7 +1648,9 @@ export async function getFixturesEvents(
     }),
   );
 
-  return new Map(resultados.flat().map((r) => [r.id, { goals: r.goals, cards: r.cards }]));
+  const out = new Map(resultados.flat().map((r) => [r.id, { goals: r.goals, cards: r.cards }]));
+  for (const [id, ev] of deDirecto) out.set(id, ev);
+  return out;
 }
 
 /** Evento notable que NO cuenta en el marcador: penalti fallado o gol anulado. */
@@ -1650,7 +1671,7 @@ export async function getFixtureNotes(
   id: number,
   revalidate = 600,
 ): Promise<FixtureNote[]> {
-  const r = await get<FixtureEvent>("/fixtures/events", { fixture: id }, revalidate);
+  const r = { response: await eventosPartido(id, revalidate) };
   const notes: FixtureNote[] = [];
   for (const e of r.response) {
     const d = (e.detail || "").toLowerCase();
@@ -1711,11 +1732,7 @@ export async function getFixtureSubs(
   id: number,
   revalidate = 600,
 ): Promise<FixtureSubs> {
-  const r = await get<FixtureEvent>(
-    "/fixtures/events",
-    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
-    revalidate,
-  );
+  const r = { response: await eventosPartido(id, revalidate) };
   const inKeys: string[] = [];
   const outKeys: string[] = [];
   for (const e of r.response) {
@@ -1756,11 +1773,7 @@ export async function getFixtureSubEvents(
   id: number,
   revalidate = 600,
 ): Promise<FixtureSubEvent[]> {
-  const r = await get<FixtureEvent>(
-    "/fixtures/events",
-    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
-    revalidate,
-  );
+  const r = { response: await eventosPartido(id, revalidate) };
   return r.response
     .filter((e) => e.type === "subst")
     .map((e) => ({
@@ -3508,4 +3521,27 @@ export async function refrescarEquipoTrasPartido(
     if (page >= (r.paging?.total ?? 1)) break;
   }
   return llamadas;
+}
+
+/**
+ * Todos los partidos en juego del mundo, con sus eventos, en UNA llamada
+ * (para el cron `directo`). Sin caché: es el dato en vivo.
+ */
+export async function getPartidosEnJuego(): Promise<(Fixture & { events?: FixtureEvent[] })[] | null> {
+  const r = await get<Fixture & { events?: FixtureEvent[] }>("/fixtures", { live: "all" }, 15, true);
+  return failed(r) ? null : r.response;
+}
+
+/** Varios partidos por id (hasta 20), con eventos, sin caché. */
+export async function getPartidosPorIdsEnVivo(
+  ids: number[],
+): Promise<(Fixture & { events?: FixtureEvent[] })[]> {
+  if (ids.length === 0) return [];
+  const r = await get<Fixture & { events?: FixtureEvent[] }>(
+    "/fixtures",
+    { ids: ids.slice(0, 20).join("-") },
+    15,
+    true,
+  );
+  return r.response;
 }
