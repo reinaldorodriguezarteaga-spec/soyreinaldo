@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   getCompetitionUpcomingFixtures,
+  edicionTerminada,
   getCompetitionFinishedFixtures,
   getCompetitionStandings,
   getCompetitionFixturesWindow,
@@ -74,6 +75,8 @@ export default async function LigaPage({
   const { v, season: seasonParam } = await searchParams;
   const selectedSeason = resolveSeason(competition, seasonParam);
   const effectiveCompetition: Competition = { ...competition, season: selectedSeason };
+  // ¿La edición por defecto ya terminó? (eliminatorias, copas de verano…)
+  const terminada = await edicionTerminada(competition).catch(() => false);
 
   let fixtures: Fixture[] = [];
   let finished: Fixture[] = [];
@@ -140,7 +143,7 @@ export default async function LigaPage({
     <main className="page">
       <section className="phero" style={{ paddingBottom: 24 }}>
         <div className="wrap">
-          <p className="eyebrow">Fútbol de clubes</p>
+          <p className="eyebrow">{competition.region === "Selecciones" ? "Selecciones" : "Fútbol de clubes"}</p>
           <div className="flex items-center gap-3">
             <h1 className="phero__title">
               {competition.name}
@@ -151,10 +154,21 @@ export default async function LigaPage({
               initialFavorited={favorited}
             />
           </div>
-          <p className="phero__lede">
-            Próximos partidos, tabla de clasificación y estadísticas de la
-            temporada — goleadores, asistencias y más, en vivo.
-          </p>
+          {terminada && selectedSeason === competition.season ? (
+            <p className="phero__lede">
+              Edición mostrada:{" "}
+              <b style={{ color: "var(--text)" }}>
+                {competition.edicion ??
+                  (competition.anual ? competition.season : `${competition.season}-${String(competition.season + 1).slice(2)}`)}
+              </b>{" "}
+              · terminada. La próxima aún no tiene calendario publicado; en cuanto salga, aparecerá aquí.
+            </p>
+          ) : (
+            <p className="phero__lede">
+              Próximos partidos, tabla de clasificación y estadísticas de la
+              temporada — goleadores, asistencias y más, en vivo.
+            </p>
+          )}
           <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
             <Link href={`/liga/${competition.slug}/buscar`} className="btn btn--ghost">
               🔍 Buscar equipo o jugador
@@ -170,6 +184,8 @@ export default async function LigaPage({
                   currentSeason={competition.season}
                   archivedSeasons={competition.archivedSeasons}
                   competitionSlug={competition.slug}
+                  anual={competition.anual}
+                  terminada={terminada}
                 />
               </Suspense>
             ) : null}

@@ -15,10 +15,16 @@ export default function SeasonSelect({
   currentSeason,
   archivedSeasons,
   competitionSlug,
+  anual = false,
+  terminada = false,
 }: {
   currentSeason: number;
   archivedSeasons: number[];
   competitionSlug: string;
+  /** Año natural: "2026", no "2026-27". */
+  anual?: boolean;
+  /** La edición por defecto ya terminó: "(terminada)", no "(actual)". */
+  terminada?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,10 +38,9 @@ export default function SeasonSelect({
   const selected = allSeasons.includes(rawNum) ? rawNum : currentSeason;
 
   function seasonLabel(season: number): string {
-    const short = `${season}-${String(season + 1).slice(2)}`;
-    return season === currentSeason
-      ? `${short} (actual)`
-      : `${short} (temporada anterior)`;
+    const short = anual ? String(season) : `${season}-${String(season + 1).slice(2)}`;
+    if (season !== currentSeason) return `${short} (anterior)`;
+    return terminada ? `${short} (terminada)` : `${short} (actual)`;
   }
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
