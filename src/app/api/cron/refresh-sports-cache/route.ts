@@ -99,7 +99,7 @@ export async function GET(request: Request) {
   // fútbol o no: ~10.000 llamadas al día, la mitad del gasto normal. Ahora
   // una competición (o un equipo destacado) se refresca cada vuelta solo si
   // tiene un partido en juego o cerca —de 30 min antes del inicio a 3 h
-  // después—; si no, cada hora. Saber si hay partido sale del calendario ya
+  // después—; si no, cada 25 min. Saber si hay partido sale del calendario ya
   // guardado: no gasta llamadas. En un partido en juego nada cambia: sigue
   // cada 10 min, como siempre.
   const ahora = Date.now();
@@ -107,7 +107,12 @@ export async function GET(request: Request) {
     const t = Date.parse(f.fixture.date);
     return isLive(f) || (ahora >= t - 30 * 60_000 && ahora <= t + 3 * 3_600_000);
   };
-  const TRANQUILO_S = 3600;
+  // 25 min, NO 60: quien lee la caché la da por vieja a los 40 min
+  // (`cachedOrLive(..., 2400)`) y entonces llama a la API en vivo. Con 60 min,
+  // entre el minuto 40 y el 60 la portada volvía a gastar cuota (13-oct, lo
+  // cazó el vigilante). Con la vuelta cada 10 min, 25 deja la caché siempre
+  // por debajo de 35 min.
+  const TRANQUILO_S = 25 * 60;
   const [compFrescas, equiposFrescos, extrasFrescos] = await Promise.all([
     freshCacheKeys(COMPETITIONS.map(allFixturesCacheKey), TRANQUILO_S),
     freshCacheKeys(FEATURED_TEAMS.map((t) => teamFixturesNextCacheKey(t.id, 4)), TRANQUILO_S),
