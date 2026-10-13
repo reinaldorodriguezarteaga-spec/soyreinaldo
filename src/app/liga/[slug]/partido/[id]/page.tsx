@@ -28,6 +28,7 @@ import {
   type TeamVenue,
 } from "@/lib/sports/api-football";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import { filasDirecto } from "@/lib/sports/directo";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
@@ -261,6 +262,11 @@ export default async function LigaPartidoPage({
   // Si la API no lo da (rate limit, corte), del calendario guardado: un
   // partido que está en el calendario existe, y un 404 en pleno directo
   // (13-oct) es lo peor que se le puede enseñar a quien entra a verlo.
+  //
+  // El directo (Supabase) se pide YA, a la vez que el calendario de
+  // directoTtl: getFixtureById reutiliza esa misma consulta en curso en vez
+  // de lanzarla después (una espera menos en serie).
+  void filasDirecto();
   const fx =
     (await getFixtureById(fixtureId, await directoTtl(competition, fixtureId, 120))) ??
     (await partidoDelCalendario(competition, fixtureId));
@@ -277,17 +283,41 @@ export default async function LigaPartidoPage({
   const rvJugadores = liveNow ? 90 : undefined;
   const rvAlineaciones = liveNow ? 120 : undefined;
 
-  const [rawGoals, cards, stats, players, lineups, notes, subs, subEvents] =
-    await Promise.all([
-      getFixtureGoals(fixtureId, rvEventos),
-      getFixtureCards(fixtureId, rvEventos),
-      getFixtureStatistics(fixtureId, rvStats),
-      getFixturePlayers(fixtureId, rvJugadores),
-      getFixtureLineups(fixtureId, rvAlineaciones),
-      getFixtureNotes(fixtureId, rvEventos),
-      getFixtureSubs(fixtureId, rvEventos),
-      getFixtureSubEvents(fixtureId, rvEventos),
-    ]);
+  // Todo lo que depende solo del partido va en UNA tanda: la clasificación y
+  // la sede iban después, cada una con su propia espera (13-oct, fichas
+  // lentas).
+  const sinJugar = !isLive(fx) && !isFinal(fx);
+  const [
+    rawGoals,
+    cards,
+    stats,
+    players,
+    lineups,
+    notes,
+    subs,
+    subEvents,
+    standings,
+    sedeDeRespaldo,
+  ] = await Promise.all([
+    getFixtureGoals(fixtureId, rvEventos),
+    getFixtureCards(fixtureId, rvEventos),
+    getFixtureStatistics(fixtureId, rvStats),
+    getFixturePlayers(fixtureId, rvJugadores),
+    getFixtureLineups(fixtureId, rvAlineaciones),
+    getFixtureNotes(fixtureId, rvEventos),
+    getFixtureSubs(fixtureId, rvEventos),
+    getFixtureSubEvents(fixtureId, rvEventos),
+    // Clasificación proyectada: solo antes de jugarse y en competiciones
+    // con tabla. Sale de `sports_cache`, no gasta cuota.
+    sinJugar && competition.standingsMode === "table"
+      ? getCompetitionStandings(competition).catch(() => null)
+      : null,
+    // La ficha del equipo local da la dirección del campo. Se consulta
+    // siempre —no solo cuando falta el nombre— porque el partido a veces
+    // trae estadio pero no ciudad, y sin ciudad Google descarta el evento.
+    // Cacheada 30 días.
+    getTeamVenue(fx.teams.home.id).catch(() => null),
+  ]);
 
   // Descarta goles anulados/fantasma reconciliando con el marcador real.
   const goals = reconcileGoals(rawGoals, {
@@ -375,12 +405,6 @@ export default async function LigaPartidoPage({
     players.find((t) => t.team.id === home.id)?.players ?? [];
   const awayPlayers =
     players.find((t) => t.team.id === away.id)?.players ?? [];
-  // Clasificación proyectada: solo tiene sentido antes de jugarse y en
-  // competiciones con tabla. Sale de `sports_cache`, no gasta cuota.
-  const standings =
-    !played && competition.standingsMode === "table"
-      ? await getCompetitionStandings(competition).catch(() => null)
-      : null;
   const standingsRows = Array.isArray(standings)
     ? (standings as StandingRow[]).filter(
         (r): r is StandingRow => "rank" in r && "points" in r,
@@ -435,10 +459,6 @@ export default async function LigaPartidoPage({
 
   const base = `/liga/${competition.slug}`;
 
-  // La ficha del equipo local da la dirección del campo. Se consulta siempre
-  // —no solo cuando falta el nombre— porque el partido a veces trae estadio
-  // pero no ciudad, y sin ciudad Google descarta el evento. Cacheada 30 días.
-  const sedeDeRespaldo = await getTeamVenue(home.id).catch(() => null);
   const datosEstructurados = matchJsonLd(fx, competition, played, sedeDeRespaldo);
 
   return (
