@@ -746,6 +746,22 @@ export async function competicionConPartidoCerca(c: Competition): Promise<boolea
   return fx.length === 0 || fx.some((f) => partidoCerca(f));
 }
 
+/**
+ * ¿La edición configurada de esta competición ya terminó? (13-oct-2026: las
+ * eliminatorias enseñaban la del Mundial 2026 como "actual".) Del
+ * calendario guardado, sin llamar: todos los partidos cerrados y, en las
+ * copas, jugada la final (una copa con la siguiente ronda sin sortear tiene
+ * todo jugado pero no ha terminado).
+ */
+export async function edicionTerminada(c: Competition): Promise<boolean> {
+  const fx = await calendarioGuardado(c);
+  if (fx.length === 0) return false;
+  const cerrado = (f: Fixture) =>
+    isFinal(f) || ["PST", "CANC", "ABD", "AWD", "WO"].includes(f.fixture.status.short);
+  if (!fx.every(cerrado)) return false;
+  return c.standingsMode !== "none" || fx.some((f) => /^final$/i.test(f.league.round) && isFinal(f));
+}
+
 /** TTL del directo para la ficha de un partido: 20 s si está en juego o
  * cerca; si no, `tranquilo`. */
 export async function directoTtl(

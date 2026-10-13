@@ -57,6 +57,12 @@ export type Competition = {
    * grandes, no por sí mismas (Ligue 1 → PSG y Lyon, pedido del dueño:
    * "solo juegos del PSG en el calendario del front page"). */
   calendarOnlyTeamIds?: number[];
+  /** Temporada de año natural (MLS, Argentina, copas de Concacaf…): el
+   * selector la escribe "2026" y no "2026-27". */
+  anual?: boolean;
+  /** Nombre de la edición cuando el año no lo dice (eliminatorias: "Mundial
+   * 2026"). Se usa al avisar de que la edición mostrada ya terminó. */
+  edicion?: string;
 };
 
 /**
@@ -321,6 +327,7 @@ export const LIGA_MX: Competition = {
   officialUrl: "https://ligamx.net",
   // América, Chivas, Cruz Azul, Pumas, Tigres, Monterrey
   calendarOnlyTeamIds: [2287, 2278, 2295, 2286, 2279, 2282],
+  anual: true,
 };
 
 /** Liga Profesional Argentina: season 2026 = Apertura + Clausura, cada uno
@@ -336,6 +343,7 @@ export const LIGA_ARGENTINA: Competition = {
   officialUrl: "https://www.ligaprofesional.ar",
   // Boca, River, Racing, Independiente, San Lorenzo
   calendarOnlyTeamIds: [451, 435, 436, 453, 460],
+  anual: true,
 };
 
 /** MLS: dos conferencias (Este y Oeste), se pintan por grupo. */
@@ -350,6 +358,7 @@ export const MLS: Competition = {
   officialUrl: "https://www.mlssoccer.com",
   // Inter Miami, LA Galaxy, LAFC
   calendarOnlyTeamIds: [9568, 1605, 1616],
+  anual: true,
 };
 
 /*
@@ -372,6 +381,7 @@ export const US_OPEN_CUP: Competition = {
   region: "EE. UU. y Canadá",
   officialUrl: "https://www.ussoccer.com/us-open-cup",
   calendarOnlyTeamIds: MLS_GRANDES,
+  anual: true,
 };
 
 /** Canadian Championship (copa de Canadá): 2026 hasta el 21-oct. */
@@ -386,6 +396,7 @@ export const CANADIAN_CHAMPIONSHIP: Competition = {
   officialUrl: "https://canadasoccer.com",
   // Toronto FC, Vancouver Whitecaps, CF Montréal
   calendarOnlyTeamIds: [1601, 1603, 1614],
+  anual: true,
 };
 
 /** Leagues Cup (MLS contra Liga MX): 2026 se jugó del 4-ago al 7-sep. */
@@ -399,6 +410,7 @@ export const LEAGUES_CUP: Competition = {
   region: "Concacaf",
   officialUrl: "https://www.leaguescup.com",
   calendarOnlyTeamIds: [...MLS_GRANDES, ...MX_GRANDES],
+  anual: true,
 };
 
 /** Concacaf Champions Cup (en el API, "CONCACAF Champions League"): 2026
@@ -413,6 +425,7 @@ export const CONCACAF_CHAMPIONS_CUP: Competition = {
   region: "Concacaf",
   officialUrl: "https://www.concacaf.com",
   calendarOnlyTeamIds: [...MLS_GRANDES, ...MX_GRANDES],
+  anual: true,
 };
 
 /** Campeones Cup: campeón de la MLS contra campeón de la Liga MX, partido
@@ -426,6 +439,7 @@ export const CAMPEONES_CUP: Competition = {
   archivedSeasons: [2025],
   region: "Concacaf",
   officialUrl: "https://www.concacaf.com",
+  anual: true,
 };
 
 /** Liga saudí (Saudi Pro League): season 2026 = 2026-27. Una tabla de 18. */
@@ -468,6 +482,8 @@ export const ELIMINATORIAS_CONMEBOL: Competition = {
   standingsMode: "table",
   region: "Selecciones",
   officialUrl: "https://www.conmebol.com",
+  anual: true,
+  edicion: "Mundial 2026",
 };
 
 /**
@@ -484,6 +500,8 @@ export const ELIMINATORIAS_UEFA: Competition = {
   standingsMode: "table",
   region: "Selecciones",
   officialUrl: "https://www.uefa.com/european-qualifiers/",
+  anual: true,
+  edicion: "Mundial 2026",
 };
 
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
