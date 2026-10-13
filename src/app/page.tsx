@@ -1,3 +1,4 @@
+import GoatsCard from "@/components/GoatsCard";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -190,6 +191,16 @@ export default async function Home() {
               </Suspense>
             </aside>
           </div>
+        </div>
+      </section>
+
+      {/* MESSI VS RONALDO — entre el feed (con las tablas) y la quiniela,
+          del mismo tamaño que el promo de la quiniela (pedido 13-oct). */}
+      <section className="section" style={{ paddingTop: 24, paddingBottom: 0 }}>
+        <div className="wrap">
+          <Suspense fallback={null}>
+            <GoatsCard />
+          </Suspense>
         </div>
       </section>
 
