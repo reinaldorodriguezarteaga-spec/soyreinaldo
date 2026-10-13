@@ -1692,13 +1692,20 @@ export function subKey(name: string | null): string {
   return parts[parts.length - 1] || clean;
 }
 
-/** Claves (apellido) de quienes ENTRARON y SALIERON en los cambios del partido. */
+/** Claves de quienes ENTRARON y SALIERON en los cambios del partido: "#id"
+ * del jugador o, si el API no trae id, su apellido (`subKey`). Se consultan
+ * con `enCambios`. */
 export type FixtureSubs = { inKeys: string[]; outKeys: string[] };
 
 /**
  * Cambios del partido (type=subst). ⚠️ En API-Football, `player` es quien SALE
- * (titular) y `assist` quien ENTRA (del banco). Como los IDs no casan con
- * /lineups, devolvemos claves por apellido (subKey) para pintar flechas.
+ * (titular) y `assist` quien ENTRA (del banco).
+ *
+ * Por id, no por apellido (13-oct): los ids SÍ casan con /lineups (verificado
+ * con el Barça–Getafe), y los nombres de los eventos son los completos
+ * ("Pablo Martín Páez Gavira", "Fermín López", "David Cordón Mancha") frente
+ * a los cortos de la alineación ("Gavi", "Fermin", "Davinchi"): por apellido
+ * no casaban y a varios suplentes les faltaba la flecha.
  */
 export async function getFixtureSubs(
   id: number,
@@ -1713,10 +1720,21 @@ export async function getFixtureSubs(
   const outKeys: string[] = [];
   for (const e of r.response) {
     if (e.type !== "subst") continue;
-    if (e.assist?.name) inKeys.push(subKey(e.assist.name)); // entra
-    if (e.player?.name) outKeys.push(subKey(e.player.name)); // sale
+    const entra = e.assist?.id != null ? `#${e.assist.id}` : subKey(e.assist?.name ?? null);
+    const sale = e.player?.id != null ? `#${e.player.id}` : subKey(e.player?.name ?? null);
+    if (entra) inKeys.push(entra);
+    if (sale) outKeys.push(sale);
   }
   return { inKeys, outKeys };
+}
+
+/** ¿Está este jugador entre los que entraron/salieron? Por id y, solo si el
+ * cambio no traía id, por apellido. */
+export function enCambios(
+  keys: Set<string>,
+  p: { id: number | null; name: string | null },
+): boolean {
+  return (p.id != null && keys.has(`#${p.id}`)) || keys.has(subKey(p.name));
 }
 
 /** Un cambio con minuto y nombres (para la ficha visual del partido). */

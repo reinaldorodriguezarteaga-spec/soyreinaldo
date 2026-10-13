@@ -18,7 +18,6 @@ import {
   isFinal,
   isLive,
   reconcileGoals,
-  subKey,
   getCompetitionStandings,
   type Fixture,
   type FixtureGoal,
@@ -278,7 +277,6 @@ export default async function LigaPartidoPage({
       getFixtureSubs(fixtureId, rvEventos),
       getFixtureSubEvents(fixtureId, rvEventos),
     ]);
-  const cameInKeys = new Set(subs.inKeys);
 
   // Descarta goles anulados/fantasma reconciliando con el marcador real.
   const goals = reconcileGoals(rawGoals, {
@@ -597,30 +595,6 @@ export default async function LigaPartidoPage({
             </div>
           )}
 
-          {(homeLineup?.substitutes.length ?? 0) +
-            (awayLineup?.substitutes.length ?? 0) >
-            0 && (
-            <div style={{ marginTop: 28 }}>
-              <div className="shead">
-                <h2>Suplentes</h2>
-                <span className="sh-note">banquillo completo</span>
-              </div>
-              <div className="panel" style={{ padding: "18px 20px" }}>
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <TeamBench
-                    team={home}
-                    subs={homeLineup?.substitutes ?? []}
-                    inKeys={cameInKeys}
-                  />
-                  <TeamBench
-                    team={away}
-                    subs={awayLineup?.substitutes ?? []}
-                    inKeys={cameInKeys}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
           </MatchTabs>
         </div>
       </section>
@@ -640,75 +614,6 @@ export default async function LigaPartidoPage({
         </div>
       </section>
     </main>
-  );
-}
-
-function TeamBench({
-  team,
-  subs,
-  inKeys,
-}: {
-  team: { id: number; name: string; logo: string };
-  subs: { id: number; number: number | null; name: string; pos: string | null }[];
-  inKeys: Set<string>;
-}) {
-  return (
-    <div>
-      <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
-        <Image src={team.logo} alt="" width={22} height={22} unoptimized />
-        <b className="truncate" style={{ fontSize: "0.9rem" }}>
-          {team.name}
-        </b>
-      </div>
-      {subs.length > 0 ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {subs.map((p) => {
-            const cameIn = inKeys.has(subKey(p.name));
-            return (
-              <li
-                key={p.id}
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "baseline",
-                  padding: "4px 0",
-                  fontSize: "0.84rem",
-                  borderBottom: "1px solid rgba(255,255,255,0.05)",
-                }}
-              >
-                <span
-                  className="mono tabular-nums"
-                  style={{ color: "var(--text-dim)", width: 20, textAlign: "right" }}
-                >
-                  {p.number ?? "–"}
-                </span>
-                <span className="truncate">{p.name}</span>
-                {cameIn && (
-                  <span
-                    title="Entró en el partido"
-                    style={{ color: "#4ade80", fontSize: "0.8rem" }}
-                  >
-                    ▲
-                  </span>
-                )}
-                {p.pos && (
-                  <span
-                    className="mono"
-                    style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "0.68rem" }}
-                  >
-                    {p.pos}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="hint" style={{ margin: 0 }}>
-          Sin datos de banquillo.
-        </p>
-      )}
-    </div>
   );
 }
 

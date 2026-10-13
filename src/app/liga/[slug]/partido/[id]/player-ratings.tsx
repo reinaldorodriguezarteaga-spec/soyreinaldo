@@ -9,7 +9,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { subKey, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
+import { enCambios, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
 
 type Team = { id: number; name: string; logo: string };
 type Entry = { p: PlayerRating; team: Team };
@@ -312,9 +312,12 @@ function SubsRow({
   onPick: (id: number) => void;
   inKeySet: Set<string>;
 }) {
+  // Solo los que jugaron de verdad: el API manda a todo el banquillo con
+  // nota 0.0 aunque no pisaran el campo (13-oct: Balde, Cancelo, Szczęsny…).
   const played = subs
     .map((s) => byId.get(s.id))
     .filter((p): p is PlayerRating => !!p)
+    .filter((p) => enCambios(inKeySet, p) || (p.minutes ?? 0) > 0)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
   if (played.length === 0) return null;
   return (
@@ -325,7 +328,7 @@ function SubsRow({
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {played.map((p) => (
           <button key={p.id} className="subschip" type="button" onClick={() => onPick(p.id)}>
-            {inKeySet.has(subKey(p.name)) && <SubArrow dir="in" />}
+            {enCambios(inKeySet, p) && <SubArrow dir="in" />}
             <Avatar photo={p.photo} n={p.number} size={20} />
             <span>{shortName(p.name)}</span>
             <b className="tabular-nums" style={{ color: ratingColor(p.rating ?? 0) }}>
@@ -399,7 +402,7 @@ function PitchView({
             x={n.x}
             y={n.y}
             onPick={onPick}
-            subbedOut={outKeySet.has(subKey(n.p.name))}
+            subbedOut={enCambios(outKeySet, n.p)}
           />
         ))}
         {awayNodes.map((n) => (
@@ -410,7 +413,7 @@ function PitchView({
             x={n.x}
             y={n.y}
             onPick={onPick}
-            subbedOut={outKeySet.has(subKey(n.p.name))}
+            subbedOut={enCambios(outKeySet, n.p)}
           />
         ))}
       </div>
