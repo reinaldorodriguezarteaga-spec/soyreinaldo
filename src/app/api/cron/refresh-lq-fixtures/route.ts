@@ -28,7 +28,7 @@ export const maxDuration = 60;
 const COMPETITIONS = [{ competition: "laliga", leagueId: 140, season: 2026 }];
 
 type ApiFixture = {
-  fixture: { id: number; date: string };
+  fixture: { id: number; date: string; status?: { short: string } };
 };
 
 export async function GET(request: Request) {
@@ -74,24 +74,38 @@ export async function GET(request: Request) {
       // ya jugado no aporta nada y arriesga a pisar datos buenos.
       const { data: rows } = await supabase
         .from("lq_matches")
-        .select("id, kickoff_at")
+        .select("id, kickoff_at, status")
         .eq("competition", c.competition)
         .eq("season", c.season)
         .eq("finished", false)
-        .returns<{ id: number; kickoff_at: string }[]>();
+        .returns<{ id: number; kickoff_at: string; status: string | null }[]>();
 
-      const nuestros = new Map((rows ?? []).map((r) => [r.id, r.kickoff_at]));
+      const nuestros = new Map((rows ?? []).map((r) => [r.id, r]));
 
       for (const f of list) {
-        const actual = nuestros.get(f.fixture.id);
-        if (!actual) continue;
+        const fila = nuestros.get(f.fixture.id);
+        if (!fila) continue;
+        const actual = fila.kickoff_at;
+        // Un aplazado/suspendido/cancelado que el API vuelve a programar
+        // (NS/TBD): hay que quitarle esa marca, o la ingesta (que no pide los
+        // PST/ABD/CANC) no lo vería nunca y no puntuaría. 13-oct: el
+        // Rayo–Athletic de la J8 quedó ABD esperando fecha nueva.
+        const apiEstado = f.fixture.status?.short ?? null;
+        const reprogramado =
+          !!fila.status &&
+          ["PST", "ABD", "CANC"].includes(fila.status) &&
+          !!apiEstado &&
+          !["PST", "ABD", "CANC"].includes(apiEstado);
         // Comparamos por instante, no por texto: los formatos difieren.
-        if (new Date(actual).getTime() === new Date(f.fixture.date).getTime()) {
-          continue;
-        }
+        const mismaHora = new Date(actual).getTime() === new Date(f.fixture.date).getTime();
+        if (mismaHora && !reprogramado) continue;
         const { error } = await supabase
           .from("lq_matches")
-          .update({ kickoff_at: f.fixture.date })
+          .update(
+            reprogramado
+              ? { kickoff_at: f.fixture.date, status: apiEstado }
+              : { kickoff_at: f.fixture.date },
+          )
           .eq("id", f.fixture.id);
         if (error) {
           errors.push(`${f.fixture.id}: ${error.message}`);
