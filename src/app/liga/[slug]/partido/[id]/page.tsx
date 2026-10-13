@@ -395,7 +395,7 @@ export default async function LigaPartidoPage({
   return (
     <main className="page">
       {datosEstructurados && <JsonLd data={datosEstructurados} />}
-      {liveNow && <LiveRefresh intervalMs={20_000} />}
+      {liveNow && <LiveRefresh intervalMs={20_000} fixtureId={fixtureId} />}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useDirecto } from "@/components/useDirecto";
 import type { CompetitionGroup, HomeWidgetData } from "@/lib/sports/widget-data";
 import CompactMatchRow from "@/components/CompactMatchRow";
 
@@ -125,35 +126,40 @@ export default function HomeMatchWidgetClient({
 }) {
   const [data, setData] = useState<HomeWidgetData>(initial);
 
+  // Pide el estado de los marcadores. Best-effort: un fallo puntual no rompe
+  // la UI y el siguiente aviso o sondeo lo arregla.
+  const refrescar = useCallback(async () => {
+    if (document.hidden) return;
+    try {
+      const res = await fetch("/api/sports/home-widget", { cache: "no-store" });
+      if (!res.ok) return;
+      setData((await res.json()) as HomeWidgetData);
+    } catch {
+      // ver arriba
+    }
+  }, []);
+
+  // Tiempo real (13-oct): cada cambio que guarda el cron `directo` (gol,
+  // minuto, tarjeta) llega al instante. El sondeo queda de respaldo: cada
+  // 60 s con el tiempo real vivo, cada 20 s si no.
+  const enTiempoReal = useDirecto(() => void refrescar(), {
+    esperaMs: 900,
+    activo: data.needsPolling,
+  });
+  const cada = enTiempoReal ? 60_000 : POLL_MS;
+
   useEffect(() => {
     if (!data.needsPolling) return;
-
-    let cancelled = false;
-
-    async function tick() {
-      if (document.hidden) return;
-      try {
-        const res = await fetch("/api/sports/home-widget", { cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        const next: HomeWidgetData = await res.json();
-        if (!cancelled) setData(next);
-      } catch {
-        // El polling es best-effort; un fallo puntual no debe romper la UI.
-      }
-    }
-
-    const timer = setInterval(tick, POLL_MS);
+    const timer = setInterval(() => void refrescar(), cada);
     const onVisibility = () => {
-      if (!document.hidden) tick();
+      if (!document.hidden) void refrescar();
     };
     document.addEventListener("visibilitychange", onVisibility);
-
     return () => {
-      cancelled = true;
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [data.needsPolling]);
+  }, [data.needsPolling, refrescar, cada]);
 
   const favs = new Set(favoriteTeamIds);
   const isFav = (fx: CompetitionGroup["live"][number]) =>
