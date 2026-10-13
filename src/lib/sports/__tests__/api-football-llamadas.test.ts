@@ -25,6 +25,9 @@ const {
   getTeamStatistics,
   getTeamFixtures,
   getPlayerSeasonStats,
+  getFixtureGoals,
+  getFixtureCards,
+  getFixtureSubs,
   refrescarEquipoTrasPartido,
   enModoAhorro,
   cuotaAgotada,
@@ -373,5 +376,20 @@ describe("llamadas a API-Football", () => {
       expect(p?.appearances).toBe(8);
       expect(fetchMock).not.toHaveBeenCalled();
     });
+  });
+
+  it("goles, tarjetas y cambios salen de UNA sola llamada de eventos", async () => {
+    const eventos = [
+      { type: "Goal", detail: "Normal Goal", time: { elapsed: 10 }, team: { id: 1 }, player: { name: "A" }, assist: {} },
+      { type: "Card", detail: "Yellow Card", time: { elapsed: 20 }, team: { id: 2 }, player: { name: "B" }, assist: {} },
+      { type: "subst", detail: "Substitution 1", time: { elapsed: 60 }, team: { id: 1 }, player: { name: "C" }, assist: { name: "D" } },
+    ];
+    const fetchMock = vi.fn(async () => respuesta({ errors: [], response: eventos }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [g, c, s] = await Promise.all([getFixtureGoals(61, 20), getFixtureCards(61, 20), getFixtureSubs(61, 20)]);
+    expect(g).toHaveLength(1);
+    expect(c).toHaveLength(1);
+    expect(s.inKeys).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -702,9 +702,50 @@ export function getWorldCupFixturesForDay(date: Date): Promise<Fixture[]> {
  * entre now−12h y now+14h. A diferencia del corte por día UTC, esta ventana
  * no parte la jornada cuando hay partidos de madrugada en husos americanos.
  */
+/**
+ * Directo más rápido sin gastar más (13-oct-2026). Antes todo lo "en vivo"
+ * caducaba a los 45 s y la ficha del partido se recargaba cada 60 s: un gol
+ * podía tardar casi 2 min en verse. Ahora:
+ *  - El marcador y los eventos caducan a los 20 s, pero SOLO cuando hay
+ *    partido cerca (de 30 min antes del inicio a 3 h después, según el
+ *    calendario ya guardado — sin llamar); sin partidos, la ventana de la
+ *    portada va a 5 min.
+ *  - Goles, tarjetas, cambios y notas salían de CUATRO llamadas distintas a
+ *    `/fixtures/events` (filtradas por tipo en la API) aunque el código ya
+ *    filtra por su cuenta: ahora es UNA, compartida. Con eso, la ficha de un
+ *    partido en juego cuesta ~8 llamadas/min en vez de ~11, y va más rápida.
+ */
+function partidoCerca(f: Fixture, ahora = Date.now()): boolean {
+  const t = Date.parse(f.fixture.date);
+  return isLive(f) || (ahora >= t - 30 * 60_000 && ahora <= t + 3 * 3_600_000);
+}
+
+async function calendarioGuardado(c: Competition): Promise<Fixture[]> {
+  return (await readCache<Fixture[]>(allFixturesCacheKey(c), 7 * 86_400).catch(() => null)) ?? [];
+}
+
+/** ¿Tiene esta competición un partido en juego o cerca? Sin calendario
+ * guardado no se sabe: se responde que sí (lo prudente es ir rápido). */
+export async function competicionConPartidoCerca(c: Competition): Promise<boolean> {
+  const fx = await calendarioGuardado(c);
+  return fx.length === 0 || fx.some((f) => partidoCerca(f));
+}
+
+/** TTL del directo para la ficha de un partido: 20 s si está en juego o
+ * cerca; si no, `tranquilo`. */
+export async function directoTtl(
+  c: Competition,
+  fixtureId: number,
+  tranquilo: number,
+): Promise<number> {
+  const fx = (await calendarioGuardado(c)).find((f) => f.fixture.id === fixtureId);
+  return !fx || partidoCerca(fx) ? 20 : tranquilo;
+}
+
 export async function getCompetitionFixturesWindow(
   competition: Competition,
 ): Promise<Fixture[]> {
+  const ttl = (await competicionConPartidoCerca(competition)) ? 20 : 300;
   const now = Date.now();
   const fromMs = now - 12 * 3600_000;
   const toMs = now + 14 * 3600_000;
@@ -725,7 +766,10 @@ export async function getCompetitionFixturesWindow(
     // 23-jul, no solo el caché frío de un deploy). 45s > 20s de margen
     // para que la mayoría de polls sí acierten en caché; sigue siendo
     // razonablemente fresco para marcadores en vivo.
-    45,
+    // 13-oct: 20 s con partido cerca (el polling de portada pasa a 20 s y la
+    // caché es compartida: una llamada por competición activa cada 20 s,
+    // la vean 10 o 10.000), 5 min sin partidos. Ver directoTtl.
+    ttl,
   );
   return r.response.filter((f) => {
     if (isLive(f)) return true;
@@ -1417,14 +1461,11 @@ export async function getFixtureGoals(
   id: number,
   revalidate = 600,
 ): Promise<FixtureGoal[]> {
-  // `type=Goal`: solo goles (lo único que necesita el detalle) y, de paso, una
-  // clave de caché DISTINTA de la del agregado de goleadores (que cachea todos
-  // los eventos 1 día). Caché propia (600s, o más corta en directo) para que un
-  // partido en curso o recién terminado muestre sus goles sin tocar esa caché
-  // larga que /mundial usa para no ralentizarse.
+  // Todos los eventos del partido (una llamada compartida con tarjetas,
+  // cambios y notas, 13-oct) y aquí se quedan solo los goles.
   const r = await get<FixtureEvent>(
     "/fixtures/events",
-    { fixture: id, type: "Goal" },
+    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
     revalidate,
   );
   return goalsFromEvents(r.response);
@@ -1496,11 +1537,10 @@ export async function getFixtureCards(
   id: number,
   revalidate = 600,
 ): Promise<FixtureCard[]> {
-  // `type=Card`: solo tarjetas, con caché propia (600s, o más corta en directo)
-  // y clave distinta de la del agregado de goleadores.
+  // Misma llamada compartida que goles, cambios y notas; aquí, las tarjetas.
   const r = await get<FixtureEvent>(
     "/fixtures/events",
-    { fixture: id, type: "Card" },
+    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
     revalidate,
   );
   return cardsFromEvents(r.response);
@@ -1666,7 +1706,7 @@ export async function getFixtureSubs(
 ): Promise<FixtureSubs> {
   const r = await get<FixtureEvent>(
     "/fixtures/events",
-    { fixture: id, type: "subst" },
+    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
     revalidate,
   );
   const inKeys: string[] = [];
@@ -1700,7 +1740,7 @@ export async function getFixtureSubEvents(
 ): Promise<FixtureSubEvent[]> {
   const r = await get<FixtureEvent>(
     "/fixtures/events",
-    { fixture: id, type: "subst" },
+    { fixture: id }, // todos los eventos: una llamada compartida (ver directoTtl)
     revalidate,
   );
   return r.response

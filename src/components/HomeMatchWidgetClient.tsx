@@ -8,7 +8,8 @@ import CompactMatchRow from "@/components/CompactMatchRow";
 // >45s (el TTL de getCompetitionFixturesWindow) para que la mayoría de polls
 // acierten en caché en vez de pegar en vivo a la API — este widget cruza
 // las 9 competiciones en cada poll, así que el margen importa el triple.
-const POLL_MS = 30_000;
+// 20 s (13-oct; antes 30): la caché del directo baja a 20 s con partido cerca.
+const POLL_MS = 20_000;
 
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (

@@ -18,6 +18,11 @@ import { useEffect } from "react";
  * 60-90s en el incidente de CPU de Vercel documentado en memoria — aquí se
  * había quedado en 15s desde la reescritura multi-liga, sin aplicar esa
  * misma lección.
+ *
+ * 13-oct-2026: la ficha de partido la usa a 20 s. Lo que hacía caro un
+ * refresco eran las 8 llamadas por recarga; ahora los eventos son una sola
+ * llamada compartida y la caché va a 20 s, así que la mayoría de recargas
+ * sale de caché.
  */
 export default function LiveRefresh({ intervalMs = 60000 }: { intervalMs?: number }) {
   const router = useRouter();

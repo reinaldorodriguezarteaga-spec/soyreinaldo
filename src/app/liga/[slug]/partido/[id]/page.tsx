@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   cuotaAgotada,
+  directoTtl,
   getFixtureById,
   getFixtureCards,
   getFixtureGoals,
@@ -248,34 +249,34 @@ export default async function LigaPartidoPage({
   const fixtureId = Number(id);
   if (!Number.isFinite(fixtureId)) notFound();
 
-  // Primero el partido (caché corta) para saber si está en juego; si lo está,
-  // el resto se pide con caché corta y se auto-refresca la página.
-  //
-  // 45s, no 15s: `LiveRefresh` (más abajo) ya solo dispara cada 60s — con
-  // estos 8 fetchers a 15s, cada uno de esos refrescos igual pegaba en vivo
-  // a la API (la caché de 15s ya había caducado), así que subir el
-  // intervalo de LiveRefresh sin tocar esto no habría bajado la carga real.
-  // 45s dentro del margen de 60s y sin quedarse corto para nadie: nada en
-  // la web pide un partido en vivo más seguido que cada 30s.
-  const fx = await getFixtureById(fixtureId, 45);
+  // Primero el partido para saber si está en juego; si lo está, el resto se
+  // pide con caché corta y la página se recarga sola cada 20 s.
+  // 13-oct: 20 s si el partido está en juego o cerca (directoTtl), 120 s si
+  // no (antes 45 s siempre, con recarga cada 60 s: un gol tardaba ~2 min).
+  const fx = await getFixtureById(fixtureId, await directoTtl(competition, fixtureId, 120));
   if (!fx) {
     if (cuotaAgotada()) throw new Error("API-Football sin cuota: ficha no disponible ahora");
     notFound();
   }
   const liveNow = isLive(fx);
-  const rv = liveNow ? 45 : undefined; // undefined = caché por defecto del fetcher
+  // En juego: lo que cambia a cada momento (eventos: goles, tarjetas,
+  // cambios, notas — UNA llamada compartida) a 20 s; lo que cambia despacio,
+  // más largo. undefined = caché por defecto del fetcher.
+  const rvEventos = liveNow ? 20 : undefined;
+  const rvStats = liveNow ? 60 : undefined;
+  const rvJugadores = liveNow ? 90 : undefined;
+  const rvAlineaciones = liveNow ? 120 : undefined;
 
   const [rawGoals, cards, stats, players, lineups, notes, subs, subEvents] =
     await Promise.all([
-      getFixtureGoals(fixtureId, rv),
-      getFixtureCards(fixtureId, rv),
-      getFixtureStatistics(fixtureId, rv),
-      getFixturePlayers(fixtureId, rv),
-      getFixtureLineups(fixtureId, rv),
-      getFixtureNotes(fixtureId, rv),
-      getFixtureSubs(fixtureId, rv),
-      // misma llamada cacheada que getFixtureSubs: sin cuota extra
-      getFixtureSubEvents(fixtureId, rv),
+      getFixtureGoals(fixtureId, rvEventos),
+      getFixtureCards(fixtureId, rvEventos),
+      getFixtureStatistics(fixtureId, rvStats),
+      getFixturePlayers(fixtureId, rvJugadores),
+      getFixtureLineups(fixtureId, rvAlineaciones),
+      getFixtureNotes(fixtureId, rvEventos),
+      getFixtureSubs(fixtureId, rvEventos),
+      getFixtureSubEvents(fixtureId, rvEventos),
     ]);
   const cameInKeys = new Set(subs.inKeys);
 
@@ -396,7 +397,7 @@ export default async function LigaPartidoPage({
   return (
     <main className="page">
       {datosEstructurados && <JsonLd data={datosEstructurados} />}
-      {liveNow && <LiveRefresh />}
+      {liveNow && <LiveRefresh intervalMs={20_000} />}
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
