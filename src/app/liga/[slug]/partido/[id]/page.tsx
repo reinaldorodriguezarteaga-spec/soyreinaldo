@@ -32,6 +32,9 @@ import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
+import MatchCronica from "./match-cronica";
+import type { DatosCronica } from "@/lib/partido/cronica";
+import { conTildes } from "@/lib/sports/nombres";
 import PlayerRatings from "./player-ratings";
 import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
@@ -376,6 +379,44 @@ export default async function LigaPartidoPage({
       )
     : [];
 
+  // Crónica automática (solo terminados): todo de lo ya cargado, sin llamar.
+  const par = (type: string): [number, number] | null => {
+    const h = val(homeStats, type);
+    const a = val(awayStats, type);
+    return h == null || a == null ? null : [toNum(h), toNum(a)];
+  };
+  const mejor = [...homePlayers.map((p) => ({ p, equipoId: home.id })), ...awayPlayers.map((p) => ({ p, equipoId: away.id }))]
+    .filter((x) => x.p.rating != null && (x.p.minutes ?? 0) > 0)
+    .sort((a, b) => (b.p.rating ?? 0) - (a.p.rating ?? 0))[0];
+  const cronica: DatosCronica | null = final
+    ? {
+        competicion: competition.name,
+        ronda: fx.league.round ? roundLabelEs(fx.league.round, competition.name) : null,
+        local: { id: home.id, nombre: conTildes(home.name) },
+        visitante: { id: away.id, nombre: conTildes(away.name) },
+        golesLocal: fx.goals.home ?? 0,
+        golesVisitante: fx.goals.away ?? 0,
+        // El API pone el autogol en el equipo que lo encaja: aquí cuenta para el rival.
+        goles: goals.map((g) => ({
+          minuto: g.minute,
+          equipoId:
+            g.detail === "Own Goal" ? (g.teamId === home.id ? away.id : home.id) : g.teamId,
+          jugador: g.player,
+          tipo: g.detail,
+        })),
+        expulsiones: cards
+          .filter((c) => c.expulsion)
+          .map((c) => ({ minuto: c.minute, equipoId: c.teamId, jugador: c.player })),
+        posesion: par("Ball Possession"),
+        tiros: par("Total Shots"),
+        tirosPuerta: par("Shots on Goal"),
+        xg: par("expected_goals"),
+        mejor: mejor
+          ? { nombre: mejor.p.name, equipoId: mejor.equipoId, nota: mejor.p.rating! }
+          : null,
+      }
+    : null;
+
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
@@ -509,12 +550,14 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
+          {cronica && <MatchCronica datos={cronica} />}
           {!played && (
             <Suspense fallback={null}>
               <MatchPrevia
                 fixtureId={fixtureId}
                 home={{ id: home.id, name: home.name }}
                 away={{ id: away.id, name: away.name }}
+                standings={standingsRows}
               />
             </Suspense>
           )}

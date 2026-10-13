@@ -817,6 +817,8 @@ export type StandingRow = {
     lose: number;
     goals: { for: number; against: number };
   };
+  /** Racha de los últimos partidos, del MÁS RECIENTE al más antiguo
+   * ("DLWWD": empató el último). Verificado 13-oct con LaLiga. */
   form: string | null;
 };
 
