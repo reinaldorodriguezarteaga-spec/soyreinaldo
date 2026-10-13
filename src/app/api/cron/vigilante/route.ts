@@ -244,6 +244,8 @@ export async function GET(request: Request) {
       "recordatorio-quiniela",
       "resumen-jornada",
       "refresco-post-partido",
+      "directo",
+      "boletin",
     ];
     const faltan = esperados.filter(
       (e) => !jobs.some((j) => j.jobname === e),
@@ -251,7 +253,7 @@ export async function GET(request: Request) {
     if (faltan.length > 0) {
       problemas.push(
         `Estos crons ya no están programados o están desactivados: ${faltan.join(", ")}. ` +
-          `Se reponen aplicando supabase/migrations/038, 043, 055 y 059.`,
+          `Se reponen aplicando supabase/migrations/038, 043, 055, 059, 061 y 063.`,
       );
     }
   }
