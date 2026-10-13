@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
 import { cargarForma } from "@/lib/quiniela-liga/forma-datos";
+import type { FormaEquipo, ResultadoCorto } from "@/lib/quiniela-liga/forma";
+import type { StandingRow } from "@/lib/sports/api-football";
 import { textoPrevia } from "@/lib/quiniela-liga/previa";
 import { conTildes } from "@/lib/sports/nombres";
 
@@ -9,9 +11,10 @@ import { conTildes } from "@/lib/sports/nombres";
 const MIN_PARA_COMUNIDAD = 3;
 
 /**
- * Previa automática de los partidos de la quiniela (antes del pitido): unas
- * frases con la forma de los dos equipos, el último cara a cara, lo que
- * pronostica la comunidad y si Reinaldo ya ha pronosticado. Todo sale de
+ * Previa automática de cualquier partido (antes del pitido; desde el 13-oct
+ * en todas las competiciones, antes solo en la quiniela): unas frases con la
+ * forma de los dos equipos y el último cara a cara; en la quiniela, además,
+ * lo que pronostica la comunidad y si Reinaldo ya ha pronosticado. Todo sale de
  * nuestra BD y de cachés: no gasta cuota en cada visita. Ver
  * lib/quiniela-liga/previa.ts.
  */
@@ -19,10 +22,13 @@ export default async function MatchPrevia({
   fixtureId,
   home,
   away,
+  standings,
 }: {
   fixtureId: number;
   home: { id: number; name: string };
   away: { id: number; name: string };
+  /** Clasificación de la competición (de la caché, ya la tiene la página). */
+  standings: StandingRow[];
 }) {
   const supabase = await createClient();
   const { data: partido } = await supabase
@@ -30,15 +36,23 @@ export default async function MatchPrevia({
     .select("competition, season")
     .eq("id", fixtureId)
     .maybeSingle<{ competition: string; season: number }>();
-  if (!partido) return null;
 
+  // Partido de la quiniela: forma de nuestros resultados, lo que pronostica
+  // la comunidad y si Reinaldo ya pronosticó. Cualquier otro: forma de la
+  // clasificación guardada (puesto, DG y racha del API), sin llamar.
   const [forma, caraACara, { data: comunidad }, { data: anf }, { data: auth }] = await Promise.all([
-    cargarForma(supabase, partido.competition, partido.season),
+    partido
+      ? cargarForma(supabase, partido.competition, partido.season)
+      : Promise.resolve(formaDeClasificacion(standings)),
     ultimoCaraACara(home.id, away.id),
-    supabase
-      .rpc("lq_pronostico_comunidad", { p_match_id: fixtureId })
-      .maybeSingle<{ total: number; local: number; empate: number; visitante: number }>(),
-    supabase.rpc("lq_pronosticos_anfitrion", { p_match_ids: [fixtureId] }),
+    partido
+      ? supabase
+          .rpc("lq_pronostico_comunidad", { p_match_id: fixtureId })
+          .maybeSingle<{ total: number; local: number; empate: number; visitante: number }>()
+      : Promise.resolve({ data: null }),
+    partido
+      ? supabase.rpc("lq_pronosticos_anfitrion", { p_match_ids: [fixtureId] })
+      : Promise.resolve({ data: null }),
     supabase.auth.getUser(),
   ]);
   const anfitrion = ((anf ?? []) as { hecho: boolean }[])[0];
@@ -66,4 +80,22 @@ export default async function MatchPrevia({
       </div>
     </div>
   );
+}
+
+/** Puesto, DG y racha (del más antiguo al más reciente) de cada equipo,
+ * desde la clasificación del API. Su `form` viene al revés: el primero es el
+ * último partido. */
+function formaDeClasificacion(filas: StandingRow[]): Map<number, FormaEquipo> {
+  const letra: Record<string, ResultadoCorto> = { W: "V", D: "E", L: "D" };
+  const out = new Map<number, FormaEquipo>();
+  for (const f of filas) {
+    if (out.has(f.team.id)) continue; // con varias tablas, la primera (la en curso)
+    const racha = [...(f.form ?? "")]
+      .map((c) => letra[c])
+      .filter((r): r is ResultadoCorto => !!r)
+      .slice(0, 5)
+      .reverse();
+    out.set(f.team.id, { puesto: f.rank, dg: f.goalsDiff, racha });
+  }
+  return out;
 }
