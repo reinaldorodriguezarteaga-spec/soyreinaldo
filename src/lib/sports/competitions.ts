@@ -20,7 +20,12 @@ export type CompetitionRegion =
   | "Inglaterra"
   | "Italia"
   | "Francia"
-  | "Internacional";
+  | "México"
+  | "Argentina"
+  | "EE. UU."
+  | "Arabia Saudí"
+  | "Internacional"
+  | "Selecciones";
 
 export type Competition = {
   /** Usado en las rutas /liga/[slug]/... */
@@ -295,6 +300,115 @@ export const LIGUE_1: Competition = {
   calendarOnlyTeamIds: [85, 80],
 };
 
+/*
+ * Ligas de América y Arabia Saudí, y selecciones (13-oct-2026, pedido del
+ * dueño: audiencia latinoamericana). Ids, temporadas y forma de la
+ * clasificación verificados contra la API ese día. En el calendario de la
+ * portada solo salen sus equipos grandes (`calendarOnlyTeamIds`, como la
+ * Ligue 1); su página /liga/[slug] enseña la competición entera.
+ */
+
+/** Liga MX: season 2026 = Apertura 2026 (jul-nov). Una tabla de 18. */
+export const LIGA_MX: Competition = {
+  slug: "liga-mx",
+  leagueId: 262,
+  season: 2026,
+  name: "Liga MX",
+  standingsMode: "table",
+  archivedSeasons: [2025],
+  region: "México",
+  officialUrl: "https://ligamx.net",
+  // América, Chivas, Cruz Azul, Pumas, Tigres, Monterrey
+  calendarOnlyTeamIds: [2287, 2278, 2295, 2286, 2279, 2282],
+};
+
+/** Liga Profesional Argentina: season 2026 = Apertura + Clausura, cada uno
+ * con dos zonas (4 tablas; se pintan por grupo). */
+export const LIGA_ARGENTINA: Competition = {
+  slug: "liga-argentina",
+  leagueId: 128,
+  season: 2026,
+  name: "Liga Profesional Argentina",
+  standingsMode: "table",
+  archivedSeasons: [2025],
+  region: "Argentina",
+  officialUrl: "https://www.ligaprofesional.ar",
+  // Boca, River, Racing, Independiente, San Lorenzo
+  calendarOnlyTeamIds: [451, 435, 436, 453, 460],
+};
+
+/** MLS: dos conferencias (Este y Oeste), se pintan por grupo. */
+export const MLS: Competition = {
+  slug: "mls",
+  leagueId: 253,
+  season: 2026,
+  name: "MLS",
+  standingsMode: "table",
+  archivedSeasons: [2025],
+  region: "EE. UU.",
+  officialUrl: "https://www.mlssoccer.com",
+  // Inter Miami, LA Galaxy, LAFC
+  calendarOnlyTeamIds: [9568, 1605, 1616],
+};
+
+/** Liga saudí (Saudi Pro League): season 2026 = 2026-27. Una tabla de 18. */
+export const LIGA_SAUDI: Competition = {
+  slug: "liga-saudi",
+  leagueId: 307,
+  season: 2026,
+  name: "Liga saudí",
+  standingsMode: "table",
+  archivedSeasons: [2025],
+  region: "Arabia Saudí",
+  officialUrl: "https://www.spl.com.sa",
+  // Al-Nassr, Al-Hilal, Al-Ittihad
+  calendarOnlyTeamIds: [2939, 2932, 2938],
+};
+
+/** Nations League 2026-27 (24-sep → 17-nov-2026): 14 grupos repartidos en
+ * Ligas A-D; se pintan por grupo. */
+export const NATIONS_LEAGUE: Competition = {
+  slug: "nations-league",
+  leagueId: 5,
+  season: 2026,
+  name: "Nations League",
+  standingsMode: "table",
+  archivedSeasons: [2024],
+  region: "Selecciones",
+  officialUrl: "https://www.uefa.com/uefanationsleague/",
+};
+
+/**
+ * Eliminatorias Conmebol. ⚠️ La última edición en la API es la del Mundial
+ * 2026 (season 2026, terminó en sep-2025); la del Mundial 2030 aún no está
+ * publicada (13-oct-2026). Cuando salga, subir `season` y archivar esta.
+ */
+export const ELIMINATORIAS_CONMEBOL: Competition = {
+  slug: "eliminatorias-conmebol",
+  leagueId: 34,
+  season: 2026,
+  name: "Eliminatorias Conmebol",
+  standingsMode: "table",
+  region: "Selecciones",
+  officialUrl: "https://www.conmebol.com",
+};
+
+/**
+ * Clasificación europea al Mundial. ⚠️ Igual: la última es la del Mundial
+ * 2026 (season 2024, terminó en mar-2026). Subir `season` cuando la API
+ * publique la del 2030. La clasificación a la Eurocopa (id 960) se añade
+ * cuando exista la de la Euro 2028 (empieza en 2027; hoy solo está la 2023).
+ */
+export const ELIMINATORIAS_UEFA: Competition = {
+  slug: "eliminatorias-uefa",
+  leagueId: 32,
+  season: 2024,
+  name: "Clasificación UEFA al Mundial",
+  standingsMode: "table",
+  region: "Selecciones",
+  officialUrl: "https://www.uefa.com/european-qualifiers/",
+};
+
 /** Estructura fija del cuadro del Mundial 2026 (48 equipos → KO desde 32avos). */
 const WORLD_CUP_KO_STRUCTURE: KoStructureEntry[] = [
   { label: "Dieciseisavos", re: /Round of 32/i, slots: 16 },
@@ -330,6 +444,13 @@ export const COMPETITIONS: Competition[] = [
   CONFERENCE_LEAGUE,
   SERIE_A,
   LIGUE_1,
+  LIGA_MX,
+  LIGA_ARGENTINA,
+  MLS,
+  LIGA_SAUDI,
+  NATIONS_LEAGUE,
+  ELIMINATORIAS_CONMEBOL,
+  ELIMINATORIAS_UEFA,
 ];
 
 export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntries(
@@ -340,8 +461,8 @@ export const COMPETITIONS_BY_SLUG: Record<string, Competition> = Object.fromEntr
  * `COMPETITIONS` agrupadas por país para el desplegable "Competiciones" del
  * nav (`Header.tsx`) — dentro de cada país, la liga siempre primero (así
  * está ordenado `COMPETITIONS` ya: liga antes que sus copas). El orden de
- * los países es fijo: España, Inglaterra, Italia, y por último Internacional
- * (las UEFA, sin país propio).
+ * los países es fijo: España, Inglaterra, Italia, Francia, Internacional
+ * (las UEFA), Selecciones y después las ligas de fuera de Europa.
  */
 const REGION_ORDER: CompetitionRegion[] = [
   "España",
@@ -349,6 +470,11 @@ const REGION_ORDER: CompetitionRegion[] = [
   "Italia",
   "Francia",
   "Internacional",
+  "Selecciones",
+  "México",
+  "Argentina",
+  "EE. UU.",
+  "Arabia Saudí",
 ];
 
 export const COMPETITION_GROUPS: { region: CompetitionRegion; competitions: Competition[] }[] =
@@ -432,5 +558,5 @@ export const CALENDAR_EXTRA_LEAGUES: CalendarExtraLeague[] = [
   // 32/34/31/30/29 = clasif. Mundial por confederación, 960 = clasif.
   // Eurocopa, 4 = Eurocopa, 9 = Copa América)
   { leagueId: 10, season: 2026, name: "Amistoso · Selecciones", seniorOnly: true },
-  { leagueId: 5, season: 2026, name: "Nations League" },
+  // (la Nations League es Competition desde el 13-oct)
 ];
