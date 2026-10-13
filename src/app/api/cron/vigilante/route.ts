@@ -125,14 +125,16 @@ export async function GET(request: Request) {
     .from("lq_matches")
     .select("id, kickoff_at")
     .eq("finished", false)
+    .not("status", "in", "(PST,ABD,CANC)")
     .lt("kickoff_at", limite)
     .order("kickoff_at", { ascending: false })
     .limit(20)
     .returns<{ id: number; kickoff_at: string }[]>();
 
-  // Los aplazados salen aquí hasta que el cron de fechas los recoloca, así
-  // que solo avisamos si son varios: uno suelto es ruido esperable.
-  if ((huerfanos?.length ?? 0) > 2) {
+  // Aplazados, suspendidos y cancelados ya no salen (filtro de arriba), así
+  // que basta UNO: el 12-oct el Levante–Sevilla se quedó sin marcador y la
+  // jornada de la quiniela sin cerrar, y con el umbral de 3 nadie se enteró.
+  if ((huerfanos?.length ?? 0) > 0) {
     problemas.push(
       `${huerfanos!.length} partidos acabaron hace más de ${PARTIDO_SIN_MARCADOR_H}h y ` +
         `siguen sin marcador (ids: ${huerfanos!.map((m) => m.id).join(", ")}). ` +
