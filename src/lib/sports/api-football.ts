@@ -3573,3 +3573,65 @@ export async function getPartidosPorIdsEnVivo(
   );
   return r.response;
 }
+
+/** Una competición de la temporada de un jugador (página Messi vs Ronaldo). */
+export type FilaTemporada = {
+  competicion: string;
+  logo: string | null;
+  equipo: string;
+  partidos: number;
+  minutos: number;
+  goles: number;
+  asistencias: number;
+};
+
+const COMPETICION_ES: Record<string, string> = {
+  "UEFA Champions League": "Champions League",
+  "Major League Soccer": "MLS",
+  "Pro League": "Liga saudí",
+  "World Cup": "Mundial",
+  Friendlies: "Amistosos",
+  "UEFA Nations League": "Nations League",
+  "World Cup - Qualification South America": "Eliminatorias Conmebol",
+  "World Cup - Qualification Europe": "Clasificación UEFA al Mundial",
+  "AFC Champions League Elite": "Champions de Asia",
+  "CONCACAF Champions League": "Concacaf Champions Cup",
+  "King's Cup": "Copa del Rey saudí",
+  "Super Cup": "Supercopa",
+};
+
+/** Nombre de competición del API en español (si lo tenemos). */
+export function competicionEs(nombre: string): string {
+  return COMPETICION_ES[nombre] ?? nombre;
+}
+
+/**
+ * La temporada de un jugador en TODAS sus competiciones (club y selección),
+ * una llamada `/players?id=&season=`. Solo donde jugó. `noCache` lo usa el
+ * cron `goats` para refrescarla justo después de cada partido.
+ */
+export async function getTemporadaJugador(
+  id: number,
+  season: number,
+  noCache = false,
+): Promise<FilaTemporada[]> {
+  type Stat = {
+    team: { name: string };
+    league: { name: string; logo: string | null };
+    games: { appearences: number | null; minutes: number | null };
+    goals: { total: number | null; assists: number | null };
+  };
+  const r = await get<{ statistics: Stat[] }>("/players", { id, season }, 3600, noCache);
+  return (r.response[0]?.statistics ?? [])
+    .filter((s) => (s.games.appearences ?? 0) > 0)
+    .map((s) => ({
+      competicion: COMPETICION_ES[s.league.name] ?? s.league.name,
+      logo: s.league.logo,
+      equipo: s.team.name,
+      partidos: s.games.appearences ?? 0,
+      minutos: s.games.minutes ?? 0,
+      goles: s.goals.total ?? 0,
+      asistencias: s.goals.assists ?? 0,
+    }))
+    .sort((a, b) => b.partidos - a.partidos);
+}

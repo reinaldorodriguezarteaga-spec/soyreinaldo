@@ -199,7 +199,7 @@ export default async function Home() {
       <section className="section" style={{ paddingTop: 24, paddingBottom: 0 }}>
         <div className="wrap">
           <Suspense fallback={null}>
-            <GoatsCard />
+            <GoatsCard enlace />
           </Suspense>
         </div>
       </section>

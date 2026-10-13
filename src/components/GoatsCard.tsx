@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -17,7 +18,7 @@ const FILAS = [
   { clave: "ga", label: "G/A", nota: "goles + asistencias" },
 ] as const;
 
-export default async function GoatsCard() {
+export default async function GoatsCard({ enlace = false }: { enlace?: boolean } = {}) {
   const supabase = await createClient();
   const [{ data: bases }, { data: partidos }] = await Promise.all([
     supabase.from("goat_base").select("jugador, api_id, partidos, goles, asistencias, fuente").returns<Base[]>(),
@@ -95,6 +96,11 @@ export default async function GoatsCard() {
       <p style={{ margin: "18px 0 0", color: "var(--text-dim)", fontSize: "0.74rem" }}>
         Carrera en partidos oficiales, con club y selección. Se actualiza tras cada partido que juegan. Base: {messi.fuente}.
       </p>
+      {enlace && (
+        <Link href="/messi-vs-ronaldo" className="btn btn--accent" style={{ marginTop: 16 }}>
+          Ver la comparativa completa <span className="arr">→</span>
+        </Link>
+      )}
     </div>
   );
 }
