@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
-import { getFixturePlayers, getTeamFixtures, isFinal } from "@/lib/sports/api-football";
+import {
+  getFixturePlayers,
+  getTeamFixtures,
+  getTemporadaJugador,
+  isFinal,
+} from "@/lib/sports/api-football";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,8 +21,8 @@ export const maxDuration = 60;
  * ~4-8 llamadas cada 2 h, casi siempre servidas de caché.
  */
 const GOATS = [
-  { jugador: "messi", apiId: 154, equipos: [9568, 26] }, // Inter Miami, Argentina
-  { jugador: "ronaldo", apiId: 874, equipos: [2939, 27] }, // Al-Nassr, Portugal
+  { jugador: "messi", apiId: 154, season: 2026, equipos: [9568, 26] }, // Inter Miami, Argentina
+  { jugador: "ronaldo", apiId: 874, season: 2026, equipos: [2939, 27] }, // Al-Nassr, Portugal
 ];
 
 export async function GET(request: Request) {
@@ -44,7 +49,7 @@ export async function GET(request: Request) {
     const corte = desde.get(g.jugador);
     if (corte == null) continue;
     for (const equipo of g.equipos) {
-      const { recent } = await getTeamFixtures(equipo, { last: 5, next: 0, revalidate: 3600 });
+      const { recent } = await getTeamFixtures(equipo, { last: 5, next: 3, revalidate: 3600 });
       for (const f of recent) {
         const inicio = Date.parse(f.fixture.date);
         if (!isFinal(f) || inicio < corte || Date.now() - inicio < 150 * 60_000) continue;
@@ -75,6 +80,10 @@ export async function GET(request: Request) {
         }
       }
     }
+  }
+  // Tras un partido nuevo, su temporada al día en la página /messi-vs-ronaldo.
+  for (const g of GOATS) {
+    if (nuevos.some((n) => n.jugador === g.jugador)) await getTemporadaJugador(g.apiId, g.season, true);
   }
   return NextResponse.json({ ok: true, nuevos });
 }
