@@ -1,6 +1,6 @@
 "use client";
 
-import { roundMeta } from "@/lib/sports/rounds";
+import { roundChip, roundMeta } from "@/lib/sports/rounds";
 
 /**
  * Vistas compartidas del árbol /liga/[slug]: partidos en vivo/próximos/
@@ -24,7 +24,7 @@ import { roundMeta } from "@/lib/sports/rounds";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   isFinal,
   isLive,
@@ -678,14 +678,31 @@ export function FinalizadosView({
     if (arr) arr.push(fx);
     else byRound.set(r, [fx]);
   }
-  const rounds = Array.from(byRound.keys()).sort(
-    (a, b) => roundMeta(a).order - roundMeta(b).order,
-  );
+  // Rondas por la fecha MEDIANA de sus partidos (15-oct): el orden por
+  // nombre ponía la fase previa de la Champions la última y se abría por
+  // defecto; la mediana, a diferencia del primer partido, no se mueve por
+  // uno adelantado o aplazado (la J6 salía antes que la J4).
+  const mediana = (r: string) => {
+    const t = byRound
+      .get(r)!
+      .map((fx) => new Date(fx.fixture.date).getTime())
+      .sort((x, y) => x - y);
+    return t[Math.floor(t.length / 2)];
+  };
+  const rounds = Array.from(byRound.keys()).sort((a, b) => mediana(a) - mediana(b));
+  // Por defecto, la última ronda disputada.
+  const porDefecto = rounds[rounds.length - 1] ?? "";
 
-  const [sel, setSel] = useState<string>(() => rounds[rounds.length - 1] ?? "");
+  const [sel, setSel] = useState<string>(porDefecto);
   const [eventsById, setEventsById] = useState<Record<number, FixtureEvents>>({});
+  const chipActivo = useRef<HTMLButtonElement | null>(null);
 
-  const active = byRound.has(sel) ? sel : rounds[rounds.length - 1];
+  const active = byRound.has(sel) ? sel : porDefecto;
+
+  // La tira se desplaza sola hasta la ronda elegida (la última, al entrar).
+  useEffect(() => {
+    chipActivo.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [active]);
   const list = [...(byRound.get(active) ?? [])].sort(
     (a, b) =>
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
@@ -717,33 +734,25 @@ export function FinalizadosView({
 
   return (
     <div>
-      <label className="mb-6" style={{ display: "block" }}>
-        <span
-          className="mono"
-          style={{
-            display: "block",
-            fontSize: "0.6rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "var(--text-dim)",
-            marginBottom: 6,
-          }}
-        >
-          Jornada
-        </span>
-        <select
-          className="field"
-          value={active}
-          onChange={(e) => setSel(e.target.value)}
-          style={{ maxWidth: 280 }}
-        >
+      {/* Tira horizontal de rondas, como la de jornadas de la quiniela. */}
+      <nav aria-label="Jornadas" className="mb-6 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <ul className="flex min-w-max gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {rounds.map((r) => (
-            <option key={r} value={r}>
-              {roundMeta(r).label} ({byRound.get(r)!.length})
-            </option>
+            <li key={r}>
+              <button
+                type="button"
+                ref={r === active ? chipActivo : undefined}
+                className={`chip-pill${r === active ? " on" : ""}`}
+                onClick={() => setSel(r)}
+                aria-pressed={r === active}
+                title={`${roundMeta(r).label} (${byRound.get(r)!.length} partidos)`}
+              >
+                {roundChip(r)}
+              </button>
+            </li>
           ))}
-        </select>
-      </label>
+        </ul>
+      </nav>
       <div className="grid2">
         {list.map((fx) => (
           <FinishedCard
