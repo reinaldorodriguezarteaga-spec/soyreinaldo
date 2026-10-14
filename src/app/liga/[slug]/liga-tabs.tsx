@@ -188,6 +188,8 @@ function nombreGrupo(g: string, slug: string): string {
     .replace(/^Group Stage - /i, "")
     .replace(/Western Conference/i, "Conferencia Oeste")
     .replace(/Eastern Conference/i, "Conferencia Este")
+    .replace(/West Region/i, "Región Oeste")
+    .replace(/East Region/i, "Región Este")
     .replace(/League ([A-D])/i, "Liga $1")
     .replace(/Group ([A-Z])/i, `${grupo} $1`)
     .replace(/ - /g, " · ");
