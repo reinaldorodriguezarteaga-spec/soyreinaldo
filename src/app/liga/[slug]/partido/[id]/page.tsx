@@ -304,9 +304,11 @@ export default async function LigaPartidoPage({
     getFixtureNotes(fixtureId, rvEventos),
     getFixtureSubs(fixtureId, rvEventos),
     getFixtureSubEvents(fixtureId, rvEventos),
-    // Clasificación proyectada: solo antes de jugarse y en competiciones
-    // con tabla. Sale de `sports_cache`, no gasta cuota.
-    sinJugar && competition.standingsMode === "table"
+    // Clasificación: antes de jugarse (tabla proyectada + puesto de cada
+    // equipo) y en directo (el puesto con el que empezó: la tabla aún no
+    // cuenta este partido). Terminado ya no: sería la de después. Sale de
+    // `sports_cache`, no gasta cuota.
+    !isFinal(fx) && competition.standingsMode === "table"
       ? getCompetitionStandings(competition).catch(() => null)
       : null,
     // La ficha del equipo local da la dirección del campo. Se consulta
@@ -402,11 +404,15 @@ export default async function LigaPartidoPage({
     players.find((t) => t.team.id === home.id)?.players ?? [];
   const awayPlayers =
     players.find((t) => t.team.id === away.id)?.players ?? [];
-  const standingsRows = Array.isArray(standings)
+  const filasTabla = Array.isArray(standings)
     ? (standings as StandingRow[]).filter(
         (r): r is StandingRow => "rank" in r && "points" in r,
       )
     : [];
+  // La tabla proyectada, como siempre, solo antes de jugarse.
+  const standingsRows = sinJugar ? filasTabla : [];
+  const puestoHome = puestoEnTabla(filasTabla, home.id);
+  const puestoAway = puestoEnTabla(filasTabla, away.id);
 
   // Crónica automática (solo terminados): todo de lo ya cargado, sin llamar.
   const par = (type: string): [number, number] | null => {
@@ -498,7 +504,7 @@ export default async function LigaPartidoPage({
               }}
             >
               <div>
-                <TeamHead competition={competition} team={home} winner={home.winner} />
+                <TeamHead competition={competition} team={home} winner={home.winner} puesto={puestoHome} />
                 <EvList lines={homeLines} align="left" />
               </div>
               <div
@@ -520,7 +526,7 @@ export default async function LigaPartidoPage({
                 )}
               </div>
               <div>
-                <TeamHead competition={competition} team={away} winner={away.winner} />
+                <TeamHead competition={competition} team={away} winner={away.winner} puesto={puestoAway} />
                 <EvList lines={awayLines} align="right" />
               </div>
             </div>
@@ -685,14 +691,27 @@ export default async function LigaPartidoPage({
   );
 }
 
+/** Puesto de un equipo en la tabla ("3.º · 19 pts"), o null si no está.
+ * En las ligas con varias tablas (conferencias, grupos) el puesto es el de
+ * la suya; en la argentina (Apertura y Clausura) manda la del Clausura. */
+function puestoEnTabla(filas: StandingRow[], teamId: number): string | null {
+  const suyas = filas.filter((r) => r.team.id === teamId);
+  const fila = suyas.find((r) => /clausura/i.test(r.group ?? "")) ?? suyas[0];
+  if (!fila) return null;
+  return `${fila.rank}.º · ${fila.points} pts`;
+}
+
 function TeamHead({
   competition,
   team,
   winner,
+  puesto,
 }: {
   competition: Competition;
   team: { id: number; name: string; logo: string };
   winner: boolean | null;
+  /** Puesto en la tabla antes del partido (null = no se enseña). */
+  puesto?: string | null;
 }) {
   return (
     <Link
@@ -712,6 +731,14 @@ function TeamHead({
       <span style={{ fontWeight: 700, textAlign: "center", fontSize: "0.95rem" }}>
         {team.name}
       </span>
+      {puesto && (
+        <span
+          className="mono"
+          style={{ color: "var(--text-dim)", fontSize: "0.7rem", marginTop: -4 }}
+        >
+          {puesto}
+        </span>
+      )}
     </Link>
   );
 }
