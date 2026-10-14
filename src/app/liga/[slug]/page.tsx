@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  getCompetitionUpcomingFixtures,
+  getCompetitionAllFixtures,
   edicionTerminada,
   getCompetitionFinishedFixtures,
   getCompetitionStandings,
@@ -91,13 +91,26 @@ export default async function LigaPage({
 
   try {
     const [fixturesR, finishedR, standingsR, todayR, playersR] = await Promise.all([
-      getCompetitionUpcomingFixtures(effectiveCompetition, 12),
+      // Todo el calendario (sports_cache, sin cuota): "Próximos partidos" se
+      // navega por jornadas hasta el final de la temporada (15-oct).
+      getCompetitionAllFixtures(effectiveCompetition),
       getCompetitionFinishedFixtures(effectiveCompetition),
       getCompetitionStandings(effectiveCompetition),
       getCompetitionFixturesWindow(effectiveCompetition).then(attachEvents),
       getCompetitionPlayerStats(effectiveCompetition, 10),
     ]);
-    fixtures = fixturesR;
+    // Próximos = todo lo no terminado; lo del día, en su versión fresca
+    // (en vivo o recién acabado), igual que con los finalizados de abajo.
+    const proximosById = new Map<number, Fixture>(
+      fixturesR.filter((f) => !isFinal(f)).map((f) => [f.fixture.id, f]),
+    );
+    for (const f of todayR) {
+      if (isFinal(f)) proximosById.delete(f.fixture.id);
+      else proximosById.set(f.fixture.id, f);
+    }
+    fixtures = [...proximosById.values()].sort(
+      (a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+    );
     // `finished` viene de una caché que el cron refresca cada ~10 min — el
     // dueño reportó que un partido recién acabado tardaba en aparecer aquí
     // (y en la ficha de equipo, mismo síntoma). `today` es la ventana
