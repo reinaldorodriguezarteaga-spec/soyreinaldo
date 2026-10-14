@@ -42,18 +42,15 @@ import LiveRefresh from "./live-refresh";
 import Countdown from "./countdown";
 import MatchTabs from "./match-tabs";
 import MatchFicha from "./match-ficha";
+import { roundMeta } from "@/lib/sports/rounds";
 
-/**
- * Etiqueta ES de una ronda. Sin config por competición: LaLiga solo tiene
- * jornadas de liga regular ("Regular Season - N" → "Jornada N"); si el
- * string no matchea ese patrón se muestra tal cual en vez de fallar (cubre
- * futuras competiciones KO sin necesidad de tocar este archivo).
- */
+/** Etiqueta ES de una ronda: la misma traducción que el calendario
+ * (`roundMeta`: "Regular Season/League Stage/League Phase - N" → "Jornada N",
+ * octavos, cuartos…). Antes solo traducía la liga regular y la ficha de la
+ * Champions decía "League Stage - 2". */
 function roundLabelEs(round: string | null, competitionName: string): string {
   if (!round) return competitionName;
-  const g = round.match(/Regular Season\s*-\s*(\d+)/i);
-  if (g) return `Jornada ${g[1]}`;
-  return round;
+  return roundMeta(round).label;
 }
 
 export async function generateMetadata({

@@ -46,6 +46,13 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+/* Nada puede crear scroll horizontal (en la app del iPhone salía una barra
+   lateral por unos píxeles). `clip` y no `hidden`: hidden convierte html/body
+   en contenedor de scroll y rompe la cabecera sticky. */
+html,
+body {
+  overflow-x: clip;
+}
 body {
   margin: 0;
   min-height: 100vh;
@@ -1685,6 +1692,20 @@ select.field { appearance: none; }
 /* Cuando cabe entero, nada de máscara ni recorte. */
 @media (max-height: 560px) {
   .hmcal-scroll { max-height: none; -webkit-mask-image: none; mask-image: none; }
+}
+/* Táctil (móvil y app): sin scroll propio. En iOS el gesto que empieza dentro
+   de una caja con scroll se queda en ella al llegar al final y la página no
+   baja. Los días de más esperan tras "Ver más días" para no hacer un túnel. */
+.hmcal-mas { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .hmcal-scroll {
+    max-height: none;
+    overflow-y: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .hmcal-resto--oculto { display: none; }
+  .hmcal-mas { display: block; width: 100%; text-align: center; }
 }
 
 /* ====================== FICHA VISUAL DEL PARTIDO (pestaña "Ficha") ====================== */
