@@ -6,6 +6,7 @@ import ProfileForm from "./profile-form";
 import DeleteAccount from "./delete-account";
 import { setReminders } from "./actions";
 import GoalAlerts from "@/components/GoalAlerts";
+import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Perfil | Soy Reinaldo",
@@ -13,6 +14,7 @@ export const metadata = {
 };
 
 export default async function PerfilPage() {
+  const inApp = await isAppRequest();
   const supabase = await createClient();
   const {
     data: { user },
@@ -175,7 +177,9 @@ export default async function PerfilPage() {
               .
             </p>
           )}
-          <GoalAlerts />
+          {/* Los avisos de gol son Web Push: dentro de la app no funcionan
+              y pedirían añadir la web a la pantalla de inicio. */}
+          {!inApp && <GoalAlerts />}
         </div>
       </section>
     </main>

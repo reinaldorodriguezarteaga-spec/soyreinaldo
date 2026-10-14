@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isAppRequest } from "@/lib/is-app";
 import ComentarioForm from "./comentario-form";
 import BorrarComentario from "./borrar-comentario";
 
@@ -30,6 +31,11 @@ export default async function Comentarios({
   articleId: string;
   slug: string;
 }) {
+  // Dentro de la app no hay tablón: Apple exige denunciar y bloquear en
+  // todo contenido de usuarios (norma 1.2). Decisión del dueño (14-oct-2026):
+  // la app sale sin comentarios; en la web siguen igual.
+  if (await isAppRequest()) return null;
+
   const supabase = await createClient();
   const [{ data }, autenticado] = await Promise.all([
     supabase.rpc("articles_comentarios", { p_article_id: articleId }),

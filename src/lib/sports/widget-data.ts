@@ -55,7 +55,7 @@ export type WidgetNextFixture = {
 export type WidgetData = {
   mode: WidgetMode;
   fixtures: WcFixture[];
-  /** Próximos partidos (para el widget grande de la app). Solo en modo "wc". */
+  /** Próximos partidos (lista "Después" del widget grande de la app). */
   next?: WidgetNextFixture[];
   /** True if some fixture is live or starts within ~30 min — gate cliente para polling. */
   needsPolling: boolean;
@@ -188,6 +188,26 @@ async function buildNext(): Promise<WidgetNextFixture[]> {
   }
 }
 
+/** Próximos partidos del Barça para la lista "Después" del widget grande de
+ * la app (14-oct-2026: tras retirar el Mundial salía vacía). Lee la misma
+ * combinación que guarda el cron de `sports_cache` (`next: 4`), así que no
+ * gasta cuota. Sin los que ya enseña el widget arriba. */
+async function buildNextClubes(yaMostrados: Set<number>): Promise<WidgetNextFixture[]> {
+  try {
+    const { upcoming } = await getTeamFixtures(TEAM_IDS.barcelona, { next: 4 });
+    return upcoming
+      .filter((f) => !yaMostrados.has(f.fixture.id))
+      .map((f) => ({
+        id: f.fixture.id,
+        ts: Math.floor(new Date(f.fixture.date).getTime() / 1000),
+        home: { name: f.teams.home.name, logo: f.teams.home.logo },
+        away: { name: f.teams.away.name, logo: f.teams.away.logo },
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getWidgetData(): Promise<WidgetData> {
   if (isWorldCupActive()) {
     const [fixtures, next] = await Promise.all([
@@ -214,8 +234,8 @@ export async function getWidgetData(): Promise<WidgetData> {
     seen.add(f.fixture.id);
     base.push(f);
   }
-  const fixtures = await attachEvents(base);
-  return { mode: "clubs", fixtures, needsPolling: shouldPoll(fixtures) };
+  const [fixtures, next] = await Promise.all([attachEvents(base), buildNextClubes(seen)]);
+  return { mode: "clubs", fixtures, next, needsPolling: shouldPoll(fixtures) };
 }
 
 /* ---------------------------------------------------------------------- *
