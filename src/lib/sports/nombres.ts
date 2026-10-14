@@ -83,3 +83,40 @@ export function equiposEnEspanol<T>(dato: T): T {
   }
   return (copia ?? o) as T;
 }
+
+/* ------------------------------------------------------------------------
+ * Nombre corto de un JUGADOR, como en los marcadores del móvil (15-oct,
+ * pedido del dueño). Lo usan la ficha de partido (con el nombre de la
+ * plantilla) y las tarjetas de resultados (con el del evento).
+ * ---------------------------------------------------------------------- */
+
+const PARTICULAS = new Set(["de", "da", "do", "dos", "das", "del", "di", "van", "von", "der", "den", "la", "le", "ter", "ten"]);
+const SUFIJOS = new Set(["júnior", "junior", "jr", "jr.", "neto", "filho", "sobrinho"]);
+
+/** Jugadores que se conocen por un nombre que no sale de la regla general
+ * (clave: nombre de la plantilla o del evento, en minúsculas y sin tildes).
+ * Ampliable: si alguno sale raro en una ficha, se añade aquí. */
+const ALIAS: Record<string, string> = {
+  "vinicius junior": "Vini Jr.",
+  "vinicius jr.": "Vini Jr.",
+  "gabriel jesus": "Gabriel Jesus",
+  "lamine yamal": "Lamine Yamal",
+  "endrick felipe moreira de sousa": "Endrick",
+};
+
+const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Nombre corto como en los marcadores de los móviles: primero el alias; si
+ * no, el apellido ("Dani Olmo" → "Olmo", "K. Mbappé" → "Mbappé", "Marten de
+ * Roon" → "de Roon"); los de una palabra ("Endrick", "Pedri"), tal cual. */
+export function nombreCorto(nombre: string): string {
+  const alias = ALIAS[sinTildes(nombre.trim())];
+  if (alias) return alias;
+  const partes = nombre.trim().split(/\s+/);
+  if (partes.length <= 1) return nombre;
+  const ult = partes[partes.length - 1];
+  if (SUFIJOS.has(ult.toLowerCase())) return partes.slice(-2).join(" ");
+  let i = partes.length - 1;
+  while (i > 0 && PARTICULAS.has(partes[i - 1].toLowerCase())) i--;
+  return partes.slice(i).join(" ");
+}

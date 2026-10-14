@@ -521,6 +521,78 @@ function agrupaPorDia(fixtures: Fixture[]): { clave: string; etiqueta: string; f
   return grupos;
 }
 
+/* ---------- Tira de rondas (Próximos y Finalizados) ---------- */
+
+/** Agrupa por ronda y las ordena: las que `roundMeta` conoce (jornadas,
+ * previas, eliminatorias), por su orden; las demás, por la fecha MEDIANA de
+ * sus partidos. Ni el nombre a secas (la fase previa de la Champions salía
+ * la última) ni la fecha a secas (un partido aplazado o adelantado
+ * descolocaba su jornada) bastaban. */
+function rondasPorFecha(fixtures: Fixture[]): { porRonda: Map<string, Fixture[]>; rondas: string[] } {
+  const porRonda = new Map<string, Fixture[]>();
+  for (const fx of fixtures) {
+    const r = fx.league.round || "—";
+    const arr = porRonda.get(r);
+    if (arr) arr.push(fx);
+    else porRonda.set(r, [fx]);
+  }
+  const mediana = (r: string) => {
+    const t = porRonda
+      .get(r)!
+      .map((fx) => new Date(fx.fixture.date).getTime())
+      .sort((x, y) => x - y);
+    return t[Math.floor(t.length / 2)];
+  };
+  const orden = (r: string) => roundMeta(r).order;
+  const rondas = Array.from(porRonda.keys()).sort((a, b) => {
+    const oa = orden(a);
+    const ob = orden(b);
+    if (oa !== 999 && ob !== 999 && oa !== ob) return oa - ob;
+    return mediana(a) - mediana(b);
+  });
+  return { porRonda, rondas };
+}
+
+/** Tira horizontal de rondas, como la de jornadas de la quiniela; se
+ * desplaza sola hasta la elegida. */
+function TiraRondas({
+  rondas,
+  activa,
+  porRonda,
+  onElegir,
+}: {
+  rondas: string[];
+  activa: string;
+  porRonda: Map<string, Fixture[]>;
+  onElegir: (r: string) => void;
+}) {
+  const chipActivo = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    chipActivo.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [activa]);
+  if (rondas.length < 2) return null;
+  return (
+    <nav aria-label="Jornadas" className="mb-6 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      <ul className="flex min-w-max gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {rondas.map((r) => (
+          <li key={r}>
+            <button
+              type="button"
+              ref={r === activa ? chipActivo : undefined}
+              className={`chip-pill${r === activa ? " on" : ""}`}
+              onClick={() => onElegir(r)}
+              aria-pressed={r === activa}
+              title={`${roundMeta(r).label} (${porRonda.get(r)!.length} partidos)`}
+            >
+              {roundChip(r)}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export function PartidosView({
   competition,
   fixtures,
@@ -529,10 +601,29 @@ export function PartidosView({
   fixtures: Fixture[];
 }) {
   const base = basePath(competition);
+  // Todo lo que queda de temporada, por jornadas (15-oct): de entrada la del
+  // próximo partido; con la tira se navega hasta el final.
+  const { porRonda, rondas } = rondasPorFecha(fixtures);
+  // De entrada, la ronda del primer partido en juego o por empezar. Los
+  // pendientes con fecha pasada (suspendidos, aplazados sin fecha nueva) no
+  // cuentan: la J8 con solo el Rayo–Athletic suspendido abría la lista.
+  const [ahora] = useState(() => Date.now());
+  const ordenados = [...fixtures].sort(
+    (a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
+  );
+  const primero =
+    ordenados.find((f) => isLive(f) || new Date(f.fixture.date).getTime() >= ahora - 3 * 3600_000) ??
+    ordenados[0];
+  const porDefecto = primero?.league.round || rondas[0] || "";
+  const [sel, setSel] = useState<string>(porDefecto);
+  const activa = porRonda.has(sel) ? sel : porDefecto;
+  const visibles = porRonda.get(activa) ?? [];
+
   const [preds, setPreds] = useState<
     Record<number, { home: number; draw: number; away: number }>
   >({});
-  const upcomingKey = fixtures
+  // Probabilidades solo de la ronda que se ve.
+  const upcomingKey = visibles
     .filter((f) => !isLive(f) && !isFinal(f))
     .map((f) => f.fixture.id)
     .join(",");
@@ -543,7 +634,7 @@ export function PartidosView({
     fetch(`/api/sports/predictions?fixtures=${upcomingKey}`)
       .then((r) => (r.ok ? r.json() : {}))
       .then((d: Record<number, { home: number; draw: number; away: number }>) => {
-        if (!cancelled) setPreds(d ?? {});
+        if (!cancelled) setPreds((prev) => ({ ...prev, ...(d ?? {}) }));
       })
       .catch(() => {});
     return () => {
@@ -556,10 +647,11 @@ export function PartidosView({
   }
   // Agrupados por día: la lista corrida costaba de leer, sobre todo con la
   // jornada repartida entre miércoles y sábado (pedido del dueño).
-  const porDia = agrupaPorDia(fixtures);
+  const porDia = agrupaPorDia(visibles);
 
   return (
     <div className="space-y-3">
+      <TiraRondas rondas={rondas} activa={activa} porRonda={porRonda} onElegir={setSel} />
       {porDia.map((dia) => (
         <div key={dia.clave}>
           <p className="daysep">{dia.etiqueta}</p>
@@ -670,39 +762,14 @@ export function FinalizadosView({
   fixtures: Fixture[];
 }) {
   const done = fixtures.filter((fx) => isFinal(fx));
-
-  const byRound = new Map<string, Fixture[]>();
-  for (const fx of done) {
-    const r = fx.league.round || "—";
-    const arr = byRound.get(r);
-    if (arr) arr.push(fx);
-    else byRound.set(r, [fx]);
-  }
-  // Rondas por la fecha MEDIANA de sus partidos (15-oct): el orden por
-  // nombre ponía la fase previa de la Champions la última y se abría por
-  // defecto; la mediana, a diferencia del primer partido, no se mueve por
-  // uno adelantado o aplazado (la J6 salía antes que la J4).
-  const mediana = (r: string) => {
-    const t = byRound
-      .get(r)!
-      .map((fx) => new Date(fx.fixture.date).getTime())
-      .sort((x, y) => x - y);
-    return t[Math.floor(t.length / 2)];
-  };
-  const rounds = Array.from(byRound.keys()).sort((a, b) => mediana(a) - mediana(b));
+  const { porRonda: byRound, rondas: rounds } = rondasPorFecha(done);
   // Por defecto, la última ronda disputada.
   const porDefecto = rounds[rounds.length - 1] ?? "";
 
   const [sel, setSel] = useState<string>(porDefecto);
   const [eventsById, setEventsById] = useState<Record<number, FixtureEvents>>({});
-  const chipActivo = useRef<HTMLButtonElement | null>(null);
 
   const active = byRound.has(sel) ? sel : porDefecto;
-
-  // La tira se desplaza sola hasta la ronda elegida (la última, al entrar).
-  useEffect(() => {
-    chipActivo.current?.scrollIntoView({ block: "nearest", inline: "center" });
-  }, [active]);
   const list = [...(byRound.get(active) ?? [])].sort(
     (a, b) =>
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
@@ -734,25 +801,7 @@ export function FinalizadosView({
 
   return (
     <div>
-      {/* Tira horizontal de rondas, como la de jornadas de la quiniela. */}
-      <nav aria-label="Jornadas" className="mb-6 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        <ul className="flex min-w-max gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {rounds.map((r) => (
-            <li key={r}>
-              <button
-                type="button"
-                ref={r === active ? chipActivo : undefined}
-                className={`chip-pill${r === active ? " on" : ""}`}
-                onClick={() => setSel(r)}
-                aria-pressed={r === active}
-                title={`${roundMeta(r).label} (${byRound.get(r)!.length} partidos)`}
-              >
-                {roundChip(r)}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <TiraRondas rondas={rounds} activa={active} porRonda={byRound} onElegir={setSel} />
       <div className="grid2">
         {list.map((fx) => (
           <FinishedCard

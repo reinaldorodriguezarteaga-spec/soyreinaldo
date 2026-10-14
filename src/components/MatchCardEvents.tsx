@@ -1,16 +1,15 @@
 import type { FixtureEvents } from "@/lib/sports/widget-data";
+import { nombreCorto } from "@/lib/sports/nombres";
 
-function shortName(name: string): string {
-  const t = name.trim().split(/\s+/);
-  return t.length > 1 ? t[t.length - 1] : name;
-}
-
-type Line = { icon: string; minute: number | null; who: string; tag: string };
+/** Una línea por jugador: "Barcola 24', 37', 66'". */
+type Linea = { icon: string; who: string; minutos: string; primero: number };
 
 /**
- * Goles y expulsiones de un partido bajo cada equipo (local izq, visitante der),
- * en formato compacto para las tarjetas de marcador. El autogol cuenta para el
- * equipo rival.
+ * Goles y expulsiones de un partido bajo cada equipo (local izq, visitante
+ * der), en formato compacto para las tarjetas de marcador. Como en la ficha
+ * del partido (15-oct, pedido del dueño): un jugador por línea con todos sus
+ * minutos, "(pen)" / "(p.p.)" detrás del minuto y el nombre corto. El
+ * autogol cuenta para el equipo rival.
  */
 export default function MatchCardEvents({
   ev,
@@ -26,20 +25,41 @@ export default function MatchCardEvents({
   const benef = (teamId: number, detail: string) =>
     detail === "Own Goal" ? (teamId === homeId ? awayId : homeId) : teamId;
 
-  const linesFor = (teamId: number): Line[] => {
-    const goals: Line[] = ev.goals
-      .filter((g) => benef(g.teamId, g.detail) === teamId)
-      .map((g) => ({
-        icon: "⚽",
-        minute: g.minute,
-        who: shortName(g.player),
-        tag:
-          g.detail === "Penalty" ? " (p)" : g.detail === "Own Goal" ? " (pp)" : "",
-      }));
-    const reds: Line[] = ev.reds
-      .filter((c) => c.teamId === teamId)
-      .map((c) => ({ icon: "🟥", minute: c.minute, who: shortName(c.player), tag: "" }));
-    return [...goals, ...reds].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+  const agrupar = (
+    icon: string,
+    eventos: { player: string; minute: number | null; tag: string }[],
+  ): Linea[] => {
+    const por = new Map<string, Linea>();
+    for (const e of eventos) {
+      const who = nombreCorto(e.player);
+      const min = `${e.minute ?? "?"}'${e.tag ? ` ${e.tag}` : ""}`;
+      const l = por.get(who);
+      if (l) l.minutos += `, ${min}`;
+      else por.set(who, { icon, who, minutos: min, primero: e.minute ?? 0 });
+    }
+    return [...por.values()];
+  };
+
+  const linesFor = (teamId: number): Linea[] => {
+    const goles = agrupar(
+      "⚽",
+      ev.goals
+        .filter((g) => benef(g.teamId, g.detail) === teamId)
+        .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+        .map((g) => ({
+          player: g.player,
+          minute: g.minute,
+          tag: g.detail === "Penalty" ? "(pen)" : g.detail === "Own Goal" ? "(p.p.)" : "",
+        })),
+    );
+    const rojas = agrupar(
+      "🟥",
+      ev.reds
+        .filter((c) => c.teamId === teamId)
+        .map((c) => ({ player: c.player, minute: c.minute, tag: "" })),
+    );
+    // Goleadores por su primer gol; las expulsiones, al final.
+    return [...goles.sort((a, b) => a.primero - b.primero), ...rojas];
   };
 
   const home = linesFor(homeId);
@@ -51,16 +71,14 @@ export default function MatchCardEvents({
       <div>
         {home.map((l, i) => (
           <span key={i}>
-            {l.icon} {l.minute != null ? `${l.minute}'` : ""} {l.who}
-            {l.tag}
+            {l.icon} {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span>
           </span>
         ))}
       </div>
       <div className="right">
         {away.map((l, i) => (
           <span key={i}>
-            {l.who}
-            {l.tag} {l.minute != null ? `${l.minute}'` : ""} {l.icon}
+            {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span> {l.icon}
           </span>
         ))}
       </div>

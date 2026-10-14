@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { equiposEnEspanol } from "../nombres";
+import { equiposEnEspanol, nombreCorto } from "../nombres";
 
 describe("nombres de equipo en español", () => {
   it("traduce selecciones y pone tildes a los clubes, en cualquier nivel", () => {
@@ -31,5 +31,36 @@ describe("nombres de equipo en español", () => {
   it("sin nada que cambiar, devuelve el mismo objeto", () => {
     const x = [{ team: { id: 529, name: "Barcelona", logo: "x" } }];
     expect(equiposEnEspanol(x)).toBe(x);
+  });
+});
+
+describe("nombreCorto", () => {
+  it("el apellido, sin inicial", () => {
+    expect(nombreCorto("Kylian Mbappé")).toBe("Mbappé");
+    expect(nombreCorto("K. Mbappé")).toBe("Mbappé");
+    expect(nombreCorto("Dani Olmo")).toBe("Olmo");
+    expect(nombreCorto("A. Rüdiger")).toBe("Rüdiger");
+  });
+
+  it("respeta las partículas", () => {
+    expect(nombreCorto("Marten de Roon")).toBe("de Roon");
+    expect(nombreCorto("F. de Jong")).toBe("de Jong");
+    expect(nombreCorto("Virgil van Dijk")).toBe("van Dijk");
+  });
+
+  it("los de una palabra, tal cual", () => {
+    expect(nombreCorto("Endrick")).toBe("Endrick");
+    expect(nombreCorto("Pedri")).toBe("Pedri");
+  });
+
+  it("alias de los que se conocen de otra forma", () => {
+    expect(nombreCorto("Vinícius Júnior")).toBe("Vini Jr.");
+    expect(nombreCorto("Endrick Felipe Moreira de Sousa")).toBe("Endrick");
+    expect(nombreCorto("Lamine Yamal")).toBe("Lamine Yamal");
+    expect(nombreCorto("Gabriel Jesus")).toBe("Gabriel Jesus");
+  });
+
+  it("sufijos brasileños, con el nombre", () => {
+    expect(nombreCorto("Gabriel Neto")).toBe("Gabriel Neto");
   });
 });
