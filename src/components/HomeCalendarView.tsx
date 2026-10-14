@@ -9,6 +9,11 @@ import CompactMatchRow from "@/components/CompactMatchRow";
  * un muro cuando hay varias competiciones activas a la vez. */
 const MAX_DAYS = 7;
 
+/** En pantallas táctiles la lista va sin scroll propio (ver `.hmcal-scroll`
+ * en globals.css) y de entrada solo enseña estos días; el resto, tras
+ * "Ver más días". */
+const DIAS_MOVIL = 2;
+
 /**
  * Contenido de la pestaña "Calendario" (envuelto por `HomeScoreboardTabs`).
  * Combina las próximas fixturas de las 9 competiciones + los amistosos de
@@ -39,6 +44,9 @@ export default function HomeCalendarView({
   // mucha info). Cambiar allOpen remonta las tarjetas vía `key`, así el
   // usuario puede seguir abriendo/cerrando días sueltos después.
   const [allOpen, setAllOpen] = useState(true);
+  const [verMas, setVerMas] = useState(false);
+  const primeros = restDays.slice(0, DIAS_MOVIL);
+  const resto = restDays.slice(DIAS_MOVIL);
 
   return (
     <div className="space-y-3">
@@ -62,15 +70,32 @@ export default function HomeCalendarView({
        *
        * Sin `overscroll-behavior: contain` a propósito: al llegar al final de
        * la lista el gesto continúa moviendo la página, que es lo que espera
-       * cualquiera. */}
+       * cualquiera.
+       *
+       * En el iPhone eso no pasa (15-oct, app): un gesto que empieza dentro
+       * de una caja con scroll se queda rebotando en ella. Por eso en
+       * táctil la caja no tiene scroll y los días a partir del tercero
+       * esperan detrás de "Ver más días" (CSS `.hmcal-resto--oculto`). */}
       <div className="hmcal-scroll space-y-3">
         {favDay.map((day) => (
           <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
         ))}
         {liveContent}
-        {restDays.map((day) => (
+        {primeros.map((day) => (
           <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
         ))}
+        {resto.length > 0 && (
+          <div className={`space-y-3 ${verMas ? "" : "hmcal-resto--oculto"}`}>
+            {resto.map((day) => (
+              <DayCard key={`${day.dateKey}-${allOpen}`} day={day} open={allOpen} />
+            ))}
+          </div>
+        )}
+        {resto.length > 0 && !verMas && (
+          <button type="button" className="backbtn hmcal-mas" onClick={() => setVerMas(true)}>
+            Ver más días ({resto.length}) ▾
+          </button>
+        )}
       </div>
     </div>
   );
