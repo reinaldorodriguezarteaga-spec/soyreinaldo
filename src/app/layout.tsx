@@ -10,6 +10,7 @@ import InstallBanner from "@/components/InstallBanner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
+import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import "./globals.css";
@@ -83,6 +84,13 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Dentro de la app nativa: sin anuncios (AdSense no se permite dentro de
+  // una app y Apple exigiría el permiso de rastreo), y por tanto sin banner
+  // de cookies; sin la franja de "instalar la web como app", que dentro de
+  // la app no tiene sentido (App Store, 14-oct-2026).
+  const inApp = await isAppRequest();
+  const anuncios = !!ADSENSE_CLIENT_ID && !inApp;
+
   // Para el atajo "Admin" en el menú de usuario — evita que quien no sea
   // admin vea enlaces a páginas que igualmente le rechazaría /admin/layout.tsx.
   let isAdmin = false;
@@ -129,7 +137,7 @@ export default async function RootLayout({
       className={`${saira.variable} ${archivo.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {ADSENSE_CLIENT_ID && (
+        {anuncios && (
           <>
             {/* Consent Mode v2: todo denegado por defecto, ANTES de que
                 cargue cualquier script de Google — RGPD/ePrivacy.
@@ -169,12 +177,12 @@ export default async function RootLayout({
         {/* En flujo normal, no fixed: aparece bajo el header sticky al
             cargar y se va con el scroll como cualquier otro contenido —
             nada compite con el banner de cookies, que sí es fixed abajo. */}
-        <InstallBanner />
+        {!inApp && <InstallBanner />}
         <Gestures />
         <BackButton />
         {children}
         <Footer />
-        {ADSENSE_CLIENT_ID && <CookieConsent />}
+        {anuncios && <CookieConsent />}
         {/* Vercel Web Analytics: visitas y páginas vistas sin cookies ni
             huella de usuario, así que no depende del banner de consentimiento.
             Hay que tenerlo activado además en el panel de Vercel. */}
