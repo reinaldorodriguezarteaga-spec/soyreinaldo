@@ -1762,9 +1762,6 @@ select.field { appearance: none; }
 .ficha__formation { font-family: var(--font-mono-stack); font-size: 0.72rem; color: var(--text-dim); }
 .ficha__score { display: flex; align-items: center; gap: 8px; font-family: var(--font-display-stack); font-size: 3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .ficha__dash { opacity: 0.35; font-weight: 500; }
-.ficha__goals { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.78rem; color: var(--text-dim); }
-.ficha__goals ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.ficha__goals--away { text-align: right; }
 
 .ficha__body { display: grid; grid-template-columns: 400px 1fr; align-items: stretch; }
 /* el campo fija la altura y las estadísticas se reparten para llegar

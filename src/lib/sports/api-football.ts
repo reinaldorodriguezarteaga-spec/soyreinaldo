@@ -1538,6 +1538,8 @@ export type FixtureGoal = {
   detail: string;
   /** Asistente del gol, si lo hay. */
   assist: string | null;
+  /** Id del jugador en API-Football (para su nombre "conocido" de la plantilla). */
+  playerId?: number | null;
 };
 export async function getFixtureGoals(
   id: number,
@@ -1558,6 +1560,7 @@ function goalsFromEvents(events: FixtureEvent[]): FixtureGoal[] {
       player: e.player.name ?? "—",
       detail: e.detail,
       assist: e.assist?.name ?? null,
+      playerId: e.player.id ?? null,
     }))
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
@@ -1610,6 +1613,7 @@ export type FixtureCard = {
   detail: string;
   /** true si supone expulsión (roja directa o segunda amarilla). */
   expulsion: boolean;
+  playerId?: number | null;
 };
 export async function getFixtureCards(
   id: number,
@@ -1631,6 +1635,7 @@ function cardsFromEvents(events: FixtureEvent[]): FixtureCard[] {
         player: e.player.name ?? "—",
         detail: d,
         expulsion: /red|second yellow/i.test(d),
+        playerId: e.player.id ?? null,
       };
     })
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
@@ -1721,6 +1726,7 @@ export type FixtureNote = {
   teamId: number;
   player: string;
   kind: "missed_penalty" | "disallowed_goal";
+  playerId?: number | null;
 };
 
 /**
@@ -1743,6 +1749,7 @@ export async function getFixtureNotes(
         teamId: e.team.id,
         player: e.player.name ?? "—",
         kind: "missed_penalty",
+        playerId: e.player.id ?? null,
       });
     } else if (
       e.type === "Var" &&

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Cronologia, { type Ev } from "./cronologia";
 import {
   subKey,
   type Fixture,
@@ -30,7 +31,6 @@ export type FichaStatRow = {
   away: number | string | null;
 };
 
-export type FichaGoal = { minute: number | null; player: string; tag: string };
 
 /** Jugador ya cruzado con su valoración y sus cambios. */
 type Chip = {
@@ -72,8 +72,9 @@ export default function MatchFicha({
   homePlayers,
   awayPlayers,
   rows,
-  homeGoals,
-  awayGoals,
+  homeLines,
+  awayLines,
+  nombres,
   subs,
   statusLabel,
 }: {
@@ -86,8 +87,10 @@ export default function MatchFicha({
   homePlayers: PlayerRating[];
   awayPlayers: PlayerRating[];
   rows: FichaStatRow[];
-  homeGoals: FichaGoal[];
-  awayGoals: FichaGoal[];
+  /** Goles, expulsiones y penaltis fallados (la misma cronología que la ficha). */
+  homeLines: Ev[];
+  awayLines: Ev[];
+  nombres: Map<number, string>;
   subs: FixtureSubEvent[];
   statusLabel: string;
 }) {
@@ -128,24 +131,7 @@ export default function MatchFicha({
               </div>
             </div>
           </div>
-          {(homeGoals.length > 0 || awayGoals.length > 0) && (
-            <div className="ficha__goals">
-              <ul>
-                {homeGoals.map((g, i) => (
-                  <li key={i}>
-                    ⚽ {g.player} {g.tag} {g.minute != null && `${g.minute}'`}
-                  </li>
-                ))}
-              </ul>
-              <ul className="ficha__goals--away">
-                {awayGoals.map((g, i) => (
-                  <li key={i}>
-                    {g.minute != null && `${g.minute}'`} {g.tag} {g.player} ⚽
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <Cronologia home={homeLines} away={awayLines} nombres={nombres} compacta />
         </header>
 
         <div className="ficha__body">
