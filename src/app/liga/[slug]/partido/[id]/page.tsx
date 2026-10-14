@@ -23,6 +23,7 @@ import {
   type Fixture,
   type FixtureGoal,
   type StandingRow,
+  getTeamSquad,
   getTeamVenue,
   mismoEstadio,
   type TeamVenue,
@@ -43,6 +44,7 @@ import Countdown from "./countdown";
 import MatchTabs from "./match-tabs";
 import MatchFicha from "./match-ficha";
 import { roundMeta } from "@/lib/sports/rounds";
+import Cronologia, { nombreConocido, type Ev } from "./cronologia";
 
 /** Etiqueta ES de una ronda: la misma traducción que el calendario
  * (`roundMeta`: "Regular Season/League Stage/League Phase - N" → "Jornada N",
@@ -230,15 +232,6 @@ function toNum(v: number | string | null): number {
 }
 
 /** Un evento bajo el equipo (gol, expulsión, pen. fallado, gol anulado…). */
-type Ev = {
-  icon: string;
-  minute: number | null;
-  player: string;
-  tag: string;
-  assist: string | null;
-  /** true para eventos que NO cuentan (pen. fallado, gol anulado) → atenuados. */
-  muted?: boolean;
-};
 
 export default async function LigaPartidoPage({
   params,
@@ -295,6 +288,8 @@ export default async function LigaPartidoPage({
     subEvents,
     standings,
     sedeDeRespaldo,
+    plantillaHome,
+    plantillaAway,
   ] = await Promise.all([
     getFixtureGoals(fixtureId, rvEventos),
     getFixtureCards(fixtureId, rvEventos),
@@ -316,7 +311,15 @@ export default async function LigaPartidoPage({
     // trae estadio pero no ciudad, y sin ciudad Google descarta el evento.
     // Cacheada 30 días.
     getTeamVenue(fx.teams.home.id).catch(() => null),
+    // Plantillas: el nombre por el que se conoce a cada jugador ("Endrick",
+    // "K. Mbappé", "Dani Olmo") para la cronología. Las precalcula el cron
+    // en `sports_cache`: sin cuota.
+    getTeamSquad(fx.teams.home.id).catch(() => []),
+    getTeamSquad(fx.teams.away.id).catch(() => []),
   ]);
+  const nombrePlantilla = new Map<number, string>(
+    [...plantillaHome, ...plantillaAway].map((p) => [p.id, p.name]),
+  );
 
   // Descarta goles anulados/fantasma reconciliando con el marcador real.
   const goals = reconcileGoals(rawGoals, {
@@ -357,6 +360,7 @@ export default async function LigaPartidoPage({
               ? "(p.p.)"
               : "",
         assist: g.assist,
+        playerId: g.playerId ?? null,
       }));
     const rs: Ev[] = cards
       .filter((c) => c.expulsion && c.teamId === teamId)
@@ -366,6 +370,7 @@ export default async function LigaPartidoPage({
         player: c.player,
         tag: /second/i.test(c.detail) ? "(2ª am.)" : "",
         assist: null,
+        playerId: c.playerId ?? null,
       }));
     // Eventos que NO cuentan al marcador: penalti fallado / gol anulado (VAR).
     const ns: Ev[] = notes
@@ -377,6 +382,7 @@ export default async function LigaPartidoPage({
         tag: n.kind === "missed_penalty" ? "(pen. fallado)" : "(gol anulado)",
         assist: null,
         muted: true,
+        playerId: n.playerId ?? null,
       }));
     return [...gs, ...rs, ...ns].sort(
       (a, b) => (a.minute ?? 0) - (b.minute ?? 0),
@@ -436,18 +442,26 @@ export default async function LigaPartidoPage({
           minuto: g.minute,
           equipoId:
             g.detail === "Own Goal" ? (g.teamId === home.id ? away.id : home.id) : g.teamId,
-          jugador: g.player,
+          jugador: nombreConocido(g.player, g.playerId, nombrePlantilla),
           tipo: g.detail,
         })),
         expulsiones: cards
           .filter((c) => c.expulsion)
-          .map((c) => ({ minuto: c.minute, equipoId: c.teamId, jugador: c.player })),
+          .map((c) => ({
+            minuto: c.minute,
+            equipoId: c.teamId,
+            jugador: nombreConocido(c.player, c.playerId, nombrePlantilla),
+          })),
         posesion: par("Ball Possession"),
         tiros: par("Total Shots"),
         tirosPuerta: par("Shots on Goal"),
         xg: par("expected_goals"),
         mejor: mejor
-          ? { nombre: mejor.p.name, equipoId: mejor.equipoId, nota: mejor.p.rating! }
+          ? {
+              nombre: nombreConocido(mejor.p.name, mejor.p.id, nombrePlantilla),
+              equipoId: mejor.equipoId,
+              nota: mejor.p.rating!,
+            }
           : null,
       }
     : null;
@@ -479,20 +493,8 @@ export default async function LigaPartidoPage({
           </Link>
 
           <div className="panel" style={{ marginTop: 16, padding: "24px 20px" }}>
-            <div className="match__meta" style={{ marginBottom: 14 }}>
+            <div className="match__meta" style={{ marginBottom: 14, justifyContent: "center" }}>
               <span className="match__grp">{roundLabelEs(fx.league.round, competition.name)}</span>
-              {live ? (
-                <span className="badge badge--danger">
-                  <span className="livepulse" />
-                  {fx.fixture.status.elapsed != null
-                    ? `${fx.fixture.status.elapsed}'`
-                    : "EN VIVO"}
-                </span>
-              ) : final ? (
-                <span className="badge">Final</span>
-              ) : (
-                <span className="match__when">Por jugarse</span>
-              )}
             </div>
 
             <div
@@ -503,33 +505,36 @@ export default async function LigaPartidoPage({
                 gap: 12,
               }}
             >
-              <div>
-                <TeamHead competition={competition} team={home} winner={home.winner} puesto={puestoHome} />
-                <EvList lines={homeLines} align="left" />
+              <TeamHead competition={competition} team={home} winner={home.winner} puesto={puestoHome} />
+              <div style={{ textAlign: "center", paddingTop: 10 }}>
+                <div className="display" style={{ fontSize: "2.8rem", whiteSpace: "nowrap", lineHeight: 1 }}>
+                  {played ? (
+                    <>
+                      {fx.goals.home ?? 0}
+                      <span style={{ color: "var(--text-dim)", margin: "0 10px" }}>–</span>
+                      {fx.goals.away ?? 0}
+                    </>
+                  ) : (
+                    <span style={{ color: "var(--text-dim)", fontSize: "1.4rem" }}>VS</span>
+                  )}
+                </div>
+                <p style={{ marginTop: 12, fontSize: "0.85rem", color: live ? "var(--danger, #ff5a6a)" : "var(--text-dim)" }}>
+                  {live ? (
+                    <>
+                      <span className="livepulse" />{" "}
+                      {fx.fixture.status.elapsed != null ? `${fx.fixture.status.elapsed}'` : "En vivo"}
+                    </>
+                  ) : final ? (
+                    "Finalizado"
+                  ) : (
+                    "Por jugarse"
+                  )}
+                </p>
               </div>
-              <div
-                className="display"
-                style={{ fontSize: "2.6rem", whiteSpace: "nowrap", paddingTop: 8 }}
-              >
-                {played ? (
-                  <>
-                    {fx.goals.home ?? 0}
-                    <span style={{ color: "var(--text-dim)", margin: "0 10px" }}>
-                      –
-                    </span>
-                    {fx.goals.away ?? 0}
-                  </>
-                ) : (
-                  <span style={{ color: "var(--text-dim)", fontSize: "1.4rem" }}>
-                    VS
-                  </span>
-                )}
-              </div>
-              <div>
-                <TeamHead competition={competition} team={away} winner={away.winner} puesto={puestoAway} />
-                <EvList lines={awayLines} align="right" />
-              </div>
+              <TeamHead competition={competition} team={away} winner={away.winner} puesto={puestoAway} />
             </div>
+
+            <Cronologia home={homeLines} away={awayLines} nombres={nombrePlantilla} />
 
             {!played && (
               <div style={{ marginTop: 18 }}>
@@ -615,8 +620,9 @@ export default async function LigaPartidoPage({
                   homePlayers={homePlayers}
                   awayPlayers={awayPlayers}
                   rows={rows}
-                  homeGoals={homeLines.filter((e) => e.icon === "⚽").map((e) => ({ minute: e.minute, player: e.player, tag: e.tag }))}
-                  awayGoals={awayLines.filter((e) => e.icon === "⚽").map((e) => ({ minute: e.minute, player: e.player, tag: e.tag }))}
+                  homeLines={homeLines}
+                  awayLines={awayLines}
+                  nombres={nombrePlantilla}
                   subs={subEvents}
                   statusLabel={
                     live
@@ -727,7 +733,14 @@ function TeamHead({
         color: "inherit",
       }}
     >
-      <Image src={team.logo} alt="" width={48} height={48} unoptimized />
+      <Image
+        src={team.logo}
+        alt=""
+        width={60}
+        height={60}
+        unoptimized
+        style={{ width: 60, height: 60, objectFit: "contain" }}
+      />
       <span style={{ fontWeight: 700, textAlign: "center", fontSize: "0.95rem" }}>
         {team.name}
       </span>
@@ -743,66 +756,6 @@ function TeamHead({
   );
 }
 
-function EvList({ lines, align }: { lines: Ev[]; align: "left" | "right" }) {
-  if (lines.length === 0) return null;
-  const right = align === "right";
-  return (
-    <div style={{ marginTop: 12, display: "grid", gap: 4 }}>
-      {lines.map((e, i) => (
-        <div
-          key={i}
-          style={{
-            display: "flex",
-            gap: 6,
-            alignItems: "baseline",
-            justifyContent: right ? "flex-end" : "flex-start",
-            flexWrap: "wrap",
-            fontSize: "0.84rem",
-            textAlign: right ? "right" : "left",
-            opacity: e.muted ? 0.6 : 1,
-          }}
-        >
-          {right ? (
-            <>
-              <Name e={e} />
-              <Min minute={e.minute} />
-              <span>{e.icon}</span>
-            </>
-          ) : (
-            <>
-              <span>{e.icon}</span>
-              <Min minute={e.minute} />
-              <Name e={e} />
-            </>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Min({ minute }: { minute: number | null }) {
-  return (
-    <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.74rem" }}>
-      {minute != null ? `${minute}'` : ""}
-    </span>
-  );
-}
-
-function Name({ e }: { e: Ev }) {
-  return (
-    <span>
-      {e.player}
-      {e.tag ? <span style={{ color: "var(--text-dim)" }}> {e.tag}</span> : null}
-      {e.assist ? (
-        <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
-          {" "}
-          · {e.assist}
-        </span>
-      ) : null}
-    </span>
-  );
-}
 
 const AWAY_COLOR = "#ff5b8a";
 

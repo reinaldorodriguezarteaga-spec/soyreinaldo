@@ -14,7 +14,11 @@ export default function MatchCronica({ datos }: { datos: DatosCronica }) {
         <span className="sh-note">en datos</span>
       </div>
       <div className="panel" style={{ padding: 20 }}>
-        <p style={{ margin: 0, lineHeight: 1.6 }}>{frases.join(" ")}</p>
+        {frases.map((f, i) => (
+          <p key={i} style={{ margin: i === 0 ? 0 : "12px 0 0", lineHeight: 1.6, fontWeight: i === 0 ? 600 : 400 }}>
+            {f}
+          </p>
+        ))}
       </div>
     </div>
   );
