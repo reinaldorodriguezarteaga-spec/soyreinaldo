@@ -6,6 +6,7 @@ import ProfileForm from "./profile-form";
 import DeleteAccount from "./delete-account";
 import { setReminders } from "./actions";
 import GoalAlerts from "@/components/GoalAlerts";
+import AvisosApp from "@/components/AvisosApp";
 import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
@@ -20,6 +21,16 @@ export default async function PerfilPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?redirect=/perfil");
+
+  // Avisos de la app: dependen de los equipos favoritos.
+  const { count: favoritosEquipo } = inApp
+    ? await supabase
+        .from("user_favorites")
+        .select("ref_id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("kind", "team")
+    : { count: 0 };
+  const tieneFavoritos = (favoritosEquipo ?? 0) > 0;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -179,7 +190,7 @@ export default async function PerfilPage() {
           )}
           {/* Los avisos de gol son Web Push: dentro de la app no funcionan
               y pedirían añadir la web a la pantalla de inicio. */}
-          {!inApp && <GoalAlerts />}
+          {inApp ? <AvisosApp tieneFavoritos={tieneFavoritos} /> : <GoalAlerts />}
         </div>
       </section>
     </main>

@@ -7,6 +7,7 @@ import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
 import InstallBanner from "@/components/InstallBanner";
+import PuenteAvisosApp from "@/components/PuenteAvisosApp";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
@@ -178,6 +179,8 @@ export default async function RootLayout({
             cargar y se va con el scroll como cualquier otro contenido —
             nada compite con el banner de cookies, que sí es fixed abajo. */}
         {!inApp && <InstallBanner />}
+        {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
+        {inApp && <PuenteAvisosApp conSesion={!!user} />}
         <Gestures />
         <BackButton />
         {children}

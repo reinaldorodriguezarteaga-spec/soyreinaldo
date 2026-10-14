@@ -1,9 +1,12 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { enviarApns, type DispositivoApns } from "./apns";
 
 /**
- * Envío de avisos de gol.
+ * Envío de avisos de gol: a los navegadores (Web Push) y, desde la app 1.1,
+ * a los iPhones (APNs, lib/push/apns.ts). Los dos canales van por separado:
+ * si falta la clave de uno, el otro sigue saliendo.
  *
  * Las claves VAPID viven en el Vault de Supabase (migración 046), no en
  * variables de entorno: así la privada nunca pasa por un panel ni por el
@@ -88,18 +91,32 @@ export async function notificarEquipo(
   payload: PushPayload,
 ): Promise<number> {
   const supabase = admin();
-  if (!supabase || !(await configurar())) return 0;
-  // Varios equipos (los dos de un partido): cada dispositivo una sola vez,
-  // aunque tenga a los dos en favoritos.
-  const porEndpoint = new Map<string, Destino>();
-  for (const id of Array.isArray(teamIds) ? teamIds : [teamIds]) {
-    const { data } = await supabase.rpc("push_targets_for_team", {
-      p_team_id: String(id),
-    });
-    for (const d of (data ?? []) as Destino[]) porEndpoint.set(d.endpoint, d);
+  if (!supabase) return 0;
+  const ids = Array.isArray(teamIds) ? teamIds : [teamIds];
+  let total = 0;
+
+  // Web Push. Varios equipos (los dos de un partido): cada dispositivo una
+  // sola vez, aunque tenga a los dos en favoritos.
+  if (await configurar()) {
+    const porEndpoint = new Map<string, Destino>();
+    for (const id of ids) {
+      const { data } = await supabase.rpc("push_targets_for_team", {
+        p_team_id: String(id),
+      });
+      for (const d of (data ?? []) as Destino[]) porEndpoint.set(d.endpoint, d);
+    }
+    // 15 min: un gol de hace media hora ya no es noticia.
+    total += await enviar(supabase, [...porEndpoint.values()], payload, 900);
   }
-  // 15 min: un gol de hace media hora ya no es noticia.
-  return enviar(supabase, [...porEndpoint.values()], payload, 900);
+
+  // iPhones (app 1.1).
+  const porToken = new Map<string, DispositivoApns>();
+  for (const id of ids) {
+    const { data } = await supabase.rpc("apns_targets_for_team", { p_team_id: String(id) });
+    for (const d of (data ?? []) as DispositivoApns[]) porToken.set(d.token, d);
+  }
+  total += await enviarApns(supabase, [...porToken.values()], payload, 900);
+  return total;
 }
 
 /** Avisa a TODOS los dispositivos de un usuario (recordatorio de la quiniela). */
@@ -109,10 +126,19 @@ export async function notificarUsuario(
   ttl = 6 * 3600,
 ): Promise<number> {
   const supabase = admin();
-  if (!supabase || !(await configurar())) return 0;
-  const { data } = await supabase
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth")
+  if (!supabase) return 0;
+  let total = 0;
+  if (await configurar()) {
+    const { data } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", userId);
+    total += await enviar(supabase, (data ?? []) as Destino[], payload, ttl);
+  }
+  const { data: iphones } = await supabase
+    .from("push_dispositivos")
+    .select("token, entorno")
     .eq("user_id", userId);
-  return enviar(supabase, (data ?? []) as Destino[], payload, ttl);
+  total += await enviarApns(supabase, (iphones ?? []) as DispositivoApns[], payload, ttl);
+  return total;
 }
