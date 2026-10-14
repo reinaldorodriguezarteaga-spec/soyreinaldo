@@ -22,6 +22,7 @@ export type CompetitionRegion =
   | "Francia"
   | "México"
   | "Argentina"
+  | "Conmebol"
   | "EE. UU. y Canadá"
   | "Concacaf"
   | "Arabia Saudí"
@@ -346,6 +347,32 @@ export const LIGA_ARGENTINA: Competition = {
   anual: true,
 };
 
+/**
+ * Copa Libertadores (14-oct-2026, pedido del dueño). Verificado contra el
+ * API: id 13, season 2026 en curso (fase previa, 8 grupos de 4 —se pintan
+ * por grupo— y eliminatorias). Sin filtro en la portada: la competición
+ * entera es lo que interesa.
+ */
+const LIBERTADORES_KO_STRUCTURE: KoStructureEntry[] = [
+  { label: "Octavos", re: /Round of 16/i, slots: 8 },
+  { label: "Cuartos", re: /Quarter/i, slots: 4 },
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+export const LIBERTADORES: Competition = {
+  slug: "libertadores",
+  leagueId: 13,
+  season: 2026,
+  name: "Copa Libertadores",
+  standingsMode: "table",
+  koStructure: LIBERTADORES_KO_STRUCTURE,
+  archivedSeasons: [2025],
+  region: "Conmebol",
+  officialUrl: "https://www.conmebol.com/libertadores/",
+  anual: true,
+};
+
 /** MLS: dos conferencias (Este y Oeste), se pintan por grupo. */
 export const MLS: Competition = {
   slug: "mls",
@@ -365,7 +392,8 @@ export const MLS: Competition = {
  * Copas de los equipos de la MLS (13-oct-2026, pedido del dueño). Ids y
  * temporadas verificados contra el API. Son torneos de eliminatorias: sin
  * tabla. Las ya terminadas enseñan su última edición; el vigilante avisa
- * cuando el API publique la siguiente.
+ * cuando el API publique la siguiente. La Canadian Championship se quitó el
+ * 14-oct (decisión del dueño: no interesa a la audiencia).
  */
 const MLS_GRANDES = [9568, 1605, 1616]; // Inter Miami, LA Galaxy, LAFC
 const MX_GRANDES = [2287, 2278, 2295, 2286, 2279, 2282];
@@ -381,21 +409,6 @@ export const US_OPEN_CUP: Competition = {
   region: "EE. UU. y Canadá",
   officialUrl: "https://www.ussoccer.com/us-open-cup",
   calendarOnlyTeamIds: MLS_GRANDES,
-  anual: true,
-};
-
-/** Canadian Championship (copa de Canadá): 2026 hasta el 21-oct. */
-export const CANADIAN_CHAMPIONSHIP: Competition = {
-  slug: "canadian-championship",
-  leagueId: 259,
-  season: 2026,
-  name: "Canadian Championship",
-  standingsMode: "none",
-  archivedSeasons: [2025],
-  region: "EE. UU. y Canadá",
-  officialUrl: "https://canadasoccer.com",
-  // Toronto FC, Vancouver Whitecaps, CF Montréal
-  calendarOnlyTeamIds: [1601, 1603, 1614],
   anual: true,
 };
 
@@ -442,6 +455,8 @@ export const CAMPEONES_CUP: Competition = {
   anual: true,
 };
 
+const SAUDI_GRANDES = [2939, 2932, 2938]; // Al-Nassr, Al-Hilal, Al-Ittihad
+
 /** Liga saudí (Saudi Pro League): season 2026 = 2026-27. Una tabla de 18. */
 export const LIGA_SAUDI: Competition = {
   slug: "liga-saudi",
@@ -452,8 +467,66 @@ export const LIGA_SAUDI: Competition = {
   archivedSeasons: [2025],
   region: "Arabia Saudí",
   officialUrl: "https://www.spl.com.sa",
-  // Al-Nassr, Al-Hilal, Al-Ittihad
-  calendarOnlyTeamIds: [2939, 2932, 2938],
+  calendarOnlyTeamIds: SAUDI_GRANDES,
+};
+
+/*
+ * Copas del Al-Nassr de Cristiano (14-oct-2026, pedido del dueño). Sacadas
+ * de `/leagues?team=2939` y verificadas contra el API ese día. En la
+ * portada, como la liga, solo los tres grandes.
+ */
+
+/** AFC Champions League Elite 2026-27: fase de liga en dos tablas (Oeste y
+ * Este, 16 cada una; se pintan por grupo) y eliminatorias. En el API la
+ * final se llama "Finals" (edición 2024-25). */
+export const AFC_CHAMPIONS_LEAGUE: Competition = {
+  slug: "afc-champions-league",
+  leagueId: 17,
+  season: 2026,
+  name: "AFC Champions League Elite",
+  standingsMode: "table",
+  koStructure: [
+    { label: "Octavos", re: /Round of 16/i, slots: 8 },
+    { label: "Cuartos", re: /Quarter/i, slots: 4 },
+    { label: "Semifinales", re: /Semi/i, slots: 2 },
+    { label: "Final", re: /^Finals?$/i, slots: 1 },
+  ],
+  archivedSeasons: [2025],
+  region: "Arabia Saudí",
+  officialUrl: "https://www.the-afc.com",
+  calendarOnlyTeamIds: SAUDI_GRANDES,
+};
+
+/** King's Cup (copa del Rey saudí). ⚠️ El API numera la temporada por el
+ * año en que TERMINA: la 2026-27 es season 2027. Por eso `edicion` y sin
+ * temporadas archivadas (el selector las escribiría un año desplazadas). */
+export const KINGS_CUP: Competition = {
+  slug: "kings-cup",
+  leagueId: 504,
+  season: 2027,
+  name: "King's Cup",
+  standingsMode: "none",
+  koStructure: CUP_KO_STRUCTURE,
+  region: "Arabia Saudí",
+  officialUrl: "https://www.saff.com.sa",
+  calendarOnlyTeamIds: SAUDI_GRANDES,
+  edicion: "2026-27",
+};
+
+/** Supercopa saudí: semis y final en agosto. Igual que la King's Cup, la
+ * season es el año en que termina la temporada: la última (ago-2025, final
+ * Al-Nassr–Al-Ahli a penaltis) es la 2026; la siguiente aún no está
+ * publicada y el vigilante avisará. */
+export const SUPERCOPA_SAUDI: Competition = {
+  slug: "supercopa-saudi",
+  leagueId: 826,
+  season: 2026,
+  name: "Supercopa saudí",
+  standingsMode: "none",
+  koStructure: SUPERCOPA_KO_STRUCTURE,
+  region: "Arabia Saudí",
+  officialUrl: "https://www.saff.com.sa",
+  edicion: "2025",
 };
 
 /** Nations League 2026-27 (24-sep → 17-nov-2026): 14 grupos repartidos en
@@ -541,13 +614,16 @@ export const COMPETITIONS: Competition[] = [
   LIGUE_1,
   LIGA_MX,
   LIGA_ARGENTINA,
+  LIBERTADORES,
   MLS,
   US_OPEN_CUP,
-  CANADIAN_CHAMPIONSHIP,
   LEAGUES_CUP,
   CONCACAF_CHAMPIONS_CUP,
   CAMPEONES_CUP,
   LIGA_SAUDI,
+  AFC_CHAMPIONS_LEAGUE,
+  KINGS_CUP,
+  SUPERCOPA_SAUDI,
   NATIONS_LEAGUE,
   ELIMINATORIAS_CONMEBOL,
   ELIMINATORIAS_UEFA,
@@ -573,6 +649,7 @@ const REGION_ORDER: CompetitionRegion[] = [
   "Selecciones",
   "México",
   "Argentina",
+  "Conmebol",
   "EE. UU. y Canadá",
   "Concacaf",
   "Arabia Saudí",
