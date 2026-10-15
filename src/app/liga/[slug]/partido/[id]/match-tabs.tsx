@@ -11,6 +11,7 @@
  * competición). Previa y H2H se cargan bajo demanda al abrir su pestaña.
  */
 
+import { IconoBalon, IconoBota, IconoPenaltiFallado } from "@/components/IconosPartido";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -309,11 +310,15 @@ function EventIcon({ kind }: { kind: TimelineEvent["kind"] }) {
       />
     );
   }
+  // Mismos iconos que el campo y la cabecera (IconosPartido).
+  if (kind === "goal" || kind === "penalty_goal") {
+    return <span style={{ flexShrink: 0, display: "inline-flex" }}><IconoBalon size={17} /></span>;
+  }
+  if (kind === "missed_penalty") {
+    return <span style={{ flexShrink: 0, display: "inline-flex" }}><IconoPenaltiFallado size={18} /></span>;
+  }
   const map: Record<string, string> = {
-    goal: "⚽",
-    penalty_goal: "⚽",
     own_goal: "🥅",
-    missed_penalty: "❌",
     var_disallowed: "🚫",
     sub: "🔄",
   };
@@ -323,7 +328,7 @@ function EventIcon({ kind }: { kind: TimelineEvent["kind"] }) {
 function eventLabel(ev: TimelineEvent): { title: string; sub: string | null } {
   switch (ev.kind) {
     case "goal":
-      return { title: ev.player ?? "Gol", sub: ev.detail ? `asist. ${ev.detail}` : "Gol" };
+      return { title: ev.player ?? "Gol", sub: ev.detail ? ev.detail : "Gol" };
     case "penalty_goal":
       return { title: ev.player ?? "Gol", sub: "Gol de penalti" };
     case "own_goal":
@@ -364,7 +369,19 @@ function TimelineRow({ ev, homeId }: { ev: TimelineEvent; homeId: number }) {
           {title}
         </b>
         {sub && (
-          <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>{sub}</span>
+          <span
+            style={{
+              fontSize: "0.72rem",
+              color: "var(--text-dim)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {/* La asistencia, con su bota. */}
+            {ev.kind === "goal" && ev.detail && <IconoBota size={12} />}
+            {sub}
+          </span>
         )}
       </span>
     </div>

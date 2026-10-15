@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { MarcasJugador } from "@/components/IconosPartido";
 import Cronologia, { type Ev } from "./cronologia";
 import {
   subKey,
@@ -41,6 +42,9 @@ type Chip = {
   photo: string | null;
   rating: number | null;
   goals: number;
+  assists: number;
+  penMissed: number;
+  penSaved: number;
   yellow: number;
   red: number;
   /** minuto en que salió (sustituido), o null si jugó hasta el final */
@@ -58,6 +62,8 @@ type Entrada = {
   rating: number | null;
   goals: number;
   assists: number;
+  penMissed: number;
+  penSaved: number;
   yellow: number;
   red: number;
 };
@@ -240,6 +246,9 @@ function onceInicial(
       photo: pr?.photo ?? null,
       rating: pr?.rating ?? null,
       goals: pr?.goals ?? 0,
+      assists: pr?.assists ?? 0,
+      penMissed: pr?.stats.penMissed ?? 0,
+      penSaved: pr?.stats.penSaved ?? 0,
       yellow: pr?.stats.yellow ?? 0,
       red: pr?.stats.red ?? 0,
       subbedOut: subs.find((s) => sale(s, lp))?.minute ?? null,
@@ -277,6 +286,8 @@ function entradas(
         rating: pr?.rating ?? null,
         goals: pr?.goals ?? 0,
         assists: pr?.assists ?? 0,
+        penMissed: pr?.stats.penMissed ?? 0,
+        penSaved: pr?.stats.penSaved ?? 0,
         yellow: pr?.stats.yellow ?? 0,
         red: pr?.stats.red ?? 0,
       };
@@ -339,8 +350,7 @@ function ListaEntradas({ lista, lado }: { lista: Entrada[]; lado: "home" | "away
             {e.porQuien && <small>por {apellido(e.porQuien)}</small>}
           </span>
           <span className="ficha__entdatos">
-            {e.goals > 0 && <span title="Goles">⚽{e.goals > 1 ? e.goals : ""}</span>}
-            {e.assists > 0 && <span title="Asistencias">🅰️{e.assists > 1 ? e.assists : ""}</span>}
+            <MarcasJugador goals={e.goals} assists={e.assists} penMissed={e.penMissed} penSaved={e.penSaved} size={13} />
             {e.red > 0 ? (
               <span className="ficha__card ficha__card--inline ficha__card--red" />
             ) : e.yellow > 0 ? (
@@ -384,7 +394,9 @@ function PlayerChip({ p, x, y }: { p: Chip; x: number; y: number }) {
         ) : p.yellow > 0 ? (
           <span className="ficha__card" />
         ) : null}
-        {p.goals > 0 && <span className="ficha__goalmark">⚽{p.goals > 1 ? p.goals : ""}</span>}
+        <span className="ficha__marcas">
+          <MarcasJugador goals={p.goals} assists={p.assists} penMissed={p.penMissed} penSaved={p.penSaved} size={12} badge />
+        </span>
         {p.subbedOut != null && (
           <span className="ficha__submark ficha__submark--out">▼{p.subbedOut}&apos;</span>
         )}

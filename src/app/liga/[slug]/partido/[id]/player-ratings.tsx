@@ -8,6 +8,7 @@
  */
 
 import Image from "next/image";
+import { MarcasJugador } from "@/components/IconosPartido";
 import { useEffect, useState } from "react";
 import { enCambios, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
 
@@ -91,9 +92,10 @@ function highlights(e: Entry, maxRating: number, maxShots: number): string[] {
   return out;
 }
 
+/** Tarjeta (abajo a la izquierda). Goles, asistencias y penaltis van en las
+ * insignias de MarcasJugador (abajo a la derecha). */
 function playerMark(p: PlayerRating | undefined): string | null {
   if (!p) return null;
-  if (p.goals > 0) return "⚽";
   if (p.stats.red > 0) return "🟥";
   if (p.stats.yellow > 0) return "🟨";
   return null;
@@ -269,6 +271,18 @@ function PitchNode({
           </span>
         )}
         {mark && <span className="pmk">{mark}</span>}
+        {pr && (
+          <span className="ficha__marcas">
+            <MarcasJugador
+              goals={pr.goals}
+              assists={pr.assists}
+              penMissed={pr.stats.penMissed}
+              penSaved={pr.stats.penSaved}
+              size={12}
+              badge
+            />
+          </span>
+        )}
       </span>
       <span className="pname">
         {lp.number ? `${lp.number} ` : ""}
@@ -466,8 +480,14 @@ function ListView({
                 <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "left" }}>
                   {p.name}
                   {p.captain ? <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}> (C)</span> : null}
-                  {p.goals > 0 ? <span> {"⚽".repeat(p.goals)}</span> : null}
-                  {p.assists > 0 ? <span style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}> · {p.assists}A</span> : null}
+                  {" "}
+                  <MarcasJugador
+                    goals={p.goals}
+                    assists={p.assists}
+                    penMissed={p.stats.penMissed}
+                    penSaved={p.stats.penSaved}
+                    size={13}
+                  />
                 </span>
                 <RatingBadge rating={p.rating} />
               </button>
