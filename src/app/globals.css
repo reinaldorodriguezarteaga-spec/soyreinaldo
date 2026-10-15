@@ -712,6 +712,18 @@ img {
 }
 .field:focus { outline: none; border-color: var(--accent); }
 .field::placeholder { color: var(--text-dim); }
+/* iOS amplía la página al tocar un campo con letra de menos de 16px y se
+   queda ampliada: tras iniciar sesión en la app, la página se movía hacia
+   los lados (15-oct). En táctil, todos los campos a 16px. Sin
+   maximum-scale en el viewport: el zoom con dos dedos se respeta. Los :not
+   suben la especificidad por encima de .field y de las clases de tamaño. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select:not([multiple]),
+  textarea:not([rows="0"]) {
+    font-size: 16px;
+  }
+}
 .dona__note { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 0.78rem; margin-top: 14px; }
 
 .foot { border-top: 1px solid var(--line); padding: clamp(56px, 7vw, 96px) 0 40px; }
