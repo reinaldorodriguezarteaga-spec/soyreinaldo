@@ -1,5 +1,6 @@
 import type React from "react";
 import { nombreCorto } from "@/lib/sports/nombres";
+import { IconoBalon, IconoPenaltiFallado } from "@/components/IconosPartido";
 
 /** Un evento bajo el marcador (gol, expulsión, penalti fallado, gol anulado). */
 export type Ev = {
@@ -75,16 +76,6 @@ function seccionesCrono(lines: Ev[], nombres: Map<number, string>) {
   };
 }
 
-/** Portería pequeña con una X roja: penalti fallado. */
-function IconoPenaltiFallado() {
-  return (
-    <svg width="20" height="16" viewBox="0 0 20 16" aria-label="Penalti fallado" role="img">
-      <path d="M2 15V3h16v12" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M2 7h16M2 11h16M7 3v12M13 3v12" stroke="currentColor" strokeWidth="0.6" opacity="0.5" />
-      <path d="M6 5l8 8M14 5l-8 8" stroke="#ff4d5e" strokeWidth="2.2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default function Cronologia({
   home,
@@ -102,8 +93,8 @@ export default function Cronologia({
   const h = seccionesCrono(home, nombres);
   const a = seccionesCrono(away, nombres);
   const filas: { key: string; icono: React.ReactNode; h: LineaCrono[]; a: LineaCrono[] }[] = [
-    { key: "goles", icono: <span aria-label="Goles">⚽</span>, h: h.goles, a: a.goles },
-    { key: "fallados", icono: <IconoPenaltiFallado />, h: h.fallados, a: a.fallados },
+    { key: "goles", icono: <IconoBalon size={16} title="Goles" />, h: h.goles, a: a.goles },
+    { key: "fallados", icono: <IconoPenaltiFallado size={18} />, h: h.fallados, a: a.fallados },
     { key: "rojas", icono: <span aria-label="Expulsiones">🟥</span>, h: h.rojas, a: a.rojas },
   ].filter((f) => f.h.length > 0 || f.a.length > 0);
   if (filas.length === 0) return null;

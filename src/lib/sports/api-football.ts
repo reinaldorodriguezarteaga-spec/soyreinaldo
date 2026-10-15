@@ -329,6 +329,12 @@ async function rawGetConReintentos<T>(
   }
 }
 
+/** "O&apos;Toole" → "O'Toole" en el texto crudo de la respuesta. Solo las
+ * entidades que no rompen el JSON (nada de &quot;). */
+export function desentidades(texto: string): string {
+  return texto.replace(/&apos;|&#0?39;/g, "'").replace(/&amp;/g, "&");
+}
+
 /** Una sola petición. `ok: false` = la API pide que esperemos (rate limit). */
 async function unIntento<T>(
   url: string,
@@ -359,7 +365,10 @@ async function unIntento<T>(
   if (res.status === 429) return { ok: false, http429: true, json: { response: [], errors: {} } };
   if (!res.ok) throw new Error(`apif http ${res.status} ${path}`);
 
-  const json = (await res.json()) as { response: T[]; errors: unknown };
+  // La API manda algunos nombres con el apóstrofo como entidad HTML
+  // ("O&apos;Toole"). Se arregla aquí, en el texto: dentro de un JSON el
+  // apóstrofo no necesita escaparse.
+  const json = JSON.parse(desentidades(await res.text())) as { response: T[]; errors: unknown };
   const errs = json.errors;
 
   // La API contesta 200 con `errors.rateLimit` cuando vamos demasiado rápido.
@@ -1875,6 +1884,9 @@ export type PlayerMatchStats = {
   saves: number | null;
   yellow: number;
   red: number;
+  /** Penaltis fallados por el jugador y parados (portero). */
+  penMissed: number;
+  penSaved: number;
 };
 
 /** Valoración (y datos) de un jugador en un partido. */
@@ -1917,6 +1929,7 @@ type RawPlayerStat = {
   dribbles: { attempts: number | null; success: number | null };
   fouls: { drawn: number | null; committed: number | null };
   cards: { yellow: number | null; red: number | null };
+  penalty?: { missed: number | null; saved: number | null } | null;
 };
 
 type FixturePlayersResponse = {
@@ -1980,6 +1993,8 @@ export async function getFixturePlayers(
             saves: numOrNull(s?.goals.saves),
             yellow: s?.cards.yellow ?? 0,
             red: s?.cards.red ?? 0,
+            penMissed: s?.penalty?.missed ?? 0,
+            penSaved: s?.penalty?.saved ?? 0,
           },
         };
       })
