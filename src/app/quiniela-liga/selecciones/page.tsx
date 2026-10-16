@@ -10,6 +10,7 @@ import {
 } from "@/lib/quiniela-liga/leagues";
 import LeagueSwitcher from "../league-switcher";
 import { getBaremoDeLiga } from "@/lib/quiniela-liga/baremo";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Selecciones · Quiniela LaLiga 2026-27 | Soy Reinaldo",
@@ -116,9 +117,11 @@ export default async function QuinielaLigaSeleccionesPage({
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 16 }}>
         <div className="wrap">
           <p className="eyebrow">
-            {active && !active.isPublic
-              ? `${active.name} · LaLiga 2026-27`
-              : "Quiniela · LaLiga 2026-27"}
+            <T>
+              {active && !active.isPublic
+                ? `${active.name} · LaLiga 2026-27`
+                : "Quiniela · LaLiga 2026-27"}
+            </T>
           </p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.2rem)" }}>
             Selecciones

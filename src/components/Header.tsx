@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import UserMenu from "./UserMenu";
+import { T } from "@/components/EnApp";
 import { COMPETITION_GROUPS } from "@/lib/sports/competitions";
 
 const PRODUCTOS = [
@@ -219,7 +220,7 @@ export default function Header({
                   href={n.href}
                   className={isActive(n.href) ? "is-active" : ""}
                 >
-                  {n.label}
+                  <T>{n.label}</T>
                 </Link>
               ))}
 
@@ -360,7 +361,7 @@ export default function Header({
 
                 {NAV_LINKS.map((n) => (
                   <MobileLink key={n.href} href={n.href}>
-                    {n.label}
+                    <T>{n.label}</T>
                   </MobileLink>
                 ))}
 

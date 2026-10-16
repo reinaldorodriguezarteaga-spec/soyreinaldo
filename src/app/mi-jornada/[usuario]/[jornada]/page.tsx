@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tarjetaJornada } from "@/lib/quiniela-liga/jornada-datos";
 import Compartir from "./compartir";
+import { T } from "@/components/EnApp";
 
 const SITE = "https://www.soyreinaldo.com";
 
@@ -75,7 +76,7 @@ export default async function MiJornada({ params }: Props) {
           </p>
           <p style={{ margin: "10px 0 0" }}>
             <Link href="/quiniela-liga" className="btn btn--accent">
-              Jugar a la quiniela <span className="arr">→</span>
+              <T>Jugar a la quiniela</T> <span className="arr">→</span>
             </Link>
           </p>
         </div>

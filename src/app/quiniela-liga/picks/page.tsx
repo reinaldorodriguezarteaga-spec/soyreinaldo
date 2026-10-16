@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PicksForm, { type PickTeam } from "./picks-form";
 import MidseasonPicksForm from "./midseason-picks-form";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Selecciones especiales · Quiniela LaLiga 2026-27 | Soy Reinaldo",
@@ -75,7 +76,7 @@ export default async function QuinielaLigaPicksPage() {
     <main className="page">
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 20 }}>
         <div className="wrap">
-          <p className="eyebrow">Quiniela · LaLiga 2026-27</p>
+          <p className="eyebrow"><T>Quiniela · LaLiga 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.4rem)" }}>
             Selecciones especiales
           </h1>

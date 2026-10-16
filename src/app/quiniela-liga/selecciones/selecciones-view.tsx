@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { puntosPronostico, type Baremo } from "@/lib/quiniela-liga/scoring";
+import { T } from "@/components/EnApp";
 
 /**
  * Vista "Selecciones" de la quiniela de clubes: por cada partido ya empezado
@@ -55,7 +56,7 @@ export default function SeleccionesView({
   /** Normas de la liga ACTIVA — cada quiniela puntúa con las suyas. */
   baremo: Baremo;
 }) {
-  if (members.length === 0) return <EmptyPanel>Aún no hay nadie en la quiniela.</EmptyPanel>;
+  if (members.length === 0) return <EmptyPanel><T>Aún no hay nadie en la quiniela.</T></EmptyPanel>;
   if (matches.length === 0) {
     return (
       <EmptyPanel>

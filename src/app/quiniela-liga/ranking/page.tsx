@@ -12,6 +12,7 @@ import {
   type FilaHistorial,
 } from "@/lib/quiniela-liga/rachas";
 import DuelosVista from "./duelos-vista";
+import { T } from "@/components/EnApp";
 
 const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
 
@@ -173,7 +174,7 @@ export default async function QuinielaLigaRankingPage({
             Clasificación
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            {active && !active.isPublic ? `${active.name} · ` : ""}
+            <T>{active && !active.isPublic ? `${active.name} · ` : ""}</T>
             LaLiga 2026-27 · {textoBaremo(baremo)}.
           </p>
           {difAnfitrion != null && (

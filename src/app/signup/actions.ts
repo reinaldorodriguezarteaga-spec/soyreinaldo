@@ -136,6 +136,6 @@ export async function signUp(
 
   return {
     status: "success",
-    message: `Te hemos enviado un email a ${email} para confirmar la cuenta. Pulsa el enlace y entrarás a la quiniela.`,
+    message: `Te hemos enviado un email a ${email} para confirmar la cuenta. Pulsa el enlace y ya estarás dentro.`,
   };
 }

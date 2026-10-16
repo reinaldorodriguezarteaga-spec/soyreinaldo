@@ -4,6 +4,7 @@ import { getMyClubLeagues, type ClubLeague } from "@/lib/quiniela-liga/leagues";
 import JoinCodeForm from "./join-code-form";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   alternates: { canonical: "/quiniela-liga" },
@@ -93,13 +94,15 @@ export default async function QuinielaLigaIndex() {
     <main className="page">
       <section className="phero" style={{ paddingBottom: 12 }}>
         <div className="wrap">
-          <p className="eyebrow">Quiniela · LaLiga 2026-27</p>
+          <p className="eyebrow"><T>Quiniela · LaLiga 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)", marginTop: 12 }}>
-            Elige tu quiniela
+            <T>Elige tu quiniela</T>
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            Pronosticas una sola vez: tus marcadores puntúan en todas las
-            quinielas en las que estés, cada una con sus normas.
+            <T>
+              Pronosticas una sola vez: tus marcadores puntúan en todas las
+              quinielas en las que estés, cada una con sus normas.
+            </T>
           </p>
         </div>
       </section>
@@ -112,10 +115,12 @@ export default async function QuinielaLigaIndex() {
 
           {!inPublic && publicLeague && (
             <div className="panel" style={{ padding: 24 }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{publicLeague.name}</h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}><T>{publicLeague.name}</T></h2>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                {publicLeague.description ??
-                  `La general, abierta a todo el mundo. ${textoBaremo(baremo)}.`}
+                <T>
+                  {publicLeague.description ??
+                    `La general, abierta a todo el mundo. ${textoBaremo(baremo)}.`}
+                </T>
               </p>
               <Link
                 href={`/unirse/${encodeURIComponent(publicLeague.code)}`}
@@ -129,7 +134,7 @@ export default async function QuinielaLigaIndex() {
           {featuredPrivate.map((p) => (
             <div key={p.id} className="panel" style={{ padding: 24 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{p.name}</h2>
+                <h2 style={{ margin: 0, fontSize: "1.3rem" }}><T>{p.name}</T></h2>
                 <span
                   style={{
                     fontFamily: "var(--font-mono-stack)",
@@ -145,7 +150,7 @@ export default async function QuinielaLigaIndex() {
                 </span>
               </div>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                {p.description ?? "Quiniela privada de su comunidad."}
+                <T>{p.description ?? "Quiniela privada de su comunidad."}</T>
                 {p.member_count > 0 &&
                   ` · ${p.member_count} ${p.member_count === 1 ? "jugador" : "jugadores"}`}
               </p>
@@ -169,7 +174,7 @@ export default async function QuinielaLigaIndex() {
 
           <div id="codigo" className="panel" style={{ padding: 24, scrollMarginTop: 90 }}>
             <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
-              ¿Te han invitado a una quiniela privada?
+              <T>¿Te han invitado a una quiniela privada?</T>
             </h2>
             <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
               Escribe el código que te han pasado y entras a la de tu comunidad.
@@ -200,7 +205,7 @@ function LeagueCard({
   return (
     <div className="panel" style={{ padding: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0, fontSize: "1.3rem" }}>{league.name}</h2>
+        <h2 style={{ margin: 0, fontSize: "1.3rem" }}><T>{league.name}</T></h2>
         {!league.isPublic && (
           <span
             style={{
@@ -222,8 +227,10 @@ function LeagueCard({
       </div>
 
       <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-        {league.description ??
-          "Marcador exacto y acierto de ganador, más los picks especiales de temporada."}
+        <T>
+          {league.description ??
+            "Marcador exacto y acierto de ganador, más los picks especiales de temporada."}
+        </T>
       </p>
 
       {stats && (

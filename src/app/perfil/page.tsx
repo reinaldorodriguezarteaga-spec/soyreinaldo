@@ -8,6 +8,7 @@ import { setReminders } from "./actions";
 import GoalAlerts from "@/components/GoalAlerts";
 import AvisosApp from "@/components/AvisosApp";
 import { isAppRequest } from "@/lib/is-app";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Perfil | Soy Reinaldo",
@@ -142,9 +143,11 @@ export default async function PerfilPage() {
                 <div className="setting__t">
                   <b>{profile?.wants_reminders ? "Activos" : "Desactivados"}</b>
                   <span>
-                    {profile?.wants_reminders
-                      ? "Recibes los emails de la quiniela."
-                      : "No recibes recordatorios. Puedes activarlos cuando quieras."}
+                    <T>
+                      {profile?.wants_reminders
+                        ? "Recibes los emails de la quiniela."
+                        : "No recibes recordatorios. Puedes activarlos cuando quieras."}
+                    </T>
                   </span>
                 </div>
                 <form action={setReminders}>

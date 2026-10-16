@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { T } from "@/components/EnApp";
 
 const PRESETS_EUR = [3, 5, 10, 25];
 
@@ -63,7 +64,7 @@ export default function DonationCard() {
       </div>
 
       <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-        Tu donación ayuda a mantener viva la web, las quinielas y el contenido.
+        <T>Tu donación ayuda a mantener viva la web, las quinielas y el contenido.</T>
         Sin obligaciones, lo que tú quieras.
       </p>
 

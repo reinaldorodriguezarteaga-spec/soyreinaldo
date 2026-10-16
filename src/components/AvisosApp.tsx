@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { pushNativo, registrarDispositivo } from "@/lib/push/app-nativa";
+import { T } from "@/components/EnApp";
 
 // "cargando" también cubre "sin plugin" (navegador o app 1.0): no se pinta.
 type Estado = "cargando" | "apagado" | "encendido" | "bloqueado";
@@ -61,8 +62,10 @@ export default function AvisosApp({ tieneFavoritos }: { tieneFavoritos: boolean 
     <div className="panel" style={{ padding: 20, marginTop: 20 }}>
       <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}>⚽ Avisos de gol</h2>
       <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.92rem" }}>
-        Te avisamos en cuanto marca un equipo que tengas en favoritos, y te
-        recordamos los pronósticos de la quiniela antes de cada jornada.
+        <T>
+          Te avisamos en cuanto marca un equipo que tengas en favoritos, y te
+          recordamos los pronósticos de la quiniela antes de cada jornada.
+        </T>
       </p>
 
       {!tieneFavoritos && (

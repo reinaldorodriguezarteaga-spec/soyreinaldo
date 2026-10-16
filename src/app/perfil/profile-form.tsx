@@ -28,7 +28,7 @@ export default function ProfileForm({
         minLength={2}
         maxLength={40}
         disabled={pending}
-        hint="Es como apareces en el ranking de la quiniela."
+        hint="Es como apareces en las clasificaciones."
       />
       <Field
         label="Usuario"
