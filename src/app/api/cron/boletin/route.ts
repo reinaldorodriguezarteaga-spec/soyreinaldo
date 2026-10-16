@@ -2,8 +2,19 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { ANFITRION_ID } from "@/lib/quiniela-liga/anfitrion";
-import { boletinConContenido, emailBoletin, type PartidoBoletin } from "@/lib/boletin/boletin";
-import { teamFixturesNextCacheKey, type Fixture } from "@/lib/sports/api-football";
+import {
+  boletinConContenido,
+  emailBoletin,
+  type EquipoBoletin,
+  type PartidoBoletin,
+} from "@/lib/boletin/boletin";
+import { equipoBoletin } from "@/lib/boletin/equipos";
+import {
+  getTeamFixtures,
+  teamFixturesLastCacheKey,
+  teamFixturesNextCacheKey,
+  type Fixture,
+} from "@/lib/sports/api-football";
 import { COMPETITIONS, FEATURED_TEAMS } from "@/lib/sports/competitions";
 import { conTildes } from "@/lib/sports/nombres";
 import { readCache } from "@/lib/sports/sports-cache";
@@ -27,6 +38,10 @@ export const maxDuration = 300;
 const PUBLICA = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 const MAX_POR_VUELTA = Number(process.env.BOLETIN_MAX ?? 80);
 const DIAS_PARTIDOS = 4;
+/** "Tus equipos": como mucho estos por persona y estos distintos por vuelta
+ * (los que no precalcula el cron cuestan 2 llamadas con caché de 30 min). */
+const EQUIPOS_POR_PERSONA = 4;
+const EQUIPOS_MAX = 60;
 
 function edicion(d = new Date()): string {
   const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -115,9 +130,16 @@ export async function GET(request: Request) {
   // 2. Destinatarios.
   const { data: perfiles } = await db
     .from("profiles")
-    .select("id, display_name, username, wants_reminders, unsubscribe_token")
+    .select("id, display_name, username, wants_reminders, unsubscribe_token, mi_equipo_id")
     .returns<
-      { id: string; display_name: string | null; username: string | null; wants_reminders: boolean | null; unsubscribe_token: string | null }[]
+      {
+        id: string;
+        display_name: string | null;
+        username: string | null;
+        wants_reminders: boolean | null;
+        unsubscribe_token: string | null;
+        mi_equipo_id: number | null;
+      }[]
     >();
   const { data: yaEnviados } = await db.from("boletin_envios").select("user_id").eq("edicion", ed);
   const hechos = new Set((yaEnviados ?? []).map((r: { user_id: string }) => r.user_id));
@@ -128,10 +150,57 @@ export async function GET(request: Request) {
       : p.wants_reminders !== false && p.unsubscribe_token && !hechos.has(p.id),
   );
 
+  // "Tus equipos" (16-oct): los favoritos de cada uno, "Mi equipo" primero.
+  const { data: favs } = await db
+    .from("user_favorites")
+    .select("user_id, ref_id, label, link_path, created_at")
+    .eq("kind", "team")
+    .order("created_at")
+    .returns<{ user_id: string; ref_id: string; label: string | null; link_path: string | null }[]>();
+  const susEquipos = new Map<string, { id: number; nombre: string; liga: string | null }[]>();
+  for (const f of favs ?? []) {
+    const id = Number(f.ref_id);
+    if (!Number.isInteger(id) || id <= 0) continue;
+    const liga = f.link_path?.match(/^\/liga\/([^/]+)\//)?.[1] ?? null;
+    susEquipos.set(f.user_id, [
+      ...(susEquipos.get(f.user_id) ?? []),
+      { id, nombre: conTildes(f.label ?? ""), liga },
+    ]);
+  }
+  const partidosDe = new Map<number, { recientes: Fixture[]; proximos: Fixture[] }>();
+  const distintos = [...new Set([...susEquipos.values()].flat().map((e) => e.id))].slice(0, EQUIPOS_MAX);
+  for (const id of distintos) {
+    try {
+      const [rec, prox] = await Promise.all([
+        readCache<Fixture[]>(teamFixturesLastCacheKey(id, 20), 2 * 86_400),
+        readCache<Fixture[]>(teamFixturesNextCacheKey(id, 4), 2 * 86_400),
+      ]);
+      if (rec && prox) {
+        partidosDe.set(id, { recientes: rec, proximos: prox });
+      } else {
+        const t = await getTeamFixtures(id, { last: 20, next: 4 });
+        partidosDe.set(id, { recientes: t.recent, proximos: t.upcoming });
+      }
+    } catch {
+      // Sin datos de ese equipo: no sale, el resto del boletín sí.
+    }
+  }
+  const misEquiposDe = (p: (typeof candidatos)[number]): EquipoBoletin[] =>
+    (susEquipos.get(p.id) ?? [])
+      .map((e) => ({ ...e, principal: e.id === p.mi_equipo_id }))
+      .sort((a, b) => Number(b.principal) - Number(a.principal))
+      .slice(0, EQUIPOS_POR_PERSONA)
+      .map((e) => {
+        const d = partidosDe.get(e.id);
+        return d ? equipoBoletin(e, d.recientes, d.proximos, site, ahora) : null;
+      })
+      .filter((e): e is EquipoBoletin => e != null);
+
   const datosPara = (p: (typeof candidatos)[number]) => {
     const idx = filas.findIndex((f) => f.user_id === p.id);
     return {
       nombre: p.display_name || p.username || "crack",
+      misEquipos: misEquiposDe(p),
       ...contenido,
       quiniela: quinielaBase && {
         ...quinielaBase,
@@ -144,7 +213,9 @@ export async function GET(request: Request) {
   };
 
   if (simular) {
-    const muestra = candidatos[0] ? emailBoletin(datosPara(candidatos[0])) : null;
+    // Muestra: alguien con equipos favoritos, si lo hay.
+    const quien = candidatos.find((p) => susEquipos.has(p.id)) ?? candidatos[0];
+    const muestra = quien ? emailBoletin(datosPara(quien)) : null;
     return NextResponse.json({
       simulacion: true,
       edicion: ed,
@@ -152,6 +223,8 @@ export async function GET(request: Request) {
       analisis: analisis.map((a) => a.titulo),
       partidos: contenido.partidos.map((p) => `${p.local}-${p.visitante} ${p.fecha}`),
       quiniela: quinielaBase,
+      conEquipos: candidatos.filter((p) => susEquipos.has(p.id)).length,
+      equiposMuestra: quien ? misEquiposDe(quien) : [],
       asunto: muestra?.subject,
       html: muestra?.html,
     });

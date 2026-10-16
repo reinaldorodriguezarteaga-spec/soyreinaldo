@@ -44,3 +44,24 @@ describe("boletín semanal", () => {
     expect(boletinConContenido(base)).toBe(true);
   });
 });
+
+describe("boletín: tus equipos", () => {
+  it("sale primero, con resultado y próximo, y el asunto es de Mi equipo", () => {
+    const { subject, html } = emailBoletin({
+      ...base,
+      misEquipos: [
+        {
+          nombre: "Barcelona",
+          principal: true,
+          ultimo: { local: "Galatasaray", visitante: "Barcelona", goles: "1–4", res: "V", url: "https://x/u" },
+          proximo: { fecha: "2026-10-17T16:30:00Z", local: "Real Betis", visitante: "Barcelona", url: "https://x/n" },
+        },
+      ],
+    });
+    expect(subject).toBe("⚽ Real Betis – Barcelona y tu semana en Soy Reinaldo");
+    expect(html).toContain("⭐ Tus equipos");
+    expect(html).toContain("❤️ Barcelona");
+    expect(html).toContain("Galatasaray 1–4 Barcelona");
+    expect(html.indexOf("Tus equipos")).toBeLessThan(html.indexOf("El análisis"));
+  });
+});
