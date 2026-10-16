@@ -8,6 +8,7 @@ import {
   InviteLink,
 } from "./league-forms";
 import { deleteAdjustment, kickMember } from "./actions";
+import { T } from "@/components/EnApp";
 
 type LeagueRow = {
   id: string;
@@ -148,13 +149,13 @@ export default async function LeaguePanelPage({
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
-            ← Mis quinielas
+            <T>← Mis quinielas</T>
           </Link>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5.5vw,3.4rem)", marginTop: 12 }}>
-            {league.name}
+            <T>{league.name}</T>
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            {league.description ?? "Quiniela privada de LaLiga 2026-27."}
+            <T>{league.description ?? "Quiniela privada de LaLiga 2026-27."}</T>
           </p>
           <p style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href={rankingHref} className="btn btn--accent">
@@ -185,8 +186,10 @@ export default async function LeaguePanelPage({
           <div className="panel" style={{ padding: 24 }}>
             <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Normas</h2>
             <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
-              Solo de esta quiniela: tus pronósticos son los mismos en todas,
-              pero aquí puntúan con este baremo.
+              <T>
+                Solo de esta quiniela: tus pronósticos son los mismos en todas,
+                pero aquí puntúan con este baremo.
+              </T>
             </p>
             <ul style={{ margin: "0 0 8px", paddingLeft: 18, lineHeight: 1.8 }}>
               <li>Marcador exacto: <strong>{league.lq_points_exact} pts</strong></li>
@@ -200,7 +203,7 @@ export default async function LeaguePanelPage({
                   🔥 más goleador {league.lq_points_attack}
                 </li>
               ) : (
-                <li>Los picks especiales no puntúan en esta quiniela</li>
+                <li><T>Los picks especiales no puntúan en esta quiniela</T></li>
               )}
             </ul>
             {isLeagueAdmin && (
@@ -290,14 +293,16 @@ export default async function LeaguePanelPage({
                 <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
                   {league.is_public ? (
                     <>
-                      Esta liga es la general: cualquiera puede entrar desde la
-                      página de quinielas. El enlace directo es este.
+                      <T>
+                        Esta liga es la general: cualquiera puede entrar desde la
+                        página de quinielas. El enlace directo es este.
+                      </T>
                     </>
                   ) : (
                     <>
                       Solo se entra con este enlace o tecleando el código{" "}
                       <strong style={{ fontFamily: "var(--font-mono-stack)" }}>{league.code}</strong>{" "}
-                      en la página de quinielas. La liga no aparece listada en ningún sitio.
+                      <T>en la página de quinielas. La liga no aparece listada en ningún sitio.</T>
                     </>
                   )}
                 </p>

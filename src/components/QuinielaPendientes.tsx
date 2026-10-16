@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { T } from "@/components/EnApp";
 
 /** Horizonte: lo que se juega en los próximos dos días. */
 const HORAS = 48;
@@ -71,7 +72,7 @@ export default async function QuinielaPendientes() {
           Te {faltan === 1 ? "falta 1 pronóstico" : `faltan ${faltan} pronósticos`}
         </strong>
         <span style={{ display: "block", color: "var(--text-dim)", fontSize: "0.88rem" }}>
-          Partidos de la quiniela en los próximos dos días. Cada uno se cierra al empezar.
+          <T>Partidos de la quiniela en los próximos dos días. Cada uno se cierra al empezar.</T>
         </span>
       </span>
       <span className="arr" style={{ color: "var(--accent)" }}>→</span>

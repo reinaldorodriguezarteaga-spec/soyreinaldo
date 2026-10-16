@@ -10,6 +10,7 @@ import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 import { cargarForma } from "@/lib/quiniela-liga/forma-datos";
 import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
 import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
+import { T } from "@/components/EnApp";
 
 // La descripción no cita puntos a propósito: el baremo lo fija cada liga en
 // la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
@@ -203,7 +204,7 @@ export default async function QuinielaLigaPartidosPage({
             <div>
               <p className="eyebrow">
                 {anyLive && <span className="livepulse" style={{ marginRight: 8 }} />}
-                Quiniela · {compName} 2026-27
+                <T>Quiniela</T> · {compName} 2026-27
               </p>
               <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)" }}>
                 Jornada {jornada}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { acceptInvite, dismissInvite } from "./actions";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Unirme a la liga | Soy Reinaldo",
@@ -85,7 +86,7 @@ export default async function JoinByCodePage({
               {preview ? (
                 <>
                   Únete a{" "}
-                  <span style={{ color: "var(--accent)" }}>{preview.name}</span>
+                  <span style={{ color: "var(--accent)" }}><T>{preview.name}</T></span>
                 </>
               ) : (
                 "Liga no encontrada"
@@ -139,7 +140,7 @@ export default async function JoinByCodePage({
                 className="mono"
                 style={{ color: "var(--text-dim)" }}
               >
-                ← Ir a la quiniela
+                <T>← Ir a la quiniela</T>
               </Link>
             </p>
           </div>
@@ -164,7 +165,7 @@ function NotFound({ code, hubHref }: { code: string; hubHref: string }) {
           className="mono"
           style={{ background: "transparent", border: 0, color: "var(--accent)", cursor: "pointer" }}
         >
-          Volver a la quiniela →
+          <T>Volver a la quiniela →</T>
         </button>
       </form>
     </article>
@@ -219,7 +220,7 @@ function ConfirmJoin({ code }: { code: string }) {
         className="mono"
         style={{ textAlign: "center", color: "var(--text-dim)" }}
       >
-        Podrás salirte cuando quieras desde la quiniela.
+        <T>Podrás salirte cuando quieras desde la quiniela.</T>
       </p>
     </form>
   );

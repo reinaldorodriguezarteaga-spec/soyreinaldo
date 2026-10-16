@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { stripe } from "@/lib/stripe/server";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "¡Gracias! | Soy Reinaldo",
@@ -58,7 +59,7 @@ export default async function DonacionExitoPage({
                 Volver al inicio
               </Link>
               <Link href="/quiniela-liga" className="btn btn--ghost justify-center">
-                Ir a la quiniela
+                <T>Ir a la quiniela</T>
               </Link>
             </div>
           </div>

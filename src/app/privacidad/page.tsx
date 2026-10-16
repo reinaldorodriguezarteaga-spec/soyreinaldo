@@ -1,3 +1,5 @@
+import { T } from "@/components/EnApp";
+
 export const metadata = {
   title: "Política de Privacidad | Soy Reinaldo",
   description:
@@ -41,7 +43,7 @@ export default function PrivacidadPage() {
                   iniciar sesión con Google/Facebook.
                 </li>
                 <li>
-                  <strong>Predicciones de la quiniela</strong> — los resultados
+                  <strong><T>Predicciones de la quiniela</T></strong> — los resultados
                   que pronosticas para el Mundial 2026.
                 </li>
                 <li>
@@ -63,7 +65,7 @@ export default function PrivacidadPage() {
               <ul>
                 <li>Crear y gestionar tu cuenta.</li>
                 <li>
-                  Mostrar tus predicciones en la clasificación de la quiniela.
+                  <T>Mostrar tus predicciones en la clasificación de la quiniela.</T>
                 </li>
                 <li>
                   Enviarte emails imprescindibles (confirmación, recuperar

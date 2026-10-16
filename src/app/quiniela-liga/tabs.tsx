@@ -41,7 +41,7 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
 
   return (
     <div className="wrap" style={{ paddingTop: 18 }}>
-      <nav aria-label="Secciones de la quiniela" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+      <nav aria-label="Secciones de los pronósticos" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         <ScrollHintTabs maxWidth={520}>
           {TABS.map((t) => {
             const on = pathname === t.href || pathname.startsWith(`${t.href}/`);

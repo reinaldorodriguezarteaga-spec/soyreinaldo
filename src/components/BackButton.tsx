@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { T } from "@/components/EnApp";
 
 /**
  * Botón físico de "Atrás" presente en todas las páginas menos el inicio.
@@ -82,7 +83,7 @@ export default function BackButton() {
 
         {showQuiniela && (
           <Link href="/quiniela-liga" className="backbtn backbtn--accent">
-            🏆 Quiniela
+            🏆 <T>Quiniela</T>
           </Link>
         )}
       </div>

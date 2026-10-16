@@ -6,6 +6,7 @@ import type { FormaEquipo, ResultadoCorto } from "@/lib/quiniela-liga/forma";
 import type { StandingRow } from "@/lib/sports/api-football";
 import { textoPrevia } from "@/lib/quiniela-liga/previa";
 import { conTildes } from "@/lib/sports/nombres";
+import { T } from "@/components/EnApp";
 
 /** Por debajo de esto, el reparto de la comunidad no dice nada. */
 const MIN_PARA_COMUNIDAD = 3;
@@ -76,7 +77,7 @@ export default async function MatchPrevia({
         <span className="sh-note">en datos</span>
       </div>
       <div className="panel" style={{ padding: 20 }}>
-        <p style={{ margin: 0, lineHeight: 1.6 }}>{frases.join(" ")}</p>
+        <p style={{ margin: 0, lineHeight: 1.6 }}><T>{frases.join(" ")}</T></p>
       </div>
     </div>
   );

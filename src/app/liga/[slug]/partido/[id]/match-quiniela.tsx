@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
+import { T } from "@/components/EnApp";
 
 /**
  * La quiniela, dentro de la ficha del partido.
@@ -89,12 +90,14 @@ export default async function MatchQuiniela({
     return (
       <Caja>
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          Este partido entra en la quiniela. Pronostica el marcador y compite
-          con tu gente en una clasificación propia.
+          <T>
+            Este partido entra en la quiniela. Pronostica el marcador y compite
+            con tu gente en una clasificación propia.
+          </T>
         </p>
         {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
-          Ver la quiniela <span className="arr">→</span>
+          <T>Ver la quiniela</T> <span className="arr">→</span>
         </Link>
       </Caja>
     );
@@ -116,11 +119,11 @@ export default async function MatchQuiniela({
     return (
       <Caja>
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          Este partido entra en la quiniela y aún no estás en ninguna.
+          <T>Este partido entra en la quiniela y aún no estás en ninguna.</T>
         </p>
         {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
-          Entrar a la quiniela <span className="arr">→</span>
+          <T>Entrar a la quiniela</T> <span className="arr">→</span>
         </Link>
       </Caja>
     );
@@ -230,7 +233,7 @@ export default async function MatchQuiniela({
       {bloqueComunidad}
 
       <Link href={enlaceQuiniela} className="btn">
-        {played ? "Ver la quiniela" : "Pronosticar"} <span className="arr">→</span>
+        <T>{played ? "Ver la quiniela" : "Pronosticar"}</T> <span className="arr">→</span>
       </Link>
     </Caja>
   );
@@ -318,8 +321,8 @@ function Caja({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>🏆 Quiniela</h2>
-        {titulo && <span className="sh-note">{titulo}</span>}
+        <h2>🏆 <T>Quiniela</T></h2>
+        {titulo && <span className="sh-note"><T>{titulo}</T></span>}
       </div>
       <div className="panel" style={{ padding: "18px 20px" }}>{children}</div>
     </div>

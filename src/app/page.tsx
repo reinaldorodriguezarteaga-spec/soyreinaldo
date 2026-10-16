@@ -18,6 +18,7 @@ import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
+import { T } from "@/components/EnApp";
 
 /** La portada es la URL que más señales recibe (ápice, http, enlaces de
  * redes): sin canónica propia, Google las trataba como versiones sueltas. */
@@ -123,7 +124,7 @@ export default async function Home() {
             {/* La quiniela, a mano desde arriba (16-oct, pedido del dueño): su
                 bloque grande queda muy abajo en la portada. */}
             <Link href="/quiniela-liga" className="hero__quiniela">
-              <span aria-hidden>🏆</span> Juega la quiniela gratis{" "}
+              <span aria-hidden>🏆</span> <T>Juega la quiniela gratis</T>{" "}
               <span className="arr">→</span>
             </Link>
 
@@ -227,7 +228,7 @@ export default async function Home() {
               className="feat__title"
               style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
             >
-              La Quiniela de LaLiga.
+              <T>La Quiniela de LaLiga.</T>
             </h2>
             <p
               style={{
@@ -375,8 +376,10 @@ export default async function Home() {
                 Invítame a<br />un café<span className="dot" style={{ color: "var(--accent)" }}>.</span>
               </h2>
               <p className="dona__p">
-                Tu donación ayuda a mantener viva la web, las quinielas y el
-                contenido. Sin obligaciones — lo que tú quieras.
+                <T>
+                  Tu donación ayuda a mantener viva la web, las quinielas y el
+                  contenido. Sin obligaciones — lo que tú quieras.
+                </T>
               </p>
             </div>
             {!inApp && <DonationBlock />}

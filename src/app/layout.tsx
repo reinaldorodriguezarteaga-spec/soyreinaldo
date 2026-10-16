@@ -17,6 +17,7 @@ import { COMPETITIONS } from "@/lib/sports/competitions";
 import "./globals.css";
 import SelectorFavoritos from "@/components/SelectorFavoritos";
 import DirectoReinaldo from "@/components/DirectoReinaldo";
+import { EnAppProvider } from "@/components/EnApp";
 
 /**
  * Google AdSense (Auto Ads) — monetización del sitio. Todo queda apagado
@@ -174,6 +175,7 @@ export default async function RootLayout({
             />
           </>
         )}
+        <EnAppProvider enApp={inApp}>
         <Header
           initialUser={user}
           hasLiveMatch={hasLiveMatch}
@@ -201,6 +203,7 @@ export default async function RootLayout({
         <BackButton />
         {children}
         <Footer />
+        </EnAppProvider>
         {anuncios && <CookieConsent />}
         {/* Vercel Web Analytics: visitas y páginas vistas sin cookies ni
             huella de usuario, así que no depende del banner de consentimiento.

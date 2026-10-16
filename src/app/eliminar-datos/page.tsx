@@ -1,3 +1,5 @@
+import { T } from "@/components/EnApp";
+
 export const metadata = {
   title: "Eliminar mis datos | Soy Reinaldo",
   description:
@@ -56,7 +58,7 @@ export default function EliminarDatosPage() {
               <ul>
                 <li>Tu cuenta de usuario y credenciales.</li>
                 <li>Tu nombre y email.</li>
-                <li>Tus predicciones de la quiniela.</li>
+                <li><T>Tus predicciones de la quiniela.</T></li>
                 <li>Cualquier dato vinculado a tu perfil.</li>
               </ul>
             </section>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ClubLeague } from "@/lib/quiniela-liga/leagues";
+import { T } from "@/components/EnApp";
 
 /**
  * Selector de liga para el hub de la quiniela de clubes. Solo aparece si el
@@ -29,7 +30,7 @@ export default function LeagueSwitcher({
             href={l.isPublic ? basePath : `${basePath}?liga=${encodeURIComponent(l.id)}`}
             className={active?.id === l.id ? "on" : ""}
           >
-            {l.name}
+            <T>{l.name}</T>
           </Link>
         ))}
       </div>

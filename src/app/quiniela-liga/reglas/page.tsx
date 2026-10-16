@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { MAX_RETOS_POR_JORNADA, PREMIO_DUELOS } from "@/lib/quiniela-liga/duelos";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
+import { T } from "@/components/EnApp";
 
 export const metadata = {
   alternates: { canonical: "/quiniela-liga/reglas" },
@@ -142,9 +143,11 @@ export default async function QuinielaLigaReglasPage({
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 20 }}>
         <div className="wrap">
           <p className="eyebrow">
-            {active && !active.isPublic
-              ? `${active.name} · LaLiga 2026-27`
-              : "Quiniela · LaLiga 2026-27"}
+            <T>
+              {active && !active.isPublic
+                ? `${active.name} · LaLiga 2026-27`
+                : "Quiniela · LaLiga 2026-27"}
+            </T>
           </p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.4rem)" }}>
             Reglas
