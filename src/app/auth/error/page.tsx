@@ -13,7 +13,7 @@ function readableReason(reason?: string) {
     return "Tu cuenta ya está confirmada. Como abriste el enlace en otro navegador, no pudimos iniciar la sesión aquí: entra con tu email y contraseña y listo.";
   }
   if (r.includes("expired") || r.includes("invalid")) {
-    return "El enlace ha caducado o ya se usó. Esto suele pasar cuando el cliente de correo (Gmail, Outlook) abre el link automáticamente para previsualizarlo.";
+    return "Este enlace ya se usó o ha caducado: duran una hora y valen una sola vez. Si ya lo habías pulsado antes, tu cuenta seguramente está confirmada: prueba a iniciar sesión. Si no puedes entrar, pide un enlace nuevo.";
   }
   if (r.includes("token")) {
     return "El token de confirmación no es válido.";
@@ -71,10 +71,10 @@ export default async function AuthErrorPage({
               </Link>
               {!yaConfirmada && (
                 <Link
-                  href="/signup"
+                  href="/auth/reenviar"
                   className="btn btn--ghost w-full justify-center"
                 >
-                  Reenviar email
+                  Pedir un enlace nuevo
                 </Link>
               )}
             </div>
@@ -84,12 +84,9 @@ export default async function AuthErrorPage({
               className="notice notice--info"
               style={{ marginTop: 20, textAlign: "left" }}
             >
-              Truco: abre el email{" "}
-              <strong style={{ color: "var(--text)" }}>
-                desde el mismo dispositivo
-              </strong>{" "}
-              en el que te registraste y haz clic una sola vez. Si tu cliente de
-              correo previsualiza enlaces, prueba a copiar y pegar la URL.
+              Truco: algunos correos (Outlook o ciertos antivirus) abren los
+              enlaces solos para revisarlos y los gastan antes que tú. Si te
+              pasa, pide uno nuevo y pulsa en él nada más llegar.
             </p>
             )}
 

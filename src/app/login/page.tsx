@@ -4,7 +4,7 @@ import { isAppRequest } from "@/lib/is-app";
 export const metadata = {
   title: "Entrar | Soy Reinaldo",
   description:
-    "Accede a la quiniela del Mundial 2026 con tu email o con Google.",
+    "Entra en tu cuenta de Soy Reinaldo con tu email o con Google.",
 };
 
 export default async function LoginPage({
