@@ -16,17 +16,19 @@ const SIN_SELECTOR = /^\/(login|signup|auth|completar-perfil)(\/|$)/;
 
 /**
  * Tras iniciar sesión por primera vez (16-oct, pedido del dueño): paso 1,
- * ligas favoritas; paso 2, equipos de esas ligas. Lo monta el layout solo si
+ * ligas favoritas; paso 2, equipos de esas ligas; paso 3, si eligió varios,
+ * cuál es SU equipo ("Mi equipo" de la portada; con uno solo, ese). Lo monta el layout solo si
  * `profiles.favoritos_elegidos_at` está vacío; "Ahora no" también lo marca.
  */
 export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [cerrado, setCerrado] = useState(false);
-  const [paso, setPaso] = useState<1 | 2>(1);
+  const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [ligasSel, setLigasSel] = useState<string[]>([]);
   const [equipos, setEquipos] = useState<EquipoOpcion[] | null>(null);
   const [equiposSel, setEquiposSel] = useState<number[]>([]);
+  const [miEquipo, setMiEquipo] = useState<number | null>(null);
   const [busca, setBusca] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -63,7 +65,9 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
       const elegidos = (equipos ?? [])
         .filter((e) => equiposSel.includes(e.id))
         .map(({ id, name, slug }) => ({ id, name, slug }));
-      await guardarFavoritosIniciales(ligasSel, elegidos);
+      // Con un solo equipo, ese es "Mi equipo"; con varios, el del paso 3.
+      const principal = equiposSel.length === 1 ? equiposSel[0] : miEquipo;
+      await guardarFavoritosIniciales(ligasSel, elegidos, principal);
       setCerrado(true);
       router.refresh();
     });
@@ -78,14 +82,18 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
     <div className="selfav" role="dialog" aria-modal="true" aria-labelledby="selfav-titulo">
       <div className="selfav__caja">
         <header className="selfav__cab">
-          <p className="mono selfav__paso">Paso {paso} de 2</p>
+          <p className="mono selfav__paso">
+            Paso {paso} de {paso === 3 || equiposSel.length > 1 ? 3 : 2}
+          </p>
           <h2 id="selfav-titulo">
-            {paso === 1 ? "¿Qué ligas sigues?" : "¿Y tus equipos?"}
+            {paso === 1 ? "¿Qué ligas sigues?" : paso === 2 ? "¿Y tus equipos?" : "¿Cuál es TU equipo?"}
           </h2>
           <p className="selfav__sub">
             {paso === 1
               ? "Las tendrás a mano en Favoritos y podrás ver solo sus partidos en la portada."
-              : "Elige tantos como quieras. Siempre puedes cambiarlos con la estrella ⭐."}
+              : paso === 2
+                ? "Elige tantos como quieras. Siempre puedes cambiarlos con la estrella ⭐."
+                : "Saldrá arriba en la portada: su próximo partido, el último resultado y su puesto."}
           </p>
         </header>
 
@@ -114,6 +122,27 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
                   </button>
                 );
               })}
+            </div>
+          ) : paso === 3 ? (
+            <div className="selfav__rejilla">
+              {(equipos ?? [])
+                .filter((e) => equiposSel.includes(e.id))
+                .map((e) => {
+                  const on = miEquipo === e.id;
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      className={`selfav__op${on ? " on" : ""}`}
+                      aria-pressed={on}
+                      onClick={() => setMiEquipo(e.id)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={e.logo} alt="" width={28} height={28} loading="lazy" />
+                      <span>{e.name}</span>
+                    </button>
+                  );
+                })}
             </div>
           ) : equipos == null ? (
             <p className="selfav__sub" style={{ padding: "24px 0", textAlign: "center" }}>
@@ -169,7 +198,7 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
                 Siguiente ({ligasSel.length}) →
               </button>
             </>
-          ) : (
+          ) : paso === 2 && equiposSel.length > 1 ? (
             <>
               <button
                 type="button"
@@ -182,10 +211,36 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
               <button
                 type="button"
                 className="btn btn--accent"
-                onClick={guardar}
+                onClick={() => {
+                  if (miEquipo == null || !equiposSel.includes(miEquipo)) setMiEquipo(null);
+                  setPaso(3);
+                }}
                 disabled={pending || equipos == null}
               >
-                {pending && equipos != null ? "Guardando…" : `Guardar (${equiposSel.length}) ✓`}
+                Siguiente ({equiposSel.length}) →
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="backbtn"
+                onClick={() => setPaso(paso === 3 ? 2 : 1)}
+                disabled={pending}
+              >
+                ← Atrás
+              </button>
+              <button
+                type="button"
+                className="btn btn--accent"
+                onClick={guardar}
+                disabled={pending || equipos == null || (paso === 3 && miEquipo == null)}
+              >
+                {pending && equipos != null
+                  ? "Guardando…"
+                  : paso === 3
+                    ? "Guardar ✓"
+                    : `Guardar (${equiposSel.length}) ✓`}
               </button>
             </>
           )}

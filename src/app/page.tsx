@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import DonationBlock from "@/components/DonationBlock";
 import HomeScoreboard from "@/components/HomeScoreboard";
 import QuinielaPendientes from "@/components/QuinielaPendientes";
+import MiEquipoCard from "@/components/MiEquipoCard";
 import HomeAnalysisCard from "@/components/HomeAnalysisCard";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
@@ -170,6 +171,9 @@ export default async function Home() {
             </aside>
 
             <div className="home3col__main" style={{ display: "grid", gap: 20 }}>
+              <Suspense fallback={null}>
+                <MiEquipoCard />
+              </Suspense>
               <Suspense fallback={null}>
                 <QuinielaPendientes />
               </Suspense>
