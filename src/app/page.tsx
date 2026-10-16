@@ -118,6 +118,12 @@ export default async function Home() {
                 Ver Champions <span className="arr">→</span>
               </Link>
             </div>
+            {/* La quiniela, a mano desde arriba (16-oct, pedido del dueño): su
+                bloque grande queda muy abajo en la portada. */}
+            <Link href="/quiniela-liga" className="hero__quiniela">
+              <span aria-hidden>🏆</span> Juega la quiniela gratis{" "}
+              <span className="arr">→</span>
+            </Link>
 
             <div className="stats">
               <div className="stat">

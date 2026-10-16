@@ -1,6 +1,7 @@
 import type { CalendarDay, HomeWidgetData } from "@/lib/sports/widget-data";
 import HomeMatchWidgetClient from "@/components/HomeMatchWidgetClient";
 import HomeCalendarView from "@/components/HomeCalendarView";
+import type { Seguidos } from "@/lib/solo-favoritos";
 
 /**
  * Feed único de la portada (pedido 18-ago: fuera pestañas — "los partidos
@@ -14,10 +15,13 @@ export default function HomeScoreboardTabs({
   widgetData,
   calendarDays,
   favoriteTeamIds,
+  seguidos,
 }: {
   widgetData: HomeWidgetData | null;
   calendarDays: CalendarDay[] | null;
   favoriteTeamIds: number[];
+  /** Equipos y ligas ⭐, para el interruptor "Solo favoritos". */
+  seguidos: Seguidos;
 }) {
   const hasLive = !!widgetData && widgetData.groups.length > 0;
   const hasCalendar = !!calendarDays && calendarDays.length > 0;
@@ -25,7 +29,12 @@ export default function HomeScoreboardTabs({
   if (!hasLive && !hasCalendar) return null;
 
   const liveCard = hasLive ? (
-    <HomeMatchWidgetClient initial={widgetData!} liveOnly favoriteTeamIds={favoriteTeamIds} />
+    <HomeMatchWidgetClient
+      initial={widgetData!}
+      liveOnly
+      favoriteTeamIds={favoriteTeamIds}
+      seguidos={seguidos}
+    />
   ) : undefined;
 
   if (!hasCalendar) {
@@ -34,7 +43,7 @@ export default function HomeScoreboardTabs({
 
   return (
     <div aria-label="Marcador y calendario">
-      <HomeCalendarView days={calendarDays!} liveContent={liveCard} />
+      <HomeCalendarView days={calendarDays!} liveContent={liveCard} seguidos={seguidos} />
     </div>
   );
 }

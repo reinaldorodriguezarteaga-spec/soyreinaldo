@@ -48,8 +48,27 @@ async function getFavoriteTeams(): Promise<FavoriteTeamRef[]> {
  * (pestañas si hay algo en ambos, directo si solo hay uno). Ambas funciones
  * pasan por `unstable_cache`, así que fallar una no debe tumbar la otra.
  */
+/** Ligas favoritas (⭐, `ref_id` = slug) para el filtro "Solo favoritos". */
+async function getFavoriteLeagues(): Promise<string[]> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data } = await supabase
+      .from("user_favorites")
+      .select("ref_id")
+      .eq("user_id", user.id)
+      .eq("kind", "competition");
+    return (data ?? []).map((r) => r.ref_id).filter((s) => !!COMPETITIONS_BY_SLUG[s]);
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomeScoreboard() {
-  const favorites = await getFavoriteTeams();
+  const [favorites, ligasFav] = await Promise.all([getFavoriteTeams(), getFavoriteLeagues()]);
   const [widgetData, calendarDays] = await Promise.all([
     getHomeWidgetData(COMPETITIONS).catch(() => null),
     getUpcomingCalendar(COMPETITIONS, FEATURED_TEAMS, favorites).catch(() => null),
@@ -60,6 +79,7 @@ export default async function HomeScoreboard() {
       widgetData={widgetData}
       calendarDays={calendarDays}
       favoriteTeamIds={favorites.map((f) => f.id)}
+      seguidos={{ equipos: favorites.map((f) => f.id), ligas: ligasFav }}
     />
   );
 }

@@ -15,6 +15,7 @@ import { isAppRequest } from "@/lib/is-app";
 import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import "./globals.css";
+import SelectorFavoritos from "@/components/SelectorFavoritos";
 
 /**
  * Google AdSense (Auto Ads) — monetización del sitio. Todo queda apagado
@@ -95,13 +96,16 @@ export default async function RootLayout({
   // Para el atajo "Admin" en el menú de usuario — evita que quien no sea
   // admin vea enlaces a páginas que igualmente le rechazaría /admin/layout.tsx.
   let isAdmin = false;
+  // ¿Le falta pasar por el selector de favoritos? (migración 067)
+  let pedirFavoritos = false;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("is_admin")
+      .select("is_admin, favoritos_elegidos_at")
       .eq("id", user.id)
       .single();
     isAdmin = !!profile?.is_admin;
+    pedirFavoritos = !!profile && !profile.favoritos_elegidos_at;
   }
 
   // ¿Hay algún partido EN JUEGO en alguna competición activa? (para el
@@ -181,6 +185,16 @@ export default async function RootLayout({
         {!inApp && <InstallBanner />}
         {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
+        {pedirFavoritos && (
+          <SelectorFavoritos
+            ligas={COMPETITIONS.map((c) => ({
+              slug: c.slug,
+              name: c.name,
+              leagueId: c.leagueId,
+              region: c.region,
+            }))}
+          />
+        )}
         <Gestures />
         <BackButton />
         {children}
