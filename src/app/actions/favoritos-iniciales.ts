@@ -45,17 +45,26 @@ export async function equiposDeLigas(slugs: string[]): Promise<EquipoOpcion[]> {
   return out;
 }
 
-async function marcarElegidos(userId: string) {
+async function marcarElegidos(
+  userId: string,
+  miEquipo?: { id: number; slug: string } | null,
+) {
   const supabase = await createClient();
   await supabase
     .from("profiles")
-    .update({ favoritos_elegidos_at: new Date().toISOString() })
+    .update({
+      favoritos_elegidos_at: new Date().toISOString(),
+      // "Mi equipo" (migración 068): el principal de los elegidos.
+      ...(miEquipo ? { mi_equipo_id: miEquipo.id, mi_equipo_liga: miEquipo.slug } : {}),
+    })
     .eq("id", userId);
 }
 
 export async function guardarFavoritosIniciales(
   ligas: string[],
   equipos: { id: number; name: string; slug: string }[],
+  /** Id del equipo principal ("Mi equipo"); tiene que estar entre `equipos`. */
+  miEquipoId?: number | null,
 ): Promise<{ ok: boolean }> {
   const supabase = await createClient();
   const {
@@ -91,7 +100,10 @@ export async function guardarFavoritosIniciales(
       .upsert(filas, { onConflict: "user_id,kind,ref_id", ignoreDuplicates: true });
     if (error) return { ok: false };
   }
-  await marcarElegidos(user.id);
+  const principal = equipos.find(
+    (e) => e.id === miEquipoId && COMPETITIONS_BY_SLUG[e.slug],
+  );
+  await marcarElegidos(user.id, principal ? { id: principal.id, slug: principal.slug } : null);
   revalidatePath("/", "layout");
   return { ok: true };
 }

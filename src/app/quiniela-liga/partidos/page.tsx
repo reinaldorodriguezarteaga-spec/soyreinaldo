@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import RetosPendientes from "@/components/RetosPendientes";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
@@ -220,6 +222,12 @@ export default async function QuinielaLigaPartidosPage({
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap">
           <JornadaTabs active={jornada} />
+
+          <div style={{ marginTop: 16 }}>
+            <Suspense fallback={null}>
+              <RetosPendientes />
+            </Suspense>
+          </div>
 
           <p className="hint" style={{ marginTop: 16 }}>
             Se guarda solo al completar el marcador. Cada partido se cierra 30

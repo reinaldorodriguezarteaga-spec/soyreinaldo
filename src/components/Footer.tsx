@@ -8,7 +8,7 @@ import {
 } from "@/components/social-logos";
 
 const SOCIALS = [
-  { href: "https://www.youtube.com/@futbolconreinaldo", Logo: YouTubeLogo, label: "YouTube" },
+  { href: "https://www.youtube.com/@SoyReinaldoR", Logo: YouTubeLogo, label: "YouTube" },
   { href: "https://www.instagram.com/soyreinaldor/", Logo: InstagramLogo, label: "Instagram" },
   { href: "https://www.tiktok.com/@soyreinaldor", Logo: TikTokLogo, label: "TikTok" },
   { href: "https://www.threads.com/@soyreinaldor", Logo: ThreadsLogo, label: "Threads" },

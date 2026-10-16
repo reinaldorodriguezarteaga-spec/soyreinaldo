@@ -5,6 +5,13 @@ import LeagueSwitcher from "../league-switcher";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
+import {
+  calcularRachas,
+  RACHA_ACIERTOS_MIN,
+  RACHA_JORNADAS_MIN,
+  type FilaHistorial,
+} from "@/lib/quiniela-liga/rachas";
+import DuelosVista from "./duelos-vista";
 
 const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
 
@@ -67,6 +74,11 @@ export default async function QuinielaLigaRankingPage({
   const rows = (data ?? []) as Row[];
   const meId = user?.id ?? null;
 
+  // Rachas (16-oct): jornadas seguidas jugando y aciertos seguidos.
+  const { data: historial } = await supabase.rpc("lq_historial_rachas", { p_league_id: leagueId });
+  const rachas = calcularRachas((historial ?? []) as FilaHistorial[]);
+  const miRacha = meId ? rachas.get(meId) : undefined;
+
   // Estado de cada jornada (los aplazados no cuentan): cuáles están
   // terminadas del todo y cuáles tienen ya algún partido jugado.
   const { data: partidos } = await supabase
@@ -93,6 +105,7 @@ export default async function QuinielaLigaRankingPage({
 
   // Pestaña "Jornada": la pedida en ?j=, o la más reciente con partidos.
   const enVistaJornada = vista === "jornada" && ultimaConPartidos != null;
+  const enVistaDuelos = vista === "duelos";
   const pedida = Number(j);
   const jornadaVista =
     Number.isInteger(pedida) && conPartidos.includes(pedida) ? pedida : ultimaConPartidos;
@@ -183,6 +196,15 @@ export default async function QuinielaLigaRankingPage({
               )}
             </p>
           )}
+          {miRacha && (miRacha.jornadas > 0 || miRacha.mejorAciertos > 0) && (
+            <p className="panel" style={{ display: "inline-block", marginTop: 14, marginLeft: 8, padding: "10px 14px" }}>
+              🔥 <strong>{miRacha.jornadas}</strong>{" "}
+              {miRacha.jornadas === 1 ? "jornada seguida" : "jornadas seguidas"} jugando ·
+              🎯 <strong>{miRacha.aciertos}</strong>{" "}
+              {miRacha.aciertos === 1 ? "acierto seguido" : "aciertos seguidos"}
+              {miRacha.mejorAciertos > miRacha.aciertos && <> (récord {miRacha.mejorAciertos})</>}
+            </p>
+          )}
           {tarjeta && (
             <p style={{ marginTop: 12 }}>
               <Link href={tarjeta.href} className="btn btn--accent">
@@ -215,10 +237,17 @@ export default async function QuinielaLigaRankingPage({
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", margin: "0 0 14px" }}>
               <Link
                 href={baseRanking}
-                className={enVistaJornada ? "btn" : "btn btn--accent"}
-                aria-current={enVistaJornada ? undefined : "page"}
+                className={enVistaJornada || enVistaDuelos ? "btn" : "btn btn--accent"}
+                aria-current={enVistaJornada || enVistaDuelos ? undefined : "page"}
               >
                 General
+              </Link>
+              <Link
+                href={hrefRanking(baseRanking, { vista: "duelos" })}
+                className={enVistaDuelos ? "btn btn--accent" : "btn"}
+                aria-current={enVistaDuelos ? "page" : undefined}
+              >
+                ⚔️ Duelos
               </Link>
               {[...conPartidos].sort((a, b) => b - a).slice(0, 6).map((n) => (
                 <Link
@@ -232,7 +261,13 @@ export default async function QuinielaLigaRankingPage({
               ))}
             </div>
           )}
-          {enVistaJornada ? (
+          {enVistaDuelos ? (
+            <DuelosVista
+              leagueId={leagueId}
+              meId={meId}
+              miembros={rows.map((r) => ({ id: r.user_id, nombre: r.display_name }))}
+            />
+          ) : enVistaJornada ? (
             filasJornada.length === 0 ? (
               <div className="panel" style={{ padding: 24, textAlign: "center", color: "var(--text-dim)" }}>
                 Nadie de esta liga pronosticó los partidos ya jugados de la jornada {jornadaVista}.
@@ -314,6 +349,7 @@ export default async function QuinielaLigaRankingPage({
                         {ganadoresUltima.has(r.user_id) && (
                           <span title={`Ganador de la jornada ${ultimaTerminada}`}> 🏅</span>
                         )}
+                        <Rachas r={rachas.get(r.user_id)} />
                       </td>
                       <td style={{ textAlign: "right" }}>{r.exact_count}</td>
                       <td className="hidem" style={{ textAlign: "right" }}>{r.partial_count}</td>
@@ -327,5 +363,20 @@ export default async function QuinielaLigaRankingPage({
         </div>
       </section>
     </main>
+  );
+}
+
+/** Llama y diana junto al nombre cuando la racha merece enseñarse. */
+function Rachas({ r }: { r?: { jornadas: number; aciertos: number } }) {
+  if (!r) return null;
+  return (
+    <>
+      {r.jornadas >= RACHA_JORNADAS_MIN && (
+        <span className="racha" title={`${r.jornadas} jornadas seguidas jugando`}> 🔥{r.jornadas}</span>
+      )}
+      {r.aciertos >= RACHA_ACIERTOS_MIN && (
+        <span className="racha" title={`${r.aciertos} aciertos seguidos`}> 🎯{r.aciertos}</span>
+      )}
+    </>
   );
 }
