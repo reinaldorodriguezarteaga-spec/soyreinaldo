@@ -7,6 +7,11 @@ export const metadata = {
 function readableReason(reason?: string) {
   if (!reason) return "El enlace no es válido o ha caducado.";
   const r = reason.toLowerCase();
+  // Enlace abierto en otro navegador (registro en la app, correo en Chrome):
+  // Supabase ya confirmó el email antes de redirigir, solo falta la sesión.
+  if (r.includes("code verifier") || r.includes("pkce")) {
+    return "Tu cuenta ya está confirmada. Como abriste el enlace en otro navegador, no pudimos iniciar la sesión aquí: entra con tu email y contraseña y listo.";
+  }
   if (r.includes("expired") || r.includes("invalid")) {
     return "El enlace ha caducado o ya se usó. Esto suele pasar cuando el cliente de correo (Gmail, Outlook) abre el link automáticamente para previsualizarlo.";
   }
@@ -25,6 +30,7 @@ export default async function AuthErrorPage({
 }) {
   const { reason } = await searchParams;
   const message = readableReason(reason);
+  const yaConfirmada = /code verifier|pkce/i.test(reason ?? "");
 
   return (
     <main className="page">
@@ -48,7 +54,9 @@ export default async function AuthErrorPage({
               </svg>
             </div>
 
-            <h1>No pudimos confirmar tu cuenta</h1>
+            <h1>
+              {yaConfirmada ? "Cuenta confirmada: inicia sesión" : "No pudimos confirmar tu cuenta"}
+            </h1>
             <p>{message}</p>
 
             <div
@@ -61,14 +69,17 @@ export default async function AuthErrorPage({
               >
                 Iniciar sesión
               </Link>
-              <Link
-                href="/signup"
-                className="btn btn--ghost w-full justify-center"
-              >
-                Reenviar email
-              </Link>
+              {!yaConfirmada && (
+                <Link
+                  href="/signup"
+                  className="btn btn--ghost w-full justify-center"
+                >
+                  Reenviar email
+                </Link>
+              )}
             </div>
 
+            {!yaConfirmada && (
             <p
               className="notice notice--info"
               style={{ marginTop: 20, textAlign: "left" }}
@@ -80,6 +91,7 @@ export default async function AuthErrorPage({
               en el que te registraste y haz clic una sola vez. Si tu cliente de
               correo previsualiza enlaces, prueba a copiar y pegar la URL.
             </p>
+            )}
 
             <p style={{ marginTop: 24 }}>
               <Link
