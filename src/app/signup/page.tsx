@@ -3,7 +3,7 @@ import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Crear cuenta | Soy Reinaldo",
-  description: "Crea tu cuenta para apuntarte a la quiniela del Mundial 2026.",
+  description: "Crea tu cuenta para jugar la quiniela y seguir el fútbol con la comunidad culé.",
 };
 
 export default async function SignupPage({
@@ -24,7 +24,7 @@ export default async function SignupPage({
         </div>
         <div className="auth__card">
           <h1>Crea tu cuenta</h1>
-          <p className="sub">Únete a la quiniela del Mundial 2026 con la comunidad culé.</p>
+          <p className="sub">Únete a la quiniela con la comunidad culé.</p>
           <SignupForm redirect={redirect} inApp={inApp} />
         </div>
       </div>

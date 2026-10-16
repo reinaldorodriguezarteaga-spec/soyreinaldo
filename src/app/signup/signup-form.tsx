@@ -100,7 +100,8 @@ export default function SignupForm({
             {state.message}
             <br />
             <span style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>
-              Si no lo ves, revisa la carpeta de spam.
+              Si no lo ves, revisa la carpeta de spam. ¿No llega?{" "}
+              <Link href="/auth/reenviar">Pide otro</Link>.
             </span>
           </p>
         )}
