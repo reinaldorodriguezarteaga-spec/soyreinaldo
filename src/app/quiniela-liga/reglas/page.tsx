@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { MAX_RETOS_POR_JORNADA, PREMIO_DUELOS } from "@/lib/quiniela-liga/duelos";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 
 export const metadata = {
@@ -209,6 +210,30 @@ export default async function QuinielaLigaReglasPage({
         </section>
         </>
       )}
+
+      <section className="section" style={{ paddingTop: 8, paddingBottom: 16 }}>
+        <div className="wrap" style={{ maxWidth: 620 }}>
+          <div className="shead" style={{ marginBottom: 16 }}>
+            <div>
+              <p className="eyebrow">Uno contra uno</p>
+              <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
+                ⚔️ Duelos
+              </h2>
+            </div>
+          </div>
+          <p className="hint">
+            Desde la clasificación (pestaña <b>Duelos</b>) puedes retar a alguien de tu liga
+            para la próxima jornada, hasta <b>{MAX_RETOS_POR_JORNADA} retos</b> por jornada. Tiene
+            hasta el primer partido para aceptar. Gana el duelo quien más puntos saque en esa
+            jornada. Al final de la temporada, <b>quien más duelos haya ganado suma {PREMIO_DUELOS} puntos</b>{" "}
+            a la clasificación general.
+          </p>
+          <p className="hint" style={{ marginTop: 8 }}>
+            🔥 Junto a tu nombre sale tu racha de jornadas seguidas jugando (desde 3) y 🎯 la de
+            aciertos seguidos (desde 4).
+          </p>
+        </div>
+      </section>
 
       <section className="section" style={{ paddingTop: 8 }}>
         <div className="wrap" style={{ maxWidth: 620 }}>

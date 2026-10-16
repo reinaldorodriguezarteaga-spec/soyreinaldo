@@ -2039,3 +2039,20 @@ select.field { appearance: none; }
   .miequipo__etq, .miequipo__cuando { grid-column: 1 / -1; margin-top: 0; }
   .miequipo__liga { display: none; }
 }
+
+/* Duelos de la quiniela (ranking/duelos-vista). */
+.duelo__intro { padding: 14px 16px; font-size: 0.92rem; line-height: 1.5; }
+.duelo__bloque { padding: 14px 16px; display: grid; gap: 10px; }
+.duelo__bloque h3 { margin: 0; font-size: 1rem; }
+.duelo__bloque--aviso { border-color: var(--accent); }
+.duelo__fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; font-size: 0.92rem; }
+.duelo__fila.mio .duelo__vs { color: var(--text); font-weight: 600; }
+.duelo__vs { flex: 1; min-width: 0; color: var(--text-dim); }
+.duelo__vs strong { color: var(--text); }
+.duelo__j { color: var(--text-dim); font-size: 0.7rem; width: 32px; }
+.duelo__acciones { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.duelo__form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.duelo__form select { flex: 1; min-width: 180px; }
+.duelo__nota { margin: 0; color: var(--text-dim); font-size: 0.8rem; }
+.duelo__error { color: #ff8a8a; font-size: 0.82rem; }
+.racha { font-size: 0.8rem; white-space: nowrap; }
