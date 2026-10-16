@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import {
   updateLeagueMeta,
   updateLeagueRules,
@@ -57,7 +58,7 @@ export function EditLeagueForm({
 }) {
   const [state, action, pending] = useActionState(updateLeagueMeta, initial);
   return (
-    <form action={action}>
+    <form onSubmit={enviarSinBorrar(action)}>
       <input type="hidden" name="league_id" value={league.id} />
       <div style={rowStyle}>
         <label>
@@ -115,7 +116,7 @@ export function RulesForm({
 }) {
   const [state, action, pending] = useActionState(updateLeagueRules, initial);
   return (
-    <form action={action}>
+    <form onSubmit={enviarSinBorrar(action)}>
       <input type="hidden" name="league_id" value={leagueId} />
       <input type="hidden" name="ref" value={leagueId} />
       <div style={rowStyle}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import { updateProfile, type ProfileState } from "./actions";
 
 const initialState: ProfileState = { status: "idle" };
@@ -17,7 +18,7 @@ export default function ProfileForm({
   const [state, action, pending] = useActionState(updateProfile, initialState);
 
   return (
-    <form action={action} className="space-y-4">
+    <form onSubmit={enviarSinBorrar(action)} className="space-y-4">
       <Field
         label="Nombre visible"
         name="display_name"

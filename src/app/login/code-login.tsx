@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import { sendEmailCode, verifyEmailCode, type AuthState } from "./actions";
 
 const initial: AuthState = { status: "idle" };
@@ -26,7 +27,7 @@ export default function CodeLogin({ redirect }: { redirect: string }) {
 
   if (!codeStep) {
     return (
-      <form action={sendAction}>
+      <form onSubmit={enviarSinBorrar(sendAction)}>
         <input type="hidden" name="redirect" value={redirect} />
         <label className="label" htmlFor="code-email">
           Tu email
@@ -61,7 +62,7 @@ export default function CodeLogin({ redirect }: { redirect: string }) {
   }
 
   return (
-    <form action={verifyAction}>
+    <form onSubmit={enviarSinBorrar(verifyAction)}>
       <input type="hidden" name="redirect" value={redirect} />
       <input type="hidden" name="email" value={email} />
       <p className="sub" style={{ marginTop: 0 }}>

@@ -8,6 +8,8 @@ import { revalidatePath } from "next/cache";
 export type SignupState = {
   status: "idle" | "success" | "error";
   message?: string;
+  /** El campo que falla, para marcarlo y llevar el cursor ahí. */
+  field?: "email" | "display_name" | "username" | "phone_number" | "password" | "confirm";
 };
 
 async function siteOrigin() {
@@ -37,17 +39,19 @@ export async function signUp(
     (formData.get("redirect") as string | null) ?? "/quiniela";
 
   if (!email || !email.includes("@")) {
-    return { status: "error", message: "Introduce un email válido." };
+    return { status: "error", field: "email", message: "Introduce un email válido." };
   }
   if (!displayName || displayName.length < 2) {
     return {
       status: "error",
+      field: "display_name",
       message: "Tu nombre debe tener al menos 2 caracteres.",
     };
   }
   if (!username || !USERNAME_RE.test(username)) {
     return {
       status: "error",
+      field: "username",
       message:
         "Username inválido. Usa 3-15 caracteres, solo letras, números, guión, punto o barra baja.",
     };
@@ -55,17 +59,19 @@ export async function signUp(
   if (phoneRaw && !PHONE_RE.test(phoneRaw)) {
     return {
       status: "error",
+      field: "phone_number",
       message: "Teléfono inválido. Usa el formato internacional, p. ej. +34666123456.",
     };
   }
   if (password.length < 6) {
     return {
       status: "error",
+      field: "password",
       message: "La contraseña debe tener al menos 6 caracteres.",
     };
   }
   if (password !== confirm) {
-    return { status: "error", message: "Las contraseñas no coinciden." };
+    return { status: "error", field: "confirm", message: "Las contraseñas no coinciden." };
   }
 
   // Comprobar antes de llamar a signUp si el username ya existe
@@ -78,6 +84,7 @@ export async function signUp(
   if (takenRow) {
     return {
       status: "error",
+      field: "username",
       message: `El usuario "${username}" ya está cogido. Prueba otro.`,
     };
   }
@@ -114,6 +121,7 @@ export async function signUp(
   ) {
     return {
       status: "error",
+      field: "email",
       message:
         "Ya existe una cuenta con este email. Inicia sesión más abajo — si te registraste con Google, entra con el botón de Google.",
     };

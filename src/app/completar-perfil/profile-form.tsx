@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import {
   completeProfile,
   type CompleteProfileState,
@@ -20,7 +21,7 @@ export default function ProfileForm({
   const [state, action, pending] = useActionState(completeProfile, initial);
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={enviarSinBorrar(action)} className="space-y-5">
       <Field
         label="Usuario"
         name="username"
