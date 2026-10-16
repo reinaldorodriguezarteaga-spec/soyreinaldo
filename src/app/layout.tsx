@@ -16,6 +16,7 @@ import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football"
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import "./globals.css";
 import SelectorFavoritos from "@/components/SelectorFavoritos";
+import DirectoReinaldo from "@/components/DirectoReinaldo";
 
 /**
  * Google AdSense (Auto Ads) — monetización del sitio. Todo queda apagado
@@ -183,6 +184,7 @@ export default async function RootLayout({
             cargar y se va con el scroll como cualquier otro contenido —
             nada compite con el banner de cookies, que sí es fixed abajo. */}
         {!inApp && <InstallBanner />}
+        <DirectoReinaldo />
         {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
         {pedirFavoritos && (
