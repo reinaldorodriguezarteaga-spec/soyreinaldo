@@ -73,8 +73,15 @@ export default async function MiEquipoCard() {
 
 type DatosEquipo = Awaited<ReturnType<typeof datosEquipo>>;
 
-export function MiEquipoVista({ datos }: { datos: DatosEquipo }) {
-  const { equipo, liga, proximo, enJuego, ultimo, fila, equipos } = datos;
+export function MiEquipoVista({
+  datos,
+}: {
+  datos: DatosEquipo & { calendario?: string | null };
+}) {
+  const { equipo, liga, proximo, enJuego, ultimo, fila, equipos, calendario } = datos;
+  // Suscripción (se actualiza sola): webcal:// abre el calendario del
+  // móvil/Mac; Google la quiere dentro de su enlace "cid".
+  const ics = calendario ? `webcal://www.soyreinaldo.com/api/calendario/${calendario}.ics` : null;
 
   return (
     <section className="panel miequipo">
@@ -135,12 +142,35 @@ export function MiEquipoVista({ datos }: { datos: DatosEquipo }) {
         )}
       </div>
 
-      {equipos.length > 1 && (
-        <details className="miequipo__cambiar">
-          <summary className="mono">Cambiar de equipo</summary>
-          <MiEquipoElegir equipos={equipos} actual={equipo.id} />
-        </details>
-      )}
+      <div className="miequipo__pie">
+        {ics && (
+          <details className="miequipo__cambiar">
+            <summary className="mono">📅 Partidos en mi calendario</summary>
+            <p className="miequipo__sub">
+              Todos los partidos de tus equipos favoritos, con hora y resultado. Se actualiza solo.
+            </p>
+            <div className="miequipo__chips" style={{ marginTop: 8 }}>
+              <a
+                className="miequipo__chip"
+                href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(ics)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Google Calendar
+              </a>
+              <a className="miequipo__chip" href={ics}>
+                iPhone / Mac / Outlook
+              </a>
+            </div>
+          </details>
+        )}
+        {equipos.length > 1 && (
+          <details className="miequipo__cambiar">
+            <summary className="mono">Cambiar de equipo</summary>
+            <MiEquipoElegir equipos={equipos} actual={equipo.id} />
+          </details>
+        )}
+      </div>
     </section>
   );
 }
@@ -164,9 +194,13 @@ async function cargar() {
   const [{ data: perfil }, { data: favs }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("mi_equipo_id, mi_equipo_liga")
+      .select("mi_equipo_id, mi_equipo_liga, calendario_token")
       .eq("id", user.id)
-      .maybeSingle<{ mi_equipo_id: number | null; mi_equipo_liga: string | null }>(),
+      .maybeSingle<{
+        mi_equipo_id: number | null;
+        mi_equipo_liga: string | null;
+        calendario_token: string | null;
+      }>(),
     supabase
       .from("user_favorites")
       .select("ref_id, label")
@@ -185,7 +219,10 @@ async function cargar() {
     return { tipo: "elegir" as const, equipos };
   }
 
-  return datosEquipo(id, perfil?.mi_equipo_liga ?? null, equipos);
+  return {
+    ...(await datosEquipo(id, perfil?.mi_equipo_liga ?? null, equipos)),
+    calendario: perfil?.calendario_token ?? null,
+  };
 }
 
 /** Partidos, puesto y escudo del equipo principal. */
