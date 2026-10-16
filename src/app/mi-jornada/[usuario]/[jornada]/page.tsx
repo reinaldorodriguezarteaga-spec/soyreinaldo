@@ -30,8 +30,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MiJornada({ params }: Props) {
   const { usuario, jornada } = await params;
-  const t = await tarjetaJornada(decodeURIComponent(usuario), Number(jornada));
-  if (!t) notFound();
+  const n = Number(jornada);
+  if (!Number.isInteger(n) || n < 1 || n > 60) notFound();
+  const t = await tarjetaJornada(decodeURIComponent(usuario), n);
+  // Sin pronósticos en esa jornada (p. ej. se unió después): lo decimos
+  // claro en vez de un 404 (16-oct, pedido del dueño).
+  if (!t) return <SinParticipar jornada={n} />;
 
   const mov = t.puestoAhora != null && t.puestoAntes != null ? t.puestoAntes - t.puestoAhora : 0;
   const url = `${SITE}/mi-jornada/${encodeURIComponent(usuario)}/${t.jornada}`;
@@ -72,6 +76,32 @@ export default async function MiJornada({ params }: Props) {
           <p style={{ margin: "10px 0 0" }}>
             <Link href="/quiniela-liga" className="btn btn--accent">
               Jugar a la quiniela <span className="arr">→</span>
+            </Link>
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function SinParticipar({ jornada }: { jornada: number }) {
+  return (
+    <main className="page">
+      <section className="section">
+        <div className="wrap" style={{ maxWidth: 560, textAlign: "center" }}>
+          <p className="mono" style={{ color: "#ff8a8a", letterSpacing: "0.12em", fontSize: "0.72rem" }}>
+            ERROR · JORNADA {jornada}
+          </p>
+          <div className="panel" style={{ padding: "28px 24px", margin: "14px 0 22px" }}>
+            <h1 style={{ margin: 0, fontSize: "1.5rem" }}>No has participado en la jornada {jornada}</h1>
+            <p style={{ margin: "12px 0 0", color: "var(--text-dim)", lineHeight: 1.6 }}>
+              Para tener tu tarjeta y compartirla, haz tus pronósticos de la próxima jornada.
+              En cuanto termine, podrás presumir de puntos.
+            </p>
+          </div>
+          <p style={{ margin: 0 }}>
+            <Link href="/quiniela-liga" className="btn btn--accent">
+              Hacer mis pronósticos <span className="arr">→</span>
             </Link>
           </p>
         </div>

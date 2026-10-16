@@ -5,7 +5,6 @@ import LeagueSwitcher from "../league-switcher";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
-import { tarjetaJornada } from "@/lib/quiniela-liga/jornada-datos";
 
 const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
 
@@ -135,16 +134,13 @@ export default async function QuinielaLigaRankingPage({
       .select("username")
       .eq("id", meId)
       .maybeSingle<{ username: string | null }>();
-    // Solo si hay tarjeta que enseñar: quien aún no ha pronosticado esa
-    // jornada (p. ej. se unió hoy) llegaba a un "no encontrada" (16-oct,
-    // tester de la app). La consulta va cacheada y la reutiliza la tarjeta.
+    // Si no jugó esa jornada, la tarjeta le explica que no participó
+    // (antes daba 404; 16-oct, pedido del dueño).
     const usuario = perfil?.username || meId;
-    if (await tarjetaJornada(usuario, ultimaTerminada)) {
-      tarjeta = {
-        jornada: ultimaTerminada,
-        href: `/mi-jornada/${encodeURIComponent(usuario)}/${ultimaTerminada}`,
-      };
-    }
+    tarjeta = {
+      jornada: ultimaTerminada,
+      href: `/mi-jornada/${encodeURIComponent(usuario)}/${ultimaTerminada}`,
+    };
   }
 
   const baseRanking = leagueHref("/quiniela-liga/ranking", active);

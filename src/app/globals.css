@@ -1872,3 +1872,106 @@ select.field { appearance: none; }
   .ficha__score { font-size: 2.3rem; }
   .ficha__teams { gap: 8px; }
 }
+
+/* Pill de la quiniela bajo los botones de la portada. */
+.hero__quiniela {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklch, #f5c542 55%, transparent);
+  background: color-mix(in oklch, #f5c542 14%, transparent);
+  color: #ffe08a;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.hero__quiniela:hover { background: color-mix(in oklch, #f5c542 24%, transparent); }
+.hero__quiniela:active { transform: scale(0.97); }
+
+/* Selector de favoritos tras iniciar sesión (components/SelectorFavoritos). */
+.selfav {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 8, 24, 0.82);
+  backdrop-filter: blur(4px);
+}
+.selfav__caja {
+  width: 100%;
+  max-width: 640px;
+  max-height: min(88dvh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.selfav__cab { padding: 20px 20px 8px; }
+.selfav__cab h2 { margin: 4px 0 6px; font-size: 1.5rem; }
+.selfav__paso { color: var(--accent); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 0; }
+.selfav__sub { color: var(--text-dim); font-size: 0.88rem; margin: 0; line-height: 1.5; }
+.selfav__cuerpo { flex: 1; overflow-y: auto; padding: 12px 20px; overscroll-behavior: contain; }
+.selfav__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.selfav__op {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+.selfav__op img { width: 28px; height: 28px; object-fit: contain; flex: none; }
+.selfav__op span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.selfav__op:active { transform: scale(0.97); }
+.selfav__op.on {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 16%, transparent);
+}
+.selfav__pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 560px) {
+  .selfav { padding: 0; align-items: stretch; }
+  .selfav__caja { max-height: none; border-radius: 0; }
+  .selfav__rejilla { grid-template-columns: 1fr 1fr; }
+}
+
+/* Interruptor "Solo favoritos" de la portada (HomeCalendarView). */
+.solofav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.solofav input { width: 16px; height: 16px; accent-color: var(--accent); }
+.solofav:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 14%, transparent);
+}

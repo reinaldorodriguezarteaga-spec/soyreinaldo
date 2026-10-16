@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDirecto } from "@/components/useDirecto";
 import type { CompetitionGroup, HomeWidgetData } from "@/lib/sports/widget-data";
 import CompactMatchRow from "@/components/CompactMatchRow";
+import { esDeFavoritos, useSoloFavoritos, type Seguidos } from "@/lib/solo-favoritos";
 
 // >45s (el TTL de getCompetitionFixturesWindow) para que la mayoría de polls
 // acierten en caché en vez de pegar en vivo a la API — este widget cruza
@@ -113,6 +114,7 @@ export default function HomeMatchWidgetClient({
   initial,
   liveOnly = false,
   favoriteTeamIds = [],
+  seguidos,
 }: {
   initial: HomeWidgetData;
   /** true → una sola tarjeta "En vivo" con SOLO los partidos en juego
@@ -123,8 +125,13 @@ export default function HomeMatchWidgetClient({
    * en el servidor porque el poll (`/api/sports/home-widget`) es igual para
    * todos y no sabe quién mira. */
   favoriteTeamIds?: number[];
+  /** Con el interruptor "Solo favoritos" activo, solo sus partidos. */
+  seguidos?: Seguidos;
 }) {
   const [data, setData] = useState<HomeWidgetData>(initial);
+  const [soloFav] = useSoloFavoritos();
+  const filtrar =
+    soloFav && seguidos && (seguidos.equipos.length > 0 || seguidos.ligas.length > 0);
 
   // Pide el estado de los marcadores. Best-effort: un fallo puntual no rompe
   // la UI y el siguiente aviso o sondeo lo arregla.
@@ -181,15 +188,18 @@ export default function HomeMatchWidgetClient({
     isFav(fx) ? `⭐ ${name}` : name;
 
   if (liveOnly) {
+    const deFav = (r: { fx: CompetitionGroup["live"][number]; competition: { slug: string } }) =>
+      !filtrar ||
+      esDeFavoritos(seguidos!, r.fx.teams.home.id, r.fx.teams.away.id, r.competition.slug);
     const liveRows = favFirst(
       groups.flatMap((g) => g.live.map((fx) => ({ fx, competition: g.competition }))),
-    );
+    ).filter(deFav);
     // Sin la vista de acordeones (las pestañas se retiraron), los
     // resultados de HOY también viven en esta tarjeta — debajo de los
     // partidos en juego.
     const finishedRows = favFirst(
       groups.flatMap((g) => g.finishedToday.map((fx) => ({ fx, competition: g.competition }))),
-    );
+    ).filter(deFav);
     if (liveRows.length === 0 && finishedRows.length === 0) return null;
     const anyLive = liveRows.length > 0;
     return (
