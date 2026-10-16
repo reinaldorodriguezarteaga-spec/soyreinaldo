@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { isAppRequest } from "@/lib/is-app";
 
 export type AuthState = {
   status: "idle" | "success" | "error";
@@ -204,10 +205,13 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // En la app no hay botón de Google (Google no deja iniciar sesión dentro
+    // de un webview): quien se registró con Google entra por código.
     return {
       status: "error",
-      message:
-        "Usuario o contraseña incorrectos. Si te registraste con Google, entra con el botón de Google de arriba — esas cuentas no tienen contraseña.",
+      message: (await isAppRequest())
+        ? "Usuario o contraseña incorrectos. Si te registraste con Google, tu cuenta no tiene contraseña: entra con «Código por email» usando tu Gmail."
+        : "Usuario o contraseña incorrectos. Si te registraste con Google, entra con el botón de Google de arriba — esas cuentas no tienen contraseña.",
     };
   }
 

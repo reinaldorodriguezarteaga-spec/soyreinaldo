@@ -50,6 +50,20 @@ export default function LoginForm({
         </>
       )}
 
+      {inApp && tab === "password" && (
+        <p className="notice notice--info" style={{ marginBottom: 14, textAlign: "left" }}>
+          ¿Te registraste con Google? Dentro de la app entra con{" "}
+          <button
+            type="button"
+            onClick={() => setTab("magic")}
+            style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "underline" }}
+          >
+            Código por email
+          </button>{" "}
+          usando tu Gmail: te llega un código y listo.
+        </p>
+      )}
+
       <div className="tabs" style={{ marginBottom: 18 }}>
         <button
           type="button"
