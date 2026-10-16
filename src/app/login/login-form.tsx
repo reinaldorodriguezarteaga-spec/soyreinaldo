@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import OAuthButton from "@/components/OAuthButton";
 import CodeLogin from "./code-login";
 import ContextWarning from "./context-warning";
@@ -67,7 +68,7 @@ export default function LoginForm({
       </div>
 
       {tab === "password" ? (
-        <form action={pwAction}>
+        <form onSubmit={enviarSinBorrar(pwAction)}>
           <input type="hidden" name="redirect" value={redirect} />
           <label className="label">Email o usuario</label>
           <input
@@ -103,7 +104,7 @@ export default function LoginForm({
       ) : inApp ? (
         <CodeLogin redirect={redirect} />
       ) : (
-        <form action={mlAction}>
+        <form onSubmit={enviarSinBorrar(mlAction)}>
           <input type="hidden" name="redirect" value={redirect} />
           <label className="label">Email</label>
           <input

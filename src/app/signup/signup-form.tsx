@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import OAuthButton from "@/components/OAuthButton";
 import ContextWarning from "@/app/login/context-warning";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import { signUp, type SignupState } from "./actions";
 
 const initialState: SignupState = { status: "idle" };
@@ -16,6 +17,15 @@ export default function SignupForm({
   inApp?: boolean;
 }) {
   const [state, action, pending] = useActionState(signUp, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Con un error de un campo concreto, el cursor va a ese campo.
+  useEffect(() => {
+    if (state.status !== "error" || !state.field) return;
+    const el = formRef.current?.elements.namedItem(state.field);
+    if (el instanceof HTMLInputElement) el.focus();
+  }, [state]);
+  const err = (name: string) =>
+    state.status === "error" && state.field === name ? state.message : undefined;
   const loginHref =
     redirect === "/quiniela"
       ? "/login"
@@ -37,14 +47,14 @@ export default function SignupForm({
         </>
       )}
 
-      <form action={action}>
+      <form ref={formRef} onSubmit={enviarSinBorrar(action)}>
         <input type="hidden" name="redirect" value={redirect} />
-        <Field label="Nombre" name="display_name" type="text" placeholder="Cómo apareces en el ranking" autoComplete="nickname" disabled={pending} />
-        <Field label="Usuario" name="username" type="text" placeholder="reinaldor" autoComplete="username" disabled={pending} hint="3-15 caracteres. Solo letras, números, _ - ." />
-        <Field label="Email" name="email" type="email" placeholder="tu@email.com" autoComplete="email" disabled={pending} />
-        <Field label="Teléfono (opcional)" name="phone_number" type="tel" placeholder="+34666123456" autoComplete="tel" disabled={pending} required={false} hint="Para recordatorios. Formato internacional con +." />
-        <Field label="Contraseña" name="password" type="password" placeholder="Mínimo 6 caracteres" autoComplete="new-password" disabled={pending} />
-        <Field label="Confirmar contraseña" name="confirm" type="password" placeholder="Repite tu contraseña" autoComplete="new-password" disabled={pending} />
+        <Field label="Nombre" name="display_name" error={err("display_name")} type="text" placeholder="Cómo apareces en el ranking" autoComplete="nickname" disabled={pending} />
+        <Field label="Usuario" name="username" error={err("username")} type="text" placeholder="reinaldor" autoComplete="username" disabled={pending} hint="3-15 caracteres. Solo letras, números, _ - ." />
+        <Field label="Email" name="email" error={err("email")} type="email" placeholder="tu@email.com" autoComplete="email" disabled={pending} />
+        <Field label="Teléfono (opcional)" name="phone_number" error={err("phone_number")} type="tel" placeholder="+34666123456" autoComplete="tel" disabled={pending} required={false} hint="Para recordatorios. Formato internacional con +." />
+        <Field label="Contraseña" name="password" error={err("password")} type="password" placeholder="Mínimo 6 caracteres" autoComplete="new-password" disabled={pending} />
+        <Field label="Confirmar contraseña" name="confirm" error={err("confirm")} type="password" placeholder="Repite tu contraseña" autoComplete="new-password" disabled={pending} />
 
         <button
           type="submit"
@@ -58,7 +68,7 @@ export default function SignupForm({
               : "Crear cuenta"}
         </button>
 
-        {state.status === "error" && state.message && (
+        {state.status === "error" && state.message && !state.field && (
           <p
             style={{
               marginTop: 12,
@@ -112,6 +122,7 @@ function Field({
   disabled,
   required = true,
   hint,
+  error,
 }: {
   label: string;
   name: string;
@@ -121,6 +132,8 @@ function Field({
   disabled?: boolean;
   required?: boolean;
   hint?: string;
+  /** Mensaje de error de este campo: lo marca en rojo y lo explica debajo. */
+  error?: string;
 }) {
   return (
     <div>
@@ -133,9 +146,26 @@ function Field({
         autoComplete={autoComplete}
         placeholder={placeholder}
         disabled={disabled}
-        style={hint ? { marginBottom: 4 } : undefined}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${name}-error` : undefined}
+        style={
+          error
+            ? { marginBottom: 4, borderColor: "#ff4d4d" }
+            : hint
+              ? { marginBottom: 4 }
+              : undefined
+        }
       />
-      {hint && (
+      {error && (
+        <p
+          id={`${name}-error`}
+          role="alert"
+          style={{ margin: "0 0 12px", fontSize: "0.78rem", color: "#ffb4b4" }}
+        >
+          {error}
+        </p>
+      )}
+      {hint && !error && (
         <p style={{ margin: "0 0 12px", fontSize: "0.7rem", color: "var(--text-dim)" }}>
           {hint}
         </p>

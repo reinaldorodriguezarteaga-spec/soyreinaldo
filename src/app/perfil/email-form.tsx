@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import { updateEmail, type EmailState } from "./actions";
 
 const initialState: EmailState = { status: "idle" };
@@ -10,7 +11,7 @@ export default function EmailForm({ currentEmail }: { currentEmail: string }) {
   const succeeded = state.status === "success";
 
   return (
-    <form action={action} className="space-y-4">
+    <form onSubmit={enviarSinBorrar(action)} className="space-y-4">
       <div>
         <label className="label">Email actual</label>
         <p style={{ fontWeight: 600 }}>{currentEmail}</p>
