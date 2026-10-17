@@ -44,6 +44,13 @@ const DIRECTOS_LINKS: AdminLink[] = [
     label: "Marcador completo (URL para OBS)",
     externo: true,
   },
+  // Encuesta abierta más reciente con sus porcentajes en vivo (1920×1080,
+  // fondo transparente). Se lanza desde la ficha del partido.
+  {
+    href: "https://www.soyreinaldo.com/api/obs/encuesta",
+    label: "Encuesta en directo (URL para OBS)",
+    externo: true,
+  },
 ];
 
 function AdminLinkItem({ a, onClick }: { a: AdminLink; onClick: () => void }) {
