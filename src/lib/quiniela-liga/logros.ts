@@ -91,3 +91,91 @@ export const logroDuelo = (id: string) =>
     ["logro-duelo", id],
     { revalidate: 600 },
   )();
+
+export type Temporada = {
+  nombre: string;
+  puntos: number;
+  puesto: number | null;
+  jugadores: number;
+  jornadas: number;
+  exactos: number;
+  aciertos: number;
+  mejor: { jornada: number; puntos: number } | null;
+  medallas: Medalla[];
+  duelos: { ganados: number; perdidos: number; empatados: number };
+  /** Contra quién ha ganado más duelos. */
+  victima: { nombre: string; veces: number } | null;
+  vsReinaldo: { ganadas: number; jugadas: number };
+};
+
+/** "Tu temporada" (17-oct): el resumen de un jugador en la liga pública. */
+export const temporadaDe = (usuario: string) =>
+  unstable_cache(
+    async (): Promise<Temporada | null> => {
+      const db = clienteServicio();
+      const p = await perfil(usuario);
+      if (!db || !p) return null;
+      const [{ data: filasData }, { data: tabla }, { data: duelosData }] = await Promise.all([
+        db.rpc("lq_jornadas_jugador", { p_league_id: PUBLICA }),
+        db.rpc("lq_leaderboard", { p_league_id: PUBLICA }),
+        db
+          .from("lq_duelos")
+          .select("matchday, retador, rival, estado")
+          .eq("estado", "aceptado")
+          .or(`retador.eq.${p.id},rival.eq.${p.id}`)
+          .returns<{ matchday: number; retador: string; rival: string; estado: string }[]>(),
+      ]);
+      const filas = (filasData ?? []) as FilaJornadaJugador[];
+      const suyas = filas.filter((f) => f.user_id === p.id);
+      if (suyas.length === 0) return null;
+      const clas = (tabla ?? []) as { user_id: string; total_points: number }[];
+      const idx = clas.findIndex((r) => r.user_id === p.id);
+      const mejorFila = [...suyas].sort((a, b) => b.puntos - a.puntos)[0];
+
+      // Duelos: los de jornadas terminadas, con los puntos de cada uno.
+      const pts = (u: string, j: number) => filas.find((f) => f.user_id === u && f.matchday === j);
+      const duelos = { ganados: 0, perdidos: 0, empatados: 0 };
+      const victimas = new Map<string, number>();
+      for (const d of duelosData ?? []) {
+        const yo = pts(p.id, d.matchday);
+        const otroId = d.retador === p.id ? d.rival : d.retador;
+        const otro = pts(otroId, d.matchday);
+        if (!(yo?.terminada ?? otro?.terminada)) continue;
+        const a = yo?.puntos ?? 0;
+        const b = otro?.puntos ?? 0;
+        if (a > b) {
+          duelos.ganados++;
+          victimas.set(otroId, (victimas.get(otroId) ?? 0) + 1);
+        } else if (a < b) duelos.perdidos++;
+        else duelos.empatados++;
+      }
+      let victima: Temporada["victima"] = null;
+      const top = [...victimas.entries()].sort((a, b) => b[1] - a[1])[0];
+      if (top) {
+        const { data: v } = await db.from("profiles").select("id, display_name, username").eq("id", top[0]).maybeSingle<Perfil>();
+        victima = { nombre: nombreDe(v), veces: top[1] };
+      }
+
+      const rei = new Map(filas.filter((f) => f.user_id === ANFITRION_ID && f.terminada).map((f) => [f.matchday, f.puntos]));
+      const comparables = suyas.filter((f) => f.terminada && rei.has(f.matchday));
+      return {
+        nombre: nombreDe(p),
+        puntos: idx >= 0 ? clas[idx].total_points : suyas.reduce((n, f) => n + f.puntos, 0),
+        puesto: idx >= 0 ? idx + 1 : null,
+        jugadores: clas.length,
+        jornadas: suyas.length,
+        exactos: suyas.reduce((n, f) => n + f.exactos, 0),
+        aciertos: suyas.reduce((n, f) => n + f.signos, 0),
+        mejor: mejorFila ? { jornada: mejorFila.matchday, puntos: mejorFila.puntos } : null,
+        medallas: medallasDe(filas, p.id, ANFITRION_ID),
+        duelos,
+        victima,
+        vsReinaldo: {
+          ganadas: p.id === ANFITRION_ID ? 0 : comparables.filter((f) => f.puntos > rei.get(f.matchday)!).length,
+          jugadas: p.id === ANFITRION_ID ? 0 : comparables.length,
+        },
+      };
+    },
+    ["temporada", usuario.toLowerCase()],
+    { revalidate: 600 },
+  )();

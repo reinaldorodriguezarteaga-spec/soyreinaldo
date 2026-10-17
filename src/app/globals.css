@@ -2245,3 +2245,16 @@ select.field { appearance: none; }
 .ytplayer__chat { height: 380px; background: #fff; }
 .ytplayer__chat iframe { width: 100%; height: 100%; border: 0; display: block; }
 @media (max-width: 640px) { .ytplayer__chat { height: 300px; } }
+
+/* "Tu temporada" (/mi-temporada/<usuario>). */
+.temporada { max-width: 720px; display: grid; gap: 16px; }
+.temporada__hero { padding: 32px 24px; text-align: center; display: grid; gap: 6px; justify-items: center;
+  background: linear-gradient(135deg, #0a1030 0%, #1b2a6b 100%); border-color: color-mix(in oklch, #f5c542 40%, transparent); }
+.temporada__cifra { font-size: 1.2rem; color: var(--text-dim); }
+.temporada__cifra strong { display: block; font-family: var(--font-display-stack); font-size: 4.5rem; line-height: 1; color: var(--text); }
+.temporada__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.temporada__dato { padding: 14px 16px; display: grid; gap: 2px; }
+.temporada__dato > span:first-child { font-size: 1.4rem; }
+.temporada__dato .mono { color: var(--text-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.temporada__dato strong { font-size: 1.05rem; }
+.temporada__frase { padding: 14px 16px; margin: 0; text-align: center; }

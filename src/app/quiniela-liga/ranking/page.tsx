@@ -89,7 +89,7 @@ export default async function QuinielaLigaRankingPage({
     ? medallasDe((jornadasJugador ?? []) as FilaJornadaJugador[], meId, ANFITRION_ID)
     : [];
   // Cómo se nombra al usuario en las URLs de sus logros (usuario o id).
-  const { data: miPerfil } = meId && misMedallas.length
+  const { data: miPerfil } = meId
     ? await supabase.from("profiles").select("username").eq("id", meId).maybeSingle<{ username: string | null }>()
     : { data: null };
   const miUsuarioUrl = meId ? miPerfil?.username || meId : null;
@@ -218,6 +218,13 @@ export default async function QuinielaLigaRankingPage({
               🎯 <strong>{miRacha.aciertos}</strong>{" "}
               {miRacha.aciertos === 1 ? "acierto seguido" : "aciertos seguidos"}
               {miRacha.mejorAciertos > miRacha.aciertos && <> (récord {miRacha.mejorAciertos})</>}
+            </p>
+          )}
+          {meId && yo && (
+            <p style={{ marginTop: 12 }}>
+              <Link href={`/mi-temporada/${encodeURIComponent(miUsuarioUrl ?? meId)}`} className="btn">
+                📊 Mi temporada <span className="arr">→</span>
+              </Link>
             </p>
           )}
           {misMedallas.length > 0 && (
