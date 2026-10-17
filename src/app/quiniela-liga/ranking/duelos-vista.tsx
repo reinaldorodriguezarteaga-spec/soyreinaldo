@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   ganadorDuelo,
@@ -170,6 +171,11 @@ function FilaResultado({ d, meId }: { d: Duelo; meId: string | null }) {
         {marca(d.rival)}
       </span>
       {!d.terminada && <span className="mono duelo__nota">{d.empezada ? "en juego" : "por empezar"}</span>}
+      {g === meId && (
+        <Link href={`/logro/duelo/${d.id}`} className="mono duelo__compartir">
+          Compartir ↗
+        </Link>
+      )}
     </div>
   );
 }
