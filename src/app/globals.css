@@ -2282,3 +2282,23 @@ select.field { appearance: none; }
 .oferta-avisos__cerrar { background: none; border: 0; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; }
 .oferta-avisos__error { width: 100%; color: #ff8a8a; font-size: 0.82rem; }
 .oferta-avisos--ok { color: var(--accent); margin: 0; }
+
+/* Bienvenida (BienvenidaPasos). */
+.bienvenida { position: relative; padding: 22px; }
+.bienvenida h2 { margin: 0 36px 18px 0; font-size: 1.15rem; }
+.bienvenida__cerrar { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border: 0; background: none; color: var(--text-dim); cursor: pointer; }
+.bienvenida__pasos { list-style: none; margin: 0; padding: 0; }
+.bienvenida__pasos li { display: flex; align-items: baseline; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.bienvenida__numero, .bienvenida__pasos a { color: var(--accent); }
+.bienvenida__pasos a:hover { text-decoration: underline; }
+.bienvenida__pasos p { margin: 6px 0 0; color: var(--text-dim); font-size: 0.85rem; }
+.bienvenida__cerrar:focus-visible, .bienvenida__pasos a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Análisis: filtros y lecturas del mismo equipo. */
+.analisis-filtros { margin-bottom: 24px; }
+.analisis-filtros a:focus-visible, .analisis-relacionados a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.analisis-relacionados { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.analisis-relacionados h2 { font-size: 1.25rem; margin-bottom: 12px; }
+.analisis-relacionados ul { list-style: none; margin: 0; padding: 0; }
+.analisis-relacionados a { display: block; padding: 12px 0; color: var(--accent); }
+.analisis-relacionados a:hover { text-decoration: underline; }
