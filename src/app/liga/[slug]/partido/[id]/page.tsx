@@ -33,6 +33,7 @@ import { filasDirecto } from "@/lib/sports/directo";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
+import MatchVideos from "./match-videos";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
 import MatchCronica from "./match-cronica";
@@ -587,6 +588,9 @@ export default async function LigaPartidoPage({
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
           {cronica && <MatchCronica datos={cronica} />}
+          <Suspense fallback={null}>
+            <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
+          </Suspense>
           {!played && (
             <Suspense fallback={null}>
               <MatchPrevia

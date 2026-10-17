@@ -2136,3 +2136,16 @@ select.field { appearance: none; }
   background: color-mix(in oklch, #f5c542 12%, transparent);
   font-size: 0.84rem;
 }
+
+/* Vídeos de Reinaldo en la ficha del partido (match-videos + VideoLite). */
+.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.videolite { margin: 0; }
+.videolite__marco { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; border: 1px solid var(--line); }
+.videolite__marco button { all: unset; cursor: pointer; display: block; width: 100%; height: 100%; }
+.videolite__marco img, .videolite__marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.videolite__play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 58px; height: 40px; border-radius: 10px; background: #e11d2a; color: #fff;
+  display: grid; place-items: center; font-size: 1rem; box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
+.videolite figcaption { margin-top: 8px; font-size: 0.9rem; line-height: 1.4; }
