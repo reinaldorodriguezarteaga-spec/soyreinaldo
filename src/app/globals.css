@@ -2241,3 +2241,7 @@ select.field { appearance: none; }
 .medalla:hover { border-color: #f5c542; }
 .medalla__compartir { color: var(--text-dim); font-size: 0.78rem; }
 .duelo__compartir { color: var(--accent); font-size: 0.72rem; text-decoration: none; }
+.ytplayer__btn.on { border-color: var(--accent); color: var(--accent); }
+.ytplayer__chat { height: 380px; background: #fff; }
+.ytplayer__chat iframe { width: 100%; height: 100%; border: 0; display: block; }
+@media (max-width: 640px) { .ytplayer__chat { height: 300px; } }

@@ -15,6 +15,7 @@ const CADA_MS = 120_000;
 export default function DirectoReinaldo() {
   const [directo, setDirecto] = useState<DirectoYoutube>(null);
   const [abierto, setAbierto] = useState(false);
+  const [chat, setChat] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -54,12 +55,21 @@ export default function DirectoReinaldo() {
       <div className="ytplayer__cab">
         <span className="livepulse" />
         <span className="ytplayer__titulo">{directo.titulo || "Reinaldo en directo"}</span>
+        <button
+          type="button"
+          className={`ytplayer__btn${chat ? " on" : ""}`}
+          onClick={() => setChat((c) => !c)}
+          aria-pressed={chat}
+          title="Ver y escribir en el chat del directo"
+        >
+          💬 Chat
+        </button>
         <a
           href={`https://www.youtube.com/watch?v=${directo.videoId}`}
           target="_blank"
           rel="noopener noreferrer"
           className="ytplayer__btn"
-          title="Abrir en YouTube (para escribir en el chat)"
+          title="Abrir en YouTube"
         >
           YouTube ↗
         </a>
@@ -75,6 +85,17 @@ export default function DirectoReinaldo() {
           allowFullScreen
         />
       </div>
+      {/* Chat del directo (17-oct): el de YouTube, incrustado. Para escribir
+          hay que tener sesión de YouTube en este navegador; si el navegador
+          bloquea sus cookies, el propio chat ofrece abrirlo en YouTube. */}
+      {chat && (
+        <div className="ytplayer__chat">
+          <iframe
+            src={`https://www.youtube.com/live_chat?v=${directo.videoId}&embed_domain=${typeof window === "undefined" ? "www.soyreinaldo.com" : window.location.hostname}`}
+            title="Chat del directo"
+          />
+        </div>
+      )}
     </div>
   );
 }
