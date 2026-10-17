@@ -2258,3 +2258,14 @@ select.field { appearance: none; }
 .temporada__dato .mono { color: var(--text-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .temporada__dato strong { font-size: 1.05rem; }
 .temporada__frase { padding: 14px 16px; margin: 0; text-align: center; }
+
+/* "Sobre Reinaldo" y firma de los análisis. */
+.sobre { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.sobre__foto { width: 160px; height: auto; border-radius: 18px; border: 1px solid var(--line); }
+.sobre__nota { color: var(--text-dim); font-size: 0.86rem; }
+.firma { display: flex; gap: 12px; align-items: center; margin-top: 18px; color: inherit; text-decoration: none; }
+.firma__foto { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; }
+.firma__nombre { display: block; font-weight: 600; font-size: 0.92rem; }
+.firma__usuario { color: var(--accent); font-weight: 500; }
+.firma__lema { display: block; color: var(--text-dim); font-size: 0.82rem; }
+.firma:hover .firma__nombre { text-decoration: underline; }

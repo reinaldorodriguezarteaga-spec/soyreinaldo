@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import { porSlug } from "@/lib/analisis/queries";
 import { markdownAHtml, minutosDeLectura } from "@/lib/analisis/markdown";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
+import FirmaAutor from "@/components/FirmaAutor";
+import { AUTOR } from "@/lib/autor/autor";
 import ShareArticle from "@/components/ShareArticle";
 import ViewPing from "@/components/ViewPing";
 import Comentarios from "./comentarios";
@@ -63,7 +65,12 @@ export default async function AnalisisPage({
           ...(a.cover_url ? { image: a.cover_url } : {}),
           datePublished: a.published_at,
           dateModified: a.updated_at,
-          author: { "@type": "Person", name: "Reinaldo Rodríguez" },
+          author: {
+            "@type": "Person",
+            name: AUTOR.nombre,
+            url: absolute(AUTOR.url),
+            sameAs: AUTOR.redes.map((r) => r.url),
+          },
           publisher: { "@type": "Person", name: "Soy Reinaldo" },
           mainEntityOfPage: absolute(`/analisis/${a.slug}`),
         }}
@@ -88,6 +95,7 @@ export default async function AnalisisPage({
             {fecha ? fecha.toUpperCase() : ""} · {minutosDeLectura(a.body)} MIN DE LECTURA
             {a.view_count >= 20 ? ` · ${a.view_count} LECTURAS` : ""}
           </p>
+          <FirmaAutor />
         </div>
       </section>
 
