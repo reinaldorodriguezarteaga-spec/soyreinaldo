@@ -229,11 +229,13 @@ export default async function QuinielaLigaReglasPage({
             para la próxima jornada, hasta <b>{MAX_RETOS_POR_JORNADA} retos</b> por jornada. Tiene
             hasta el primer partido para aceptar. Gana el duelo quien más puntos saque en esa
             jornada. Al final de la temporada, <b>quien más duelos haya ganado suma {PREMIO_DUELOS} puntos</b>{" "}
-            a la clasificación general.
+            a la clasificación general (se suman solos al acabar la última jornada).
           </p>
           <p className="hint" style={{ marginTop: 8 }}>
             🔥 Junto a tu nombre sale tu racha de jornadas seguidas jugando (desde 3) y 🎯 la de
-            aciertos seguidos (desde 4).
+            aciertos seguidos (desde 4). Y en la clasificación ves tus medallas: 🏅 mejor de la
+            jornada, 🎯 francotirador (3 exactos en una jornada), 💯 pleno (todos los ganadores de una
+            jornada), 🔥 constancia (5 jornadas seguidas) y 🎙️ le ganaste a Reinaldo.
           </p>
         </div>
       </section>
