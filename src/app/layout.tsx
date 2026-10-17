@@ -85,6 +85,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // El indicador del directo llega de forma independiente: si el cron falla,
+  // sus consultas de respaldo no bloquean todas las páginas de la web.
+  const hasLiveMatch = hayPartidoEnJuego().then((vivo) =>
+    vivo != null
+      ? vivo
+      : Promise.all(COMPETITIONS.map((c) => getCompetitionFixturesWindow(c)))
+          .then((windows) => windows.some((w) => w.some(isLive)))
+          .catch(() => false),
+  ).catch(() => false);
   const supabase = await createClient();
   const {
     data: { user },
@@ -97,9 +106,9 @@ export default async function RootLayout({
   const inApp = await isAppRequest();
   const anuncios = !!ADSENSE_CLIENT_ID && !inApp;
 
-  // En paralelo (17-oct): perfil, favoritos y "¿hay partido en juego?" iban
-  // uno detrás de otro antes de pintar nada en TODAS las páginas.
-  const [perfilRes, favoritosRes, hasLiveMatch] = await Promise.all([
+  // Perfil y favoritos en paralelo; el indicador del directo se resuelve
+  // aparte, dentro de las pastillas de la cabecera.
+  const [perfilRes, favoritosRes] = await Promise.all([
     user
       ? supabase.from("profiles").select("is_admin, favoritos_elegidos_at").eq("id", user.id).single()
       : Promise.resolve({ data: null }),
@@ -110,17 +119,6 @@ export default async function RootLayout({
           .eq("user_id", user.id)
           .order("created_at", { ascending: true })
       : Promise.resolve({ data: null }),
-    // ¿Hay algún partido EN JUEGO en alguna competición activa? (indicador
-    // del header). Cada ventana va cacheada; best-effort si la API falla.
-    // Primero la tabla del directo (una consulta); si el cron no late, las
-    // ventanas de cada competición como siempre.
-    hayPartidoEnJuego().then((vivo) =>
-      vivo != null
-        ? vivo
-        : Promise.all(COMPETITIONS.map((c) => getCompetitionFixturesWindow(c)))
-            .then((windows) => windows.some((w) => w.some(isLive)))
-            .catch(() => false),
-    ),
   ]);
   const profile = perfilRes.data as { is_admin: boolean | null; favoritos_elegidos_at: string | null } | null;
   // Para el atajo "Admin" en el menú de usuario — evita que quien no sea

@@ -193,6 +193,21 @@ describe("llamadas a API-Football", () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
+  it.each([false, true])("no pide los listados desactivados (forceLive=%s)", async (forceLive) => {
+    const fetchMock = vi.fn(async (_url: string | URL) => respuesta({ errors: [], response: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await getTeamFixtures(7654, { last: 0, next: 4, forceLive });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("next=4");
+    fetchMock.mockClear();
+    await getTeamFixtures(7655, { last: 1, next: 0, forceLive });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("last=1");
+    fetchMock.mockClear();
+    expect(await getTeamFixtures(7656, { last: 0, next: 0, forceLive })).toEqual({ team: null, recent: [], upcoming: [] });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("archivo: un partido terminado hace horas se guarda y no se vuelve a pedir", async () => {
     const terminado = {
       fixture: { id: 21, date: new Date(Date.now() - 24 * 3_600_000).toISOString(), status: { short: "FT" } },

@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import TeamAnalisis from "./team-analisis";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -9,7 +9,6 @@ import {
   frenoActivo,
   getTeamCoach,
   getTeamFixtures,
-  getAllCompetitionPlayers,
   getTeamSquad,
   getTeamStatistics,
   getCompetitionStandings,
@@ -18,6 +17,7 @@ import {
   type Fixture,
   type SquadPlayer,
   type StandingRow,
+  type TeamSeasonStats,
 } from "@/lib/sports/api-football";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
@@ -29,6 +29,10 @@ import TeamTabs from "./team-tabs";
 import TeamFixturesList from "./fixtures-list";
 import TeamOverview from "./team-overview";
 
+// Metadatos y contenido comparten la misma lectura: antes los metadatos
+// pedían last:1 y next:0, además de los dos listados de la ficha.
+const fixturesDelEquipo = cache((teamId: number) => getTeamFixtures(teamId, { last: 40, next: 40 }));
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,7 +41,7 @@ export async function generateMetadata({
   const { slug, id } = await params;
   const competition = COMPETITIONS_BY_SLUG[slug];
   if (!competition) return {};
-  const { team } = await getTeamFixtures(Number(id), { last: 1, next: 0 }).catch(
+  const { team } = await fixturesDelEquipo(Number(id)).catch(
     () => ({ team: null }) as { team: null },
   );
   if (!team) return { title: `Equipo · ${competition.name} | Soy Reinaldo` };
@@ -66,22 +70,17 @@ export default async function LigaEquipoPage({
   const teamId = Number(id);
   if (!Number.isFinite(teamId)) notFound();
 
-  const [{ team, recent, upcoming }, stats, squad, coach, standings, liveFixtures] =
-    await Promise.all([
-      getTeamFixtures(teamId, { last: 40, next: 40 }),
-      getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(
-        () => null,
-      ),
-      getTeamSquad(teamId).catch(() => [] as SquadPlayer[]),
-      getTeamCoach(teamId).catch(() => null as Coach | null),
-      // null si la competición no tiene tabla (Copa del Rey y demás KO puros)
-      // — TeamTabs oculta la pestaña "Clasificación" en ese caso.
-      getCompetitionStandings(competition).catch(() => null) as Promise<StandingRow[] | null>,
-      // Ventana de partidos de la competición (caché 45s, ya compartida con
-      // el widget de portada) — StandingsTableView la usa para fusionar los
-      // marcadores en directo sobre la tabla mientras se juega.
-      getCompetitionFixturesWindow(competition).catch(() => [] as Fixture[]),
-    ]);
+  // Todo arranca a la vez, pero solo el calendario y su estado en vivo
+  // son necesarios para enseñar el equipo y sus próximos partidos.
+  const statsPromise = getTeamStatistics(teamId, { league: competition.leagueId, season: competition.season }).catch(() => null);
+  const squadPromise = getTeamSquad(teamId).catch(() => [] as SquadPlayer[]);
+  const coachPromise = getTeamCoach(teamId).catch(() => null as Coach | null);
+  const standingsPromise = getCompetitionStandings(competition).catch(() => null) as Promise<StandingRow[] | null>;
+  const favoritedPromise = isFavorited("team", String(teamId)).catch(() => false);
+  const [{ team, recent, upcoming }, liveFixtures] = await Promise.all([
+    fixturesDelEquipo(teamId),
+    getCompetitionFixturesWindow(competition).catch(() => [] as Fixture[]),
+  ]);
 
   if (!team && recent.length === 0 && upcoming.length === 0) {
     if (cuotaAgotada() || frenoActivo()) {
@@ -89,38 +88,6 @@ export default async function LigaEquipoPage({
     }
     notFound();
   }
-
-  // Respaldo de la plantilla.
-  //
-  // La ficha lanza cinco llamadas a la vez y `/players/squads` es la que más
-  // se cae de la ráfaga: API-Football contesta con su límite por minuto y la
-  // pestaña "Jugadores" desaparecía según la visita — aparecía y se iba sin
-  // que nadie tocara nada.
-  //
-  // El listado de toda la competición pide esas mismas plantillas pero en
-  // lotes pequeños y con pausas, así que sí las consigue, y queda cacheado.
-  // Si la llamada directa vuelve vacía, se saca de ahí. Se pierden el dorsal
-  // y la edad, que ese listado no guarda; se gana que la pestaña esté
-  // siempre.
-  const squadFinal: SquadPlayer[] =
-    squad.length > 0
-      ? squad
-      : await getAllCompetitionPlayers(competition)
-          .then((todos) =>
-            todos
-              .filter((p) => p.teamId === teamId)
-              .map((p) => ({
-                id: p.id,
-                name: p.name,
-                photo: p.photo,
-                number: null,
-                position: p.position,
-                age: null,
-              })),
-          )
-          .catch(() => [] as SquadPlayer[]);
-
-  const favorited = await isFavorited("team", String(teamId));
 
   // Historial + calendario en una sola lista cronológica ascendente (FotMob).
   //
@@ -193,43 +160,14 @@ export default async function LigaEquipoPage({
                   {team?.name ?? "Equipo"}
                 </h1>
                 {team && (
-                  <FavoriteStar
-                    target={{
-                      kind: "team",
-                      id: teamId,
-                      name: team.name,
-                      homeCompetitionSlug: competition.slug,
-                    }}
-                    initialFavorited={favorited}
-                  />
+                  <Suspense fallback={<span style={{ width: 40, height: 40 }} aria-hidden />}>
+                    <TeamFavorite teamId={teamId} team={team} competition={competition} favorited={favoritedPromise} />
+                  </Suspense>
                 )}
               </div>
-              {coach ? (
-                <p
-                  className="phero__lede"
-                  style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}
-                >
-                  {coach.photo && (
-                    <Image
-                      src={coach.photo}
-                      alt=""
-                      width={24}
-                      height={24}
-                      unoptimized
-                      style={{ borderRadius: "50%", background: "var(--surface-2)" }}
-                    />
-                  )}
-                  <span>
-                    Entrenador: <b style={{ color: "var(--text)" }}>{coach.name}</b>
-                    {coach.nationality ? ` · ${coach.nationality}` : ""}
-                  </span>
-                </p>
-              ) : (
-                <p className="phero__lede" style={{ marginTop: 6 }}>
-                  Historial de partidos — toca cualquiera para ver sus
-                  estadísticas.
-                </p>
-              )}
+              <Suspense fallback={<p className="phero__lede" style={{ marginTop: 6 }}>Historial de partidos — toca cualquiera para ver sus estadísticas.</p>}>
+                <TeamCoach coachPromise={coachPromise} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -245,29 +183,14 @@ export default async function LigaEquipoPage({
               fixtureIds={allFixtures.map((f) => f.fixture.id)}
             />
           </Suspense>
-          {stats && <TeamStats stats={stats} />}
+          <Suspense fallback={null}>
+            <TeamSeason statsPromise={statsPromise} />
+          </Suspense>
 
-          <TeamTabs
-            hasSquad={squadFinal.length > 0}
-            jugadores={<SquadList competition={competition} squad={squadFinal} />}
-            partidos={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}
-            clasificacion={
-              standings && standings.length > 0 ? (
-                <StandingsTableView
-                  // koStructure trae RegExp (bracket de eliminatorias) —
-                  // rompe la serialización Server→Client Component en las
-                  // competiciones que lo tienen (Champions/Europa/
-                  // Conference/Copa del Rey/FA Cup/Supercopa). Mismo
-                  // idioma que ya usan `/liga/[slug]/page.tsx`, `buscar` y
-                  // `comparar` al cruzar una Competition a un "use client".
-                  competition={{ ...competition, koStructure: undefined }}
-                  standings={standings}
-                  highlightTeamIds={[teamId]}
-                  liveFixtures={liveFixtures}
-                />
-              ) : undefined
-            }
-          />
+          <Suspense fallback={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}>
+            <TeamDetails competition={competition} teamId={teamId} allFixtures={allFixtures}
+              liveFixtures={liveFixtures} squadPromise={squadPromise} standingsPromise={standingsPromise} />
+          </Suspense>
         </div>
       </section>
     </main>
@@ -359,6 +282,94 @@ function SquadList({ competition, squad }: { competition: Competition; squad: Sq
         </div>
       ))}
     </div>
+  );
+}
+
+
+async function TeamSeason({ statsPromise }: { statsPromise: Promise<TeamSeasonStats | null> }) {
+  const stats = await statsPromise;
+  return stats ? <TeamStats stats={stats} /> : null;
+}
+
+async function TeamCoach({ coachPromise }: { coachPromise: Promise<Coach | null> }) {
+  const coach = await coachPromise;
+  return (
+    coach ? (
+      <p
+        className="phero__lede"
+        style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}
+      >
+        {coach.photo && (
+          <Image
+            src={coach.photo}
+            alt=""
+            width={24}
+            height={24}
+            unoptimized
+            style={{ borderRadius: "50%", background: "var(--surface-2)" }}
+          />
+        )}
+        <span>
+          Entrenador: <b style={{ color: "var(--text)" }}>{coach.name}</b>
+          {coach.nationality ? ` · ${coach.nationality}` : ""}
+        </span>
+      </p>
+    ) : (
+      <p className="phero__lede" style={{ marginTop: 6 }}>
+        Historial de partidos — toca cualquiera para ver sus
+        estadísticas.
+      </p>
+    )
+  );
+}
+
+
+async function TeamFavorite({ teamId, team, competition, favorited }: {
+  teamId: number; team: { name: string }; competition: Competition; favorited: Promise<boolean>;
+}) {
+  return (
+    <FavoriteStar
+      target={{
+        kind: "team",
+        id: teamId,
+        name: team.name,
+        homeCompetitionSlug: competition.slug,
+      }}
+      initialFavorited={await favorited}
+    />
+  );
+}
+
+
+async function TeamDetails({ competition, teamId, allFixtures, liveFixtures, squadPromise, standingsPromise }: {
+  competition: Competition; teamId: number; allFixtures: Fixture[]; liveFixtures: Fixture[];
+  squadPromise: Promise<SquadPlayer[]>; standingsPromise: Promise<StandingRow[] | null>;
+}) {
+  // getTeamSquad ya recupera la última plantilla válida. No reconsultamos
+  // aquí las plantillas de toda la competición para rescatar un solo equipo.
+  const [squadFinal, standings] = await Promise.all([squadPromise, standingsPromise]);
+  return (
+    <TeamTabs
+      hasSquad={squadFinal.length > 0}
+      jugadores={<SquadList competition={competition} squad={squadFinal} />}
+      partidos={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}
+      clasificacion={
+        standings && standings.length > 0 ? (
+          <StandingsTableView
+            // koStructure trae RegExp (bracket de eliminatorias) —
+            // rompe la serialización Server→Client Component en las
+            // competiciones que lo tienen (Champions/Europa/
+            // Conference/Copa del Rey/FA Cup/Supercopa). Mismo
+            // idioma que ya usan `/liga/[slug]/page.tsx`, `buscar` y
+            // `comparar` al cruzar una Competition a un "use client".
+            competition={{ ...competition, koStructure: undefined }}
+            standings={standings}
+            highlightTeamIds={[teamId]}
+            liveFixtures={liveFixtures}
+          />
+        ) : undefined
+      }
+    />
   );
 }
 

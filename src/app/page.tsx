@@ -37,47 +37,25 @@ const MARQUEE = [
   "Debate",
 ];
 
-/** Las dos tablas de la portada (rails del feed de 3 columnas): LaLiga a la
- * izquierda, Premier a la derecha — pedido del dueño. El resto de tablas
- * viven en su /liga/[slug]. */
-const HOME_ALWAYS_SHOW = ["laliga", "premier"];
-
-async function getStandingsSnapshot() {
-  const competitions = COMPETITIONS.filter((c) =>
-    HOME_ALWAYS_SHOW.includes(c.slug),
-  );
-  return Promise.all(
-    competitions.map(async (competition) => {
-      try {
-        const rows = (await getCompetitionStandings(competition)) as StandingRow[] | null;
-        return { competition, standings: rows ?? [] };
-      } catch {
-        return { competition, standings: [] as StandingRow[] };
-      }
-    }),
+/** Las tablas se cargan sin retrasar la foto y el título de portada. */
+async function HomeStandings({ slug }: { slug: string }) {
+  const competition = COMPETITIONS.find((c) => c.slug === slug);
+  if (!competition) return null;
+  const standings = await getCompetitionStandings(competition).catch(() => null) as StandingRow[] | null;
+  if (!standings?.length) return null;
+  return (
+    <div>
+      <div className="subhead">
+        <h3>{competition.name}</h3>
+        <Link href={`/liga/${slug}?v=tabla`}>Tabla completa →</Link>
+      </div>
+      <RailStandings slug={slug} standings={standings} />
+    </div>
   );
 }
 
 export default async function Home() {
-  // Todo en paralelo (17-oct): el baremo iba antes, en fila. Baremo y
-  // cifras de redes van cacheados; las tablas, desde sports_cache.
-  const [baremo, stats, inApp, standingsSnapshot] = await Promise.all([
-    getBaremoPublico(),
-    getSocialStats(),
-    isAppRequest(),
-    getStandingsSnapshot(),
-  ]);
-
-  // Rails del layout de 3 columnas: LaLiga a la izquierda, Premier a la
-  // derecha (pedido explícito). El resto de tablas viven en su /liga/[slug].
-  const laligaSnapshot =
-    standingsSnapshot.find(
-      (s) => s.competition.slug === "laliga" && s.standings.length > 0,
-    ) ?? null;
-  const premierSnapshot =
-    standingsSnapshot.find(
-      (s) => s.competition.slug === "premier" && s.standings.length > 0,
-    ) ?? null;
+  const [stats, inApp] = await Promise.all([getSocialStats(), isAppRequest()]);
 
   return (
     <main className="page">
@@ -160,15 +138,9 @@ export default async function Home() {
         <div className="wrap">
           <div className="home3col">
             <aside className="home3col__side home3col__left">
-              {laligaSnapshot && (
-                <div>
-                  <div className="subhead">
-                    <h3>LaLiga</h3>
-                    <Link href="/liga/laliga?v=tabla">Tabla completa →</Link>
-                  </div>
-                  <RailStandings slug="laliga" standings={laligaSnapshot.standings} />
-                </div>
-              )}
+              <Suspense fallback={null}>
+                <HomeStandings slug="laliga" />
+              </Suspense>
               <Suspense fallback={null}>
                 <TransfersCard />
               </Suspense>
@@ -184,7 +156,9 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <QuinielaPendientes />
               </Suspense>
-              <HomeScoreboard />
+              <Suspense fallback={<div className="panel" style={{ minHeight: 360, padding: 20 }} role="status">Cargando partidos…</div>}>
+                <HomeScoreboard />
+              </Suspense>
               {/* Últimos análisis publicados — debajo del calendario y FUERA
                   de su caja de scroll (.hmcal-scroll), para que no quede
                   atrapado dentro. Si no hay nada publicado, no pinta nada. */}
@@ -194,15 +168,9 @@ export default async function Home() {
             </div>
 
             <aside className="home3col__side home3col__right">
-              {premierSnapshot && (
-                <div>
-                  <div className="subhead">
-                    <h3>Premier League</h3>
-                    <Link href="/liga/premier?v=tabla">Tabla completa →</Link>
-                  </div>
-                  <RailStandings slug="premier" standings={premierSnapshot.standings} />
-                </div>
-              )}
+              <Suspense fallback={null}>
+                <HomeStandings slug="premier" />
+              </Suspense>
               <Suspense fallback={null}>
                 <NewsCard />
               </Suspense>
@@ -224,31 +192,9 @@ export default async function Home() {
       {/* QUINIELA — promo del juego gratuito (la joya nueva). */}
       <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
         <div className="wrap">
-          <Link href="/quiniela-liga" className="panel promopanel">
-            <p className="eyebrow">🏆 Nuevo · Gratis</p>
-            <h2
-              className="feat__title"
-              style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
-            >
-              <T>La Quiniela de LaLiga.</T>
-            </h2>
-            <p
-              style={{
-                color: "var(--text-dim)",
-                maxWidth: 560,
-                marginTop: 10,
-                lineHeight: 1.5,
-              }}
-            >
-              Pronostica cada jornada, marcador exacto{" "}
-              <b style={{ color: "var(--text)" }}>{baremo.exacto} pts</b>, y
-              compite en la clasificación pública. Sin código: entras de un
-              toque y a jugar.
-            </p>
-            <span className="btn btn--accent" style={{ marginTop: 18 }}>
-              Jugar gratis <span className="arr">→</span>
-            </span>
-          </Link>
+          <Suspense fallback={null}>
+            <HomePromoQuiniela />
+          </Suspense>
         </div>
       </section>
 
@@ -389,5 +335,36 @@ export default async function Home() {
         </div>
       </section>
     </main>
+  );
+}
+
+async function HomePromoQuiniela() {
+  const baremo = await getBaremoPublico();
+  return (
+    <Link href="/quiniela-liga" className="panel promopanel">
+      <p className="eyebrow">🏆 Nuevo · Gratis</p>
+      <h2
+        className="feat__title"
+        style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
+      >
+        <T>La Quiniela de LaLiga.</T>
+      </h2>
+      <p
+        style={{
+          color: "var(--text-dim)",
+          maxWidth: 560,
+          marginTop: 10,
+          lineHeight: 1.5,
+        }}
+      >
+        Pronostica cada jornada, marcador exacto{" "}
+        <b style={{ color: "var(--text)" }}>{baremo.exacto} pts</b>, y
+        compite en la clasificación pública. Sin código: entras de un
+        toque y a jugar.
+      </p>
+      <span className="btn btn--accent" style={{ marginTop: 18 }}>
+        Jugar gratis <span className="arr">→</span>
+      </span>
+    </Link>
   );
 }

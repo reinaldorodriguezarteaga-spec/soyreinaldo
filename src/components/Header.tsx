@@ -3,7 +3,7 @@
 import Link from "next/link";
 import HeaderSearch from "@/components/HeaderSearch";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, use, useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import UserMenu from "./UserMenu";
 import { T } from "@/components/EnApp";
@@ -78,7 +78,7 @@ export default function Header({
   isAdmin = false,
 }: {
   initialUser: User | null;
-  hasLiveMatch?: boolean;
+  hasLiveMatch?: boolean | Promise<boolean>;
   favorites?: FavoriteNavItem[];
   isAdmin?: boolean;
 }) {
@@ -133,17 +133,9 @@ export default function Header({
               <span>Soy Reinaldo</span>
             </Link>
 
-            {hasLiveMatch && (
-              <Link
-                href="/en-vivo"
-                className="navlive"
-                onClick={() => setMobileOpen(false)}
-                title="Hay partidos en juego — verlos todos"
-              >
-                <span className="livepulse" />
-                EN VIVO
-              </Link>
-            )}
+            <Suspense fallback={null}>
+              <LiveMatchLink value={hasLiveMatch} className="navlive" onNavigate={() => setMobileOpen(false)} />
+            </Suspense>
 
             <div
               className={`nav__links${buscando ? " nav__links--fuera" : ""}`}
@@ -423,17 +415,9 @@ export default function Header({
           una pantalla de 375). Va FUERA del <nav> a propósito: el
           backdrop-filter del header lo convierte en marco de referencia de los
           elementos fijos, y anclado ahí dentro la pastilla se quedaba arriba. */}
-      {hasLiveMatch && (
-        <Link
-          href="/en-vivo"
-          className="livepill"
-          onClick={() => setMobileOpen(false)}
-          title="Hay partidos en juego — verlos todos"
-        >
-          <span className="livepulse" />
-          EN VIVO
-        </Link>
-      )}
+      <Suspense fallback={null}>
+        <LiveMatchLink value={hasLiveMatch} className="livepill" onNavigate={() => setMobileOpen(false)} />
+      </Suspense>
     </>
   );
 }
@@ -451,6 +435,20 @@ function MobileLink({
       className="rounded-[4px] px-3 py-3 text-sm font-semibold text-[var(--text-dim)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       {children}
+    </Link>
+  );
+}
+
+/** Solo las dos pastillas esperan el directo; el menú ya funciona mientras tanto. */
+function LiveMatchLink({ value, className, onNavigate }: {
+  value: boolean | Promise<boolean>; className: string; onNavigate: () => void;
+}) {
+  const live = typeof value === "boolean" ? value : use(value);
+  if (!live) return null;
+  return (
+    <Link href="/en-vivo" className={className} onClick={onNavigate} title="Hay partidos en juego — verlos todos">
+      <span className="livepulse" />
+      EN VIVO
     </Link>
   );
 }

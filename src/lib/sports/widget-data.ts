@@ -194,7 +194,7 @@ async function buildNext(): Promise<WidgetNextFixture[]> {
  * gasta cuota. Sin los que ya enseña el widget arriba. */
 async function buildNextClubes(yaMostrados: Set<number>): Promise<WidgetNextFixture[]> {
   try {
-    const { upcoming } = await getTeamFixtures(TEAM_IDS.barcelona, { next: 4 });
+    const { upcoming } = await getTeamFixtures(TEAM_IDS.barcelona, { last: 0, next: 4 });
     return upcoming
       .filter((f) => !yaMostrados.has(f.fixture.id))
       .map((f) => ({
@@ -337,21 +337,18 @@ export async function getHomeWidgetData(
       const finishedRaw = soloEquiposDePortada(finishedAll, c);
 
       const windowTagged = tagCompetition(windowRaw, c);
-      const windowWithEvents = await attachEvents(windowTagged);
-      const windowFull = orderHomeForDisplay(
-        windowWithEvents.map((f, i) => ({ ...f, competition: windowTagged[i].competition })),
-      );
-      const live = windowFull.filter(isLive);
-
+      // El directo puede conocer un resultado final antes del siguiente
+      // refresco del calendario completo. Prevalece la ventana más reciente.
+      const resultados = new Map([...finishedRaw, ...windowRaw].map((f) => [f.fixture.id, f]));
       const finishedTodayRaw = tagCompetition(
-        finishedRaw.filter((f) => madridDateKey(new Date(f.fixture.date)) === todayKey),
+        [...resultados.values()].filter((f) => isFinal(f) && madridDateKey(new Date(f.fixture.date)) === todayKey),
         c,
       ).sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime());
-      const finishedTodayEvents = await attachEvents(finishedTodayRaw);
-      const finishedToday = finishedTodayEvents.map((f, i) => ({
-        ...f,
-        competition: finishedTodayRaw[i].competition,
-      }));
+      // La portada pinta CompactMatchRow: solo marcador, minuto y equipos.
+      // Los goleadores y tarjetas se piden en la ficha, donde sí se muestran.
+      const windowFull = orderHomeForDisplay(windowTagged.map((f) => ({ ...f, ev: null })));
+      const live = windowFull.filter(isLive);
+      const finishedToday = finishedTodayRaw.map((f) => ({ ...f, ev: null }));
 
       const group: CompetitionGroup = { competition: { slug: c.slug, name: c.name }, live, finishedToday };
       // Reutiliza `shouldPoll` sobre la ventana COMPLETA (incluye próximos a
@@ -468,7 +465,7 @@ export async function getUpcomingCalendar(
   // destacados, o el estreno liguero de uno de ellos) no aparece dos veces.
   const merged = new Map<number, CalendarFixture>();
 
-  const perCompetition = await Promise.all(
+  const competitionPromise = Promise.all(
     competitions.map(async (c): Promise<CalendarFixture[]> => {
       try {
         // Con filtro de equipos pedimos más fixturas, para que el corte no
@@ -503,13 +500,10 @@ export async function getUpcomingCalendar(
       }
     }),
   );
-  for (const list of perCompetition) {
-    for (const fx of list) merged.set(fx.fixture.id, fx);
-  }
 
   // Ligas/copas extra del calendario (Bundesliga, copas ES/EN/IT/DE,
   // selecciones — ver CALENDAR_EXTRA_LEAGUES): sin hub propio → sin enlace.
-  const perExtra = await Promise.all(
+  const extraPromise = Promise.all(
     CALENDAR_EXTRA_LEAGUES.map(async (entry): Promise<CalendarFixture[]> => {
       try {
         // Con filtro de equipos (Bundesliga → top-4) pedimos más fixturas
@@ -548,16 +542,11 @@ export async function getUpcomingCalendar(
       }
     }),
   );
-  for (const list of perExtra) {
-    for (const fx of list) {
-      if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
-    }
-  }
 
-  const perTeam = await Promise.all(
+  const teamPromise = Promise.all(
     featuredTeams.map(async (team): Promise<CalendarFixture[]> => {
       try {
-        const { upcoming } = await getTeamFixtures(team.id, { next: 4 });
+        const { upcoming } = await getTeamFixtures(team.id, { last: 0, next: 4 });
         return upcoming.map((f) => ({
           ...f,
           ev: null,
@@ -570,45 +559,39 @@ export async function getUpcomingCalendar(
       }
     }),
   );
-  for (const list of perTeam) {
-    for (const fx of list) {
-      if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
-    }
+  // Las fuentes son independientes. El cliente de API-Football mantiene su
+  // límite de seis llamadas simultáneas, también con la caché fría.
+  const favoritePromise = Promise.all(
+    favoriteTeams.map(async (fav): Promise<CalendarFixture[]> => {
+      try {
+        const { upcoming } = await getTeamFixtures(fav.id, { last: 0, next: 4 });
+        return upcoming.slice(0, 3).map((f) => ({
+          ...f,
+          ev: null,
+          competitionLabel: f.league.id === FRIENDLIES_LEAGUE_ID ? "Amistoso" : f.league.name,
+          linkSlug: fav.linkSlug,
+        }));
+      } catch {
+        return [];
+      }
+    }),
+  );
+  const [perCompetition, perExtra, perTeam, perFav] = await Promise.all([
+    competitionPromise, extraPromise, teamPromise, favoritePromise,
+  ]);
+  // Se mantiene la prioridad de las fuentes al deduplicar.
+  for (const list of perCompetition) {
+    for (const fx of list) merged.set(fx.fixture.id, fx);
   }
-
+  for (const list of [...perExtra, ...perTeam]) {
+    for (const fx of list) if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
+  }
   const all = [...merged.values()]
     .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())
     .slice(0, CALENDAR_MAX_FIXTURES);
-
-  // Sección "⭐ Tus favoritos": los próximos partidos de los equipos que el
-  // usuario marcó con la estrella, como PRIMER grupo del calendario. Van
-  // también en su día normal a propósito (como FotMob) — esto es un
-  // acceso rápido, no un filtro excluyente. `next: 4` coincide con lo que
-  // ya precalcula el cron para los equipos destacados; para favoritos no
-  // destacados cae a la llamada en vivo con su caché de 30 min.
   const favFixtures = new Map<number, CalendarFixture>();
-  if (favoriteTeams.length > 0) {
-    const perFav = await Promise.all(
-      favoriteTeams.map(async (fav): Promise<CalendarFixture[]> => {
-        try {
-          const { upcoming } = await getTeamFixtures(fav.id, { next: 4 });
-          return upcoming.slice(0, 3).map((f) => ({
-            ...f,
-            ev: null,
-            competitionLabel:
-              f.league.id === FRIENDLIES_LEAGUE_ID ? "Amistoso" : f.league.name,
-            linkSlug: fav.linkSlug,
-          }));
-        } catch {
-          return [];
-        }
-      }),
-    );
-    for (const list of perFav) {
-      for (const fx of list) {
-        if (!favFixtures.has(fx.fixture.id)) favFixtures.set(fx.fixture.id, fx);
-      }
-    }
+  for (const list of perFav) {
+    for (const fx of list) if (!favFixtures.has(fx.fixture.id)) favFixtures.set(fx.fixture.id, fx);
   }
   const now = new Date();
   const todayKey = madridDateKey(now);
