@@ -25,6 +25,7 @@ export default function Footer() {
         <div className="foot__cols">
           <nav className="foot__links">
             <Link href="/estadios">Estadios</Link>
+            <Link href="/sobre-reinaldo">Sobre Reinaldo</Link>
             <Link href="/redes">Redes</Link>
             <Link href="/contacto">Contáctame</Link>
             <Link href="/privacidad">Privacidad</Link>

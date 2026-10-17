@@ -2258,3 +2258,27 @@ select.field { appearance: none; }
 .temporada__dato .mono { color: var(--text-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .temporada__dato strong { font-size: 1.05rem; }
 .temporada__frase { padding: 14px 16px; margin: 0; text-align: center; }
+
+/* "Sobre Reinaldo" y firma de los análisis. */
+.sobre { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.sobre__foto { width: 160px; height: auto; border-radius: 18px; border: 1px solid var(--line); }
+.sobre__nota { color: var(--text-dim); font-size: 0.86rem; }
+.firma { display: flex; gap: 12px; align-items: center; margin-top: 18px; color: inherit; text-decoration: none; }
+.firma__foto { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; }
+.firma__nombre { display: block; font-weight: 600; font-size: 0.92rem; }
+.firma__usuario { color: var(--accent); font-weight: 500; }
+.firma__lema { display: block; color: var(--text-dim); font-size: 0.82rem; }
+.firma:hover .firma__nombre { text-decoration: underline; }
+
+/* Oferta de avisos en contexto (OfertaAvisos). */
+.oferta-avisos {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 12px; font-size: 0.9rem;
+  border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent);
+  background: color-mix(in oklch, var(--accent) 10%, transparent);
+}
+.oferta-avisos__texto { flex: 1; min-width: 180px; }
+.oferta-avisos__btn { padding: 8px 14px; }
+.oferta-avisos__cerrar { background: none; border: 0; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; }
+.oferta-avisos__error { width: 100%; color: #ff8a8a; font-size: 0.82rem; }
+.oferta-avisos--ok { color: var(--accent); margin: 0; }

@@ -16,6 +16,7 @@ import { getCompetitionFixturesWindow, isLive } from "@/lib/sports/api-football"
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import "./globals.css";
 import SelectorFavoritos from "@/components/SelectorFavoritos";
+import { hayPartidoEnJuego } from "@/lib/sports/directo";
 import DirectoReinaldo from "@/components/DirectoReinaldo";
 import { EnAppProvider } from "@/components/EnApp";
 import Actividad from "@/components/Actividad";
@@ -96,48 +97,45 @@ export default async function RootLayout({
   const inApp = await isAppRequest();
   const anuncios = !!ADSENSE_CLIENT_ID && !inApp;
 
+  // En paralelo (17-oct): perfil, favoritos y "¿hay partido en juego?" iban
+  // uno detrás de otro antes de pintar nada en TODAS las páginas.
+  const [perfilRes, favoritosRes, hasLiveMatch] = await Promise.all([
+    user
+      ? supabase.from("profiles").select("is_admin, favoritos_elegidos_at").eq("id", user.id).single()
+      : Promise.resolve({ data: null }),
+    user
+      ? supabase
+          .from("user_favorites")
+          .select("kind, label, link_path")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
+    // ¿Hay algún partido EN JUEGO en alguna competición activa? (indicador
+    // del header). Cada ventana va cacheada; best-effort si la API falla.
+    // Primero la tabla del directo (una consulta); si el cron no late, las
+    // ventanas de cada competición como siempre.
+    hayPartidoEnJuego().then((vivo) =>
+      vivo != null
+        ? vivo
+        : Promise.all(COMPETITIONS.map((c) => getCompetitionFixturesWindow(c)))
+            .then((windows) => windows.some((w) => w.some(isLive)))
+            .catch(() => false),
+    ),
+  ]);
+  const profile = perfilRes.data as { is_admin: boolean | null; favoritos_elegidos_at: string | null } | null;
   // Para el atajo "Admin" en el menú de usuario — evita que quien no sea
   // admin vea enlaces a páginas que igualmente le rechazaría /admin/layout.tsx.
-  let isAdmin = false;
+  const isAdmin = !!profile?.is_admin;
   // ¿Le falta pasar por el selector de favoritos? (migración 067)
-  let pedirFavoritos = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin, favoritos_elegidos_at")
-      .eq("id", user.id)
-      .single();
-    isAdmin = !!profile?.is_admin;
-    pedirFavoritos = !!profile && !profile.favoritos_elegidos_at;
-  }
-
-  // ¿Hay algún partido EN JUEGO en alguna competición activa? (para el
-  // indicador del header). Cada ventana va cacheada (unstable_cache) → coste
-  // ~0 aunque se consulten varias competiciones en paralelo.
-  let hasLiveMatch = false;
-  try {
-    const windows = await Promise.all(
-      COMPETITIONS.map((c) => getCompetitionFixturesWindow(c)),
-    );
-    hasLiveMatch = windows.some((w) => w.some(isLive));
-  } catch {
-    // best-effort: no romper el layout si la API falla
-  }
-
-  // Favoritos del usuario para el desplegable del header — solo si hay sesión.
-  let favorites: FavoriteNavItem[] = [];
-  if (user) {
-    const { data } = await supabase
-      .from("user_favorites")
-      .select("kind, label, link_path")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-    favorites = (data ?? []).map((row) => ({
-      kind: row.kind as "competition" | "team",
-      label: row.label,
-      linkPath: row.link_path,
-    }));
-  }
+  const pedirFavoritos = !!profile && !profile.favoritos_elegidos_at;
+  // Favoritos del usuario para el desplegable del header.
+  const favorites: FavoriteNavItem[] = (
+    (favoritosRes.data ?? []) as { kind: string; label: string; link_path: string }[]
+  ).map((row) => ({
+    kind: row.kind as "competition" | "team",
+    label: row.label,
+    linkPath: row.link_path,
+  }));
 
   return (
     <html
@@ -219,3 +217,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

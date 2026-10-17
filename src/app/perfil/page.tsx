@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUsuarioCompleto } from "@/lib/supabase/server";
 import EmailForm from "./email-form";
 import PasswordForm from "./password-form";
 import ProfileForm from "./profile-form";
@@ -20,7 +20,7 @@ export default async function PerfilPage() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getUsuarioCompleto(); // completo: aquí hacen falta las identidades
   if (!user) redirect("/login?redirect=/perfil");
 
   // Avisos de la app: dependen de los equipos favoritos.

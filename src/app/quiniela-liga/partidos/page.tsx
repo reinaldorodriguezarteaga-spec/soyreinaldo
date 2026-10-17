@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import RetosPendientes from "@/components/RetosPendientes";
+import OfertaAvisos from "@/components/OfertaAvisos";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
@@ -228,6 +229,12 @@ export default async function QuinielaLigaPartidosPage({
             <Suspense fallback={null}>
               <RetosPendientes />
             </Suspense>
+            <div style={{ marginTop: 12 }}>
+              <OfertaAvisos
+                clave="pronosticos"
+                texto="Te recordamos los partidos que te falten por pronosticar y te avisamos si te retan a un duelo."
+              />
+            </div>
           </div>
 
           <p className="hint" style={{ marginTop: 16 }}>

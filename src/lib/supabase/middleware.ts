@@ -115,13 +115,17 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const authResult = await withTimeout(supabase.auth.getUser());
+  // getClaims (17-oct): verifica el JWT en local con la clave pública del
+  // proyecto (ES256) y solo va a Auth si hay que renovar la sesión. Antes,
+  // getUser hacía un viaje a Auth en CADA petición con sesión (~150 ms).
+  const authResult = await withTimeout(supabase.auth.getClaims());
   if (authResult === TIMED_OUT) {
     console.error(
-      `[middleware] supabase.auth.getUser() sin respuesta en ${SUPABASE_TIMEOUT_MS} ms (${request.nextUrl.pathname})`,
+      `[middleware] supabase.auth.getClaims() sin respuesta en ${SUPABASE_TIMEOUT_MS} ms (${request.nextUrl.pathname})`,
     );
   }
-  const user = authResult === TIMED_OUT ? null : authResult.data.user;
+  const sub = authResult === TIMED_OUT ? null : authResult.data?.claims?.sub;
+  const user = sub ? { id: sub } : null;
 
   const pathname = request.nextUrl.pathname;
 

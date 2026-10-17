@@ -1,3 +1,4 @@
+import { esDelEquipo } from "./equipo";
 import { createClient } from "@/lib/supabase/server";
 
 export type Articulo = {
@@ -54,5 +55,49 @@ export async function porPartido(fixtureId: number): Promise<Articulo[]> {
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
     .returns<Articulo[]>();
+  return data ?? [];
+}
+
+/** Últimos análisis del equipo, incluso si el editor solo indicó el partido o el título. */
+export async function porEquipo(
+  teamId: number,
+  nombre: string,
+  fixtureIds: number[],
+  limite = 3,
+): Promise<Articulo[]> {
+  if (limite <= 0) return [];
+  const supabase = await createClient();
+  const equipo = { id: teamId, nombre, partidos: new Set(fixtureIds) };
+  const ids: string[] = [];
+  const lote = 100;
+  // Solo vínculos y títulos hasta encontrar suficientes: no descargamos todos
+  // los cuerpos ni dejamos fuera asociaciones antiguas por un límite global.
+  for (let desde = 0; ids.length < limite; desde += lote) {
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, title, team_id, fixture_id")
+      .not("published_at", "is", null)
+      .lte("published_at", new Date().toISOString())
+      .order("published_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(desde, desde + lote - 1);
+    if (error) throw error;
+    for (const a of data ?? []) {
+      if (esDelEquipo(a, equipo)) ids.push(a.id);
+      if (ids.length === limite) break;
+    }
+    if (!data || data.length < lote) break;
+  }
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("articles")
+    .select(CAMPOS)
+    .in("id", ids)
+    .not("published_at", "is", null)
+    .lte("published_at", new Date().toISOString())
+    .order("published_at", { ascending: false })
+    .order("id", { ascending: true })
+    .returns<Articulo[]>();
+  if (error) throw error;
   return data ?? [];
 }

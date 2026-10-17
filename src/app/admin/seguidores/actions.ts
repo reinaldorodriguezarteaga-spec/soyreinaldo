@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { SOCIAL_STATS_TAG } from "@/lib/social-stats";
 
 export type SocialStatsState = {
   status: "idle" | "success" | "error";
@@ -74,6 +75,7 @@ export async function updateSocialStats(
   if (error) return { status: "error", message: error.message };
 
   // Invalidar todas las páginas que muestran estos números
+  updateTag(SOCIAL_STATS_TAG);
   revalidatePath("/");
   revalidatePath("/redes");
   revalidatePath("/contacto");

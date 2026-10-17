@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { ClubLeague } from "./league-utils";
 
@@ -16,7 +17,10 @@ type MembershipRow = {
 };
 
 /** Ligas de clubes a las que pertenece el usuario, la pública primero. */
-export async function getMyClubLeagues(userId: string): Promise<ClubLeague[]> {
+/** Una vez por petición (17-oct): la pedían el layout y la página a la vez. */
+export const getMyClubLeagues = cache(leerMisLigas);
+
+async function leerMisLigas(userId: string): Promise<ClubLeague[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("league_members")

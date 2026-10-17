@@ -21,8 +21,9 @@ const MEMO_MS = 1_500;
 
 type FilaDirecto = Fixture & { events?: FixtureEvent[]; score?: unknown };
 
-let memo: { t: number; filas: Map<number, FilaDirecto> } | null = null;
-let enCurso: Promise<Map<number, FilaDirecto>> | null = null;
+type Lectura = { ok: boolean; filas: Map<number, FilaDirecto> };
+let memo: { t: number; lectura: Lectura } | null = null;
+let enCurso: Promise<Lectura> | null = null;
 
 function cliente() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,8 +38,8 @@ function cliente() {
   });
 }
 
-async function leer(): Promise<Map<number, FilaDirecto>> {
-  const vacio = new Map<number, FilaDirecto>();
+async function leer(): Promise<Lectura> {
+  const vacio: Lectura = { ok: false, filas: new Map() };
   const db = cliente();
   if (!db) return vacio;
   try {
@@ -47,25 +48,48 @@ async function leer(): Promise<Map<number, FilaDirecto>> {
       db.from("partidos_directo").select("fixture_id, data"),
     ]);
     if (!lat || Date.now() - Date.parse(lat.latido) > LATIDO_MAX_MS) return vacio;
-    return new Map(
-      ((filas ?? []) as { fixture_id: number; data: FilaDirecto }[]).map((f) => [f.fixture_id, f.data]),
-    );
+    return {
+      ok: true,
+      filas: new Map(
+        ((filas ?? []) as { fixture_id: number; data: FilaDirecto }[]).map((f) => [f.fixture_id, f.data]),
+      ),
+    };
   } catch {
     return vacio;
   }
 }
 
-/** Partidos del directo (vacío si el cron no está latiendo). Nunca lanza. */
-export async function filasDirecto(): Promise<Map<number, FilaDirecto>> {
-  if (memo && Date.now() - memo.t < MEMO_MS) return memo.filas;
+async function lectura(): Promise<Lectura> {
+  if (memo && Date.now() - memo.t < MEMO_MS) return memo.lectura;
   if (!enCurso) {
-    enCurso = leer().then((filas) => {
-      memo = { t: Date.now(), filas };
+    enCurso = leer().then((l) => {
+      memo = { t: Date.now(), lectura: l };
       enCurso = null;
-      return filas;
+      return l;
     });
   }
   return enCurso;
+}
+
+/** Partidos del directo (vacío si el cron no está latiendo). Nunca lanza. */
+export async function filasDirecto(): Promise<Map<number, FilaDirecto>> {
+  return (await lectura()).filas;
+}
+
+/**
+ * ¿Hay algún partido en juego ahora? Del directo (una consulta, con memoria),
+ * o `null` si el cron no está latiendo y no se puede saber así (17-oct: lo
+ * usa la cabecera en TODAS las páginas, antes con 10 consultas).
+ */
+// Los mismos que `isLive` de api-football (LIVE_STATES).
+const ESTADOS_EN_JUEGO = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE"]);
+export async function hayPartidoEnJuego(): Promise<boolean | null> {
+  const l = await lectura();
+  if (!l.ok) return null;
+  for (const f of l.filas.values()) {
+    if (ESTADOS_EN_JUEGO.has(f.fixture?.status?.short ?? "")) return true;
+  }
+  return false;
 }
 
 /** Pone encima de `f` lo que dice el directo (si lo hay). */

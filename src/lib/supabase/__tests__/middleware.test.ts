@@ -6,7 +6,8 @@ const singleMock = vi.fn();
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: () => ({
-    auth: { getUser: getUserMock },
+    // El middleware verifica la sesión con getClaims (17-oct).
+    auth: { getClaims: getUserMock },
     from: () => ({
       select: () => ({ eq: () => ({ single: singleMock }) }),
     }),
@@ -19,8 +20,8 @@ import { updateSession } from "../middleware";
 // incidente del 27–28-ago-2026 (getUser colgado → 504 del middleware).
 const cuelgue = () => new Promise(() => {});
 
-const usuario = { data: { user: { id: "user-1" } } };
-const anonimo = { data: { user: null } };
+const usuario = { data: { claims: { sub: "user-1" } } };
+const anonimo = { data: null };
 
 function peticion(path: string) {
   return new NextRequest(`http://localhost:3000${path}`);
