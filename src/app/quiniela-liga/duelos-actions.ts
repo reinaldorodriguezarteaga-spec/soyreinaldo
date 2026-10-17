@@ -16,7 +16,7 @@ const MENSAJES: Record<string, string> = {
   sin_sesion: "Inicia sesión para retar.",
   a_ti_mismo: "No puedes retarte a ti mismo.",
   sin_jornada: "No hay ninguna jornada por empezar.",
-  no_miembro: "Los dos tenéis que estar en esta liga.",
+  no_miembro: "Esta liga es privada: entra antes con su código.",
   max_retos: "Ya has lanzado 3 retos esta jornada.",
   ya_retado: "Ya tenéis un duelo en esta jornada.",
   no_valido: "Ese reto ya no está pendiente.",
@@ -49,6 +49,18 @@ export async function responderDuelo(id: string, aceptar: boolean): Promise<Resu
 export async function retirarDuelo(id: string): Promise<ResultadoDuelo> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("lq_retirar_duelo", { p_id: id });
+  revalidatePath("/quiniela-liga", "layout");
+  return traducir(error);
+}
+
+/** Aceptar un reto recibido por enlace (/reto/<usuario>): el duelo nace aceptado. */
+export async function aceptarInvitacion(leagueId: string, retadorId: string): Promise<ResultadoDuelo> {
+  const supabase = await createClient();
+  const { data: id, error } = await supabase.rpc("lq_aceptar_invitacion", {
+    p_league_id: leagueId,
+    p_retador: retadorId,
+  });
+  if (!error && typeof id === "string") after(() => avisarRetoAceptado(id));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }
