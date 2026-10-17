@@ -14,6 +14,7 @@ type AdminLink = { href: string; label: string; externo?: boolean };
 // no se toca nada más entre partido y partido.
 const ADMIN_LINKS: AdminLink[] = [
   { href: "/admin/analisis", label: "Escribir análisis" },
+  { href: "/admin/metricas", label: "Métricas" },
   { href: "/admin/ligas", label: "Ligas" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },

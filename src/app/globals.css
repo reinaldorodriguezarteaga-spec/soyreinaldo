@@ -2174,3 +2174,34 @@ select.field { appearance: none; }
 .encuesta__nueva summary { color: var(--text-dim); font-size: 0.72rem; cursor: pointer; }
 .encuesta__nueva form { display: grid; gap: 8px; margin-top: 10px; max-width: 520px; }
 .encuesta__nueva-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Panel de métricas del dueño (/admin/metricas). */
+.met-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.met-tile { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.met-tile__valor { font-family: var(--font-display-stack); font-weight: 900; font-size: 2.2rem; line-height: 1; }
+.met-tile__etiqueta { font-weight: 600; font-size: 0.9rem; margin-top: 6px; }
+.met-tile__nota { color: var(--text-dim); font-size: 0.66rem; }
+.met-chart { padding: 16px; margin-bottom: 16px; }
+.met-chart h2, .met-grupo h2 { margin: 0 0 12px; font-size: 1rem; }
+.met-vacio { color: var(--text-dim); font-size: 0.86rem; margin: 0; }
+.met-barras { display: flex; align-items: flex-end; gap: 2px; height: 140px; border-bottom: 1px solid var(--line); }
+.met-barra { position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; min-width: 4px; }
+.met-barra__fill { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.met-barra__tip {
+  position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
+  font-size: 0.7rem; opacity: 0; pointer-events: none; transition: opacity 0.12s; white-space: nowrap;
+}
+.met-barra:hover .met-barra__tip { opacity: 1; }
+.met-barra:hover .met-barra__fill { filter: brightness(1.25); }
+.met-ejes { display: flex; justify-content: space-between; color: var(--text-dim); font-size: 0.66rem; margin-top: 6px; }
+.met-tabla { margin-top: 8px; }
+.met-tabla summary { color: var(--text-dim); font-size: 0.68rem; cursor: pointer; }
+.met-tabla table { margin-top: 6px; font-size: 0.84rem; border-collapse: collapse; }
+.met-tabla td { padding: 2px 16px 2px 0; }
+.met-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.met-grupo { padding: 16px; }
+.met-grupo dl { margin: 0; display: grid; gap: 6px; }
+.met-grupo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; }
+.met-grupo dt { color: var(--text-dim); }
+.met-grupo dd { margin: 0; font-weight: 600; }

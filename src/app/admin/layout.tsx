@@ -51,6 +51,9 @@ export default async function AdminLayout({
             >
               Final Quiniela LaLiga
             </Link>
+            <Link href="/admin/metricas" className="hover:text-white">
+              Métricas
+            </Link>
             <Link href="/admin/seguidores" className="hover:text-white">
               Redes
             </Link>
