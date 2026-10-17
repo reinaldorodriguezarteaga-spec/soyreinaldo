@@ -470,7 +470,11 @@ export default async function LigaPartidoPage({
     : null;
 
   // Encuesta "¿Quién fue el mejor?": los 5 mejor valorados, al terminar.
-  const candidatosMvp = final
+  // Solo partidos de la última semana: los buscadores recorren cientos de
+  // fichas viejas y cada visita crearía una encuesta que nadie va a ver.
+  const recienTerminado =
+    final && Date.now() - new Date(fx.fixture.date).getTime() < 7 * 86_400_000;
+  const candidatosMvp = recienTerminado
     ? [...homePlayers, ...awayPlayers]
         .filter((p) => p.rating != null && (p.minutes ?? 0) > 0)
         .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
