@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esDelEquipo } from "../equipo";
+import { esDelEquipo, equipoDelArticulo, equipoDelFiltro } from "../equipo";
 import { nombraEquipo } from "@/lib/sports/menciones";
 
 const equipo = { id: 10, nombre: "Barcelona", partidos: new Set([25]) };
@@ -28,5 +28,22 @@ describe("análisis del equipo", () => {
   });
   it("admite espacios y signos en los nombres compuestos", () => {
     expect(nombraEquipo("Gana la Real  Sociedad", "Real Sociedad")).toBe(true);
+  });
+});
+
+describe("selección editorial del equipo", () => {
+  it("acepta solo los tres filtros conocidos y descarta parámetros ambiguos", () => {
+    expect(equipoDelFiltro("529")?.nombre).toBe("Barcelona");
+    expect(equipoDelFiltro("541")?.de).toBe("del Real Madrid");
+    expect(equipoDelFiltro("530")?.de).toBe("del Atlético");
+    expect(equipoDelFiltro("999")).toBeUndefined();
+    expect(equipoDelFiltro(["529", "541"])).toBeUndefined();
+  });
+  it("prioriza team_id e infiere el primer equipo citado solo si no hay asignación", () => {
+    expect(equipoDelArticulo({ team_id: 123, title: "El Barça gana" })).toBe(123);
+    expect(equipoDelArticulo({ team_id: null, title: "El Madrid supera al Barça" })).toBe(541);
+    expect(equipoDelArticulo({ team_id: null, title: "El Atleti y el Madrid" })).toBe(530);
+    expect(equipoDelArticulo({ team_id: null, title: "Los culés vuelven" })).toBe(529);
+    expect(equipoDelArticulo({ team_id: null, title: "Balance de la jornada" })).toBeNull();
   });
 });

@@ -49,7 +49,7 @@ function serviceClient() {
  * 11 GB de 5,5 del plan gratis (aviso de corte, sep-2026). El cron reescribe
  * cada 10 min, así que 2 min de retraso no se notan.
  */
-const leerFila = (key: string) =>
+const leerFila = (key: string, signal?: AbortSignal) =>
   unstable_cache(
     async (): Promise<{ data: unknown; updated_at: string } | null> => {
       try {
@@ -59,6 +59,7 @@ const leerFila = (key: string) =>
           .from("sports_cache")
           .select("data, updated_at")
           .eq("cache_key", key)
+          .abortSignal(signal ?? AbortSignal.timeout(5_000))
           .maybeSingle();
         return data ?? null;
       } catch {
@@ -115,9 +116,12 @@ function leerFilaMemo(key: string): Promise<FilaCache> {
 export async function readCache<T>(
   key: string,
   maxAgeSeconds: number,
+  signal?: AbortSignal,
 ): Promise<T | null> {
   try {
-    const data = await leerFilaMemo(key);
+    // Con presupuesto (el cron del directo, pocas lecturas): directa y
+    // cortable. Sin él (las páginas): memoria compartida de 30 s.
+    const data = signal ? await leerFila(key, signal) : await leerFilaMemo(key);
     if (!data) return null;
     const ageMs = Date.now() - new Date(data.updated_at).getTime();
     if (ageMs > maxAgeSeconds * 1000) return null;

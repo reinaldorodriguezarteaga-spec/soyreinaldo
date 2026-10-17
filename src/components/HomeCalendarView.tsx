@@ -30,7 +30,7 @@ export default function HomeCalendarView({
   seguidos,
 }: {
   days: CalendarDay[];
-  /** Equipos y ligas ⭐: con "Solo favoritos" activo, solo sus partidos. */
+  /** Equipos ⭐: con "Solo favoritos" activo, solo sus partidos. */
   seguidos?: Seguidos;
   /** Bloque "En vivo" (HomeMatchWidgetClient liveOnly) — se pinta entre el
    * grupo de favoritos y los días de próximos partidos, como pidió el
@@ -42,13 +42,13 @@ export default function HomeCalendarView({
   // El grupo "⭐ Tus favoritos" (si existe, siempre el primero) no consume
   // un hueco de los MAX_DAYS de días reales.
   const [soloFav, setSoloFav] = useSoloFavoritos();
-  const tieneSeguidos = !!seguidos && (seguidos.equipos.length > 0 || seguidos.ligas.length > 0);
+  const tieneSeguidos = !!seguidos && seguidos.equipos.length > 0;
   if (soloFav && tieneSeguidos) {
     days = days
       .map((d) => ({
         ...d,
         fixtures: d.fixtures.filter((fx) =>
-          esDeFavoritos(seguidos!, fx.teams.home.id, fx.teams.away.id, fx.linkSlug),
+          esDeFavoritos(seguidos!, fx.teams.home.id, fx.teams.away.id),
         ),
       }))
       .filter((d) => d.fixtures.length > 0);

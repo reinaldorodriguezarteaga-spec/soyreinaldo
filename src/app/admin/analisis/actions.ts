@@ -10,6 +10,7 @@ import {
   type Fixture,
   type StandingRow,
 } from "@/lib/sports/api-football";
+import { equiposEnEspanol } from "@/lib/sports/nombres";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 
 export type EstadoAnalisis = {
@@ -45,6 +46,11 @@ export async function guardarAnalisis(
   const portada = (formData.get("cover_url") as string | null)?.trim() || null;
   const slugManual = (formData.get("slug") as string | null)?.trim() || "";
   const partido = (formData.get("fixture_id") as string | null)?.trim() || "";
+  const equipo = (formData.get("team_id") as string | null)?.trim() || "";
+  const teamId = equipo ? Number(equipo) : null;
+  if (equipo && (!Number.isSafeInteger(teamId) || Number(teamId) <= 0)) {
+    return { status: "error", message: "El equipo no es válido." };
+  }
   const competicion = (formData.get("competition_slug") as string | null)?.trim() || null;
   // Guardar PUBLICA por defecto (pedido del dueño 23-ago: lo normal es
   // publicar; dejarlo en borrador es la excepción). La casilla marca el caso
@@ -80,6 +86,7 @@ export async function guardarAnalisis(
     body: cuerpo,
     cover_url: portada,
     fixture_id: fixtureId,
+    team_id: teamId,
     competition_slug: fixtureId ? competicion : null,
     author_id: user.id,
   };
@@ -140,7 +147,7 @@ export async function equiposDeCompeticion(slug: string): Promise<EquipoOpcion[]
   const competition = COMPETITIONS_BY_SLUG[slug];
   if (!competition) return [];
   try {
-    const filas = (await getCompetitionStandings(competition)) as StandingRow[] | null;
+    const filas = equiposEnEspanol(await getCompetitionStandings(competition)) as StandingRow[] | null;
     const porId = new Map<number, EquipoOpcion>();
     for (const f of filas ?? []) {
       if (!porId.has(f.team.id)) porId.set(f.team.id, { id: f.team.id, nombre: f.team.name });

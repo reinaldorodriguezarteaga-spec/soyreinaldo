@@ -10,6 +10,7 @@ import FirmaAutor from "@/components/FirmaAutor";
 import { AUTOR } from "@/lib/autor/autor";
 import ShareArticle from "@/components/ShareArticle";
 import ViewPing from "@/components/ViewPing";
+import MasAnalisisEquipo from "@/components/MasAnalisisEquipo";
 import Comentarios from "./comentarios";
 
 export const revalidate = 300;
@@ -134,6 +135,10 @@ export default async function AnalisisPage({
             slug={a.slug}
             shareCount={a.share_count}
           />
+
+          <Suspense fallback={null}>
+            <MasAnalisisEquipo articulo={a} />
+          </Suspense>
 
           {/* El tablón: que el artículo pinte sin esperar a los comentarios. */}
           <Suspense fallback={null}>

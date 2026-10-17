@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Editor, { type Borrador } from "./editor";
-import { borrarAnalisis } from "./actions";
+import { borrarAnalisis, equiposDeCompeticion } from "./actions";
 
 export const metadata = { title: "Análisis | Admin | Soy Reinaldo" };
 
@@ -34,13 +34,13 @@ export default async function AdminAnalisis({
     .returns<Fila[]>();
   const articulos = data ?? [];
 
-  const { data: enEdicion } = editar
-    ? await supabase
+  const [{ data: enEdicion }, equiposLaLiga] = await Promise.all([editar
+    ? supabase
         .from("articles")
-        .select("id, slug, title, excerpt, body, cover_url, fixture_id, competition_slug, published_at")
+        .select("id, slug, title, excerpt, body, cover_url, fixture_id, competition_slug, team_id, published_at")
         .eq("id", editar)
         .maybeSingle<Borrador>()
-    : { data: null };
+    : Promise.resolve({ data: null }), equiposDeCompeticion("laliga")]);
 
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
@@ -65,7 +65,7 @@ export default async function AdminAnalisis({
           )}
         </header>
 
-        <Editor borrador={enEdicion ?? undefined} />
+        <Editor key={enEdicion?.id ?? "nuevo"} borrador={enEdicion ?? undefined} equiposLaLiga={equiposLaLiga} />
 
         {enEdicion && (
           <p className="mt-4 text-sm">

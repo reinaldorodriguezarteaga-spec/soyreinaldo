@@ -120,12 +120,25 @@ const MAX_SIMULTANEAS = 6;
 let enVuelo = 0;
 const cola: Array<() => void> = [];
 
-async function tomarCarril(): Promise<void> {
+async function tomarCarril(signal?: AbortSignal): Promise<void> {
+  signal?.throwIfAborted();
   if (enVuelo < MAX_SIMULTANEAS) {
     enVuelo++;
     return;
   }
-  await new Promise<void>((resolve) => cola.push(resolve));
+  await new Promise<void>((resolve, reject) => {
+    const continuar = () => {
+      signal?.removeEventListener("abort", cancelar);
+      resolve();
+    };
+    const cancelar = () => {
+      const indice = cola.indexOf(continuar);
+      if (indice >= 0) cola.splice(indice, 1);
+      reject(signal?.reason);
+    };
+    cola.push(continuar);
+    signal?.addEventListener("abort", cancelar, { once: true });
+  });
   enVuelo++;
 }
 
@@ -340,6 +353,7 @@ async function unIntento<T>(
   url: string,
   path: string,
   paramStr: string,
+  signal?: AbortSignal,
 ): Promise<
   | { ok: true; json: { response: T[]; errors: unknown } }
   | { ok: false; http429: boolean; json: { response: T[]; errors: unknown } }
@@ -350,7 +364,7 @@ async function unIntento<T>(
   const res = await fetch(url, {
     headers: { "x-apisports-key": key },
     cache: "no-store", // el único caché es unstable_cache (capa de abajo)
-    signal: AbortSignal.timeout(TIEMPO_MAX_LLAMADA_MS),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(TIEMPO_MAX_LLAMADA_MS)]) : AbortSignal.timeout(TIEMPO_MAX_LLAMADA_MS),
   });
 
   const remaining =
@@ -744,14 +758,14 @@ function partidoCerca(f: Fixture, ahora = Date.now()): boolean {
   return isLive(f) || (ahora >= t - 30 * 60_000 && ahora <= t + 3 * 3_600_000);
 }
 
-async function calendarioGuardado(c: Competition): Promise<Fixture[]> {
-  return (await readCache<Fixture[]>(allFixturesCacheKey(c), 7 * 86_400).catch(() => null)) ?? [];
+async function calendarioGuardado(c: Competition, signal?: AbortSignal): Promise<Fixture[]> {
+  return (await readCache<Fixture[]>(allFixturesCacheKey(c), 7 * 86_400, signal).catch(() => null)) ?? [];
 }
 
 /** ¿Tiene esta competición un partido en juego o cerca? Sin calendario
  * guardado no se sabe: se responde que sí (lo prudente es ir rápido). */
-export async function competicionConPartidoCerca(c: Competition): Promise<boolean> {
-  const fx = await calendarioGuardado(c);
+export async function competicionConPartidoCerca(c: Competition, signal?: AbortSignal): Promise<boolean> {
+  const fx = await calendarioGuardado(c, signal);
   return fx.length === 0 || fx.some((f) => partidoCerca(f));
 }
 
@@ -3643,7 +3657,26 @@ export async function refrescarEquipoTrasPartido(
  * Todos los partidos en juego del mundo, con sus eventos, en UNA llamada
  * (para el cron `directo`). Sin caché: es el dato en vivo.
  */
-export async function getPartidosEnJuego(): Promise<(Fixture & { events?: FixtureEvent[] })[] | null> {
+/** Con presupuesto del cron: una sola petición, sin reintentos; incluye la
+ * espera del carril en el mismo AbortSignal y conserva el límite compartido. */
+async function directoConPresupuesto(params: Record<string, string | number>, signal: AbortSignal) {
+  try {
+    await tomarCarril(signal);
+    try {
+      signal.throwIfAborted();
+      const url = urlApi("/fixtures", params);
+      const r = await unIntento<Fixture & { events?: FixtureEvent[] }>(url, "/fixtures", new URL(url).searchParams.toString(), signal);
+      return r.ok ? equiposEnEspanol(r.json.response) : null;
+    } finally {
+      soltarCarril();
+    }
+  } catch {
+    return null;
+  }
+}
+
+export async function getPartidosEnJuego(signal?: AbortSignal): Promise<(Fixture & { events?: FixtureEvent[] })[] | null> {
+  if (signal) return directoConPresupuesto({ live: "all" }, signal);
   const r = await get<Fixture & { events?: FixtureEvent[] }>("/fixtures", { live: "all" }, 15, true);
   return failed(r) ? null : r.response;
 }
@@ -3651,8 +3684,10 @@ export async function getPartidosEnJuego(): Promise<(Fixture & { events?: Fixtur
 /** Varios partidos por id (hasta 20), con eventos, sin caché. */
 export async function getPartidosPorIdsEnVivo(
   ids: number[],
+  signal?: AbortSignal,
 ): Promise<(Fixture & { events?: FixtureEvent[] })[]> {
   if (ids.length === 0) return [];
+  if (signal) return (await directoConPresupuesto({ ids: ids.slice(0, 20).join("-") }, signal)) ?? [];
   const r = await get<Fixture & { events?: FixtureEvent[] }>(
     "/fixtures",
     { ids: ids.slice(0, 20).join("-") },
