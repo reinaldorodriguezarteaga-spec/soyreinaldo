@@ -43,10 +43,13 @@ async function leer(): Promise<Lectura> {
   const db = cliente();
   if (!db) return vacio;
   try {
-    const [{ data: lat }, { data: filas }] = await Promise.all([
+    const [latRes, filasRes] = await Promise.all([
       db.from("directo_latido").select("latido").eq("id", 1).maybeSingle<{ latido: string }>(),
       db.from("partidos_directo").select("fixture_id, data"),
     ]);
+    if (latRes.error || filasRes.error) return vacio;
+    const lat = latRes.data;
+    const filas = filasRes.data;
     if (!lat || Date.now() - Date.parse(lat.latido) > LATIDO_MAX_MS) return vacio;
     return {
       ok: true,
@@ -69,6 +72,12 @@ async function lectura(): Promise<Lectura> {
     });
   }
   return enCurso;
+}
+
+/** Distingue un directo al día sin partidos de un cron caído. */
+export async function filasDirectoVigentes(): Promise<Map<number, FilaDirecto> | null> {
+  const l = await lectura();
+  return l.ok ? l.filas : null;
 }
 
 /** Partidos del directo (vacío si el cron no está latiendo). Nunca lanza. */

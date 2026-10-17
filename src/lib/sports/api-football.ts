@@ -17,7 +17,7 @@ import {
 } from "./competitions";
 import { cachedOrLive, conUltimoBueno, readCache } from "./sports-cache";
 import { guardarArchivo, leerArchivo, respuestaUtil } from "./archivo";
-import { eventosDirecto, filasDirecto, superponer } from "./directo";
+import { eventosDirecto, filasDirecto, filasDirectoVigentes, superponer } from "./directo";
 import { equiposEnEspanol } from "./nombres";
 
 const BASE = "https://v3.football.api-sports.io";
@@ -785,10 +785,39 @@ export async function directoTtl(
 export async function getCompetitionFixturesWindow(
   competition: Competition,
 ): Promise<Fixture[]> {
-  const ttl = (await competicionConPartidoCerca(competition)) ? 20 : 300;
+  const [calendario, directoVigente] = await Promise.all([
+    readCache<Fixture[]>(allFixturesCacheKey(competition), 2400),
+    filasDirectoVigentes(),
+  ]);
   const now = Date.now();
   const fromMs = now - 12 * 3600_000;
   const toMs = now + 14 * 3600_000;
+  const enVentana = (f: Fixture) => isLive(f) ||
+    (Date.parse(f.fixture.date) >= fromMs && Date.parse(f.fixture.date) <= toMs);
+
+  if (calendario && directoVigente !== null) {
+    // Si el calendario aún dice "en juego" o "sin empezar" y el cron no
+    // conoce ese partido, pedimos la ventana para aclarar su estado.
+    const ambiguo = calendario.some((f) => enVentana(f) && !directoVigente.has(f.fixture.id) &&
+      (isLive(f) || (["NS", "TBD"].includes(f.fixture.status.short) && Date.parse(f.fixture.date) < now - 60_000)));
+    if (!ambiguo) {
+      const ventana = new Map(calendario.filter(enVentana).map((f) => [f.fixture.id, f]));
+      for (const f of directoVigente.values()) {
+        if (f.league.id === competition.leagueId && enVentana(f)) {
+          const base = ventana.get(f.fixture.id);
+          ventana.set(f.fixture.id, base ? superponer(base, f) : equiposEnEspanol({
+            fixture: f.fixture, league: f.league, teams: f.teams, goals: f.goals,
+          }));
+        }
+      }
+      return [...ventana.values()];
+    }
+  }
+
+  // Sin cron/calendario fiable, se conserva la consulta y su caché corta.
+  const ttl = calendario?.length
+    ? (calendario.some((f) => partidoCerca(f, now)) ? 20 : 300)
+    : ((await competicionConPartidoCerca(competition)) ? 20 : 300);
   const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
   const r = await get<Fixture>(
@@ -1036,6 +1065,9 @@ export async function getCompetitionUpcomingFixtures(
   if (n <= UPCOMING_CACHE_N) {
     const cached = await readCache<Fixture[]>(upcomingCacheKey(competition), 2400);
     if (cached) return cached.slice(0, n);
+    // Una edición cerrada no tiene próximos partidos. El calendario ya lo
+    // acredita: no esperamos una llamada vacía a la API en cada caché fría.
+    if (await edicionTerminada(competition)) return [];
     return (await conUltimoBueno(upcomingCacheKey(competition), await fetchLive(n))).slice(0, n);
   }
   return fetchLive(n);
@@ -1361,10 +1393,10 @@ export async function getTeamFixtures(
   // getCompetitionStandings. Otras combinaciones (ficha de equipo) caen a
   // la llamada en vivo tal cual siempre.
   const [recentRaw, upcomingRaw] = opts.forceLive
-    ? await Promise.all([fetchLast(true), fetchNext(true)])
+    ? await Promise.all([last > 0 ? fetchLast(true) : [], next > 0 ? fetchNext(true) : []])
     : await Promise.all([
-        cachedOrLive(teamFixturesLastCacheKey(teamId, last), 2400, () => fetchLast()),
-        cachedOrLive(teamFixturesNextCacheKey(teamId, next), 2400, () => fetchNext()),
+        last > 0 ? cachedOrLive(teamFixturesLastCacheKey(teamId, last), 2400, () => fetchLast()) : [],
+        next > 0 ? cachedOrLive(teamFixturesNextCacheKey(teamId, next), 2400, () => fetchNext()) : [],
       ]);
 
   const recent = recentRaw.sort(
