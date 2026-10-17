@@ -13,6 +13,7 @@ import { equiposEnEspanol } from "@/lib/sports/nombres";
 import MiEquipoElegir from "@/components/MiEquipoElegir";
 import CuentaAtras from "@/components/CuentaAtras";
 import CalendarioBotones from "@/components/CalendarioBotones";
+import OfertaAvisos from "@/components/OfertaAvisos";
 
 /**
  * "Mi equipo" en lo alto de la portada (16-oct, pedido del dueño): próximo
@@ -141,6 +142,11 @@ export function MiEquipoVista({
           </Link>
         )}
       </div>
+
+      <OfertaAvisos
+        clave="mi-equipo"
+        texto={`¿Te avisamos cuando juegue y cuando marque el ${equipo.name}?`}
+      />
 
       <div className="miequipo__pie">
         {ics && (
