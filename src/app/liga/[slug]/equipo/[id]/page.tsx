@@ -25,6 +25,7 @@ import { isFavorited } from "@/app/actions/favorites";
 import FavoriteStar from "@/components/FavoriteStar";
 import { StandingsTableView } from "@/components/competition/tab-views";
 import TeamStats from "./team-stats";
+import { perfilAlDia } from "@/lib/sports/perfil-al-dia";
 import TeamTabs from "./team-tabs";
 import TeamFixturesList from "./fixtures-list";
 import TeamOverview from "./team-overview";
@@ -184,7 +185,7 @@ export default async function LigaEquipoPage({
             />
           </Suspense>
           <Suspense fallback={null}>
-            <TeamSeason statsPromise={statsPromise} />
+            <TeamSeason statsPromise={statsPromise} partidos={allFixtures} teamId={teamId} />
           </Suspense>
 
           <Suspense fallback={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}>
@@ -286,9 +287,19 @@ function SquadList({ competition, squad }: { competition: Competition; squad: Sq
 }
 
 
-async function TeamSeason({ statsPromise }: { statsPromise: Promise<TeamSeasonStats | null> }) {
+async function TeamSeason({
+  statsPromise,
+  partidos,
+  teamId,
+}: {
+  statsPromise: Promise<TeamSeasonStats | null>;
+  partidos: Fixture[];
+  teamId: number;
+}) {
   const stats = await statsPromise;
-  return stats ? <TeamStats stats={stats} /> : null;
+  if (!stats) return null;
+  const alDia = perfilAlDia(stats, partidos, teamId);
+  return <TeamStats stats={alDia.stats} minutosHasta={alDia.minutosHasta} />;
 }
 
 async function TeamCoach({ coachPromise }: { coachPromise: Promise<Coach | null> }) {

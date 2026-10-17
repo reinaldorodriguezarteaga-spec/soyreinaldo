@@ -159,7 +159,15 @@ function FormDots({ form }: { form: string }) {
  * título, ahora genérico: "Perfil de la temporada" en vez de "... en el
  * Mundial").
  */
-export default function TeamStats({ stats }: { stats: TeamSeasonStats }) {
+export default function TeamStats({
+  stats,
+  minutosHasta = null,
+}: {
+  stats: TeamSeasonStats;
+  /** Si los goles por minuto van por detrás del balance (la API aún no
+   * sumó el último partido), hasta qué partido llegan. */
+  minutosHasta?: number | null;
+}) {
   const played = stats.fixtures?.played?.total ?? 0;
   if (played === 0) return null; // sin partidos en la competición: nada que enseñar
 
@@ -227,6 +235,7 @@ export default function TeamStats({ stats }: { stats: TeamSeasonStats }) {
                 }}
               >
                 Goles a favor por minuto
+                {minutosHasta ? ` · hasta el partido ${minutosHasta}` : ""}
               </p>
               <MinuteBars map={stats.goals.for.minute} color="var(--accent)" />
             </div>
@@ -244,6 +253,7 @@ export default function TeamStats({ stats }: { stats: TeamSeasonStats }) {
                 }}
               >
                 Goles en contra por minuto
+                {minutosHasta ? ` · hasta el partido ${minutosHasta}` : ""}
               </p>
               <MinuteBars map={stats.goals.against.minute} color="#ff5b8a" />
             </div>
