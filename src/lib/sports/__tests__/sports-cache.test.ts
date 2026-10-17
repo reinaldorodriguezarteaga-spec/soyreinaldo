@@ -21,7 +21,8 @@ vi.mock("@supabase/supabase-js", () => ({
 const { writeCache, readCache } = await import("../sports-cache");
 
 describe("sports_cache", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    (await import("../sports-cache")).vaciarMemoCache();
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service";

@@ -75,13 +75,53 @@ const leerFila = (key: string, signal?: AbortSignal) =>
  * existe, si falla la consulta, o si `updated_at` es más vieja que
  * `maxAgeSeconds`, o si está vacía (`[]`: nunca es un dato útil) — en ese caso el llamador debe caer a la llamada en vivo.
  */
+/**
+ * Memoria por instancia (17-oct, incidente): la base de datos se saturó a
+ * las 22:32 con 3,9 M lecturas de `sports_cache`. `unstable_cache` no
+ * guarda las filas grandes (los calendarios de temporada superan el límite
+ * de la Data Cache de Vercel), así que cada llamada iba a Postgres a por
+ * cientos de KB. Aquí: 30 s de memoria por clave y, si llegan varias
+ * peticiones a la vez, una sola lectura. La caché la refresca el cron cada
+ * 10 min: 30 s más de antigüedad no cambian nada.
+ */
+const MEMO_MS = 30_000;
+const MEMO_MAX = 200;
+type FilaCache = { data: unknown; updated_at: string } | null;
+const memoFilas = new Map<string, { t: number; fila: Promise<FilaCache> }>();
+
+/** Solo para pruebas: vacía la memoria por instancia. */
+export function vaciarMemoCache(): void {
+  memoFilas.clear();
+}
+
+function leerFilaMemo(key: string): Promise<FilaCache> {
+  const ahora = Date.now();
+  const m = memoFilas.get(key);
+  if (m && ahora - m.t < MEMO_MS) return m.fila;
+  if (memoFilas.size >= MEMO_MAX) {
+    for (const [k, v] of memoFilas) if (ahora - v.t >= MEMO_MS) memoFilas.delete(k);
+    if (memoFilas.size >= MEMO_MAX) memoFilas.clear();
+  }
+  const fila = leerFila(key).catch(() => null);
+  memoFilas.set(key, { t: ahora, fila });
+  // Ni un fallo ni una fila vacía se recuerdan: la siguiente petición
+  // vuelve a mirar (una vacía nunca es un dato útil).
+  void fila.then((f) => {
+    const inutil = f == null || (Array.isArray(f.data) && f.data.length === 0);
+    if (inutil && memoFilas.get(key)?.fila === fila) memoFilas.delete(key);
+  });
+  return fila;
+}
+
 export async function readCache<T>(
   key: string,
   maxAgeSeconds: number,
   signal?: AbortSignal,
 ): Promise<T | null> {
   try {
-    const data = await leerFila(key, signal);
+    // Con presupuesto (el cron del directo, pocas lecturas): directa y
+    // cortable. Sin él (las páginas): memoria compartida de 30 s.
+    const data = signal ? await leerFila(key, signal) : await leerFilaMemo(key);
     if (!data) return null;
     const ageMs = Date.now() - new Date(data.updated_at).getTime();
     if (ageMs > maxAgeSeconds * 1000) return null;
