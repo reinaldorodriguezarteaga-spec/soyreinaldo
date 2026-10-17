@@ -1493,6 +1493,11 @@ select.field { appearance: none; }
 .pava img, .pava > span.ph { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
 .pava .prbadge { position: absolute; top: -5px; right: -7px; font-size: 0.62rem; font-weight: 800; padding: 1px 5px; border-radius: 6px; color: #0a1030; font-variant-numeric: tabular-nums; }
 .pava .pmk { position: absolute; bottom: -3px; left: -4px; font-size: 0.7rem; line-height: 1; }
+/* Minuto del cambio (17-oct): a la izquierda de la flecha del que sale
+ * (encima pisaba el nombre de la fila de arriba en móvil) y en el chip del
+ * que entra. */
+.pava .pmin { position: absolute; top: -3px; right: calc(100% + 5px); z-index: 2; font-size: 0.6rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.85); font-variant-numeric: tabular-nums; }
+.subschip__min { font-size: 0.72rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .subschip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; color: inherit; font: inherit; }
 
 /* Chip-pill (tabs de fase, filtros) */

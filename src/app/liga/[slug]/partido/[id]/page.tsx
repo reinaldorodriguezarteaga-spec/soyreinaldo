@@ -703,6 +703,7 @@ export default async function LigaPartidoPage({
                 awayLineup={awayLineup}
                 inKeys={subs.inKeys}
                 outKeys={subs.outKeys}
+                minutos={subs.minutos}
               />
             </div>
           )}

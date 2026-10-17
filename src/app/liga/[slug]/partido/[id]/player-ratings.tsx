@@ -10,7 +10,7 @@
 import Image from "next/image";
 import { MarcasJugador } from "@/components/IconosPartido";
 import { useEffect, useState } from "react";
-import { enCambios, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
+import { enCambios, minutoCambio, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
 
 type Team = { id: number; name: string; logo: string };
 type Entry = { p: PlayerRating; team: Team };
@@ -218,6 +218,7 @@ function PitchNode({
   y,
   onPick,
   subbedOut,
+  minuto,
 }: {
   lp: { id: number; number: number | null; name: string };
   pr: PlayerRating | undefined;
@@ -225,6 +226,8 @@ function PitchNode({
   y: number;
   onPick: (id: number) => void;
   subbedOut?: boolean;
+  /** Minuto en que salió ("63'"). */
+  minuto?: string | null;
 }) {
   const rating = pr?.rating ?? null;
   const mark = playerMark(pr);
@@ -270,6 +273,7 @@ function PitchNode({
             ↓
           </span>
         )}
+        {subbedOut && minuto && <span className="pmin">{minuto}</span>}
         {mark && <span className="pmk">{mark}</span>}
         {pr && (
           <span className="ficha__marcas">
@@ -319,12 +323,14 @@ function SubsRow({
   byId,
   onPick,
   inKeySet,
+  minutos,
 }: {
   team: Team;
   subs: { id: number; number: number | null; name: string }[];
   byId: Map<number, PlayerRating>;
   onPick: (id: number) => void;
   inKeySet: Set<string>;
+  minutos?: Record<string, string>;
 }) {
   // Solo los que jugaron de verdad: el API manda a todo el banquillo con
   // nota 0.0 aunque no pisaran el campo (13-oct: Balde, Cancelo, Szczęsny…).
@@ -343,6 +349,9 @@ function SubsRow({
         {played.map((p) => (
           <button key={p.id} className="subschip" type="button" onClick={() => onPick(p.id)}>
             {enCambios(inKeySet, p) && <SubArrow dir="in" />}
+            {enCambios(inKeySet, p) && minutoCambio(minutos, p) && (
+              <span className="subschip__min">{minutoCambio(minutos, p)}</span>
+            )}
             <Avatar photo={p.photo} n={p.number} size={20} />
             <span>{shortName(p.name)}</span>
             <b className="tabular-nums" style={{ color: ratingColor(p.rating ?? 0) }}>
@@ -365,6 +374,7 @@ function PitchView({
   horizontal,
   inKeySet,
   outKeySet,
+  minutos,
 }: {
   home: Team;
   away: Team;
@@ -375,6 +385,7 @@ function PitchView({
   horizontal: boolean;
   inKeySet: Set<string>;
   outKeySet: Set<string>;
+  minutos?: Record<string, string>;
 }) {
   const homeNodes = teamNodes(homeLineup, "home", horizontal);
   const awayNodes = teamNodes(awayLineup, "away", horizontal);
@@ -417,6 +428,7 @@ function PitchView({
             y={n.y}
             onPick={onPick}
             subbedOut={enCambios(outKeySet, n.p)}
+            minuto={minutoCambio(minutos, n.p)}
           />
         ))}
         {awayNodes.map((n) => (
@@ -428,6 +440,7 @@ function PitchView({
             y={n.y}
             onPick={onPick}
             subbedOut={enCambios(outKeySet, n.p)}
+            minuto={minutoCambio(minutos, n.p)}
           />
         ))}
       </div>
@@ -436,8 +449,8 @@ function PitchView({
           <TeamCaption team={away} formation={awayLineup.formation} align="right" />
         </div>
       )}
-      <SubsRow team={home} subs={homeLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} />
-      <SubsRow team={away} subs={awayLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} />
+      <SubsRow team={home} subs={homeLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} minutos={minutos} />
+      <SubsRow team={away} subs={awayLineup.substitutes} byId={byId} onPick={onPick} inKeySet={inKeySet} minutos={minutos} />
     </div>
   );
 }
@@ -510,6 +523,7 @@ export default function PlayerRatings({
   awayLineup,
   inKeys = [],
   outKeys = [],
+  minutos,
 }: {
   home: Team;
   away: Team;
@@ -519,6 +533,7 @@ export default function PlayerRatings({
   awayLineup: LineupTeam | null;
   inKeys?: string[];
   outKeys?: string[];
+  minutos?: Record<string, string>;
 }) {
   const inKeySet = new Set(inKeys);
   const outKeySet = new Set(outKeys);
@@ -601,6 +616,7 @@ export default function PlayerRatings({
           horizontal={horizontal}
           inKeySet={inKeySet}
           outKeySet={outKeySet}
+          minutos={minutos}
         />
       ) : (
         <ListView
