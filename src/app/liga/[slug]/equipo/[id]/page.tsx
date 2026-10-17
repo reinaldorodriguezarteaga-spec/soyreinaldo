@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import TeamAnalisis from "./team-analisis";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -236,6 +238,13 @@ export default async function LigaEquipoPage({
       <section className="section" style={{ paddingTop: 20 }}>
         <div className="wrap space-y-8">
           <TeamOverview fixtures={allFixtures} teamId={teamId} slug={competition.slug} />
+          <Suspense fallback={null}>
+            <TeamAnalisis
+              teamId={teamId}
+              nombre={team?.name ?? ""}
+              fixtureIds={allFixtures.map((f) => f.fixture.id)}
+            />
+          </Suspense>
           {stats && <TeamStats stats={stats} />}
 
           <TeamTabs
