@@ -2205,3 +2205,22 @@ select.field { appearance: none; }
 .met-grupo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; }
 .met-grupo dt { color: var(--text-dim); }
 .met-grupo dd { margin: 0; font-weight: 600; }
+
+/* Botón "Compartir" compacto (BotonCompartir). */
+.compartir { position: relative; display: inline-flex; }
+.compartir__btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  font-size: 0.84rem; cursor: pointer;
+}
+.compartir__btn:hover { border-color: var(--accent); }
+.compartir__menu {
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 30;
+  display: flex; flex-direction: column; min-width: 170px; padding: 6px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line-strong); box-shadow: 0 12px 30px rgba(0,0,0,.4);
+}
+.compartir__menu a, .compartir__menu button {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  color: var(--text); text-decoration: none; font-size: 0.86rem; background: none; border: 0; cursor: pointer; text-align: left;
+}
+.compartir__menu a:hover, .compartir__menu button:hover { background: var(--surface-2); }
