@@ -1840,7 +1840,13 @@ export function subKey(name: string | null): string {
 /** Claves de quienes ENTRARON y SALIERON en los cambios del partido: "#id"
  * del jugador o, si el API no trae id, su apellido (`subKey`). Se consultan
  * con `enCambios`. */
-export type FixtureSubs = { inKeys: string[]; outKeys: string[] };
+export type FixtureSubs = {
+  inKeys: string[];
+  outKeys: string[];
+  /** Minuto de cada cambio ("63'", "90+2'") por la misma clave (17-oct,
+   * pedido del dueño: verlo junto a la flecha). */
+  minutos?: Record<string, string>;
+};
 
 /**
  * Cambios del partido (type=subst). ⚠️ En API-Football, `player` es quien SALE
@@ -1859,14 +1865,25 @@ export async function getFixtureSubs(
   const r = { response: await eventosPartido(id, revalidate) };
   const inKeys: string[] = [];
   const outKeys: string[] = [];
+  const minutos: Record<string, string> = {};
   for (const e of r.response) {
     if (e.type !== "subst") continue;
     const entra = e.assist?.id != null ? `#${e.assist.id}` : subKey(e.assist?.name ?? null);
     const sale = e.player?.id != null ? `#${e.player.id}` : subKey(e.player?.name ?? null);
-    if (entra) inKeys.push(entra);
-    if (sale) outKeys.push(sale);
+    const min =
+      e.time.elapsed != null
+        ? `${e.time.elapsed}${e.time.extra ? `+${e.time.extra}` : ""}'`
+        : null;
+    if (entra) {
+      inKeys.push(entra);
+      if (min) minutos[entra] = min;
+    }
+    if (sale) {
+      outKeys.push(sale);
+      if (min) minutos[sale] = min;
+    }
   }
-  return { inKeys, outKeys };
+  return { inKeys, outKeys, minutos };
 }
 
 /** ¿Está este jugador entre los que entraron/salieron? Por id y, solo si el
@@ -1876,6 +1893,15 @@ export function enCambios(
   p: { id: number | null; name: string | null },
 ): boolean {
   return (p.id != null && keys.has(`#${p.id}`)) || keys.has(subKey(p.name));
+}
+
+/** Minuto del cambio de este jugador ("63'"), o null. */
+export function minutoCambio(
+  minutos: Record<string, string> | undefined,
+  p: { id: number | null; name: string | null },
+): string | null {
+  if (!minutos) return null;
+  return (p.id != null ? minutos[`#${p.id}`] : undefined) ?? minutos[subKey(p.name)] ?? null;
 }
 
 /** Un cambio con minuto y nombres (para la ficha visual del partido). */
