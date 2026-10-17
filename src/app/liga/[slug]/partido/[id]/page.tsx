@@ -33,6 +33,8 @@ import { filasDirecto } from "@/lib/sports/directo";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
+import MatchVideos from "./match-videos";
+import MatchEncuestas from "./match-encuestas";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
 import MatchCronica from "./match-cronica";
@@ -466,6 +468,15 @@ export default async function LigaPartidoPage({
       }
     : null;
 
+  // Encuesta "¿Quién fue el mejor?": los 5 mejor valorados, al terminar.
+  const candidatosMvp = final
+    ? [...homePlayers, ...awayPlayers]
+        .filter((p) => p.rating != null && (p.minutes ?? 0) > 0)
+        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        .slice(0, 5)
+        .map((p) => ({ id: String(p.id), texto: nombreConocido(p.name, p.id, nombrePlantilla) }))
+    : null;
+
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
@@ -587,6 +598,12 @@ export default async function LigaPartidoPage({
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
           {cronica && <MatchCronica datos={cronica} />}
+          <Suspense fallback={null}>
+            <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MatchEncuestas fixtureId={fixtureId} candidatosMvp={candidatosMvp} />
+          </Suspense>
           {!played && (
             <Suspense fallback={null}>
               <MatchPrevia

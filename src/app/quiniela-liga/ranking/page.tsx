@@ -12,6 +12,7 @@ import {
   type FilaHistorial,
 } from "@/lib/quiniela-liga/rachas";
 import DuelosVista from "./duelos-vista";
+import { medallasDe, type FilaJornadaJugador } from "@/lib/quiniela-liga/medallas";
 import { T } from "@/components/EnApp";
 
 const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
@@ -79,6 +80,14 @@ export default async function QuinielaLigaRankingPage({
   const { data: historial } = await supabase.rpc("lq_historial_rachas", { p_league_id: leagueId });
   const rachas = calcularRachas((historial ?? []) as FilaHistorial[]);
   const miRacha = meId ? rachas.get(meId) : undefined;
+
+  // Medallas (17-oct): las del usuario, a partir de sus jornadas.
+  const { data: jornadasJugador } = meId
+    ? await supabase.rpc("lq_jornadas_jugador", { p_league_id: leagueId })
+    : { data: null };
+  const misMedallas = meId
+    ? medallasDe((jornadasJugador ?? []) as FilaJornadaJugador[], meId, ANFITRION_ID)
+    : [];
 
   // Estado de cada jornada (los aplazados no cuentan): cuáles están
   // terminadas del todo y cuáles tienen ya algún partido jugado.
@@ -205,6 +214,17 @@ export default async function QuinielaLigaRankingPage({
               {miRacha.aciertos === 1 ? "acierto seguido" : "aciertos seguidos"}
               {miRacha.mejorAciertos > miRacha.aciertos && <> (récord {miRacha.mejorAciertos})</>}
             </p>
+          )}
+          {misMedallas.length > 0 && (
+            <div className="medallas">
+              <span className="mono medallas__titulo">Tus medallas</span>
+              {misMedallas.map((m) => (
+                <span key={m.clave} className="medalla" title={`${m.nombre}: ${m.descripcion}`}>
+                  <span aria-hidden>{m.emoji}</span> {m.nombre}
+                  {m.veces > 1 && <strong> ×{m.veces}</strong>}
+                </span>
+              ))}
+            </div>
           )}
           {tarjeta && (
             <p style={{ marginTop: 12 }}>

@@ -2122,3 +2122,55 @@ select.field { appearance: none; }
   body:has(.livepill) .ytpill { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   .ytplayer { right: 8px; left: 8px; width: auto; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Medallas de los pronósticos (ranking). */
+.medallas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.medallas__titulo { color: var(--text-dim); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; margin-right: 4px; }
+.medalla {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklch, #f5c542 45%, transparent);
+  background: color-mix(in oklch, #f5c542 12%, transparent);
+  font-size: 0.84rem;
+}
+
+/* Vídeos de Reinaldo en la ficha del partido (match-videos + VideoLite). */
+.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.videolite { margin: 0; }
+.videolite__marco { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; border: 1px solid var(--line); }
+.videolite__marco button { all: unset; cursor: pointer; display: block; width: 100%; height: 100%; }
+.videolite__marco img, .videolite__marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }
+.videolite__play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 58px; height: 40px; border-radius: 10px; background: #e11d2a; color: #fff;
+  display: grid; place-items: center; font-size: 1rem; box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}
+.videolite figcaption { margin-top: 8px; font-size: 0.9rem; line-height: 1.4; }
+
+/* Encuestas de la ficha del partido. */
+.encuestas { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.encuesta { padding: 16px; display: grid; gap: 10px; }
+.encuesta__pregunta { margin: 0; font-weight: 600; }
+.encuesta__opciones { display: grid; gap: 8px; }
+.encuesta__op {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font-size: 0.9rem; text-align: left; cursor: pointer;
+}
+.encuesta__op:disabled { cursor: default; }
+.encuesta__op.on { border-color: var(--accent); }
+.encuesta__barra { position: absolute; inset: 0 auto 0 0; background: color-mix(in oklch, var(--accent) 18%, transparent); transition: width 0.4s ease; }
+.encuesta__texto, .encuesta__pct { position: relative; }
+.encuesta__pct { color: var(--text-dim); font-size: 0.78rem; }
+.encuesta__pie { margin: 0; color: var(--text-dim); font-size: 0.7rem; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.encuesta__pie a { color: var(--accent); }
+.encuesta__cerrar { margin-left: auto; background: none; border: 1px solid var(--line); color: var(--text-dim); border-radius: 8px; padding: 2px 8px; cursor: pointer; font-size: 0.7rem; }
+.encuesta__error { margin: 0; color: #ff8a8a; font-size: 0.82rem; }
+.encuesta__nueva { margin-top: 12px; }
+.encuesta__nueva summary { color: var(--text-dim); font-size: 0.72rem; cursor: pointer; }
+.encuesta__nueva form { display: grid; gap: 8px; margin-top: 10px; max-width: 520px; }
+.encuesta__nueva-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
