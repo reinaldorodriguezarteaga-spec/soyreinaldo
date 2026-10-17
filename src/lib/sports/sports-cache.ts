@@ -49,7 +49,7 @@ function serviceClient() {
  * 11 GB de 5,5 del plan gratis (aviso de corte, sep-2026). El cron reescribe
  * cada 10 min, así que 2 min de retraso no se notan.
  */
-const leerFila = (key: string) =>
+const leerFila = (key: string, signal?: AbortSignal) =>
   unstable_cache(
     async (): Promise<{ data: unknown; updated_at: string } | null> => {
       try {
@@ -59,6 +59,7 @@ const leerFila = (key: string) =>
           .from("sports_cache")
           .select("data, updated_at")
           .eq("cache_key", key)
+          .abortSignal(signal ?? AbortSignal.timeout(5_000))
           .maybeSingle();
         return data ?? null;
       } catch {
@@ -77,9 +78,10 @@ const leerFila = (key: string) =>
 export async function readCache<T>(
   key: string,
   maxAgeSeconds: number,
+  signal?: AbortSignal,
 ): Promise<T | null> {
   try {
-    const data = await leerFila(key);
+    const data = await leerFila(key, signal);
     if (!data) return null;
     const ageMs = Date.now() - new Date(data.updated_at).getTime();
     if (ageMs > maxAgeSeconds * 1000) return null;

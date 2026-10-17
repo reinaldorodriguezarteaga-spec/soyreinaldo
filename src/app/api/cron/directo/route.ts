@@ -9,6 +9,7 @@ import {
   type Fixture,
   type FixtureEvent,
 } from "@/lib/sports/api-football";
+import { tiempoDisponible } from "@/lib/sports/presupuesto-directo";
 import { COMPETITIONS } from "@/lib/sports/competitions";
 
 export const runtime = "nodejs";
@@ -50,6 +51,7 @@ function firma(f: Partido): string {
 }
 
 export async function GET(request: Request) {
+  const limite = Date.now() + 11_000;
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,66 +60,92 @@ export async function GET(request: Request) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return NextResponse.json({ error: "Missing env vars" }, { status: 500 });
   const db = createClient(url, key, { auth: { persistSession: false } });
+  let parcial = false;
+  let escritos = 0;
+  let terminados: Partido[] = [];
+  const senal = (maximo: number, reserva = 0) =>
+    AbortSignal.timeout(tiempoDisponible(limite, maximo, reserva));
 
-  // Limpieza: lo de hace más de 6 h ya no es "directo".
-  await db
-    .from("partidos_directo")
-    .delete()
-    .lt("actualizado", new Date(Date.now() - 6 * 3_600_000).toISOString());
-
-  // ¿Hay algo que mirar? Sin partidos cerca, ni una llamada.
+  // Calendarios ya guardados, en paralelo y sin llamadas a API-Football.
   const activas = (
-    await Promise.all(COMPETITIONS.map(async (c) => ((await competicionConPartidoCerca(c)) ? c : null)))
+    await Promise.all(COMPETITIONS.map(async (c) =>
+      (await competicionConPartidoCerca(c, senal(3_000))) ? c : null,
+    ))
   ).filter((c): c is (typeof COMPETITIONS)[number] => c !== null);
+
+  async function cerrar(conLatido: boolean) {
+    const tareas = [];
+    if (conLatido && tiempoDisponible(limite, 3_000) > 0) {
+      tareas.push(db.from("directo_latido")
+        .upsert({ id: 1, latido: new Date().toISOString() }).abortSignal(senal(3_000)));
+    } else if (conLatido) parcial = true;
+    // La limpieza es opcional y nunca retrasa la lectura en vivo.
+    if (tiempoDisponible(limite, 3_000) >= 1_500) {
+      tareas.push(db.from("partidos_directo").delete()
+        .lt("actualizado", new Date(Date.now() - 6 * 3_600_000).toISOString())
+        .abortSignal(senal(3_000)));
+    } else parcial = true;
+    const resultados = await Promise.allSettled(tareas);
+    if (resultados.some((r) => r.status === "rejected" || r.value.error)) parcial = true;
+  }
+
   if (activas.length === 0) {
-    return NextResponse.json({ ok: true, activas: 0 });
+    await cerrar(true);
+    return NextResponse.json({ ok: true, activas: 0, parcial });
   }
+
   const ligas = new Set(activas.map((c) => c.leagueId));
-
-  const enJuego = await getPartidosEnJuego();
-  if (enJuego === null) {
-    // La API falló: sin latido, la web vuelve sola a su camino de siempre.
-    return NextResponse.json({ ok: false, error: "live=all falló" });
+  const [enJuego, anteriores] = await Promise.all([
+    getPartidosEnJuego(senal(6_000, 2_000)),
+    db.from("partidos_directo").select("fixture_id, firma, data").abortSignal(senal(3_000)),
+  ]);
+  if (enJuego === null || anteriores.error) {
+    // No certificar datos antiguos como recientes si falla la lectura.
+    await cerrar(false);
+    return NextResponse.json({ ok: false, parcial: true, error: "No se pudo actualizar el directo" });
   }
+
   const nuestros = enJuego.filter((f) => ligas.has(f.league.id));
-
-  const { data: previas } = await db
-    .from("partidos_directo")
-    .select("fixture_id, firma, data");
   const previa = new Map(
-    ((previas ?? []) as { fixture_id: number; firma: string; data: Partido }[]).map((p) => [
-      p.fixture_id,
-      p,
-    ]),
+    ((anteriores.data ?? []) as { fixture_id: number; firma: string; data: Partido }[])
+      .map((p) => [p.fixture_id, p]),
   );
-
-  // Los que estaban en juego y ya no salen: han terminado (o se suspendieron).
   const vivosAhora = new Set(nuestros.map((f) => f.fixture.id));
   const desaparecidos = [...previa.values()]
     .filter((p) => !vivosAhora.has(p.fixture_id) && isLive(p.data))
     .map((p) => p.fixture_id);
-  const terminados = desaparecidos.length ? await getPartidosPorIdsEnVivo(desaparecidos) : [];
 
-  const ahora = new Date().toISOString();
-  const cambios = [...nuestros, ...terminados.filter((f) => isFinal(f) || !isLive(f))]
-    .filter((f) => previa.get(f.fixture.id)?.firma !== firma(f))
-    .map((f) => ({
-      fixture_id: f.fixture.id,
-      league_id: f.league.id,
-      data: f,
-      firma: firma(f),
-      actualizado: ahora,
-    }));
-  if (cambios.length > 0) {
-    await db.from("partidos_directo").upsert(cambios);
+  async function guardar(partidos: Partido[]) {
+    const cambios = partidos.filter((f) => previa.get(f.fixture.id)?.firma !== firma(f))
+      .map((f) => ({ fixture_id: f.fixture.id, league_id: f.league.id,
+        data: f, firma: firma(f), actualizado: new Date().toISOString() }));
+    if (!cambios.length) return true;
+    if (tiempoDisponible(limite, 3_000, 750) <= 0) {
+      parcial = true;
+      return false;
+    }
+    const { error } = await db.from("partidos_directo").upsert(cambios).abortSignal(senal(3_000, 750));
+    if (error) parcial = true;
+    else escritos += cambios.length;
+    return !error;
   }
-  await db.from("directo_latido").upsert({ id: 1, latido: ahora });
 
-  return NextResponse.json({
-    ok: true,
-    activas: activas.length,
-    enJuego: nuestros.length,
-    terminados: terminados.length,
-    escritos: cambios.length,
-  });
+  // Persistir lo actual mientras se busca el cierre: son independientes.
+  const [guardado] = await Promise.all([
+    guardar(nuestros),
+    (async () => {
+      if (!desaparecidos.length) return;
+      if (tiempoDisponible(limite, 6_000, 3_750) <= 0) {
+        parcial = true;
+        return;
+      }
+      terminados = await getPartidosPorIdsEnVivo(desaparecidos, senal(6_000, 3_750));
+      if (terminados.length < Math.min(desaparecidos.length, 20)) parcial = true;
+      await guardar(terminados.filter((f) => isFinal(f) || !isLive(f)));
+    })(),
+  ]);
+  await cerrar(guardado);
+
+  return NextResponse.json({ ok: true, activas: activas.length,
+    enJuego: nuestros.length, terminados: terminados.length, escritos, parcial });
 }

@@ -19,6 +19,8 @@ vi.mock("../archivo", async (original) => {
 });
 
 const {
+  getPartidosEnJuego,
+  getPartidosPorIdsEnVivo,
   getFixtureById,
   getFixturesEvents,
   getTeamCoach,
@@ -406,5 +408,37 @@ describe("llamadas a API-Football", () => {
     expect(c).toHaveLength(1);
     expect(s.inKeys).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("directo con presupuesto", () => {
+  beforeEach(() => { process.env.API_FOOTBALL_KEY = "test"; });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("no reintenta un rate limit y transmite la cancelación al fetch", async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      return new Response("{}", { status: 429 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await getPartidosEnJuego(AbortSignal.timeout(6_000))).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("no inicia una llamada con presupuesto agotado", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await getPartidosEnJuego(AbortSignal.abort())).toBeNull();
+    expect(await getPartidosPorIdsEnVivo([1], AbortSignal.abort())).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("consulta los desaparecidos en un solo lote de hasta veinte", async () => {
+    const fetchMock = vi.fn(async (_url: string) => respuesta({ errors: [], response: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await getPartidosPorIdsEnVivo(Array.from({ length: 25 }, (_, i) => i + 1), AbortSignal.timeout(6_000));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(url.searchParams.get("ids")?.split("-")).toHaveLength(20);
   });
 });

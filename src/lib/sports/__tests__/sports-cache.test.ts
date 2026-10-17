@@ -5,13 +5,14 @@ vi.mock("next/cache", () => ({
 }));
 
 const upsert = vi.fn(async () => ({ error: null }));
+const abortar = vi.fn();
 let fila: { data: unknown; updated_at: string } | null = null;
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
     from: () => ({
       upsert,
       select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: fila }) }),
+        eq: () => ({ abortSignal: (signal: AbortSignal) => { abortar(signal); return { maybeSingle: async () => ({ data: fila }) }; } }),
       }),
     }),
   }),
@@ -26,6 +27,7 @@ describe("sports_cache", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
     upsert.mockClear();
     fila = null;
+    abortar.mockClear();
   });
 
   it("no pisa datos buenos con un vacío (API sin cuota)", async () => {
@@ -34,6 +36,12 @@ describe("sports_cache", () => {
     expect(upsert).not.toHaveBeenCalled();
     await writeCache("standings:laliga", [{ rank: 1 }]);
     expect(upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("propaga el presupuesto del cron a Supabase", async () => {
+    const signal = AbortSignal.timeout(3_000);
+    await readCache("fixtures:laliga", 2400, signal);
+    expect(abortar).toHaveBeenCalledWith(signal);
   });
 
   it("una entrada vacía cuenta como 'sin dato' para caer a la API", async () => {
