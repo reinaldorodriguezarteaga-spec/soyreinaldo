@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { avisarRetoAceptado, avisarRetoNuevo } from "@/lib/quiniela-liga/aviso-reto";
 
 /**
  * Duelos de la quiniela: las reglas (próxima jornada sin empezar, miembros
@@ -29,7 +31,9 @@ function traducir(error: { message: string } | null): ResultadoDuelo {
 
 export async function retar(leagueId: string, rivalId: string): Promise<ResultadoDuelo> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("lq_retar", { p_league_id: leagueId, p_rival: rivalId });
+  const { data: id, error } = await supabase.rpc("lq_retar", { p_league_id: leagueId, p_rival: rivalId });
+  // Aviso al retado (push + email) después de responder: no hace esperar.
+  if (!error && typeof id === "string") after(() => avisarRetoNuevo(id));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }
@@ -37,6 +41,7 @@ export async function retar(leagueId: string, rivalId: string): Promise<Resultad
 export async function responderDuelo(id: string, aceptar: boolean): Promise<ResultadoDuelo> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("lq_responder_duelo", { p_id: id, p_aceptar: aceptar });
+  if (!error && aceptar) after(() => avisarRetoAceptado(id));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }

@@ -12,6 +12,7 @@ import { COMPETITIONS, COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 import { equiposEnEspanol } from "@/lib/sports/nombres";
 import MiEquipoElegir from "@/components/MiEquipoElegir";
 import CuentaAtras from "@/components/CuentaAtras";
+import CalendarioBotones from "@/components/CalendarioBotones";
 
 /**
  * "Mi equipo" en lo alto de la portada (16-oct, pedido del dueño): próximo
@@ -79,9 +80,8 @@ export function MiEquipoVista({
   datos: DatosEquipo & { calendario?: string | null };
 }) {
   const { equipo, liga, proximo, enJuego, ultimo, fila, equipos, calendario } = datos;
-  // Suscripción (se actualiza sola): webcal:// abre el calendario del
-  // móvil/Mac; Google la quiere dentro de su enlace "cid".
-  const ics = calendario ? `webcal://www.soyreinaldo.com/api/calendario/${calendario}.ics` : null;
+  // Suscripción al calendario de sus equipos (se actualiza sola).
+  const ics = calendario ?? null;
 
   return (
     <section className="panel miequipo">
@@ -149,19 +149,7 @@ export function MiEquipoVista({
             <p className="miequipo__sub">
               Todos los partidos de tus equipos favoritos, con hora y resultado. Se actualiza solo.
             </p>
-            <div className="miequipo__chips" style={{ marginTop: 8 }}>
-              <a
-                className="miequipo__chip"
-                href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(ics)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Google Calendar
-              </a>
-              <a className="miequipo__chip" href={ics}>
-                iPhone / Mac / Outlook
-              </a>
-            </div>
+            <CalendarioBotones token={ics} />
           </details>
         )}
         {equipos.length > 1 && (
