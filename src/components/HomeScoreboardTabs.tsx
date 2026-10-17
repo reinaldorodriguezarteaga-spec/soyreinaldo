@@ -1,7 +1,7 @@
 import type { CalendarDay, HomeWidgetData } from "@/lib/sports/widget-data";
 import HomeMatchWidgetClient from "@/components/HomeMatchWidgetClient";
 import HomeCalendarView from "@/components/HomeCalendarView";
-import { esDeFavoritos, type Seguidos } from "@/lib/favoritos-puros";
+import type { Seguidos } from "@/lib/favoritos-puros";
 
 /**
  * Feed único de la portada (pedido 18-ago: fuera pestañas — "los partidos
@@ -24,12 +24,14 @@ export default function HomeScoreboardTabs({
   seguidos: Seguidos;
 }) {
   const hasLive = !!widgetData && widgetData.groups.length > 0;
-  // ¿Juega ahora algún favorito (equipo o liga)? Entonces el directo va lo
-  // primero de todo (17-oct, pedido del dueño: verlos sin tener que bajar).
+  // ¿Juega ahora alguno de SUS EQUIPOS? Entonces el directo va lo primero
+  // (17-oct, pedido del dueño). Solo equipos, no ligas: con una liga
+  // entera seguida se llenaba la sección de partidos que no buscaba.
+  const equiposFav = new Set(favoriteTeamIds);
   const favEnVivo =
     !!widgetData &&
     widgetData.groups.some((g) =>
-      g.live.some((fx) => esDeFavoritos(seguidos, fx.teams.home.id, fx.teams.away.id, g.competition.slug)),
+      g.live.some((fx) => equiposFav.has(fx.teams.home.id) || equiposFav.has(fx.teams.away.id)),
     );
   const hasCalendar = !!calendarDays && calendarDays.length > 0;
 

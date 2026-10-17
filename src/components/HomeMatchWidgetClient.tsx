@@ -169,22 +169,16 @@ export default function HomeMatchWidgetClient({
   }, [data.needsPolling, refrescar, cada]);
 
   const favs = new Set(favoriteTeamIds);
-  // Favorito = equipo con estrella o partido de una liga con estrella.
-  const ligasFav = new Set(seguidos?.ligas ?? []);
-  const slugDe = new Map<number, string>();
-  for (const g of data.groups) {
-    for (const fx of [...g.live, ...g.finishedToday]) slugDe.set(fx.fixture.id, g.competition.slug);
-  }
+  // Favorito = partido de un EQUIPO con estrella (17-oct: las ligas
+  // llenaban "⭐ Tus favoritos" de partidos que no se buscaban).
   const isFav = (fx: CompetitionGroup["live"][number]) =>
-    favs.has(fx.teams.home.id) ||
-    favs.has(fx.teams.away.id) ||
-    ligasFav.has(slugDe.get(fx.fixture.id) ?? "");
+    favs.has(fx.teams.home.id) || favs.has(fx.teams.away.id);
   // sort() es estable: dentro de favoritos y de no favoritos se conserva el
   // orden que ya traía cada lista.
   const favFirst = <T extends { fx: CompetitionGroup["live"][number] }>(rows: T[]) =>
-    favs.size === 0 && ligasFav.size === 0 ? rows : [...rows].sort((a, b) => Number(isFav(b.fx)) - Number(isFav(a.fx)));
+    favs.size === 0 ? rows : [...rows].sort((a, b) => Number(isFav(b.fx)) - Number(isFav(a.fx)));
   const groups =
-    favs.size === 0 && ligasFav.size === 0
+    favs.size === 0
       ? data.groups
       : [...data.groups].sort(
           (a, b) =>
