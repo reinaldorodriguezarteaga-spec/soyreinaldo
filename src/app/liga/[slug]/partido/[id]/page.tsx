@@ -472,8 +472,7 @@ export default async function LigaPartidoPage({
   // Encuesta "¿Quién fue el mejor?": los 5 mejor valorados, al terminar.
   // Solo partidos de la última semana: los buscadores recorren cientos de
   // fichas viejas y cada visita crearía una encuesta que nadie va a ver.
-  const recienTerminado =
-    final && Date.now() - new Date(fx.fixture.date).getTime() < 7 * 86_400_000;
+  const recienTerminado = final && empezoHaceMenosDe(fx.fixture.date, 7);
   const candidatosMvp = recienTerminado
     ? [...homePlayers, ...awayPlayers]
         .filter((p) => p.rating != null && (p.minutes ?? 0) > 0)
@@ -924,4 +923,9 @@ function StatRow({
       <StatPill value={String(aRaw)} lead={a >= h} side="away" />
     </div>
   );
+}
+
+/** ¿Empezó hace menos de `dias` días? (fuera del componente: la hora no es pura). */
+function empezoHaceMenosDe(iso: string, dias: number): boolean {
+  return Date.now() - new Date(iso).getTime() < dias * 86_400_000;
 }
