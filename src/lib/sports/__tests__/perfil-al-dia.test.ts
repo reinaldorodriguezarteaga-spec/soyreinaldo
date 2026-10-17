@@ -33,8 +33,19 @@ describe("perfilAlDia", () => {
     partido("2026-08-27T19:00:00Z", 1, 1, 2),
   ];
 
-  it("si la API va al día, la deja tal cual", () => {
-    expect(perfilAlDia(stats, temporada, BARCA)).toEqual({ stats, minutosHasta: null });
+  it("con la API al día, recalcula la racha (la de la API venía mal)", () => {
+    const vedv = [
+      partido("2026-08-20T19:00:00Z", BARCA, 1, 0),
+      partido("2026-08-27T19:00:00Z", BARCA, 1, 1),
+    ];
+    const r = perfilAlDia({ ...stats, biggest: { ...stats.biggest, streak: { wins: 0, draws: 0, loses: 0 } } }, vedv, BARCA);
+    expect(r.minutosHasta).toBeNull();
+    expect(r.stats.biggest.streak.wins).toBe(1);
+    expect(r.stats.fixtures.played.total).toBe(2);
+  });
+
+  it("si nos faltan partidos (lista recortada), manda la API", () => {
+    expect(perfilAlDia(stats, temporada.slice(1), BARCA)).toEqual({ stats, minutosHasta: null });
   });
 
   it("suma el partido que la API aún no tiene, sin la temporada anterior", () => {

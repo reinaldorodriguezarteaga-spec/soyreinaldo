@@ -37,11 +37,13 @@ export function perfilAlDia(
   }
   const jugados = deLaLiga.slice(inicio);
 
-  // Solo si vamos por delante, y por poco (el retraso de la API es de uno o
-  // dos partidos): si no cuadra, manda la API.
+  // Si tenemos la temporada entera (los mismos partidos que la API, o uno o
+  // dos más por su retraso), el balance sale de aquí. También al día: la
+  // "racha de victorias" de la API venía mal (Atlético, V-E-V-D-V-V-V-V →
+  // decía 1). Si no cuadra (lista recortada), manda la API.
   const enApi = stats.fixtures?.played?.total ?? 0;
   const delante = jugados.length - enApi;
-  if (delante <= 0 || delante > 2) return { stats, minutosHasta: null };
+  if (delante < 0 || delante > 2 || jugados.length === 0) return { stats, minutosHasta: null };
 
   const cuenta = () => ({ home: 0, away: 0, total: 0 });
   const played = cuenta();
@@ -82,7 +84,7 @@ export function perfilAlDia(
   }
 
   return {
-    minutosHasta: enApi,
+    minutosHasta: delante > 0 ? enApi : null,
     stats: {
       ...stats,
       form: forma,
