@@ -59,8 +59,10 @@ async function getStandingsSnapshot() {
 }
 
 export default async function Home() {
-  const baremo = await getBaremoPublico();
-  const [stats, inApp, standingsSnapshot] = await Promise.all([
+  // Todo en paralelo (17-oct): el baremo iba antes, en fila. Baremo y
+  // cifras de redes van cacheados; las tablas, desde sports_cache.
+  const [baremo, stats, inApp, standingsSnapshot] = await Promise.all([
+    getBaremoPublico(),
     getSocialStats(),
     isAppRequest(),
     getStandingsSnapshot(),

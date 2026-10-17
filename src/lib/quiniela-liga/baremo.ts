@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { clientePublico } from "@/lib/supabase/publico";
 import type { Baremo } from "./league-utils";
 
 /** Si la consulta falla, lo que valía históricamente. */
@@ -10,9 +12,14 @@ const POR_DEFECTO: Baremo = { exacto: 3, acierto: 1 };
  * mano: el 21-ago la web seguía diciendo "3 pts" tres días después de que el
  * baremo pasara a 5/2.
  */
-export async function getBaremoPublico(): Promise<Baremo> {
+export const getBaremoPublico = unstable_cache(leerBaremoPublico, ["baremo-publico"], {
+  // 5 min (17-oct): estaba en la ruta crítica de la portada en cada visita.
+  revalidate: 300,
+});
+
+async function leerBaremoPublico(): Promise<Baremo> {
   try {
-    const supabase = await createClient();
+    const supabase = clientePublico();
     const { data } = await supabase
       .from("leagues")
       .select("lq_points_exact, lq_points_result")

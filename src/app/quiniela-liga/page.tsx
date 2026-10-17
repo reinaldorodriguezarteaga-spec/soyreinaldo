@@ -46,17 +46,15 @@ export default async function QuinielaLigaIndex() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const leagues = user ? await getMyClubLeagues(user.id) : [];
-  const baremo = await getBaremoPublico();
+  // En paralelo (17-oct): iban una detrás de otra.
+  const [leagues, baremo, { data: publicLeague }] = await Promise.all([
+    user ? getMyClubLeagues(user.id) : Promise.resolve([]),
+    getBaremoPublico(),
+    // Datos EN VIVO de la liga pública (código incluido) — es is_public, así
+    // que la RLS deja leerla a cualquiera, con o sin sesión.
+    supabase.from("leagues").select("code, name, description").eq("id", PUBLIC_LEAGUE_ID).maybeSingle(),
+  ]);
   const inPublic = leagues.some((l) => l.isPublic);
-
-  // Datos EN VIVO de la liga pública (código incluido) — es is_public, así
-  // que la RLS deja leerla a cualquiera, con o sin sesión.
-  const { data: publicLeague } = await supabase
-    .from("leagues")
-    .select("code, name, description")
-    .eq("id", PUBLIC_LEAGUE_ID)
-    .maybeSingle();
 
   // Quinielas privadas anunciadas — solo las que el usuario aún NO tiene
   // (si ya es miembro, su tarjeta normal de arriba basta). La vista previa

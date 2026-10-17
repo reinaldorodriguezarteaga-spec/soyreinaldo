@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { clientePublico } from "@/lib/supabase/publico";
 import { formatearTotal, sumarSeguidores } from "@/lib/social/totales";
 
 export type SocialStats = {
@@ -38,9 +39,22 @@ const FALLBACK: SocialStats = {
  * Next.js cachea el resultado del fetch interno hasta la siguiente
  * `revalidatePath` (que se dispara desde el form de admin).
  */
-export async function getSocialStats(): Promise<SocialStats> {
+/** Etiqueta de caché: el formulario de /admin/seguidores la invalida. */
+export const SOCIAL_STATS_TAG = "social-stats";
+
+/**
+ * Cacheado 10 min (17-oct): era una consulta en CADA visita a la portada
+ * (180-400 ms en la ruta crítica). Al guardar desde el admin se invalida
+ * al momento con `revalidateTag(SOCIAL_STATS_TAG)`.
+ */
+export const getSocialStats = unstable_cache(leerSocialStats, ["social-stats"], {
+  revalidate: 600,
+  tags: [SOCIAL_STATS_TAG],
+});
+
+async function leerSocialStats(): Promise<SocialStats> {
   try {
-    const supabase = await createClient();
+    const supabase = clientePublico();
     const { data } = await supabase
       .from("social_stats")
       .select(

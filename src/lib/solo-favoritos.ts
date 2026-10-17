@@ -40,18 +40,4 @@ export function useSoloFavoritos(): [boolean, (v: boolean) => void] {
   return [valor, cambiar];
 }
 
-/** Lo que el usuario sigue: equipos (id de API-Football) y ligas (slug). */
-export type Seguidos = { equipos: number[]; ligas: string[] };
-
-export function esDeFavoritos(
-  seguidos: Seguidos,
-  homeId: number,
-  awayId: number,
-  ligaSlug: string | null | undefined,
-): boolean {
-  return (
-    seguidos.equipos.includes(homeId) ||
-    seguidos.equipos.includes(awayId) ||
-    (!!ligaSlug && seguidos.ligas.includes(ligaSlug))
-  );
-}
+export { esDeFavoritos, type Seguidos } from "./favoritos-puros";

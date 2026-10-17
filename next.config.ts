@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // AVIF primero (17-oct): pesa ~30-50% menos que WebP; el navegador que no
+  // lo entienda recibe WebP. La foto de la portada era el elemento más lento.
+  images: { formats: ["image/avif", "image/webp"] },
   async redirects() {
     return [
       // La sección "LaLiga" vive ahora en el árbol genérico /liga/[slug].

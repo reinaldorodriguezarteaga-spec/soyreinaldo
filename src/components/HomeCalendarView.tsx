@@ -26,6 +26,7 @@ const DIAS_MOVIL = 2;
 export default function HomeCalendarView({
   days,
   liveContent,
+  vivoPrimero = false,
   seguidos,
 }: {
   days: CalendarDay[];
@@ -35,6 +36,8 @@ export default function HomeCalendarView({
    * grupo de favoritos y los días de próximos partidos, como pidió el
    * dueño ("los en vivo junto con el calendario, arriba de los próximos"). */
   liveContent?: React.ReactNode;
+  /** Algún favorito está jugando: el directo va antes que "⭐ Tus favoritos". */
+  vivoPrimero?: boolean;
 }) {
   // El grupo "⭐ Tus favoritos" (si existe, siempre el primero) no consume
   // un hueco de los MAX_DAYS de días reales.
@@ -110,10 +113,11 @@ export default function HomeCalendarView({
             En los próximos días no juega ninguno de tus favoritos.
           </p>
         )}
+        {vivoPrimero && liveContent}
         {favDay.map((day) => (
           <DayCard key={`${day.dateKey}-${modo}`} day={day} open={abierto(day)} />
         ))}
-        {liveContent}
+        {!vivoPrimero && liveContent}
         {primeros.map((day) => (
           <DayCard key={`${day.dateKey}-${modo}`} day={day} open={abierto(day)} />
         ))}

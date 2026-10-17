@@ -169,14 +169,22 @@ export default function HomeMatchWidgetClient({
   }, [data.needsPolling, refrescar, cada]);
 
   const favs = new Set(favoriteTeamIds);
+  // Favorito = equipo con estrella o partido de una liga con estrella.
+  const ligasFav = new Set(seguidos?.ligas ?? []);
+  const slugDe = new Map<number, string>();
+  for (const g of data.groups) {
+    for (const fx of [...g.live, ...g.finishedToday]) slugDe.set(fx.fixture.id, g.competition.slug);
+  }
   const isFav = (fx: CompetitionGroup["live"][number]) =>
-    favs.has(fx.teams.home.id) || favs.has(fx.teams.away.id);
+    favs.has(fx.teams.home.id) ||
+    favs.has(fx.teams.away.id) ||
+    ligasFav.has(slugDe.get(fx.fixture.id) ?? "");
   // sort() es estable: dentro de favoritos y de no favoritos se conserva el
   // orden que ya traía cada lista.
   const favFirst = <T extends { fx: CompetitionGroup["live"][number] }>(rows: T[]) =>
-    favs.size === 0 ? rows : [...rows].sort((a, b) => Number(isFav(b.fx)) - Number(isFav(a.fx)));
+    favs.size === 0 && ligasFav.size === 0 ? rows : [...rows].sort((a, b) => Number(isFav(b.fx)) - Number(isFav(a.fx)));
   const groups =
-    favs.size === 0
+    favs.size === 0 && ligasFav.size === 0
       ? data.groups
       : [...data.groups].sort(
           (a, b) =>
@@ -218,9 +226,29 @@ export default function HomeMatchWidgetClient({
           </span>
         </div>
         <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
+          {/* Los favoritos que juegan ahora, con su propio título arriba
+              (17-oct): son lo que más interesa y no hay que buscarlos. */}
+          {liveRows.some((r) => isFav(r.fx)) && liveRows.some((r) => !isFav(r.fx)) && (
+            <GroupLabel>⭐ Tus favoritos</GroupLabel>
+          )}
           {liveRows.length > 0 && (
             <div className="hmrowlist">
-              {liveRows.map(({ fx, competition }) => (
+              {liveRows.filter((r) => isFav(r.fx)).map(({ fx, competition }) => (
+                <CompactMatchRow
+                  key={fx.fixture.id}
+                  fx={fx}
+                  href={`/liga/${competition.slug}/partido/${fx.fixture.id}`}
+                  badge={badgeFor(fx, competition.name)}
+                />
+              ))}
+            </div>
+          )}
+          {liveRows.some((r) => isFav(r.fx)) && liveRows.some((r) => !isFav(r.fx)) && (
+            <GroupLabel>En juego</GroupLabel>
+          )}
+          {liveRows.some((r) => !isFav(r.fx)) && (
+            <div className="hmrowlist">
+              {liveRows.filter((r) => !isFav(r.fx)).map(({ fx, competition }) => (
                 <CompactMatchRow
                   key={fx.fixture.id}
                   fx={fx}
