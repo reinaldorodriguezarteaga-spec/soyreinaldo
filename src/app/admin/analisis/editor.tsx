@@ -21,6 +21,7 @@ export type Borrador = {
   body?: string;
   cover_url?: string | null;
   fixture_id?: number | null;
+  team_id?: number | null;
   competition_slug?: string | null;
   published_at?: string | null;
 };
@@ -41,7 +42,7 @@ const campo =
   "w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-300 focus:outline-none";
 const etiqueta = "mb-1 block text-[11px] uppercase tracking-[0.14em] text-zinc-500";
 
-export default function Editor({ borrador }: { borrador?: Borrador }) {
+export default function Editor({ borrador, equiposLaLiga }: { borrador?: Borrador; equiposLaLiga: EquipoOpcion[] }) {
   const [estado, accion, enviando] = useActionState(guardarAnalisis, inicial);
   const [cuerpo, setCuerpo] = useState(borrador?.body ?? "");
   const [vista, setVista] = useState<"escribir" | "previa">("escribir");
@@ -188,6 +189,19 @@ export default function Editor({ borrador }: { borrador?: Borrador }) {
             disabled={enviando}
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="analisis-equipo" className={etiqueta}>Equipo (opcional)</label>
+        <select id="analisis-equipo" className={campo} name="team_id"
+          defaultValue={borrador?.team_id ?? ""} disabled={enviando}>
+          <option value="">Ninguno</option>
+          {borrador?.team_id && !equiposLaLiga.some((e) => e.id === borrador.team_id) && (
+            <option value={borrador.team_id}>Equipo actual (#{borrador.team_id})</option>
+          )}
+          {equiposLaLiga.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+        </select>
+        <p className="mt-1 text-xs text-zinc-500">Relaciona el análisis con un equipo, aunque no elijas un partido.</p>
       </div>
 
       <div className="rounded-xl border border-zinc-800 p-4">
