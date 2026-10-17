@@ -4,18 +4,14 @@
  * (HomeScoreboardTabs). Desde el servidor no se puede llamar a una función
  * de un módulo de cliente.
  */
-/** Lo que el usuario sigue: equipos (id de API-Football) y ligas (slug). */
-export type Seguidos = { equipos: number[]; ligas: string[] };
+/** Equipos ⭐ (id de API-Football). Las ligas no cuentan (17-oct, pedido
+ * del dueño): con una liga seguida, "Solo favoritos" se llenaba de partidos. */
+export type Seguidos = { equipos: number[] };
 
 export function esDeFavoritos(
   seguidos: Seguidos,
   homeId: number,
   awayId: number,
-  ligaSlug: string | null | undefined,
 ): boolean {
-  return (
-    seguidos.equipos.includes(homeId) ||
-    seguidos.equipos.includes(awayId) ||
-    (!!ligaSlug && seguidos.ligas.includes(ligaSlug))
-  );
+  return seguidos.equipos.includes(homeId) || seguidos.equipos.includes(awayId);
 }

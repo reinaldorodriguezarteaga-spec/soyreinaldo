@@ -131,7 +131,7 @@ export default function HomeMatchWidgetClient({
   const [data, setData] = useState<HomeWidgetData>(initial);
   const [soloFav] = useSoloFavoritos();
   const filtrar =
-    soloFav && seguidos && (seguidos.equipos.length > 0 || seguidos.ligas.length > 0);
+    soloFav && seguidos && seguidos.equipos.length > 0;
 
   // Pide el estado de los marcadores. Best-effort: un fallo puntual no rompe
   // la UI y el siguiente aviso o sondeo lo arregla.
@@ -192,7 +192,7 @@ export default function HomeMatchWidgetClient({
   if (liveOnly) {
     const deFav = (r: { fx: CompetitionGroup["live"][number]; competition: { slug: string } }) =>
       !filtrar ||
-      esDeFavoritos(seguidos!, r.fx.teams.home.id, r.fx.teams.away.id, r.competition.slug);
+      esDeFavoritos(seguidos!, r.fx.teams.home.id, r.fx.teams.away.id);
     const liveRows = favFirst(
       groups.flatMap((g) => g.live.map((fx) => ({ fx, competition: g.competition }))),
     ).filter(deFav);
