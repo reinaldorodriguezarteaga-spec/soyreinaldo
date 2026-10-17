@@ -18,6 +18,7 @@ import "./globals.css";
 import SelectorFavoritos from "@/components/SelectorFavoritos";
 import DirectoReinaldo from "@/components/DirectoReinaldo";
 import { EnAppProvider } from "@/components/EnApp";
+import Actividad from "@/components/Actividad";
 
 /**
  * Google AdSense (Auto Ads) — monetización del sitio. Todo queda apagado
@@ -187,6 +188,7 @@ export default async function RootLayout({
             nada compite con el banner de cookies, que sí es fixed abajo. */}
         {!inApp && <InstallBanner />}
         <DirectoReinaldo />
+        {user && <Actividad />}
         {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
         {pedirFavoritos && (

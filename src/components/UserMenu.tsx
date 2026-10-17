@@ -14,6 +14,7 @@ type AdminLink = { href: string; label: string; externo?: boolean };
 // no se toca nada más entre partido y partido.
 const ADMIN_LINKS: AdminLink[] = [
   { href: "/admin/analisis", label: "Escribir análisis" },
+  { href: "/admin/metricas", label: "Métricas" },
   { href: "/admin/ligas", label: "Ligas" },
   { href: "/admin/quiniela-liga", label: "Final Quiniela LaLiga" },
   { href: "/admin/seguidores", label: "Redes (seguidores)" },
@@ -41,6 +42,13 @@ const DIRECTOS_LINKS: AdminLink[] = [
   {
     href: "https://chat.soyreinaldo.com/marcador/completo",
     label: "Marcador completo (URL para OBS)",
+    externo: true,
+  },
+  // Encuesta abierta más reciente con sus porcentajes en vivo (1920×1080,
+  // fondo transparente). Se lanza desde la ficha del partido.
+  {
+    href: "https://www.soyreinaldo.com/api/obs/encuesta",
+    label: "Encuesta en directo (URL para OBS)",
     externo: true,
   },
 ];

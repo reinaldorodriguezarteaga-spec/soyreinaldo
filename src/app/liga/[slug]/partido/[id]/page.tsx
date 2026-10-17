@@ -35,6 +35,7 @@ import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
 import MatchVideos from "./match-videos";
 import MatchEncuestas from "./match-encuestas";
+import BotonCompartir from "@/components/BotonCompartir";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
 import MatchCronica from "./match-cronica";
@@ -469,7 +470,10 @@ export default async function LigaPartidoPage({
     : null;
 
   // Encuesta "¿Quién fue el mejor?": los 5 mejor valorados, al terminar.
-  const candidatosMvp = final
+  // Solo partidos de la última semana: los buscadores recorren cientos de
+  // fichas viejas y cada visita crearía una encuesta que nadie va a ver.
+  const recienTerminado = final && empezoHaceMenosDe(fx.fixture.date, 7);
+  const candidatosMvp = recienTerminado
     ? [...homePlayers, ...awayPlayers]
         .filter((p) => p.rating != null && (p.minutes ?? 0) > 0)
         .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
@@ -575,6 +579,17 @@ export default async function LigaPartidoPage({
             >
               {formatKickoff(fx.fixture.date)}
               {fx.fixture.venue?.name ? ` · ${fx.fixture.venue.name}` : ""}
+            </p>
+            {/* Compartir el partido (17-oct, pedido del dueño). */}
+            <p style={{ textAlign: "center", margin: "12px 0 0" }}>
+              <BotonCompartir
+                url={`https://www.soyreinaldo.com/liga/${slug}/partido/${fixtureId}`}
+                texto={
+                  played
+                    ? `${conTildes(home.name)} ${fx.goals.home ?? 0}–${fx.goals.away ?? 0} ${conTildes(away.name)} · ${competition.name}`
+                    : `${conTildes(home.name)} – ${conTildes(away.name)} · ${competition.name}, en directo en soyreinaldo.com`
+                }
+              />
             </p>
           </div>
         </div>
@@ -908,4 +923,9 @@ function StatRow({
       <StatPill value={String(aRaw)} lead={a >= h} side="away" />
     </div>
   );
+}
+
+/** ¿Empezó hace menos de `dias` días? (fuera del componente: la hora no es pura). */
+function empezoHaceMenosDe(iso: string, dias: number): boolean {
+  return Date.now() - new Date(iso).getTime() < dias * 86_400_000;
 }

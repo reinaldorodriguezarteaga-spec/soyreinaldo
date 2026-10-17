@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   ganadorDuelo,
@@ -7,6 +8,7 @@ import {
   type Duelo,
 } from "@/lib/quiniela-liga/duelos";
 import { FormRetar, ResponderReto, RetirarReto } from "./duelos-botones";
+import BotonCompartir from "@/components/BotonCompartir";
 
 /**
  * Pestaña "Duelos" de la clasificación: retos pendientes, duelos de la
@@ -45,6 +47,19 @@ export default async function DuelosVista({
   );
   const misRetos = duelos.filter((d) => d.matchday === proxima && d.retador === meId).length;
   const rivales = miembros.filter((m) => m.id !== meId && !yaRetados.has(m.id));
+
+  // Enlace para retar a alguien de fuera (17-oct): /reto/<usuario>.
+  const { data: miPerfil } = esMiembro
+    ? await supabase.from("profiles").select("username").eq("id", meId!).maybeSingle<{ username: string | null }>()
+    : { data: null };
+  const { data: ligaInfo } = esMiembro
+    ? await supabase.from("leagues").select("is_public").eq("id", leagueId).maybeSingle<{ is_public: boolean }>()
+    : { data: null };
+  const enlaceReto = esMiembro
+    ? `https://www.soyreinaldo.com/reto/${encodeURIComponent(miPerfil?.username || meId!)}${
+        ligaInfo?.is_public ? "" : `?liga=${encodeURIComponent(leagueId)}`
+      }`
+    : null;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -97,6 +112,16 @@ export default async function DuelosVista({
               <p className="duelo__nota">
                 Hasta {MAX_RETOS_POR_JORNADA} retos por jornada. Se acepta hasta que empiece su primer partido.
               </p>
+              {enlaceReto && (
+                <div className="duelo__fila">
+                  <span>¿Tu amigo aún no juega? Mándale tu enlace de reto:</span>
+                  <BotonCompartir
+                    url={enlaceReto}
+                    texto={`⚔️ Te reto en la jornada ${proxima} de los pronósticos de soyreinaldo.com. ¿Aceptas?`}
+                    etiqueta="Retar a un amigo"
+                  />
+                </div>
+              )}
             </section>
           )}
 
@@ -170,6 +195,11 @@ function FilaResultado({ d, meId }: { d: Duelo; meId: string | null }) {
         {marca(d.rival)}
       </span>
       {!d.terminada && <span className="mono duelo__nota">{d.empezada ? "en juego" : "por empezar"}</span>}
+      {g === meId && (
+        <Link href={`/logro/duelo/${d.id}`} className="mono duelo__compartir">
+          Compartir ↗
+        </Link>
+      )}
     </div>
   );
 }

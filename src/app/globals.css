@@ -2174,3 +2174,87 @@ select.field { appearance: none; }
 .encuesta__nueva summary { color: var(--text-dim); font-size: 0.72rem; cursor: pointer; }
 .encuesta__nueva form { display: grid; gap: 8px; margin-top: 10px; max-width: 520px; }
 .encuesta__nueva-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Panel de métricas del dueño (/admin/metricas). */
+.met-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.met-tile { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.met-tile__valor { font-family: var(--font-display-stack); font-weight: 900; font-size: 2.2rem; line-height: 1; }
+.met-tile__etiqueta { font-weight: 600; font-size: 0.9rem; margin-top: 6px; }
+.met-tile__nota { color: var(--text-dim); font-size: 0.66rem; }
+.met-chart { padding: 16px; margin-bottom: 16px; }
+.met-chart h2, .met-grupo h2 { margin: 0 0 12px; font-size: 1rem; }
+.met-vacio { color: var(--text-dim); font-size: 0.86rem; margin: 0; }
+.met-barras { display: flex; align-items: flex-end; gap: 2px; height: 140px; border-bottom: 1px solid var(--line); }
+.met-barra { position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; min-width: 4px; }
+.met-barra__fill { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.met-barra__tip {
+  position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text);
+  font-size: 0.7rem; opacity: 0; pointer-events: none; transition: opacity 0.12s; white-space: nowrap;
+}
+.met-barra:hover .met-barra__tip { opacity: 1; }
+.met-barra:hover .met-barra__fill { filter: brightness(1.25); }
+.met-ejes { display: flex; justify-content: space-between; color: var(--text-dim); font-size: 0.66rem; margin-top: 6px; }
+.met-tabla { margin-top: 8px; }
+.met-tabla summary { color: var(--text-dim); font-size: 0.68rem; cursor: pointer; }
+.met-tabla table { margin-top: 6px; font-size: 0.84rem; border-collapse: collapse; }
+.met-tabla td { padding: 2px 16px 2px 0; }
+.met-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.met-grupo { padding: 16px; }
+.met-grupo dl { margin: 0; display: grid; gap: 6px; }
+.met-grupo dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; }
+.met-grupo dt { color: var(--text-dim); }
+.met-grupo dd { margin: 0; font-weight: 600; }
+
+/* Botón "Compartir" compacto (BotonCompartir). */
+.compartir { position: relative; display: inline-flex; }
+.compartir__btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+  font-size: 0.84rem; cursor: pointer;
+}
+.compartir__btn:hover { border-color: var(--accent); }
+.compartir__menu {
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 30;
+  display: flex; flex-direction: column; min-width: 170px; padding: 6px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line-strong); box-shadow: 0 12px 30px rgba(0,0,0,.4);
+}
+.compartir__menu a, .compartir__menu button {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  color: var(--text); text-decoration: none; font-size: 0.86rem; background: none; border: 0; cursor: pointer; text-align: left;
+}
+.compartir__menu a:hover, .compartir__menu button:hover { background: var(--surface-2); }
+
+/* Tarjetas de logros para compartir (/logro/*). */
+.logro { max-width: 560px; display: grid; gap: 18px; justify-items: center; }
+.logro__tarjeta {
+  width: 100%; padding: 36px 28px; text-align: center; display: grid; gap: 6px; justify-items: center;
+  background: linear-gradient(135deg, #0a1030 0%, #1b2a6b 100%); border-color: color-mix(in oklch, #f5c542 40%, transparent);
+}
+.logro__emoji { font-size: 4rem; line-height: 1; }
+.logro__titulo { margin: 8px 0 0; color: #f5c542; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.logro__nombre { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); }
+.logro__detalle { margin: 0; color: var(--text-dim); max-width: 40ch; }
+.logro__marca { margin: 14px 0 0; color: var(--accent); font-size: 0.72rem; }
+.logro__acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+.medalla { color: inherit; text-decoration: none; }
+.medalla:hover { border-color: #f5c542; }
+.medalla__compartir { color: var(--text-dim); font-size: 0.78rem; }
+.duelo__compartir { color: var(--accent); font-size: 0.72rem; text-decoration: none; }
+.ytplayer__btn.on { border-color: var(--accent); color: var(--accent); }
+.ytplayer__chat { height: 380px; background: #fff; }
+.ytplayer__chat iframe { width: 100%; height: 100%; border: 0; display: block; }
+@media (max-width: 640px) { .ytplayer__chat { height: 300px; } }
+
+/* "Tu temporada" (/mi-temporada/<usuario>). */
+.temporada { max-width: 720px; display: grid; gap: 16px; }
+.temporada__hero { padding: 32px 24px; text-align: center; display: grid; gap: 6px; justify-items: center;
+  background: linear-gradient(135deg, #0a1030 0%, #1b2a6b 100%); border-color: color-mix(in oklch, #f5c542 40%, transparent); }
+.temporada__cifra { font-size: 1.2rem; color: var(--text-dim); }
+.temporada__cifra strong { display: block; font-family: var(--font-display-stack); font-size: 4.5rem; line-height: 1; color: var(--text); }
+.temporada__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.temporada__dato { padding: 14px 16px; display: grid; gap: 2px; }
+.temporada__dato > span:first-child { font-size: 1.4rem; }
+.temporada__dato .mono { color: var(--text-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.temporada__dato strong { font-size: 1.05rem; }
+.temporada__frase { padding: 14px 16px; margin: 0; text-align: center; }

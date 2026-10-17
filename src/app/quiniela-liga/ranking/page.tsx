@@ -88,6 +88,11 @@ export default async function QuinielaLigaRankingPage({
   const misMedallas = meId
     ? medallasDe((jornadasJugador ?? []) as FilaJornadaJugador[], meId, ANFITRION_ID)
     : [];
+  // Cómo se nombra al usuario en las URLs de sus logros (usuario o id).
+  const { data: miPerfil } = meId
+    ? await supabase.from("profiles").select("username").eq("id", meId).maybeSingle<{ username: string | null }>()
+    : { data: null };
+  const miUsuarioUrl = meId ? miPerfil?.username || meId : null;
 
   // Estado de cada jornada (los aplazados no cuentan): cuáles están
   // terminadas del todo y cuáles tienen ya algún partido jugado.
@@ -215,14 +220,27 @@ export default async function QuinielaLigaRankingPage({
               {miRacha.mejorAciertos > miRacha.aciertos && <> (récord {miRacha.mejorAciertos})</>}
             </p>
           )}
+          {meId && yo && (
+            <p style={{ marginTop: 12 }}>
+              <Link href={`/mi-temporada/${encodeURIComponent(miUsuarioUrl ?? meId)}`} className="btn">
+                📊 Mi temporada <span className="arr">→</span>
+              </Link>
+            </p>
+          )}
           {misMedallas.length > 0 && (
             <div className="medallas">
               <span className="mono medallas__titulo">Tus medallas</span>
               {misMedallas.map((m) => (
-                <span key={m.clave} className="medalla" title={`${m.nombre}: ${m.descripcion}`}>
+                <Link
+                  key={m.clave}
+                  href={`/logro/medalla/${encodeURIComponent(miUsuarioUrl ?? "")}/${m.clave}`}
+                  className="medalla"
+                  title={`${m.nombre}: ${m.descripcion} — tócala para compartirla`}
+                >
                   <span aria-hidden>{m.emoji}</span> {m.nombre}
                   {m.veces > 1 && <strong> ×{m.veces}</strong>}
-                </span>
+                  <span aria-hidden className="medalla__compartir">↗</span>
+                </Link>
               ))}
             </div>
           )}
