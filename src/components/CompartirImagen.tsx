@@ -1,0 +1,65 @@
+"use client";
+
+import { useState } from "react";
+import BotonCompartir from "@/components/BotonCompartir";
+
+/**
+ * Compartir una IMAGEN, no solo el enlace (18-oct, pedido del dueño: que la
+ * gente suba la foto de Messi vs Cristiano a sus redes). En el móvil abre la
+ * hoja del sistema con la foto adjunta (Instagram, WhatsApp, X...). Donde no
+ * se puede compartir un archivo (casi todo el escritorio), la descarga, y al
+ * lado queda el botón de siempre para el enlace.
+ */
+export default function CompartirImagen({
+  imagen,
+  nombreArchivo,
+  url,
+  texto,
+}: {
+  /** Ruta de la imagen en esta web. */
+  imagen: string;
+  nombreArchivo: string;
+  /** URL absoluta de la página. */
+  url: string;
+  texto: string;
+}) {
+  const [cargando, setCargando] = useState(false);
+
+  const compartir = async () => {
+    setCargando(true);
+    try {
+      const blob = await fetch(imagen).then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.blob();
+      });
+      const archivo = new File([blob], nombreArchivo, { type: blob.type || "image/png" });
+      if (navigator.canShare?.({ files: [archivo] })) {
+        try {
+          await navigator.share({ files: [archivo], text: `${texto} ${url}` });
+        } catch {
+          // Hoja cerrada: no es un error.
+        }
+        return;
+      }
+      const enlace = document.createElement("a");
+      enlace.href = URL.createObjectURL(blob);
+      enlace.download = nombreArchivo;
+      enlace.click();
+      setTimeout(() => URL.revokeObjectURL(enlace.href), 10_000);
+    } catch {
+      // Sin red: abre la imagen y que la guarde a mano.
+      window.open(imagen, "_blank", "noopener");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+      <button type="button" className="btn btn--accent" onClick={compartir} disabled={cargando}>
+        📸 {cargando ? "Preparando la imagen…" : "Compartir imagen"}
+      </button>
+      <BotonCompartir url={url} texto={texto} etiqueta="Compartir enlace" />
+    </div>
+  );
+}

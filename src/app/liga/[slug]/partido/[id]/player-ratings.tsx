@@ -9,6 +9,7 @@
 
 import Image from "next/image";
 import { MarcasJugador } from "@/components/IconosPartido";
+import { nombreCorto } from "@/lib/sports/nombres";
 import { useEffect, useState } from "react";
 import { enCambios, minutoCambio, type LineupTeam, type PlayerRating } from "@/lib/sports/api-football";
 
@@ -48,10 +49,9 @@ function ratingColor(r: number): string {
   return "#ff8a8a";
 }
 
-function shortName(name: string): string {
-  const t = name.trim().split(/\s+/);
-  return t.length > 1 ? t[t.length - 1] : name;
-}
+/** El mismo nombre corto que la cronología (alias incluidos: antes cortaba
+ * a la última palabra y Cubarsí salía como "Paredes", 18-oct). */
+const shortName = nombreCorto;
 
 function statLines(p: PlayerRating): { label: string; value: string }[] {
   const s = p.stats;
