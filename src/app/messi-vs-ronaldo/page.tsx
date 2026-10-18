@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import GoatsCard from "@/components/GoatsCard";
+import CompartirImagen from "@/components/CompartirImagen";
 import {
   competicionEs,
   getFixturePlayers,
@@ -67,9 +68,17 @@ export default async function MessiVsRonaldoPage() {
     <main className="page">
       <section className="section" style={{ paddingTop: 32 }}>
         <div className="wrap" style={{ display: "grid", gap: 28 }}>
-          <Suspense fallback={null}>
-            <GoatsCard />
-          </Suspense>
+          <div style={{ display: "grid", gap: 14 }}>
+            <Suspense fallback={null}>
+              <GoatsCard />
+            </Suspense>
+            <CompartirImagen
+              imagen="/messi-vs-ronaldo/imagen"
+              nombreArchivo="messi-vs-cristiano.png"
+              url="https://www.soyreinaldo.com/messi-vs-ronaldo"
+              texto="Messi vs Cristiano, al día 🐐"
+            />
+          </div>
           <Suspense fallback={null}>
             <Detalle />
           </Suspense>
