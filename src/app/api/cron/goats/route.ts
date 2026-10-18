@@ -64,6 +64,8 @@ export async function GET(request: Request) {
           minutos,
           goles: minutos > 0 ? (p?.goals ?? 0) : 0,
           asistencias: minutos > 0 ? (p?.assists ?? 0) : 0,
+          pen_marcados: minutos > 0 ? (p?.stats.penScored ?? 0) : 0,
+          pen_fallados: minutos > 0 ? (p?.stats.penMissed ?? 0) : 0,
         };
         // Sin estadísticas todavía (lista vacía): se reintenta en la siguiente vuelta.
         if (equipos.length === 0) continue;
