@@ -298,7 +298,7 @@ export default function Header({
 
           {/* Menú móvil desplegable */}
           {mobileOpen && (
-            <div className="md:hidden border-t border-[var(--line)] py-3">
+            <div className="nav__movil md:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
                 {/* Favoritos acordeón — primero */}
                 {favorites.length > 0 && (

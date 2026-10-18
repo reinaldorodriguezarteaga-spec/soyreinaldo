@@ -5,10 +5,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import ScrollHintTabs from "@/components/ScrollHintTabs";
 import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 
-const TABS = [
+// "Duelos" (18-oct, pedido del dueño): acceso directo a la vista de duelos
+// de la clasificación (`?vista=duelos`), con su propia pestaña.
+const TABS: { href: string; label: string; vista?: string }[] = [
   { href: "/quiniela-liga/partidos", label: "Pronósticos" },
   { href: "/quiniela-liga/ranking", label: "Clasificación" },
   { href: "/quiniela-liga/selecciones", label: "Selecciones" },
+  { href: "/quiniela-liga/ranking", label: "⚔️ Duelos", vista: "duelos" },
   { href: "/quiniela-liga/picks", label: "Especiales" },
   { href: "/quiniela-liga/reglas", label: "Reglas" },
 ];
@@ -37,16 +40,26 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
     leagues[0] ??
     null;
 
-  const qs = active && !active.isPublic ? `?liga=${encodeURIComponent(active.id)}` : "";
+  const liga = active && !active.isPublic ? active.id : null;
+  const vistaActual = params.get("vista");
+  const hrefDe = (t: (typeof TABS)[number]) => {
+    const q = new URLSearchParams();
+    if (liga) q.set("liga", liga);
+    if (t.vista) q.set("vista", t.vista);
+    const s = q.toString();
+    return s ? `${t.href}?${s}` : t.href;
+  };
 
   return (
     <div className="wrap" style={{ paddingTop: 18 }}>
       <nav aria-label="Secciones de los pronósticos" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-        <ScrollHintTabs maxWidth={520}>
+        <ScrollHintTabs maxWidth={720}>
           {TABS.map((t) => {
-            const on = pathname === t.href || pathname.startsWith(`${t.href}/`);
+            const enRuta = pathname === t.href || pathname.startsWith(`${t.href}/`);
+            // Clasificación y Duelos comparten ruta: decide `?vista=`.
+            const on = enRuta && (t.vista ? vistaActual === t.vista : vistaActual !== "duelos");
             return (
-              <Link key={t.href} href={`${t.href}${qs}`} className={on ? "on" : ""}>
+              <Link key={t.label} href={hrefDe(t)} className={on ? "on" : ""}>
                 {t.label}
               </Link>
             );

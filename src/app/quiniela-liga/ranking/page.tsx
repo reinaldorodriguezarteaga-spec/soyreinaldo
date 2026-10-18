@@ -6,13 +6,14 @@ import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 import {
-  calcularRachas,
+  rachasDeResumen,
   RACHA_ACIERTOS_MIN,
   RACHA_JORNADAS_MIN,
-  type FilaHistorial,
+  type FilaRachas,
 } from "@/lib/quiniela-liga/rachas";
 import DuelosVista from "./duelos-vista";
-import { medallasDe, type FilaJornadaJugador } from "@/lib/quiniela-liga/medallas";
+import { medallasDe } from "@/lib/quiniela-liga/medallas";
+import { jornadasDeLaLiga } from "@/lib/quiniela-liga/jornadas-jugador";
 import { T } from "@/components/EnApp";
 
 const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
@@ -77,16 +78,14 @@ export default async function QuinielaLigaRankingPage({
   const meId = user?.id ?? null;
 
   // Rachas (16-oct): jornadas seguidas jugando y aciertos seguidos.
-  const { data: historial } = await supabase.rpc("lq_historial_rachas", { p_league_id: leagueId });
-  const rachas = calcularRachas((historial ?? []) as FilaHistorial[]);
+  const { data: resumenRachas } = await supabase.rpc("lq_rachas_resumen", { p_league_id: leagueId });
+  const rachas = rachasDeResumen((resumenRachas ?? []) as FilaRachas[]);
   const miRacha = meId ? rachas.get(meId) : undefined;
 
   // Medallas (17-oct): las del usuario, a partir de sus jornadas.
-  const { data: jornadasJugador } = meId
-    ? await supabase.rpc("lq_jornadas_jugador", { p_league_id: leagueId })
-    : { data: null };
+  const jornadasJugador = meId ? await jornadasDeLaLiga(supabase, leagueId) : null;
   const misMedallas = meId
-    ? medallasDe((jornadasJugador ?? []) as FilaJornadaJugador[], meId, ANFITRION_ID)
+    ? medallasDe(jornadasJugador ?? [], meId, ANFITRION_ID)
     : [];
   // Cómo se nombra al usuario en las URLs de sus logros (usuario o id).
   const { data: miPerfil } = meId

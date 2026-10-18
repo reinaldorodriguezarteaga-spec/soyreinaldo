@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { clienteServicio } from "./jornada-datos";
 import { ANFITRION_ID } from "./anfitrion";
 import { medallasDe, type FilaJornadaJugador, type Medalla } from "./medallas";
+import { jornadasDeLaLiga } from "./jornadas-jugador";
 
 /**
  * Datos de las tarjetas de logros para compartir (17-oct, pedido del dueño):
@@ -39,8 +40,8 @@ export const logroMedalla = (usuario: string, clave: string) =>
       const db = clienteServicio();
       const p = await perfil(usuario);
       if (!db || !p) return null;
-      const { data } = await db.rpc("lq_jornadas_jugador", { p_league_id: PUBLICA });
-      const m = medallasDe((data ?? []) as FilaJornadaJugador[], p.id, ANFITRION_ID).find((x) => x.clave === clave);
+      const data = await jornadasDeLaLiga(db, PUBLICA);
+      const m = medallasDe(data, p.id, ANFITRION_ID).find((x) => x.clave === clave);
       return m ? { nombre: nombreDe(p), medalla: m } : null;
     },
     ["logro-medalla", usuario.toLowerCase(), clave],
@@ -67,8 +68,8 @@ export const logroDuelo = (id: string) =>
         .eq("id", id)
         .maybeSingle<{ league_id: string; matchday: number; retador: string; rival: string; estado: string }>();
       if (!d || d.estado !== "aceptado") return null;
-      const { data: filas } = await db.rpc("lq_jornadas_jugador", { p_league_id: d.league_id });
-      const deLaJornada = ((filas ?? []) as FilaJornadaJugador[]).filter((f) => f.matchday === d.matchday);
+      const filas = await jornadasDeLaLiga(db, d.league_id);
+      const deLaJornada = filas.filter((f) => f.matchday === d.matchday);
       if (!deLaJornada.length || !deLaJornada[0].terminada) return null;
       const pts = (u: string) => deLaJornada.find((f) => f.user_id === u)?.puntos ?? 0;
       const [a, b] = [pts(d.retador), pts(d.rival)];
@@ -116,7 +117,7 @@ export const temporadaDe = (usuario: string) =>
       const p = await perfil(usuario);
       if (!db || !p) return null;
       const [{ data: filasData }, { data: tabla }, { data: duelosData }] = await Promise.all([
-        db.rpc("lq_jornadas_jugador", { p_league_id: PUBLICA }),
+        jornadasDeLaLiga(db, PUBLICA).then((data) => ({ data })),
         db.rpc("lq_leaderboard", { p_league_id: PUBLICA }),
         db
           .from("lq_duelos")
