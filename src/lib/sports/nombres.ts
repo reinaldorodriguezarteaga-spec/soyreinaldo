@@ -102,6 +102,9 @@ const ALIAS: Record<string, string> = {
   "gabriel jesus": "Gabriel Jesus",
   "lamine yamal": "Lamine Yamal",
   "endrick felipe moreira de sousa": "Endrick",
+  // El API trae los dos apellidos y la regla se quedaba con el segundo
+  // ("Paredes", 18-oct).
+  "pau cubarsi paredes": "Cubarsí",
 };
 
 const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();

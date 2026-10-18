@@ -39,6 +39,7 @@ describe("nombreCorto", () => {
     expect(nombreCorto("Kylian Mbappé")).toBe("Mbappé");
     expect(nombreCorto("K. Mbappé")).toBe("Mbappé");
     expect(nombreCorto("Dani Olmo")).toBe("Olmo");
+    expect(nombreCorto("Pau Cubarsí Paredes")).toBe("Cubarsí");
     expect(nombreCorto("A. Rüdiger")).toBe("Rüdiger");
   });
 
