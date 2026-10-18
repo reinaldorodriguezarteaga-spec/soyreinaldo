@@ -21,33 +21,48 @@ export type FilaHistorial = {
 
 export type Racha = { jornadas: number; aciertos: number; mejorAciertos: number };
 
-export function calcularRachas(filas: FilaHistorial[]): Map<string, Racha> {
-  const jornadasEmpezadas = [...new Set(filas.map((f) => f.matchday))].sort((a, b) => b - a);
-  const porJugador = new Map<string, FilaHistorial[]>();
-  for (const f of filas) porJugador.set(f.user_id, [...(porJugador.get(f.user_id) ?? []), f]);
+/** Una fila por jugador de `lq_rachas_resumen()` (18-oct): sus jornadas
+ * con algún partido ya empezado y sus aciertos en orden de hora. El
+ * historial fila a fila pasaba de las 1.000 que devuelve Supabase y a
+ * algunos les faltaban las últimas jornadas (racha 0). */
+export type FilaRachas = { user_id: string; jornadas: number[]; aciertos: boolean[] };
 
+export function rachasDeResumen(filas: FilaRachas[]): Map<string, Racha> {
+  const jornadasEmpezadas = [...new Set(filas.flatMap((f) => f.jornadas))].sort((a, b) => b - a);
   const out = new Map<string, Racha>();
-  for (const [userId, suyas] of porJugador) {
-    const jugadas = new Set(suyas.map((f) => f.matchday));
+  for (const f of filas) {
+    const jugadas = new Set(f.jornadas);
     let jornadas = 0;
     for (let i = 0; i < jornadasEmpezadas.length; i++) {
       if (jugadas.has(jornadasEmpezadas[i])) jornadas++;
       else if (i === 0) continue; // la jornada en curso aún no la ha jugado
       else break;
     }
-
-    const terminadas = suyas
-      .filter((f) => f.finished)
-      .sort((a, b) => Date.parse(a.kickoff_at) - Date.parse(b.kickoff_at));
     let actual = 0;
     let mejor = 0;
-    for (const f of terminadas) {
-      actual = f.acierto ? actual + 1 : 0;
+    for (const acierto of f.aciertos) {
+      actual = acierto ? actual + 1 : 0;
       mejor = Math.max(mejor, actual);
     }
-    out.set(userId, { jornadas, aciertos: actual, mejorAciertos: mejor });
+    out.set(f.user_id, { jornadas, aciertos: actual, mejorAciertos: mejor });
   }
   return out;
+}
+
+/** Lo mismo a partir del historial fila a fila (lo usan las pruebas). */
+export function calcularRachas(filas: FilaHistorial[]): Map<string, Racha> {
+  const porJugador = new Map<string, FilaHistorial[]>();
+  for (const f of filas) porJugador.set(f.user_id, [...(porJugador.get(f.user_id) ?? []), f]);
+  return rachasDeResumen(
+    [...porJugador].map(([user_id, suyas]) => ({
+      user_id,
+      jornadas: [...new Set(suyas.map((f) => f.matchday))],
+      aciertos: suyas
+        .filter((f) => f.finished)
+        .sort((a, b) => Date.parse(a.kickoff_at) - Date.parse(b.kickoff_at))
+        .map((f) => f.acierto),
+    })),
+  );
 }
 
 /** Desde cuánto se enseña la llama en la clasificación. */
