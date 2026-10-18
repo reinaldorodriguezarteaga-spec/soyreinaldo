@@ -13,7 +13,6 @@ export default async function GoatsCard({ enlace = false }: { enlace?: boolean }
   if (!totales) return null;
   const { messi, ronaldo } = totales;
 
-  const fmt = (n: number) => n.toLocaleString("es-ES");
   const lado = (nombre: string, apiId: number, alinear: "left" | "right") => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: alinear === "left" ? "flex-start" : "flex-end", gap: 8 }}>
       <Image
@@ -47,8 +46,8 @@ export default async function GoatsCard({ enlace = false }: { enlace?: boolean }
         <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>VS</span>
         {lado("Cristiano", ronaldo.apiId, "right")}
         {FILAS.map((f) => {
-          const m = messi[f.clave];
-          const r = ronaldo[f.clave];
+          const m = f.peso(messi);
+          const r = f.peso(ronaldo);
           const estilo = (gana: boolean, alinear: "left" | "right") =>
             ({
               textAlign: alinear,
@@ -59,18 +58,15 @@ export default async function GoatsCard({ enlace = false }: { enlace?: boolean }
               color: gana ? "var(--accent-2)" : "var(--text)",
             }) as const;
           return [
-            <span key={`${f.clave}-m`} style={estilo(m > r, "left")}>{fmt(m)}</span>,
+            <span key={`${f.clave}-m`} style={estilo(m > r, "left")}>{f.valor(messi)}</span>,
             <span key={`${f.clave}-l`} style={{ textAlign: "center", color: "var(--text-dim)", fontSize: "0.82rem", lineHeight: 1.2 }}>
               {f.label}
-              {"nota" in f && <><br /><small style={{ fontSize: "0.68rem" }}>{f.nota}</small></>}
+              {f.nota && <><br /><small style={{ fontSize: "0.68rem" }}>{f.nota}</small></>}
             </span>,
-            <span key={`${f.clave}-r`} style={estilo(r > m, "right")}>{fmt(r)}</span>,
+            <span key={`${f.clave}-r`} style={estilo(r > m, "right")}>{f.valor(ronaldo)}</span>,
           ];
         })}
       </div>
-      <p style={{ margin: "18px 0 0", color: "var(--text-dim)", fontSize: "0.74rem" }}>
-        Carrera en partidos oficiales, con club y selección. Se actualiza tras cada partido que juegan. Base: {messi.fuente}.
-      </p>
       {enlace && (
         <Link href="/messi-vs-ronaldo" className="btn btn--accent" style={{ marginTop: 16 }}>
           Ver la comparativa completa <span className="arr">→</span>

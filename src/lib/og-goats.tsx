@@ -12,9 +12,8 @@ export async function imagenGoats(formato: "vertical" | "enlace") {
   const vertical = formato === "vertical";
   const W = vertical ? 1080 : 1200;
   const H = vertical ? 1350 : 630;
-  const foto = vertical ? 260 : 150;
-  const cifra = vertical ? 92 : 54;
-  const fmt = (n: number) => n.toLocaleString("es-ES");
+  const foto = vertical ? 200 : 140;
+  const cifra = vertical ? 80 : 48;
 
   const jugador = (nombre: string, t: TotalGoat | undefined) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: vertical ? 360 : 300 }}>
@@ -28,7 +27,7 @@ export async function imagenGoats(formato: "vertical" | "enlace") {
           style={{ borderRadius: foto, border: "6px solid #3b82f6", background: "#e2e8f0" }}
         />
       )}
-      <div style={{ display: "flex", marginTop: 16, fontSize: vertical ? 64 : 44, fontWeight: 800 }}>{nombre}</div>
+      <div style={{ display: "flex", marginTop: 16, fontSize: vertical ? 56 : 40, fontWeight: 800 }}>{nombre}</div>
     </div>
   );
 
@@ -60,28 +59,29 @@ export async function imagenGoats(formato: "vertical" | "enlace") {
         {totales ? (
           <div style={{ display: "flex", flexDirection: vertical ? "column" : "row", alignItems: "center", width: "100%" }}>
             {vertical && (
-              <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: 24, marginBottom: 36 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: 20, marginBottom: 24 }}>
                 {jugador("Messi", totales.messi)}
                 {jugador("Cristiano", totales.ronaldo)}
               </div>
             )}
             {!vertical && jugador("Messi", totales.messi)}
-            <div style={{ display: "flex", flexDirection: "column", flexGrow: vertical ? 0 : 1, width: vertical ? "100%" : undefined }}>
+            <div style={{ display: "flex", flexDirection: "column", ...(vertical ? { width: "100%" } : { flexGrow: 1 }) }}>
               {FILAS_GOATS.map((f) => {
-                const m = totales.messi[f.clave];
-                const r = totales.ronaldo[f.clave];
-                const num = (v: number, gana: boolean) => (
+                const m = f.peso(totales.messi);
+                const r = f.peso(totales.ronaldo);
+                const num = (v: string, gana: boolean) => (
                   <span
                     style={{
                       display: "flex",
                       width: vertical ? 320 : 170,
                       justifyContent: "center",
-                      fontSize: cifra,
+                      // "183/219" es más largo que una cifra suelta.
+                      fontSize: v.length > 5 ? Math.round(cifra * 0.72) : cifra,
                       fontWeight: 800,
                       color: gana ? "#ff9d00" : "#e8ecff",
                     }}
                   >
-                    {fmt(v)}
+                    {v}
                   </span>
                 );
                 return (
@@ -91,15 +91,15 @@ export async function imagenGoats(formato: "vertical" | "enlace") {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: vertical ? "14px 0" : "4px 0",
+                      padding: vertical ? "10px 0" : "2px 0",
                       borderTop: "2px solid rgba(255,255,255,0.08)",
                     }}
                   >
-                    {num(m, m > r)}
+                    {num(f.valor(totales.messi), m > r)}
                     <span style={{ display: "flex", flex: 1, justifyContent: "center", fontSize: vertical ? 30 : 22, color: "#9aa4d6", textAlign: "center" }}>
                       {f.label}
                     </span>
-                    {num(r, r > m)}
+                    {num(f.valor(totales.ronaldo), r > m)}
                   </div>
                 );
               })}
@@ -111,11 +111,6 @@ export async function imagenGoats(formato: "vertical" | "enlace") {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {vertical && (
-            <div style={{ display: "flex", fontSize: 24, color: "#9aa4d6", marginBottom: 14 }}>
-              Carrera en partidos oficiales, con club y selección
-            </div>
-          )}
           <div style={{ display: "flex", fontSize: vertical ? 40 : 26, color: "#3b82f6", fontWeight: 700 }}>
             soyreinaldo.com/messi-vs-ronaldo
           </div>

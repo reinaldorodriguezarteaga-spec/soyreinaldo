@@ -1956,7 +1956,8 @@ export type PlayerMatchStats = {
   saves: number | null;
   yellow: number;
   red: number;
-  /** Penaltis fallados por el jugador y parados (portero). */
+  /** Penaltis marcados y fallados por el jugador, y parados (portero). */
+  penScored: number;
   penMissed: number;
   penSaved: number;
 };
@@ -2001,7 +2002,7 @@ type RawPlayerStat = {
   dribbles: { attempts: number | null; success: number | null };
   fouls: { drawn: number | null; committed: number | null };
   cards: { yellow: number | null; red: number | null };
-  penalty?: { missed: number | null; saved: number | null } | null;
+  penalty?: { scored?: number | null; missed: number | null; saved: number | null } | null;
 };
 
 type FixturePlayersResponse = {
@@ -2065,6 +2066,7 @@ export async function getFixturePlayers(
             saves: numOrNull(s?.goals.saves),
             yellow: s?.cards.yellow ?? 0,
             red: s?.cards.red ?? 0,
+            penScored: s?.penalty?.scored ?? 0,
             penMissed: s?.penalty?.missed ?? 0,
             penSaved: s?.penalty?.saved ?? 0,
           },
