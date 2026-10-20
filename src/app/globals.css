@@ -2406,7 +2406,8 @@ select.field { appearance: none; }
 .pz-texto { position: absolute; transform: translate(-50%, -50%); z-index: 3; background: rgba(10,16,48,0.82); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
 .pz-campo--dibujo .pz-texto { pointer-events: none; }
 .pz-ficha--foco .pz-ficha__cara, .pz-ficha--foco .pz-ficha__num { box-shadow: 0 0 0 3px #facc15, 0 0 14px 4px rgba(250,204,21,0.55); border-radius: 50%; }
-.pz-ficha--sel .pz-ficha__cara, .pz-ficha--sel .pz-ficha__num { outline: 2px dashed #fff; outline-offset: 3px; border-radius: 50%; }
+.pz-ficha--sel .pz-ficha__cara, .pz-ficha--sel .pz-ficha__num { box-shadow: 0 0 0 3px #3b82f6, 0 0 0 5px #fff, 0 0 16px 6px rgba(59,130,246,0.6); border-radius: 50%; }
+.pz-ficha--sel .pz-ficha__nom { color: #93c5fd; }
 .pz-campo--foco .pz-ficha { cursor: pointer; }
 .pz-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; flex: none; padding: 0; }
 .pz-paleta { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -2444,3 +2445,12 @@ select.field { appearance: none; }
 .pzc-like.on { border-color: #ff5b8a; color: #ff5b8a; }
 .pzc-retirar { border: 0; background: transparent; color: var(--text-dim); font: inherit; font-size: 0.74rem; cursor: pointer; text-decoration: underline; }
 .pzc-retirada { font-size: 0.74rem; color: var(--text-dim); }
+
+/* Rendimiento por posición (ficha del jugador, 20-oct) */
+.rpos { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-top: 8px; }
+.rpos th { text-align: right; font-weight: 600; font-size: 0.68rem; color: var(--text-dim); padding: 6px 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.rpos th:first-child, .rpos td:first-child { text-align: left; padding-left: 16px; }
+.rpos td { text-align: right; padding: 8px 10px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.rpos td:last-child, .rpos th:last-child { padding-right: 16px; }
+.rpos--mejor td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
+.rpos--mejor td:first-child { font-weight: 700; }

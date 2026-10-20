@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import RendimientoPosicion from "./rendimiento-posicion";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -192,6 +194,9 @@ export default async function LigaJugadorPage({
         <div className="wrap" style={{ maxWidth: 680 }}>
           {p && <PlayerBio p={p} />}
           {p && <SeasonStats p={p} />}
+          <Suspense fallback={null}>
+            <RendimientoPosicion jugador={pid} temporada={p?.season ?? competition.season} />
+          </Suspense>
           <PlayerExtras extras={extras} />
         </div>
       </section>
