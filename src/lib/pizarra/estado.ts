@@ -11,6 +11,9 @@ export type Punto = { x: number; y: number };
 export type TipoFlecha = "pase" | "carrera";
 export type Flecha = { a: Punto; b: Punto; tipo: TipoFlecha };
 export type PorLado<T> = Record<Lado, T>;
+/** Una etapa de la animación: dónde está cada jugador ("l:154" / "v:874",
+ * por id, así sigue valiendo si se cambian huecos), el balón y las flechas. */
+export type Etapa = { jug: Record<string, Punto>; balon: Punto | null; flechas: Flecha[] };
 export type Estado = {
   formacion: PorLado<string>;
   once: PorLado<(number | null)[]>;
@@ -18,10 +21,13 @@ export type Estado = {
   movidos: Record<string, Punto>;
   flechas: Flecha[];
   balon: Punto | null;
+  etapas: Etapa[];
 };
 
 const MAX_FLECHAS = 40;
-const MAX_URL = 4000;
+export const MAX_ETAPAS = 10;
+/** Con 10 etapas el enlace ronda los 6-7 KB: cabe en WhatsApp y en la barra. */
+const MAX_URL = 12000;
 
 export const vacio = (): (number | null)[] => Array(11).fill(null);
 export const estadoInicial = (): Estado => ({
@@ -30,6 +36,7 @@ export const estadoInicial = (): Estado => ({
   movidos: {},
   flechas: [],
   balon: null,
+  etapas: [],
 });
 
 /** Coordenada a entero 0..1000 y vuelta (URLs más cortas). */
@@ -38,6 +45,27 @@ const deMil = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(1, Math.max(0, v / 1000)) : null;
 
 const LETRA: PorLado<string> = { local: "l", visitante: "v" };
+
+const flechaACompacta = (f: Flecha) => [aMil(f.a.x), aMil(f.a.y), aMil(f.b.x), aMil(f.b.y), f.tipo === "carrera" ? 1 : 0];
+
+function leerPunto(v: unknown): Punto | null {
+  if (!Array.isArray(v)) return null;
+  const x = deMil(v[0]);
+  const y = deMil(v[1]);
+  return x == null || y == null ? null : { x, y };
+}
+
+function leerFlechas(v: unknown): Flecha[] {
+  if (!Array.isArray(v)) return [];
+  const out: Flecha[] = [];
+  for (const a of v.slice(0, MAX_FLECHAS)) {
+    if (!Array.isArray(a)) continue;
+    const ini = leerPunto([a[0], a[1]]);
+    const fin = leerPunto([a[2], a[3]]);
+    if (ini && fin) out.push({ a: ini, b: fin, tipo: a[4] === 1 ? "carrera" : "pase" });
+  }
+  return out;
+}
 
 export function codificar(e: Estado): string {
   const compacto = {
@@ -49,8 +77,13 @@ export function codificar(e: Estado): string {
         return [`${LETRA[lado as Lado]}${i}`, [aMil(p.x), aMil(p.y)]];
       }),
     ),
-    a: e.flechas.map((f) => [aMil(f.a.x), aMil(f.a.y), aMil(f.b.x), aMil(f.b.y), f.tipo === "carrera" ? 1 : 0]),
+    a: e.flechas.map(flechaACompacta),
     b: e.balon ? [aMil(e.balon.x), aMil(e.balon.y)] : 0,
+    e: e.etapas.map((et) => [
+      Object.entries(et.jug).map(([k, p]) => [k, aMil(p.x), aMil(p.y)]),
+      et.balon ? [aMil(et.balon.x), aMil(et.balon.y)] : 0,
+      et.flechas.map(flechaACompacta),
+    ]),
   };
   return btoa(JSON.stringify(compacto)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
@@ -97,19 +130,22 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
     }
   }
 
-  if (Array.isArray(d.a)) {
-    for (const a of d.a.slice(0, MAX_FLECHAS)) {
-      if (!Array.isArray(a)) continue;
-      const [ax, ay, bx, by] = [deMil(a[0]), deMil(a[1]), deMil(a[2]), deMil(a[3])];
-      if (ax == null || ay == null || bx == null || by == null) continue;
-      e.flechas.push({ a: { x: ax, y: ay }, b: { x: bx, y: by }, tipo: a[4] === 1 ? "carrera" : "pase" });
-    }
-  }
+  e.flechas = leerFlechas(d.a);
+  e.balon = leerPunto(d.b);
 
-  if (Array.isArray(d.b)) {
-    const x = deMil(d.b[0]);
-    const y = deMil(d.b[1]);
-    if (x != null && y != null) e.balon = { x, y };
+  if (Array.isArray(d.e)) {
+    const validos: Record<string, Set<number>> = { l: new Set(plantillas.local), v: new Set(plantillas.visitante) };
+    for (const et of d.e.slice(0, MAX_ETAPAS)) {
+      if (!Array.isArray(et)) continue;
+      const jug: Record<string, Punto> = {};
+      for (const j of Array.isArray(et[0]) ? et[0] : []) {
+        if (!Array.isArray(j) || typeof j[0] !== "string") continue;
+        const m = /^([lv]):(\d{1,9})$/.exec(j[0]);
+        const p = leerPunto([j[1], j[2]]);
+        if (m && p && validos[m[1]].has(Number(m[2]))) jug[j[0]] = p;
+      }
+      e.etapas.push({ jug, balon: leerPunto(et[1]), flechas: leerFlechas(et[2]) });
+    }
   }
   return e;
 }

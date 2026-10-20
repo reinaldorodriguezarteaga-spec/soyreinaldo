@@ -55,9 +55,59 @@ const LINEAS: Record<string, Linea[]> = {
     { d: 0.58, roles: ["MC", "MC", "MC"], grupo: "M" },
     { d: 0.9, roles: ["DC", "DC"], grupo: "F" },
   ],
+  // Las que más salen en las alineaciones reales del API (fase 3, 20-oct).
+  "4-4-1-1": [
+    { d: 0.26, roles: ["LI", "DFC", "DFC", "LD"], grupo: "D" },
+    { d: 0.54, roles: ["MI", "MC", "MC", "MD"], grupo: "M" },
+    { d: 0.74, roles: ["MP"], grupo: "M" },
+    { d: 0.92, roles: ["DC"], grupo: "F" },
+  ],
+  "3-4-2-1": [
+    { d: 0.25, roles: ["DFC", "DFC", "DFC"], grupo: "D" },
+    { d: 0.5, roles: ["CAI", "MC", "MC", "CAD"], grupo: "M" },
+    { d: 0.72, roles: ["MP", "MP"], grupo: "M" },
+    { d: 0.92, roles: ["DC"], grupo: "F" },
+  ],
+  "3-4-1-2": [
+    { d: 0.25, roles: ["DFC", "DFC", "DFC"], grupo: "D" },
+    { d: 0.5, roles: ["CAI", "MC", "MC", "CAD"], grupo: "M" },
+    { d: 0.7, roles: ["MP"], grupo: "M" },
+    { d: 0.9, roles: ["DC", "DC"], grupo: "F" },
+  ],
+  "4-3-1-2": [
+    { d: 0.25, roles: ["LI", "DFC", "DFC", "LD"], grupo: "D" },
+    { d: 0.48, roles: ["MC", "MCD", "MC"], grupo: "M" },
+    { d: 0.7, roles: ["MP"], grupo: "M" },
+    { d: 0.9, roles: ["DC", "DC"], grupo: "F" },
+  ],
+  "4-1-2-1-2": [
+    { d: 0.24, roles: ["LI", "DFC", "DFC", "LD"], grupo: "D" },
+    { d: 0.4, roles: ["MCD"], grupo: "M" },
+    { d: 0.56, roles: ["MC", "MC"], grupo: "M" },
+    { d: 0.72, roles: ["MP"], grupo: "M" },
+    { d: 0.92, roles: ["DC", "DC"], grupo: "F" },
+  ],
+  "5-4-1": [
+    { d: 0.27, roles: ["CAI", "DFC", "DFC", "DFC", "CAD"], grupo: "D" },
+    { d: 0.6, roles: ["MI", "MC", "MC", "MD"], grupo: "M" },
+    { d: 0.9, roles: ["DC"], grupo: "F" },
+  ],
 };
 
 export const FORMACIONES = Object.keys(LINEAS);
+
+/** Jugadores por línea (sin el portero): "4-2-3-1" → [4, 2, 3, 1]. */
+export function lineasDe(formacion: string): number[] {
+  return (LINEAS[formacion] ?? []).map((l) => l.roles.length);
+}
+
+/** Posición de una casilla "fila:columna" de una alineación (fila 1 =
+ * portero; la columna va de la banda izquierda del equipo a la derecha),
+ * en coordenadas canónicas del local. */
+export function puntoDeRejilla(fila: number, filas: number, col: number, cols: number): { x: number; y: number } {
+  const d = filas > 1 ? (fila - 1) / (filas - 1) : 0;
+  return { x: X_PORTERO + d * (X_PUNTA - X_PORTERO), y: col / (cols + 1) };
+}
 export const FORMACION_INICIAL = "4-3-3";
 
 /** De dónde a dónde va el bloque de un equipo, en su mitad del campo. */

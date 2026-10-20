@@ -8,12 +8,15 @@ import {
   decodificar,
   estadoInicial,
   vacio,
+  MAX_ETAPAS,
   type Estado,
+  type Etapa,
   type Flecha,
   type PorLado,
   type Punto,
   type TipoFlecha,
 } from "@/lib/pizarra/estado";
+import { duracion, fotograma, type Fotograma } from "@/lib/pizarra/animacion";
 import { nombreCorto } from "@/lib/sports/nombres";
 
 /**
@@ -85,11 +88,17 @@ export default function Pizarra({
   local,
   visitante,
   inicial,
+  preparado,
+  partido,
 }: {
   local: EquipoConPlantilla;
   visitante: EquipoConPlantilla;
   /** `?p=` de un enlace compartido. */
   inicial?: string;
+  /** Pizarra ya montada (alineación real de `?partido=`). */
+  preparado?: Estado;
+  /** Partido del que sale (viaja en el enlace compartido). */
+  partido?: number;
 }) {
   const router = useRouter();
   const equipos: PorLado<EquipoConPlantilla> = { local, visitante };
@@ -98,7 +107,9 @@ export default function Pizarra({
       decodificar(inicial, {
         local: local.plantilla.map((p) => p.id),
         visitante: visitante.plantilla.map((p) => p.id),
-      }) ?? estadoInicial(),
+      }) ??
+      preparado ??
+      estadoInicial(),
   );
   const [historial, setHistorial] = useState<Estado[]>([]);
   const [modo, setModo] = useState<Modo>("mover");
@@ -108,10 +119,16 @@ export default function Pizarra({
   const [horizontal, setHorizontal] = useState(false);
   const [compartiendo, setCompartiendo] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Fotograma de la animación mientras se reproduce. */
+  const [fot, setFot] = useState<Fotograma | null>(null);
+  /** Progreso (0-1) de la grabación del vídeo. */
+  const [grabando, setGrabando] = useState<number | null>(null);
+  const animacion = useRef<number | null>(null);
   /** La última ficha movida va encima de las demás. */
   const [arriba, setArriba] = useState<string | null>(null);
   const [orden, setOrden] = useState<PorLado<Orden>>({ local: "posicion", visitante: "posicion" });
   const [busca, setBusca] = useState("");
+  const [buscaLista, setBuscaLista] = useState<PorLado<string>>({ local: "", visitante: "" });
   const campo = useRef<HTMLDivElement>(null);
   const gesto = useRef<{ x: number; y: number; activo: boolean } | null>(null);
   const { formacion, once, movidos, flechas, balon } = estado;
@@ -125,6 +142,14 @@ export default function Pizarra({
     mq.addEventListener("change", aplicar);
     return () => mq.removeEventListener("change", aplicar);
   }, []);
+
+  // Parar la animación si se sale de la página a mitad.
+  useEffect(
+    () => () => {
+      if (animacion.current != null) cancelAnimationFrame(animacion.current);
+    },
+    [],
+  );
 
   /** Cambio que se puede deshacer. */
   const cambiar = (f: (e: Estado) => Estado) => {
@@ -299,7 +324,9 @@ export default function Pizarra({
   };
 
   const compartirEnlace = async () => {
-    const url = `${window.location.origin}/pizarra?local=${local.id}&visitante=${visitante.id}&p=${codificar(estado)}`;
+    const url = `${window.location.origin}/pizarra?local=${local.id}&visitante=${visitante.id}${
+      partido ? `&partido=${partido}` : ""
+    }&p=${codificar(estado)}`;
     const texto = `${local.name} vs ${visitante.name}: mira mi pizarra`;
     if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
       try {
@@ -320,25 +347,104 @@ export default function Pizarra({
   const compartirImagen = async () => {
     setCompartiendo(true);
     try {
-      const blob = await imagenPizarra({ equipos, estado, posicion, jugador });
-      if (!blob) return;
-      const archivo = new File([blob], "pizarra-soyreinaldo.png", { type: "image/png" });
-      const texto = `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`;
-      if (navigator.canShare?.({ files: [archivo] })) {
-        try {
-          await navigator.share({ files: [archivo], text: texto });
-        } catch {
-          // Hoja cerrada: no es un error.
-        }
-        return;
-      }
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = archivo.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+      const blob = await imagenPizarra(escena(null));
+      if (blob) await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
     } finally {
       setCompartiendo(false);
+    }
+  };
+
+  // ---- Animación por etapas (fase 3)
+  const claveJug = (lado: Lado, id: number) => `${lado === "local" ? "l" : "v"}:${id}`;
+  const etapaActual = (): Etapa => {
+    const jug: Record<string, Punto> = {};
+    for (const lado of LADOS) {
+      once[lado].forEach((id, i) => {
+        if (id != null) jug[claveJug(lado, id)] = posicion(lado, i);
+      });
+    }
+    return { jug, balon, flechas };
+  };
+  const guardarEtapa = () => {
+    if (estado.etapas.length >= MAX_ETAPAS) return avisar(`Máximo ${MAX_ETAPAS} etapas`);
+    cambiar((e) => ({ ...e, etapas: [...e.etapas, etapaActual()] }));
+    avisar(`Etapa ${estado.etapas.length + 1} guardada`);
+  };
+  /** Pone el campo como estaba en una etapa (para retocarla o seguir desde ahí). */
+  const irAEtapa = (k: number) => {
+    const et = estado.etapas[k];
+    if (!et) return;
+    cambiar((e) => {
+      const movidos = { ...e.movidos };
+      for (const lado of LADOS) {
+        e.once[lado].forEach((id, i) => {
+          const p = id != null ? et.jug[claveJug(lado, id)] : undefined;
+          if (p) movidos[`${lado}:${i}`] = p;
+        });
+      }
+      return { ...e, movidos, balon: et.balon, flechas: et.flechas };
+    });
+  };
+  const borrarEtapa = (k: number) => cambiar((e) => ({ ...e, etapas: e.etapas.filter((_, i) => i !== k) }));
+
+  const parar = () => {
+    if (animacion.current != null) cancelAnimationFrame(animacion.current);
+    animacion.current = null;
+    setFot(null);
+  };
+  const reproducir = () => {
+    const etapas = estado.etapas;
+    if (etapas.length < 2) return avisar("Guarda al menos 2 etapas");
+    parar();
+    const total = duracion(etapas.length);
+    const inicio = performance.now();
+    const paso = (ahora: number) => {
+      const t = (ahora - inicio) / 1000;
+      setFot(fotograma(etapas, t));
+      if (t < total + 0.4) animacion.current = requestAnimationFrame(paso);
+      else {
+        animacion.current = null;
+        setFot(null);
+      }
+    };
+    animacion.current = requestAnimationFrame(paso);
+  };
+
+  /** La pizarra (o un fotograma de la animación) lista para el canvas. */
+  const escena = (f: Fotograma | null): Escena => {
+    const fichas: Escena["fichas"] = [];
+    for (const lado of LADOS) {
+      once[lado].forEach((id, i) => {
+        const j = jugador(lado, id);
+        if (!j) return;
+        fichas.push({
+          ...(f?.jug[claveJug(lado, j.id)] ?? posicion(lado, i)),
+          color: COLOR[lado],
+          numero: j.number,
+          nombre: nombreCorto(j.name),
+          foto: j.photo,
+        });
+      });
+    }
+    return {
+      titulo: `${local.name} vs ${visitante.name}`,
+      subtitulo: `${formacion.local}  ·  ${formacion.visitante}`,
+      fichas,
+      flechas: f ? f.flechas : flechas,
+      balon: f ? f.balon : balon,
+    };
+  };
+
+  const exportarVideo = async () => {
+    const etapas = estado.etapas;
+    if (etapas.length < 2) return avisar("Guarda al menos 2 etapas");
+    setGrabando(0);
+    try {
+      const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando);
+      if (!r) return avisar("Tu navegador no permite grabar vídeo");
+      await compartirArchivo(r.blob, `jugada-soyreinaldo.${r.ext}`, `${local.name} vs ${visitante.name}: la jugada en soyreinaldo.com`);
+    } finally {
+      setGrabando(null);
     }
   };
 
@@ -356,16 +462,25 @@ export default function Pizarra({
         onPointerCancel={cancelar}
       >
         <Cara j={j} color={COLOR[lado]} tam={26} />
-        <span className="pz-jug__nom">{nombreCorto(j.name)}</span>
+        <span className="pz-jug__nom">
+          {/* El dorsal siempre a la vista (pedido del dueño, 20-oct). */}
+          <b className="pz-jug__dorsal" style={{ background: COLOR[lado] }}>
+            {j.number ?? "–"}
+          </b>
+          {nombreCorto(j.name)}
+        </span>
         <span className="mono pz-jug__pos">
-          {dentro ? "✓" : orden[lado] === "numero" ? (POS_ES[j.position ?? ""] ?? "") : (j.number ?? "")}
+          {dentro ? "✓" : orden[lado] === "numero" ? (POS_ES[j.position ?? ""] ?? "") : ""}
         </span>
       </button>
     );
   };
 
   const lista = (lado: Lado) => {
-    const plantilla = equipos[lado].plantilla;
+    const q = normal(buscaLista[lado].trim());
+    const plantilla = equipos[lado].plantilla.filter(
+      (j) => !q || normal(j.name).includes(q) || String(j.number ?? "") === q,
+    );
     return (
       <div className={`pz-lista pz-lista--${lado}`}>
         <div className="pz-lista__cab">
@@ -401,8 +516,20 @@ export default function Pizarra({
             </button>
           ))}
         </div>
+        <input
+          type="search"
+          className="pz-busca__input pz-lista__busca"
+          placeholder="Buscar nombre o dorsal…"
+          value={buscaLista[lado]}
+          onChange={(e) => setBuscaLista((x) => ({ ...x, [lado]: e.target.value }))}
+          aria-label={`Buscar jugador de ${equipos[lado].name}`}
+        />
         <div className="pz-lista__jug">
-          {plantilla.length === 0 && <p className="pz-vacio">No hay plantilla disponible de este equipo ahora mismo.</p>}
+          {plantilla.length === 0 && (
+            <p className="pz-vacio">
+              {q ? "Ningún jugador con eso." : "No hay plantilla disponible de este equipo ahora mismo."}
+            </p>
+          )}
           {orden[lado] === "numero"
             ? [...plantilla].sort(porNumero).map((j) => chip(lado, j))
             : GRUPOS_POS.map(([pos, titulo]) => {
@@ -515,11 +642,50 @@ export default function Pizarra({
         </button>
       </div>
 
+      <div className="pz-anim" aria-label="Animación por etapas">
+        <span className="mono pz-anim__titulo">🎬 Animación</span>
+        <button type="button" className="pz-tool" onClick={guardarEtapa} disabled={!!fot}>
+          + Guardar etapa
+        </button>
+        {estado.etapas.map((_, k) => (
+          <span key={k} className={`pz-etapa${fot?.etapa === k ? " on" : ""}`}>
+            <button type="button" onClick={() => irAEtapa(k)} disabled={!!fot} aria-label={`Ir a la etapa ${k + 1}`}>
+              {k + 1}
+            </button>
+            <button type="button" onClick={() => borrarEtapa(k)} disabled={!!fot} aria-label={`Borrar la etapa ${k + 1}`}>
+              ×
+            </button>
+          </span>
+        ))}
+        {fot ? (
+          <button type="button" className="pz-tool on" onClick={parar}>
+            ■ Parar
+          </button>
+        ) : (
+          <button type="button" className="pz-tool" onClick={reproducir} disabled={estado.etapas.length < 2}>
+            ▶ Reproducir
+          </button>
+        )}
+        <button
+          type="button"
+          className="pz-tool"
+          onClick={exportarVideo}
+          disabled={estado.etapas.length < 2 || grabando != null || !!fot}
+        >
+          {grabando != null ? `Grabando… ${Math.round(grabando * 100)}%` : "📹 Vídeo"}
+        </button>
+        {estado.etapas.length === 0 && (
+          <span className="pz-anim__ayuda">
+            Coloca a los jugadores y guarda la etapa 1; muévelos y guarda la 2… y dale a reproducir.
+          </span>
+        )}
+      </div>
+
       <div className="pz-cuerpo">
         {lista("local")}
         <div
           ref={campo}
-          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${dibujando ? " pz-campo--dibujo" : ""}`}
+          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${dibujando ? " pz-campo--dibujo" : ""}${fot ? " pz-campo--anim" : ""}`}
           aria-label="Campo de fútbol"
           onPointerDown={dibujoDown}
           onPointerMove={dibujoMove}
@@ -556,15 +722,16 @@ export default function Pizarra({
                 </marker>
               ))}
             </defs>
-            {flechas.map((f, k) => pintarFlecha(f, k))}
+            {(fot ? fot.flechas : flechas).map((f, k) => pintarFlecha(f, k))}
             {trazo && pintarFlecha(trazo, "trazo")}
           </svg>
           {LADOS.map((lado) =>
             huecos(formacion[lado], lado).map((h, i) => {
               const j = jugador(lado, once[lado][i]);
-              const { left, top } = aPantalla(posicion(lado, i));
+              const { left, top } = aPantalla((j && fot?.jug[claveJug(lado, j.id)]) || posicion(lado, i));
               const estilo = { left: `${left}%`, top: `${top}%` };
               if (!j) {
+                if (fot) return null;
                 return (
                   <button
                     key={`${lado}-${i}`}
@@ -611,12 +778,12 @@ export default function Pizarra({
               );
             }),
           )}
-          {balon && (
+          {(fot ? fot.balon : balon) && (
             <div
               className="pz-balon"
               style={{
-                left: `${aPantalla(balon).left}%`,
-                top: `${aPantalla(balon).top}%`,
+                left: `${aPantalla((fot ? fot.balon : balon)!).left}%`,
+                top: `${aPantalla((fot ? fot.balon : balon)!).top}%`,
                 zIndex: arriba === "balon" ? 5 : 3,
               }}
               data-clave="balon"
@@ -706,7 +873,9 @@ export default function Pizarra({
                     >
                       <Cara j={j} color={COLOR[elegir.lado]} tam={30} />
                       <span className="pz-jug__nom">
-                        {j.number != null && <b className="pz-elegir__num">{j.number}</b>}
+                        <b className="pz-jug__dorsal" style={{ background: COLOR[elegir.lado] }}>
+                          {j.number ?? "–"}
+                        </b>
                         {nombreCorto(j.name)}
                       </span>
                       <span className="mono pz-jug__pos">{dentro ? "en el campo" : (POS_ES[j.position ?? ""] ?? "")}</span>
@@ -726,41 +895,65 @@ export default function Pizarra({
 
 const posGrupo = (g?: string) => ({ G: "POR", D: "DEF", M: "MED", F: "DEL" })[g ?? ""] ?? "";
 
-/** La pizarra como PNG vertical 1080×1350 (la medida de Instagram), dibujada
- * a mano en un canvas: sin fotos, para no depender de imágenes de otro
- * dominio (el canvas quedaría bloqueado). */
-async function imagenPizarra(o: {
-  equipos: PorLado<EquipoConPlantilla>;
-  estado: Estado;
-  posicion: (lado: Lado, i: number) => Punto;
-  jugador: (lado: Lado, id: number | null) => JugadorPizarra | null;
-}): Promise<Blob | null> {
-  const W = 1080;
-  const H = 1350;
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const g = c.getContext("2d");
-  if (!g) return null;
+/** Lo que se dibuja en el canvas (imagen y vídeo): coordenadas canónicas. */
+type Escena = {
+  titulo: string;
+  subtitulo: string;
+  fichas: { x: number; y: number; color: string; numero: number | null; nombre: string; foto: string | null }[];
+  flechas: Flecha[];
+  balon: Punto | null;
+};
+
+/** Caras para el canvas: la CDN de fotos manda CORS abierto, así que el
+ * canvas no queda bloqueado. La que no cargue en 4 s, fuera (sale el dorsal). */
+async function cargarFotos(urls: (string | null)[]): Promise<Map<string, HTMLImageElement>> {
+  const fotos = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    [...new Set(urls.filter((u): u is string => !!u))].map(
+      (url) =>
+        new Promise<void>((listo) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          const fin = setTimeout(listo, 4000);
+          img.onload = () => {
+            clearTimeout(fin);
+            fotos.set(url, img);
+            listo();
+          };
+          img.onerror = () => {
+            clearTimeout(fin);
+            listo();
+          };
+          img.src = url;
+        }),
+    ),
+  );
+  return fotos;
+}
+
+/** Pinta la escena con el campo en vertical (local abajo) en un lienzo W×H. */
+function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Escena, fotos: Map<string, HTMLImageElement>) {
   const fondo = g.createLinearGradient(0, 0, 0, H);
   fondo.addColorStop(0, "#0a1030");
   fondo.addColorStop(1, "#1b2a6b");
   g.fillStyle = fondo;
   g.fillRect(0, 0, W, H);
 
+  // Campo con proporción de campo real (como mucho 1,45 de alto por ancho),
+  // centrado en el hueco entre la cabecera y el pie.
+  const cw = W - 140;
+  const ch = Math.min(H - 150 - 110, Math.round(cw * 1.45));
+  const cx = 70;
+  const cy = 150 + Math.round((H - 150 - 110 - ch) / 2);
+
   g.textAlign = "center";
   g.fillStyle = "#e8ecff";
   g.font = "800 46px sans-serif";
-  g.fillText(`${o.equipos.local.name} vs ${o.equipos.visitante.name}`, W / 2, 74, W - 80);
+  g.fillText(e.titulo, W / 2, cy - 76, W - 80);
   g.font = "28px sans-serif";
   g.fillStyle = "#9aa4d6";
-  g.fillText(`${o.estado.formacion.local}  ·  ${o.estado.formacion.visitante}`, W / 2, 118);
+  g.fillText(e.subtitulo, W / 2, cy - 32);
 
-  // Campo vertical: local abajo.
-  const cx = 70;
-  const cy = 150;
-  const cw = W - 140;
-  const ch = H - 150 - 110;
   const aLienzo = (p: Punto) => ({ x: cx + p.y * cw, y: cy + (1 - p.x) * ch });
   g.fillStyle = "#10271c";
   g.beginPath();
@@ -780,7 +973,7 @@ async function imagenPizarra(o: {
   g.strokeRect(cx + cw * 0.26, cy + ch * 0.88, cw * 0.48, ch * 0.12);
 
   // Flechas debajo de las fichas.
-  for (const f of o.estado.flechas) {
+  for (const f of e.flechas) {
     const a = aLienzo(f.a);
     const b = aLienzo(f.b);
     const color = COLOR_FLECHA[f.tipo];
@@ -790,10 +983,9 @@ async function imagenPizarra(o: {
     g.lineCap = "round";
     g.setLineDash(f.tipo === "carrera" ? [22, 16] : []);
     const ang = Math.atan2(b.y - a.y, b.x - a.x);
-    const fin = { x: b.x - Math.cos(ang) * 18, y: b.y - Math.sin(ang) * 18 };
     g.beginPath();
     g.moveTo(a.x, a.y);
-    g.lineTo(fin.x, fin.y);
+    g.lineTo(b.x - Math.cos(ang) * 18, b.y - Math.sin(ang) * 18);
     g.stroke();
     g.setLineDash([]);
     g.beginPath();
@@ -804,86 +996,54 @@ async function imagenPizarra(o: {
     g.fill();
   }
 
-  // Caras: la CDN de fotos manda CORS abierto, así que el canvas no queda
-  // bloqueado. Si una no carga a tiempo, esa ficha sale con el dorsal.
-  const fotos = new Map<number, HTMLImageElement>();
-  await Promise.all(
-    LADOS.flatMap((lado) =>
-      o.estado.once[lado].map((id) => {
-        const j = o.jugador(lado, id);
-        if (!j?.photo) return null;
-        const foto = j.photo;
-        return new Promise<void>((listo) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          const fin = setTimeout(listo, 4000);
-          img.onload = () => {
-            clearTimeout(fin);
-            fotos.set(j.id, img);
-            listo();
-          };
-          img.onerror = () => {
-            clearTimeout(fin);
-            listo();
-          };
-          img.src = foto;
-        });
-      }),
-    ),
-  );
-
-  for (const lado of LADOS) {
-    o.estado.once[lado].forEach((id, i) => {
-      const j = o.jugador(lado, id);
-      if (!j) return;
-      const { x, y } = aLienzo(o.posicion(lado, i));
-      const foto = fotos.get(j.id);
+  for (const f of e.fichas) {
+    const { x, y } = aLienzo(f);
+    const foto = f.foto ? fotos.get(f.foto) : undefined;
+    g.beginPath();
+    g.arc(x, y, 38, 0, Math.PI * 2);
+    g.fillStyle = foto ? "#e2e8f0" : f.color;
+    g.fill();
+    if (foto) {
+      g.save();
       g.beginPath();
       g.arc(x, y, 38, 0, Math.PI * 2);
-      g.fillStyle = foto ? "#e2e8f0" : COLOR[lado];
-      g.fill();
-      if (foto) {
-        g.save();
+      g.clip();
+      g.drawImage(foto, x - 38, y - 38, 76, 76);
+      g.restore();
+    }
+    g.beginPath();
+    g.arc(x, y, 38, 0, Math.PI * 2);
+    g.lineWidth = 5;
+    g.strokeStyle = foto ? f.color : "#ffffff";
+    g.stroke();
+    if (foto) {
+      if (f.numero != null) {
         g.beginPath();
-        g.arc(x, y, 38, 0, Math.PI * 2);
-        g.clip();
-        g.drawImage(foto, x - 38, y - 38, 76, 76);
-        g.restore();
-      }
-      g.beginPath();
-      g.arc(x, y, 38, 0, Math.PI * 2);
-      g.lineWidth = 5;
-      g.strokeStyle = foto ? COLOR[lado] : "#ffffff";
-      g.stroke();
-      if (foto) {
-        if (j.number != null) {
-          g.beginPath();
-          g.arc(x + 30, y + 28, 17, 0, Math.PI * 2);
-          g.fillStyle = COLOR[lado];
-          g.fill();
-          g.lineWidth = 3;
-          g.strokeStyle = "#ffffff";
-          g.stroke();
-          g.fillStyle = "#ffffff";
-          g.font = "800 19px sans-serif";
-          g.fillText(String(j.number), x + 30, y + 35);
-        }
-      } else {
+        g.arc(x + 30, y + 28, 17, 0, Math.PI * 2);
+        g.fillStyle = f.color;
+        g.fill();
+        g.lineWidth = 3;
+        g.strokeStyle = "#ffffff";
+        g.stroke();
         g.fillStyle = "#ffffff";
-        g.font = "800 30px sans-serif";
-        g.fillText(String(j.number ?? ""), x, y + 11);
+        g.font = "800 19px sans-serif";
+        g.fillText(String(f.numero), x + 30, y + 35);
       }
-      g.font = "600 24px sans-serif";
-      g.shadowColor = "rgba(0,0,0,0.8)";
-      g.shadowBlur = 6;
+    } else {
       g.fillStyle = "#ffffff";
-      g.fillText(nombreCorto(j.name), x, y + 70, 170);
-      g.shadowBlur = 0;
-    });
+      g.font = "800 30px sans-serif";
+      g.fillText(String(f.numero ?? ""), x, y + 11);
+    }
+    g.font = "600 24px sans-serif";
+    g.shadowColor = "rgba(0,0,0,0.8)";
+    g.shadowBlur = 6;
+    g.fillStyle = "#ffffff";
+    g.fillText(f.nombre, x, y + 70, 170);
+    g.shadowBlur = 0;
   }
 
-  if (o.estado.balon) {
-    const { x, y } = aLienzo(o.estado.balon);
+  if (e.balon) {
+    const { x, y } = aLienzo(e.balon);
     g.font = "44px sans-serif";
     g.fillText("⚽", x, y + 15);
   }
@@ -891,5 +1051,75 @@ async function imagenPizarra(o: {
   g.font = "700 34px sans-serif";
   g.fillStyle = "#3b82f6";
   g.fillText("soyreinaldo.com/pizarra", W / 2, H - 46);
+}
+
+/** PNG vertical 1080×1350 (la medida de Instagram). */
+async function imagenPizarra(e: Escena): Promise<Blob | null> {
+  const c = document.createElement("canvas");
+  c.width = 1080;
+  c.height = 1350;
+  const g = c.getContext("2d");
+  if (!g) return null;
+  dibujarEscena(g, c.width, c.height, e, await cargarFotos(e.fichas.map((f) => f.foto)));
   return new Promise((r) => c.toBlob(r, "image/png"));
+}
+
+/** Vídeo vertical 1080×1920 (Reels, TikTok, Shorts) de la animación,
+ * grabado en tiempo real desde un canvas. MP4 si el navegador lo graba
+ * (Safari, Chrome reciente); si no, WebM. */
+async function videoPizarra(
+  escenaEn: (t: number) => Escena,
+  total: number,
+  progreso: (p: number) => void,
+): Promise<{ blob: Blob; ext: string } | null> {
+  if (typeof MediaRecorder === "undefined") return null;
+  const tipo = ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find((t) =>
+    MediaRecorder.isTypeSupported(t),
+  );
+  if (!tipo) return null;
+  const c = document.createElement("canvas");
+  c.width = 1080;
+  c.height = 1920;
+  const g = c.getContext("2d");
+  if (!g || !c.captureStream) return null;
+  const fotos = await cargarFotos(escenaEn(0).fichas.map((f) => f.foto));
+  dibujarEscena(g, c.width, c.height, escenaEn(0), fotos);
+
+  const rec = new MediaRecorder(c.captureStream(30), { mimeType: tipo, videoBitsPerSecond: 6_000_000 });
+  const trozos: Blob[] = [];
+  rec.ondataavailable = (ev) => ev.data.size && trozos.push(ev.data);
+  const fin = new Promise<void>((r) => (rec.onstop = () => r()));
+  rec.start();
+  const inicio = performance.now();
+  await new Promise<void>((hecho) => {
+    const paso = () => {
+      const t = (performance.now() - inicio) / 1000;
+      dibujarEscena(g, c.width, c.height, escenaEn(t), fotos);
+      progreso(Math.min(1, t / total));
+      if (t < total) requestAnimationFrame(paso);
+      else hecho();
+    };
+    requestAnimationFrame(paso);
+  });
+  rec.stop();
+  await fin;
+  return { blob: new Blob(trozos, { type: tipo.split(";")[0] }), ext: tipo.startsWith("video/mp4") ? "mp4" : "webm" };
+}
+
+/** Hoja de compartir con el archivo en el móvil; descarga en el escritorio. */
+async function compartirArchivo(blob: Blob, nombre: string, texto: string) {
+  const archivo = new File([blob], nombre, { type: blob.type });
+  if (navigator.canShare?.({ files: [archivo] })) {
+    try {
+      await navigator.share({ files: [archivo], text: texto });
+    } catch {
+      // Hoja cerrada: no es un error.
+    }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }

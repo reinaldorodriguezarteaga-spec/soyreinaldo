@@ -2390,7 +2390,18 @@ select.field { appearance: none; }
 .pz-orden button.on { border-color: var(--accent); color: var(--text); background: var(--surface-2); }
 .pz-lista__grupo { flex: none; align-self: center; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); padding: 0 4px; }
 .pz-elegir .pz-busca__input { margin-bottom: 8px; }
+.pz-lista__busca { margin-bottom: 8px; padding: 7px 10px; }
+.pz-jug__dorsal { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 999px; color: #fff; font-size: 0.72rem; font-weight: 800; font-variant-numeric: tabular-nums; margin-right: 7px; vertical-align: middle; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.85); }
 .pz-elegir__num { color: var(--text-dim); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.pz-anim { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.pz-anim__titulo { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-right: 4px; }
+.pz-anim__ayuda { color: var(--text-dim); font-size: 0.78rem; flex-basis: 100%; }
+.pz-etapa { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.pz-etapa.on { border-color: var(--accent); }
+.pz-etapa button { background: var(--surface-2); color: var(--text); border: 0; padding: 6px 10px; font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.pz-etapa.on button:first-child { background: var(--accent); color: #fff; }
+.pz-etapa button + button { color: var(--text-dim); font-weight: 400; padding: 6px 8px; border-left: 1px solid var(--line); }
+.pz-campo--anim .pz-ficha, .pz-campo--anim .pz-balon { pointer-events: none; }
 @media (min-width: 640px) {
   .pz-vs { display: inline; }
   .pz-botones { display: flex; flex-wrap: wrap; }
