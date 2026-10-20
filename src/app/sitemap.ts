@@ -124,6 +124,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...estaticas,
     { url: `${SITE}/analisis`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.9 },
     { url: `${SITE}/messi-vs-ronaldo`, lastModified: now, changeFrequency: "daily" as const, priority: 0.8 },
+    { url: `${SITE}/pizarra`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 },
     ...analisis,
     ...competiciones,
     ...[...equipos.values()].map((e) => ({
