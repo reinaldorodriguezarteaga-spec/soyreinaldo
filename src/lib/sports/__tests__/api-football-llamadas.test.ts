@@ -22,6 +22,8 @@ const {
   getPartidosEnJuego,
   getPartidosPorIdsEnVivo,
   getFixtureById,
+  getFixturePlayers,
+  getFixturePlayersTodos,
   getFixturesEvents,
   getTeamCoach,
   getTeamStatistics,
@@ -53,6 +55,25 @@ describe("llamadas a API-Football", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("incluye suplentes sin nota usando la misma URL y una sola llamada", async () => {
+    const jugador = (id: number, rating: string | null) => ({
+      player: { id, name: `Jugador ${id}`, photo: null },
+      statistics: [{ games: { rating, minutes: 5 }, goals: { total: 1 }, shots: {}, passes: {}, tackles: {}, duels: {}, dribbles: {}, fouls: {}, cards: {} }],
+    });
+    const fetchMock = vi.fn(async (_url: string | URL) => respuesta({
+      errors: [],
+      response: [{ team: { id: 1, name: "Equipo", logo: "" }, players: [jugador(1, null), jugador(2, "7.5"), jugador(3, "8")] }],
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const [todos, conNota] = await Promise.all([getFixturePlayersTodos(98765, 600), getFixturePlayers(98765, 600)]);
+    expect(todos[0].players.map((p) => p.id)).toEqual([3, 2, 1]);
+    expect(todos[0].players[2]).toMatchObject({ rating: null, goals: 1 });
+    expect(conNota[0].players).toEqual(todos[0].players.slice(0, 2));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = new URL(String(fetchMock.mock.calls[0][0]));
+    expect(url.pathname + url.search).toBe("/fixtures/players?fixture=98765");
   });
 
   it("dos peticiones simultáneas a la misma URL hacen UNA sola llamada", async () => {

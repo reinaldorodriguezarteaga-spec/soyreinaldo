@@ -2019,20 +2019,26 @@ function numOrNull(v: number | string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/**
- * Valoraciones + estadística detallada de los jugadores de un partido (las dos
- * alineaciones). Solo los que jugaron (tienen nota). Caché 600s.
- */
-export async function getFixturePlayers(
-  id: number,
-  revalidate = 600,
-): Promise<TeamPlayers[]> {
+/** Valoraciones y estadísticas de los jugadores con nota. Caché 600s. */
+export async function getFixturePlayers(id: number, revalidate = 600): Promise<TeamPlayers[]> {
+  return (await getFixturePlayersTodos(id, revalidate)).map((t) => ({
+    ...t,
+    players: t.players.filter((p) => p.rating != null),
+  }));
+}
+
+/** Incluye también a los suplentes sin nota; comparte llamada, caché y archivo. */
+export async function getFixturePlayersTodos(id: number, revalidate = 600): Promise<TeamPlayers[]> {
   const r = await get<FixturePlayersResponse>(
     "/fixtures/players",
     { fixture: id },
     revalidate,
   );
-  return r.response.map((t) => ({
+  return mapearFixturePlayers(r.response);
+}
+
+function mapearFixturePlayers(respuesta: FixturePlayersResponse[]): TeamPlayers[] {
+  return respuesta.map((t) => ({
     team: t.team,
     players: t.players
       .map((p) => {
@@ -2072,8 +2078,7 @@ export async function getFixturePlayers(
           },
         };
       })
-      .filter((p) => p.rating != null)
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)),
+      .sort((a, b) => (b.rating ?? -Infinity) - (a.rating ?? -Infinity)),
   }));
 }
 
