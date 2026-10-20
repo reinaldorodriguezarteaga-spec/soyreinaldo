@@ -2318,13 +2318,12 @@ select.field { appearance: none; }
 /* ============ Pizarra táctica (/pizarra, 20-oct) ============ */
 .pz-selector { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; }
 .pz-sel { display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px; max-width: 340px; }
-.pz-sel span { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
+.pz-sel > span { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
 .pz-sel select, .pz-lista__cab select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 10px; font: inherit; }
 .pz-vs { color: var(--text-dim); font-size: 0.8rem; padding-bottom: 10px; display: none; }
 .pz { margin-top: 18px; }
 .pz-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .pz-botones .btn { padding: 10px 8px; font-size: 0.62rem; justify-content: center; }
-.pz-botones .btn--accent { grid-column: 1 / -1; }
 .pz-cuerpo { display: grid; gap: 14px; grid-template-columns: 1fr; }
 /* Móvil: visitante arriba (ataca hacia abajo), campo, local abajo. */
 .pz-lista--visitante { order: 0; }
@@ -2355,6 +2354,43 @@ select.field { appearance: none; }
 .pz-elegir h3 { margin: 0 0 12px; font-size: 1.05rem; }
 .pz-elegir__lista { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; }
 .pz-elegir__lista .pz-jug { width: 100%; border-radius: var(--radius); }
+/* Fase 2: herramientas, flechas, balón, aviso y buscador de equipos. */
+.pz-herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pz-modos { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.pz-modos button { padding: 8px 12px; font: inherit; font-size: 0.82rem; color: var(--text-dim); background: transparent; border: 0; cursor: pointer; }
+.pz-modos button.on { background: var(--accent); color: #fff; }
+.pz-tool { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; }
+.pz-tool.on { border-color: var(--accent); color: var(--accent); }
+.pz-tool:disabled { opacity: 0.4; cursor: default; }
+.pz-flechas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.pz-campo--dibujo { cursor: crosshair; }
+.pz-campo--dibujo .pz-ficha, .pz-campo--dibujo .pz-hueco, .pz-campo--dibujo .pz-balon { pointer-events: none; }
+.pz-balon { position: absolute; transform: translate(-50%, -50%); font-size: 1.35rem; line-height: 1; cursor: grab; touch-action: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); user-select: none; }
+.pz-aviso { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent); color: var(--text); padding: 10px 16px; border-radius: 999px; z-index: 90; font-size: 0.88rem; box-shadow: var(--shadow); }
+.pz-sel { position: relative; }
+.pz-busca__boton { display: flex; align-items: center; gap: 8px; width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; text-align: left; cursor: pointer; min-height: 42px; }
+.pz-busca__boton span:not(.pz-busca__flecha) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pz-busca__vacio { color: var(--text-dim); }
+.pz-busca__flecha { color: var(--text-dim); }
+.pz-busca__panel { position: absolute; top: calc(100% + 6px); left: 0; right: 0; min-width: 260px; z-index: 70; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px; }
+.pz-busca__input { width: 100%; background: var(--surface-2); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 9px 10px; font: inherit; font-size: 16px; }
+.pz-busca__lista { max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; margin-top: 6px; }
+.pz-busca__liga { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 8px; background: transparent; border: 0; border-bottom: 1px solid var(--line); color: var(--text); font: inherit; font-weight: 700; font-size: 0.86rem; text-align: left; cursor: pointer; }
+.pz-busca__liga span:first-child { flex: 1; }
+.pz-busca__liga small { color: var(--text-dim); font-weight: 400; }
+.pz-busca__eq { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; background: transparent; border: 0; border-radius: 8px; color: var(--text); font: inherit; font-size: 0.88rem; text-align: left; cursor: pointer; }
+.pz-busca__eq:hover { background: var(--surface-2); }
+.pz-busca__eq span { flex: 1; min-width: 0; }
+.pz-busca__eq small { color: var(--text-dim); font-size: 0.7rem; white-space: nowrap; }
+.pz-cara { border-radius: 50%; object-fit: cover; background: #e2e8f0; border: 2px solid; flex: none; display: block; -webkit-user-drag: none; }
+.pz-ficha__cara { position: relative; display: block; box-shadow: 0 2px 6px rgba(0,0,0,0.5); border-radius: 50%; }
+.pz-ficha__dorsal { position: absolute; right: -6px; bottom: -4px; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 999px; border: 1.5px solid #fff; color: #fff; font-size: 0.58rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.pz-orden { display: flex; gap: 4px; margin-bottom: 8px; }
+.pz-orden button { flex: 1; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text-dim); font: inherit; font-size: 0.72rem; cursor: pointer; }
+.pz-orden button.on { border-color: var(--accent); color: var(--text); background: var(--surface-2); }
+.pz-lista__grupo { flex: none; align-self: center; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); padding: 0 4px; }
+.pz-elegir .pz-busca__input { margin-bottom: 8px; }
+.pz-elegir__num { color: var(--text-dim); margin-right: 6px; font-variant-numeric: tabular-nums; }
 @media (min-width: 640px) {
   .pz-vs { display: inline; }
   .pz-botones { display: flex; flex-wrap: wrap; }
@@ -2367,4 +2403,5 @@ select.field { appearance: none; }
   .pz-lista--visitante { order: 2; }
   .pz-lista__jug { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 560px; touch-action: pan-y; }
   .pz-jug { width: 100%; }
+  .pz-lista__grupo { padding: 8px 4px 2px; }
 }
