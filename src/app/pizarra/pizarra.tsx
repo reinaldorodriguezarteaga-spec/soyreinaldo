@@ -50,6 +50,18 @@ export type EquipoConPlantilla = { id: number; name: string; logo: string; plant
 type Modo = "mover" | TipoFlecha | "zona" | "texto" | "foco" | "grupo";
 /** Modos que dibujan arrastrando o tocando el césped (las fichas no estorban). */
 const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "zona", "texto", "grupo"];
+/** Qué hace cada herramienta (ayuda bajo el campo y al pasar el ratón). */
+const AYUDA: Record<Modo, string> = {
+  mover:
+    "Toca un «+» o un jugador de la lista para colocarlo, o arrástralo al campo. Las fichas se mueven libremente; suéltalas fuera del campo para quitarlas.",
+  pase: "Arrastra sobre el campo para dibujar un pase (flecha blanca).",
+  carrera: "Arrastra sobre el campo para dibujar una carrera o desmarque (flecha amarilla discontinua).",
+  zona: "Arrastra sobre el campo para sombrear una zona (elige el color arriba).",
+  texto: "Toca el campo donde quieras poner un texto. Luego puedes arrastrarlo o tocarlo para cambiarlo.",
+  foco: "Toca un jugador para destacarlo con un halo amarillo (en la imagen y el vídeo también). Tócalo otra vez para quitarlo.",
+  grupo:
+    "Dibuja un recuadro alrededor de varios jugadores: se iluminan en azul y luego, al arrastrar uno, se mueven todos juntos (para mover una línea entera).",
+};
 type Orden = "posicion" | "numero";
 
 const LADOS: Lado[] = ["local", "visitante"];
@@ -89,6 +101,15 @@ function Cara({ j, color, tam }: { j: JugadorPizarra; color: string; tam: number
   );
 }
 const limitar = (v: number) => Math.min(0.98, Math.max(0.02, v));
+/** Que el gesto siga aunque el dedo salga del elemento. Si el navegador no
+ * deja (puntero que ya no existe), el gesto sigue igual sin captura. */
+const capturar = (e: React.PointerEvent) => {
+  try {
+    e.currentTarget.setPointerCapture(e.pointerId);
+  } catch {
+    // Sin captura: funciona mientras el puntero siga encima.
+  }
+};
 
 export default function Pizarra({
   local,
@@ -216,7 +237,7 @@ export default function Pizarra({
   const moverDown = (e: React.PointerEvent) => {
     const clave = claveDe(e);
     e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capturar(e);
     gesto.current = { x: e.clientX, y: e.clientY, activo: false, ultimo: aCanonico(e.clientX, e.clientY) };
     setArriba(clave);
   };
@@ -289,7 +310,7 @@ export default function Pizarra({
   // ---- Jugadores de la lista: tocar = al mejor hueco libre; arrastrar = al
   // hueco más cercano a donde se suelte.
   const listaDown = (e: React.PointerEvent) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capturar(e);
     gesto.current = { x: e.clientX, y: e.clientY, activo: false };
   };
   const listaMove = (lado: Lado, id: number) => (e: React.PointerEvent) => {
@@ -341,7 +362,7 @@ export default function Pizarra({
     const p = aCanonico(e.clientX, e.clientY);
     if (!p) return;
     if (modo === "texto") return setEditorTexto({ k: null, p, valor: "" });
-    e.currentTarget.setPointerCapture(e.pointerId);
+    capturar(e);
     if (modo === "zona" || modo === "grupo") return setCaja({ a: p, b: p });
     setTrazo({ a: p, b: p, tipo: modo });
   };
@@ -550,7 +571,9 @@ export default function Pizarra({
     try {
       const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando);
       if (!r) return avisar("Tu navegador no permite grabar vídeo");
-      await compartirArchivo(r.blob, `jugada-soyreinaldo.${r.ext}`, `${local.name} vs ${visitante.name}: la jugada en soyreinaldo.com`);
+      // Descarga directa (pedido del dueño: nada de hoja de compartir).
+      descargar(r.blob, `jugada-soyreinaldo.${r.ext}`);
+      avisar("Vídeo descargado");
     } finally {
       setGrabando(null);
     }
@@ -720,7 +743,7 @@ export default function Pizarra({
         width={Math.abs(q.x - p.x)}
         height={Math.abs(q.y - p.y)}
         rx={1.5}
-        fill={seleccionando ? "rgba(255,255,255,0.06)" : color}
+        fill={seleccionando ? "rgba(59,130,246,0.16)" : color}
         fillOpacity={seleccionando ? 1 : 0.22}
         stroke={color}
         strokeWidth={0.5}
@@ -733,9 +756,20 @@ export default function Pizarra({
     setBusca("");
     setElegir(x);
   };
+  // Mientras se dibuja el recuadro de grupo, quién va quedando dentro.
+  const enCaja = new Set<string>();
+  if (caja && modo === "grupo") {
+    const [x0, x1] = [Math.min(caja.a.x, caja.b.x), Math.max(caja.a.x, caja.b.x)];
+    const [y0, y1] = [Math.min(caja.a.y, caja.b.y), Math.max(caja.a.y, caja.b.y)];
+    for (const lado of LADOS) {
+      once[lado].forEach((id, i) => {
+        const q = posicion(lado, i);
+        if (id != null && q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1) enCaja.add(`${lado}:${i}`);
+      });
+    }
+  }
   const candidatos = elegir ? equipos[elegir.lado].plantilla : [];
   const rolElegido = elegir ? huecos(formacion[elegir.lado], elegir.lado)[elegir.hueco] : null;
-  const dibujando = modo !== "mover";
 
   return (
     <div className="pz">
@@ -776,13 +810,14 @@ export default function Pizarra({
               ["carrera", "⤳ Carrera"],
               ["zona", "▭ Zona"],
               ["texto", "T Texto"],
-              ["foco", "◎ Foco"],
-              ["grupo", "⬚ Grupo"],
+              ["foco", "◎ Destacar"],
+              ["grupo", "⬚ Mover grupo"],
             ] as [Modo, string][]
           ).map(([m, etiqueta]) => (
             <button
               key={m}
               type="button"
+              title={AYUDA[m]}
               role="radio"
               aria-checked={modo === m}
               className={modo === m ? "on" : ""}
@@ -910,7 +945,7 @@ export default function Pizarra({
               ))}
             </defs>
             {zonas.map((z, k) => pintarZona(z.a, z.b, z.color, `z${k}`))}
-            {caja && pintarZona(caja.a, caja.b, modo === "zona" ? colorZona : "#ffffff", "caja", modo === "grupo")}
+            {caja && pintarZona(caja.a, caja.b, modo === "zona" ? colorZona : "#3b82f6", "caja", modo === "grupo")}
             {(fot ? fot.flechas : flechas).map((f, k) => pintarFlecha(f, k))}
             {trazo && pintarFlecha(trazo, "trazo")}
           </svg>
@@ -939,7 +974,7 @@ export default function Pizarra({
                 <div
                   key={`${lado}-${i}`}
                   className={`pz-ficha${focos.includes(claveJug(lado, j.id)) ? " pz-ficha--foco" : ""}${
-                    seleccion.includes(clave) ? " pz-ficha--sel" : ""
+                    seleccion.includes(clave) || enCaja.has(clave) ? " pz-ficha--sel" : ""
                   }`}
                   style={arriba === clave ? { ...estilo, zIndex: 4 } : estilo}
                   data-clave={clave}
@@ -1012,9 +1047,9 @@ export default function Pizarra({
       </div>
 
       <p className="pz-ayuda">
-        {dibujando
-          ? `Arrastra sobre el campo para dibujar ${modo === "pase" ? "un pase" : "una carrera"}. Vuelve a «Mover» para colocar jugadores.`
-          : "Toca un «+» o un jugador de la lista para colocarlo, o arrástralo al campo. Las fichas se mueven libremente; suéltalas fuera del campo para quitarlas."}
+        {seleccion.length > 0 && modo === "mover"
+          ? `${seleccion.length} jugadores seleccionados: arrastra cualquiera de ellos y se mueven todos juntos. Toca el césped para soltarlos.`
+          : AYUDA[modo]}
       </p>
 
       {aviso && (
@@ -1458,6 +1493,17 @@ async function videoPizarra(
   rec.stop();
   await fin;
   return { blob: new Blob(trozos, { type: tipo.split(";")[0] }), ext: tipo.startsWith("video/mp4") ? "mp4" : "webm" };
+}
+
+/** Descarga un archivo generado en el navegador. */
+function descargar(blob: Blob, nombre: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
 }
 
 /** Hoja de compartir con el archivo en el móvil; descarga en el escritorio. */
