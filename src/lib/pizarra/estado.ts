@@ -14,6 +14,28 @@ export type PorLado<T> = Record<Lado, T>;
 /** Una etapa de la animación: dónde está cada jugador ("l:154" / "v:874",
  * por id, así sigue valiendo si se cambian huecos), el balón y las flechas. */
 export type Etapa = { jug: Record<string, Punto>; balon: Punto | null; flechas: Flecha[] };
+/** Zona sombreada (rectángulo entre dos esquinas) y texto suelto en el campo. */
+export type Zona = { a: Punto; b: Punto; color: string };
+export type Texto = { p: Punto; t: string };
+
+/** Colores para equipaciones y zonas (los únicos que acepta la URL). */
+export const PALETA = [
+  "#3b82f6", // azul
+  "#ff5b8a", // rosa
+  "#ef4444", // rojo
+  "#a50044", // granate
+  "#f59e0b", // naranja
+  "#facc15", // amarillo
+  "#22c55e", // verde
+  "#0ea5e9", // celeste
+  "#8b5cf6", // morado
+  "#ffffff", // blanco
+  "#111827", // negro
+] as const;
+export const COLOR_INICIAL: PorLado<string> = { local: "#3b82f6", visitante: "#ff5b8a" };
+const MAX_ZONAS = 20;
+const MAX_TEXTOS = 20;
+export const MAX_LARGO_TEXTO = 60;
 export type Estado = {
   formacion: PorLado<string>;
   once: PorLado<(number | null)[]>;
@@ -22,6 +44,11 @@ export type Estado = {
   flechas: Flecha[];
   balon: Punto | null;
   etapas: Etapa[];
+  zonas: Zona[];
+  textos: Texto[];
+  /** Jugadores destacados ("l:154"). */
+  focos: string[];
+  colores: PorLado<string>;
 };
 
 const MAX_FLECHAS = 40;
@@ -37,6 +64,10 @@ export const estadoInicial = (): Estado => ({
   flechas: [],
   balon: null,
   etapas: [],
+  zonas: [],
+  textos: [],
+  focos: [],
+  colores: { ...COLOR_INICIAL },
 });
 
 /** Coordenada a entero 0..1000 y vuelta (URLs más cortas). */
@@ -79,6 +110,10 @@ export function codificar(e: Estado): string {
     ),
     a: e.flechas.map(flechaACompacta),
     b: e.balon ? [aMil(e.balon.x), aMil(e.balon.y)] : 0,
+    z: e.zonas.map((z) => [aMil(z.a.x), aMil(z.a.y), aMil(z.b.x), aMil(z.b.y), PALETA.indexOf(z.color as (typeof PALETA)[number])]),
+    t: e.textos.map((t) => [aMil(t.p.x), aMil(t.p.y), t.t]),
+    k: e.focos,
+    c: [PALETA.indexOf(e.colores.local as (typeof PALETA)[number]), PALETA.indexOf(e.colores.visitante as (typeof PALETA)[number])],
     e: e.etapas.map((et) => [
       Object.entries(et.jug).map(([k, p]) => [k, aMil(p.x), aMil(p.y)]),
       et.balon ? [aMil(et.balon.x), aMil(et.balon.y)] : 0,
@@ -89,8 +124,11 @@ export function codificar(e: Estado): string {
 }
 
 /** El estado de un `?p=`, o null si no vale. Los jugadores que no estén en
- * la plantilla de su equipo se descartan (hueco vacío). */
-export function decodificar(p: string | undefined | null, plantillas: PorLado<number[]>): Estado | null {
+ * la plantilla de su equipo se descartan (hueco vacío). Sin plantillas
+ * (miniaturas de la galería), vale cualquier id. */
+export function decodificar(p: string | undefined | null, plantillas: PorLado<number[]> | null): Estado | null {
+  const vale = (lado: "l" | "v", id: number) =>
+    Number.isInteger(id) && id > 0 && (!plantillas || (lado === "l" ? plantillas.local : plantillas.visitante).includes(id));
   if (!p || p.length > MAX_URL) return null;
   let d: Record<string, unknown>;
   try {
@@ -109,11 +147,10 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
   const o = Array.isArray(d.o) ? d.o : [];
   (["local", "visitante"] as Lado[]).forEach((lado, n) => {
     const fila = Array.isArray(o[n]) ? o[n] : [];
-    const validos = new Set(plantillas[lado]);
     const usados = new Set<number>();
     e.once[lado] = vacio().map((_, i) => {
       const id = fila[i];
-      if (typeof id !== "number" || !validos.has(id) || usados.has(id)) return null;
+      if (typeof id !== "number" || !vale(lado === "local" ? "l" : "v", id) || usados.has(id)) return null;
       usados.add(id);
       return id;
     });
@@ -133,16 +170,45 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
   e.flechas = leerFlechas(d.a);
   e.balon = leerPunto(d.b);
 
+  const claveValida = (k: unknown): k is string => {
+    const m = typeof k === "string" ? /^([lv]):(\d{1,9})$/.exec(k) : null;
+    return !!m && vale(m[1] as "l" | "v", Number(m[2]));
+  };
+
+  if (Array.isArray(d.z)) {
+    for (const z of d.z.slice(0, MAX_ZONAS)) {
+      if (!Array.isArray(z)) continue;
+      const a = leerPunto([z[0], z[1]]);
+      const b = leerPunto([z[2], z[3]]);
+      const color = PALETA[typeof z[4] === "number" ? z[4] : -1];
+      if (a && b && color) e.zonas.push({ a, b, color });
+    }
+  }
+  if (Array.isArray(d.t)) {
+    for (const t of d.t.slice(0, MAX_TEXTOS)) {
+      if (!Array.isArray(t) || typeof t[2] !== "string") continue;
+      const p = leerPunto([t[0], t[1]]);
+      const texto = t[2].trim().slice(0, MAX_LARGO_TEXTO);
+      if (p && texto) e.textos.push({ p, t: texto });
+    }
+  }
+  if (Array.isArray(d.k)) e.focos = [...new Set(d.k.filter(claveValida))].slice(0, 22);
+  if (Array.isArray(d.c)) {
+    (["local", "visitante"] as Lado[]).forEach((lado, n) => {
+      const i = (d.c as unknown[])[n];
+      const color = PALETA[typeof i === "number" ? i : -1];
+      if (color) e.colores[lado] = color;
+    });
+  }
+
   if (Array.isArray(d.e)) {
-    const validos: Record<string, Set<number>> = { l: new Set(plantillas.local), v: new Set(plantillas.visitante) };
     for (const et of d.e.slice(0, MAX_ETAPAS)) {
       if (!Array.isArray(et)) continue;
       const jug: Record<string, Punto> = {};
       for (const j of Array.isArray(et[0]) ? et[0] : []) {
         if (!Array.isArray(j) || typeof j[0] !== "string") continue;
-        const m = /^([lv]):(\d{1,9})$/.exec(j[0]);
         const p = leerPunto([j[1], j[2]]);
-        if (m && p && validos[m[1]].has(Number(m[2]))) jug[j[0]] = p;
+        if (p && claveValida(j[0])) jug[j[0]] = p;
       }
       e.etapas.push({ jug, balon: leerPunto(et[1]), flechas: leerFlechas(et[2]) });
     }

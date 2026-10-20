@@ -2402,6 +2402,17 @@ select.field { appearance: none; }
 .pz-etapa.on button:first-child { background: var(--accent); color: #fff; }
 .pz-etapa button + button { color: var(--text-dim); font-weight: 400; padding: 6px 8px; border-left: 1px solid var(--line); }
 .pz-campo--anim .pz-ficha, .pz-campo--anim .pz-balon { pointer-events: none; }
+/* Fase 4: zonas, textos, foco, grupo y colores. */
+.pz-texto { position: absolute; transform: translate(-50%, -50%); z-index: 3; background: rgba(10,16,48,0.82); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
+.pz-campo--dibujo .pz-texto { pointer-events: none; }
+.pz-ficha--foco .pz-ficha__cara, .pz-ficha--foco .pz-ficha__num { box-shadow: 0 0 0 3px #facc15, 0 0 14px 4px rgba(250,204,21,0.55); border-radius: 50%; }
+.pz-ficha--sel .pz-ficha__cara, .pz-ficha--sel .pz-ficha__num { outline: 2px dashed #fff; outline-offset: 3px; border-radius: 50%; }
+.pz-campo--foco .pz-ficha { cursor: pointer; }
+.pz-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; flex: none; padding: 0; }
+.pz-paleta { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pz-paleta button { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); cursor: pointer; padding: 0; }
+.pz-paleta button.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+.pz-paleta--lista { margin: -2px 0 8px; }
 @media (min-width: 640px) {
   .pz-vs { display: inline; }
   .pz-botones { display: flex; flex-wrap: wrap; }
@@ -2416,3 +2427,20 @@ select.field { appearance: none; }
   .pz-jug { width: 100%; }
   .pz-lista__grupo { padding: 8px 4px 2px; }
 }
+
+/* ============ Pizarras de la comunidad (/pizarra/comunidad, 20-oct) ============ */
+.pzc-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.pzc-rejilla { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.pzc-tarjeta { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pzc-tarjeta__enlace { color: inherit; text-decoration: none; display: flex; flex-direction: column; gap: 6px; }
+.pzc-tarjeta__enlace:hover .pzc-titulo { color: var(--accent); }
+.pzc-mini { width: 100%; height: auto; display: block; border-radius: 8px; }
+.pzc-titulo { font-size: 0.98rem; font-weight: 800; margin: 2px 0 0; line-height: 1.25; }
+.pzc-equipos { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 0; font-size: 0.8rem; color: var(--text-dim); }
+.pzc-equipos .mono { font-size: 0.66rem; }
+.pzc-pie { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.pzc-autor { flex: 1; min-width: 0; font-size: 0.74rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pzc-like { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; background: transparent; color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: none; }
+.pzc-like.on { border-color: #ff5b8a; color: #ff5b8a; }
+.pzc-retirar { border: 0; background: transparent; color: var(--text-dim); font: inherit; font-size: 0.74rem; cursor: pointer; text-decoration: underline; }
+.pzc-retirada { font-size: 0.74rem; color: var(--text-dim); }

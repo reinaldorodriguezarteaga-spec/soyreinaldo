@@ -9,15 +9,20 @@ import {
   estadoInicial,
   vacio,
   MAX_ETAPAS,
+  MAX_LARGO_TEXTO,
+  PALETA,
   type Estado,
   type Etapa,
   type Flecha,
   type PorLado,
   type Punto,
+  type Texto,
   type TipoFlecha,
+  type Zona,
 } from "@/lib/pizarra/estado";
 import { duracion, fotograma, type Fotograma } from "@/lib/pizarra/animacion";
 import { nombreCorto } from "@/lib/sports/nombres";
+import { publicarPizarra } from "./acciones";
 
 /**
  * Pizarra táctica (20-oct, pedido del dueño). Cada equipo tiene su formación
@@ -42,12 +47,13 @@ export type JugadorPizarra = {
   photo: string | null;
 };
 export type EquipoConPlantilla = { id: number; name: string; logo: string; plantilla: JugadorPizarra[] };
-type Modo = "mover" | TipoFlecha;
+type Modo = "mover" | TipoFlecha | "zona" | "texto" | "foco" | "grupo";
+/** Modos que dibujan arrastrando o tocando el césped (las fichas no estorban). */
+const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "zona", "texto", "grupo"];
 type Orden = "posicion" | "numero";
 
 const LADOS: Lado[] = ["local", "visitante"];
 const POS_ES: Record<string, string> = { Goalkeeper: "POR", Defender: "DEF", Midfielder: "MED", Attacker: "DEL" };
-const COLOR: PorLado<string> = { local: "#3b82f6", visitante: "#ff5b8a" };
 const COLOR_FLECHA: Record<TipoFlecha, string> = { pase: "#ffffff", carrera: "#f5c542" };
 const MAX_HISTORIAL = 50;
 const GRUPOS_POS: [string, string][] = [
@@ -90,6 +96,7 @@ export default function Pizarra({
   inicial,
   preparado,
   partido,
+  conectado = false,
 }: {
   local: EquipoConPlantilla;
   visitante: EquipoConPlantilla;
@@ -99,6 +106,8 @@ export default function Pizarra({
   preparado?: Estado;
   /** Partido del que sale (viaja en el enlace compartido). */
   partido?: number;
+  /** ¿Hay sesión? (para publicar en la comunidad). */
+  conectado?: boolean;
 }) {
   const router = useRouter();
   const equipos: PorLado<EquipoConPlantilla> = { local, visitante };
@@ -129,9 +138,19 @@ export default function Pizarra({
   const [orden, setOrden] = useState<PorLado<Orden>>({ local: "posicion", visitante: "posicion" });
   const [busca, setBusca] = useState("");
   const [buscaLista, setBuscaLista] = useState<PorLado<string>>({ local: "", visitante: "" });
+  const [colorZona, setColorZona] = useState<string>("#facc15");
+  /** Huecos seleccionados en modo grupo ("local:3"): se mueven juntos. */
+  const [seleccion, setSeleccion] = useState<string[]>([]);
+  /** Rectángulo que se está dibujando (zona o selección de grupo). */
+  const [caja, setCaja] = useState<{ a: Punto; b: Punto } | null>(null);
+  const [editorTexto, setEditorTexto] = useState<{ k: number | null; p: Punto; valor: string } | null>(null);
+  const [paletaDe, setPaletaDe] = useState<Lado | null>(null);
+  const [publicar, setPublicar] = useState<{ titulo: string; enviando: boolean; error: string | null; id: string | null } | null>(
+    null,
+  );
   const campo = useRef<HTMLDivElement>(null);
-  const gesto = useRef<{ x: number; y: number; activo: boolean } | null>(null);
-  const { formacion, once, movidos, flechas, balon } = estado;
+  const gesto = useRef<{ x: number; y: number; activo: boolean; ultimo?: Punto | null } | null>(null);
+  const { formacion, once, movidos, flechas, balon, zonas, textos, focos, colores } = estado;
 
   // Campo horizontal en escritorio, vertical en el móvil. Arranca vertical
   // (= SSR) y se ajusta al montar.
@@ -198,13 +217,13 @@ export default function Pizarra({
     const clave = claveDe(e);
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    gesto.current = { x: e.clientX, y: e.clientY, activo: false };
+    gesto.current = { x: e.clientX, y: e.clientY, activo: false, ultimo: aCanonico(e.clientX, e.clientY) };
     setArriba(clave);
   };
   const moverMove = (e: React.PointerEvent) => {
     const clave = claveDe(e);
     const g = gesto.current;
-    if (!g) return;
+    if (!g || modo === "foco") return;
     if (!g.activo) {
       if (Math.hypot(e.clientX - g.x, e.clientY - g.y) < 4) return;
       g.activo = true;
@@ -212,15 +231,50 @@ export default function Pizarra({
     }
     const p = aCanonico(e.clientX, e.clientY);
     if (!p) return;
+    // Grupo: todas las fichas seleccionadas se mueven lo mismo que esta.
+    if (seleccion.length > 1 && seleccion.includes(clave) && g.ultimo) {
+      const dx = p.x - g.ultimo.x;
+      const dy = p.y - g.ultimo.y;
+      g.ultimo = p;
+      setEstado((s) => {
+        const m = { ...s.movidos };
+        for (const k of seleccion) {
+          const [l, i] = k.split(":");
+          const q = m[k] ?? huecos(s.formacion[l as Lado], l as Lado)[Number(i)];
+          m[k] = { x: limitar(q.x + dx), y: limitar(q.y + dy) };
+        }
+        return { ...s, movidos: m };
+      });
+      return;
+    }
+    g.ultimo = p;
+    if (clave.startsWith("texto:")) {
+      const k = Number(clave.slice(6));
+      return setEstado((s) => ({ ...s, textos: s.textos.map((t, i) => (i === k ? { ...t, p } : t)) }));
+    }
     setEstado((s) => (clave === "balon" ? { ...s, balon: p } : { ...s, movidos: { ...s.movidos, [clave]: p } }));
   };
   const moverUp = (e: React.PointerEvent) => {
-    const [ladoTxt, iTxt] = claveDe(e).split(":");
+    const clave = claveDe(e);
+    const [ladoTxt, iTxt] = clave.split(":");
     const lado = LADOS.find((l) => l === ladoTxt) ?? null;
     const i = Number(iTxt);
     const g = gesto.current;
     gesto.current = null;
-    if (!g || !lado) return;
+    if (!g) return;
+    if (clave.startsWith("texto:")) {
+      // Toque en un texto: editarlo o borrarlo.
+      const t = textos[Number(clave.slice(6))];
+      if (!g.activo && t) setEditorTexto({ k: Number(clave.slice(6)), p: t.p, valor: t.t });
+      return;
+    }
+    if (!lado) return;
+    if (!g.activo && modo === "foco") {
+      const id = once[lado][i];
+      if (id == null) return;
+      const k = claveJug(lado, id);
+      return cambiar((s) => ({ ...s, focos: s.focos.includes(k) ? s.focos.filter((x) => x !== k) : [...s.focos, k] }));
+    }
     if (!g.activo) return abrirElegir({ lado, hueco: i }); // toque: cambiar jugador
     if (!aCanonico(e.clientX, e.clientY)) {
       // Fuera del campo: a la lista (sin otra entrada en el historial).
@@ -273,28 +327,77 @@ export default function Pizarra({
     gesto.current = null;
     setFantasma(null);
     setTrazo(null);
+    setCaja(null);
   };
 
   // ---- Flechas: en modo pase/carrera, se dibujan arrastrando sobre el campo.
   const dibujoDown = (e: React.PointerEvent) => {
-    if (modo === "mover") return;
+    if (modo === "mover") {
+      // Tocar el césped suelta el grupo seleccionado.
+      if (seleccion.length) setSeleccion([]);
+      return;
+    }
+    if (modo === "foco") return;
     const p = aCanonico(e.clientX, e.clientY);
     if (!p) return;
+    if (modo === "texto") return setEditorTexto({ k: null, p, valor: "" });
     e.currentTarget.setPointerCapture(e.pointerId);
+    if (modo === "zona" || modo === "grupo") return setCaja({ a: p, b: p });
     setTrazo({ a: p, b: p, tipo: modo });
   };
   const dibujoMove = (e: React.PointerEvent) => {
-    if (!trazo) return;
+    if (!trazo && !caja) return;
     const p = aCanonico(e.clientX, e.clientY, false);
-    if (p) setTrazo({ ...trazo, b: p });
+    if (!p) return;
+    if (trazo) setTrazo({ ...trazo, b: p });
+    if (caja) setCaja({ ...caja, b: p });
   };
   const dibujoUp = () => {
+    if (caja) {
+      const c = caja;
+      setCaja(null);
+      const [x0, x1] = [Math.min(c.a.x, c.b.x), Math.max(c.a.x, c.b.x)];
+      const [y0, y1] = [Math.min(c.a.y, c.b.y), Math.max(c.a.y, c.b.y)];
+      if (x1 - x0 < 0.02 && y1 - y0 < 0.02) return;
+      if (modo === "zona") return cambiar((e) => ({ ...e, zonas: [...e.zonas, { ...c, color: colorZona }].slice(-20) }));
+      // Grupo: las fichas dentro del rectángulo.
+      const dentro: string[] = [];
+      for (const lado of LADOS) {
+        once[lado].forEach((id, i) => {
+          const q = posicion(lado, i);
+          if (id != null && q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1) dentro.push(`${lado}:${i}`);
+        });
+      }
+      setSeleccion(dentro);
+      if (dentro.length) {
+        setModo("mover");
+        avisar(`${dentro.length} seleccionados: arrastra uno para mover el grupo`);
+      }
+      return;
+    }
     if (!trazo) return;
     const t = trazo;
     setTrazo(null);
     // Un toque sin arrastrar no deja una flecha de longitud cero.
     if (Math.hypot(t.b.x - t.a.x, t.b.y - t.a.y) < 0.03) return;
     cambiar((e) => ({ ...e, flechas: [...e.flechas, t].slice(-40) }));
+  };
+
+  const guardarTexto = () => {
+    if (!editorTexto) return;
+    const t = editorTexto.valor.trim().slice(0, MAX_LARGO_TEXTO);
+    const { k, p } = editorTexto;
+    setEditorTexto(null);
+    if (!t) return;
+    cambiar((e) => ({
+      ...e,
+      textos: k == null ? [...e.textos, { p, t }].slice(-20) : e.textos.map((x, i) => (i === k ? { ...x, t } : x)),
+    }));
+  };
+  const borrarTexto = () => {
+    const k = editorTexto?.k;
+    setEditorTexto(null);
+    if (k != null) cambiar((e) => ({ ...e, textos: e.textos.filter((_, i) => i !== k) }));
   };
 
   // ---- Botones
@@ -397,8 +500,10 @@ export default function Pizarra({
     if (etapas.length < 2) return avisar("Guarda al menos 2 etapas");
     parar();
     const total = duracion(etapas.length);
-    const inicio = performance.now();
+    // El reloj lo da el primer fotograma (sin llamar a performance.now aquí).
+    let inicio: number | null = null;
     const paso = (ahora: number) => {
+      inicio ??= ahora;
       const t = (ahora - inicio) / 1000;
       setFot(fotograma(etapas, t));
       if (t < total + 0.4) animacion.current = requestAnimationFrame(paso);
@@ -419,10 +524,11 @@ export default function Pizarra({
         if (!j) return;
         fichas.push({
           ...(f?.jug[claveJug(lado, j.id)] ?? posicion(lado, i)),
-          color: COLOR[lado],
+          color: colores[lado],
           numero: j.number,
           nombre: nombreCorto(j.name),
           foto: j.photo,
+          foco: focos.includes(claveJug(lado, j.id)),
         });
       });
     }
@@ -432,6 +538,8 @@ export default function Pizarra({
       fichas,
       flechas: f ? f.flechas : flechas,
       balon: f ? f.balon : balon,
+      zonas,
+      textos,
     };
   };
 
@@ -461,10 +569,10 @@ export default function Pizarra({
         onPointerUp={dentro ? undefined : listaUp(lado, j)}
         onPointerCancel={cancelar}
       >
-        <Cara j={j} color={COLOR[lado]} tam={26} />
+        <Cara j={j} color={colores[lado]} tam={26} />
         <span className="pz-jug__nom">
           {/* El dorsal siempre a la vista (pedido del dueño, 20-oct). */}
-          <b className="pz-jug__dorsal" style={{ background: COLOR[lado] }}>
+          <b className="pz-jug__dorsal" style={{ background: colores[lado] }}>
             {j.number ?? "–"}
           </b>
           {nombreCorto(j.name)}
@@ -496,7 +604,34 @@ export default function Pizarra({
               <option key={f}>{f}</option>
             ))}
           </select>
+          <button
+            type="button"
+            className="pz-color"
+            style={{ background: colores[lado] }}
+            aria-label={`Color de ${equipos[lado].name}`}
+            aria-expanded={paletaDe === lado}
+            onClick={() => setPaletaDe((x) => (x === lado ? null : lado))}
+          />
         </div>
+        {paletaDe === lado && (
+          <div className="pz-paleta pz-paleta--lista" role="radiogroup" aria-label={`Color de ${equipos[lado].name}`}>
+            {PALETA.map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={colores[lado] === c}
+                aria-label={`Color ${c}`}
+                className={colores[lado] === c ? "on" : ""}
+                style={{ background: c }}
+                onClick={() => {
+                  setPaletaDe(null);
+                  cambiar((e) => ({ ...e, colores: { ...e.colores, [lado]: c } }));
+                }}
+              />
+            ))}
+          </div>
+        )}
         <div className="pz-orden" role="radiogroup" aria-label="Ordenar jugadores">
           {(
             [
@@ -574,6 +709,26 @@ export default function Pizarra({
     );
   };
 
+  const pintarZona = (a: Punto, b: Punto, color: string, k: string, seleccionando = false) => {
+    const p = enSvg(a);
+    const q = enSvg(b);
+    return (
+      <rect
+        key={k}
+        x={Math.min(p.x, q.x)}
+        y={Math.min(p.y, q.y)}
+        width={Math.abs(q.x - p.x)}
+        height={Math.abs(q.y - p.y)}
+        rx={1.5}
+        fill={seleccionando ? "rgba(255,255,255,0.06)" : color}
+        fillOpacity={seleccionando ? 1 : 0.22}
+        stroke={color}
+        strokeWidth={0.5}
+        strokeDasharray="1.6 1.2"
+      />
+    );
+  };
+
   const abrirElegir = (x: { lado: Lado; hueco: number } | null) => {
     setBusca("");
     setElegir(x);
@@ -600,6 +755,13 @@ export default function Pizarra({
         <button type="button" className="btn" onClick={compartirEnlace}>
           🔗 Compartir enlace
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => setPublicar({ titulo: `${local.name} vs ${visitante.name}`, enviando: false, error: null, id: null })}
+        >
+          🌍 Publicar
+        </button>
         <button type="button" className="btn btn--accent" onClick={compartirImagen} disabled={compartiendo}>
           📸 {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
@@ -612,6 +774,10 @@ export default function Pizarra({
               ["mover", "✋ Mover"],
               ["pase", "➜ Pase"],
               ["carrera", "⤳ Carrera"],
+              ["zona", "▭ Zona"],
+              ["texto", "T Texto"],
+              ["foco", "◎ Foco"],
+              ["grupo", "⬚ Grupo"],
             ] as [Modo, string][]
           ).map(([m, etiqueta]) => (
             <button
@@ -629,13 +795,34 @@ export default function Pizarra({
         <button type="button" className={`pz-tool${balon ? " on" : ""}`} onClick={alternarBalon} aria-pressed={!!balon}>
           ⚽ Balón
         </button>
+        {modo === "zona" && (
+          <span className="pz-paleta" role="radiogroup" aria-label="Color de la zona">
+            {PALETA.map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={colorZona === c}
+                aria-label={`Color ${c}`}
+                className={colorZona === c ? "on" : ""}
+                style={{ background: c }}
+                onClick={() => setColorZona(c)}
+              />
+            ))}
+          </span>
+        )}
+        {seleccion.length > 0 && (
+          <button type="button" className="pz-tool on" onClick={() => setSeleccion([])}>
+            Soltar grupo ({seleccion.length})
+          </button>
+        )}
         <button
           type="button"
           className="pz-tool"
-          onClick={() => cambiar((e) => ({ ...e, flechas: [] }))}
-          disabled={flechas.length === 0}
+          onClick={() => cambiar((e) => ({ ...e, flechas: [], zonas: [], textos: [], focos: [] }))}
+          disabled={!flechas.length && !zonas.length && !textos.length && !focos.length}
         >
-          Borrar flechas
+          Borrar dibujos
         </button>
         <button type="button" className="pz-tool" onClick={deshacer} disabled={historial.length === 0}>
           ↶ Deshacer
@@ -685,7 +872,7 @@ export default function Pizarra({
         {lista("local")}
         <div
           ref={campo}
-          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${dibujando ? " pz-campo--dibujo" : ""}${fot ? " pz-campo--anim" : ""}`}
+          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${MODOS_DIBUJO.includes(modo) ? " pz-campo--dibujo" : ""}${modo === "foco" ? " pz-campo--foco" : ""}${fot ? " pz-campo--anim" : ""}`}
           aria-label="Campo de fútbol"
           onPointerDown={dibujoDown}
           onPointerMove={dibujoMove}
@@ -722,6 +909,8 @@ export default function Pizarra({
                 </marker>
               ))}
             </defs>
+            {zonas.map((z, k) => pintarZona(z.a, z.b, z.color, `z${k}`))}
+            {caja && pintarZona(caja.a, caja.b, modo === "zona" ? colorZona : "#ffffff", "caja", modo === "grupo")}
             {(fot ? fot.flechas : flechas).map((f, k) => pintarFlecha(f, k))}
             {trazo && pintarFlecha(trazo, "trazo")}
           </svg>
@@ -737,7 +926,7 @@ export default function Pizarra({
                     key={`${lado}-${i}`}
                     type="button"
                     className="pz-hueco"
-                    style={{ ...estilo, borderColor: COLOR[lado], color: COLOR[lado] }}
+                    style={{ ...estilo, borderColor: colores[lado], color: colores[lado] }}
                     onClick={() => abrirElegir({ lado, hueco: i })}
                     aria-label={`Añadir ${h.rol} de ${equipos[lado].name}`}
                   >
@@ -749,7 +938,9 @@ export default function Pizarra({
               return (
                 <div
                   key={`${lado}-${i}`}
-                  className="pz-ficha"
+                  className={`pz-ficha${focos.includes(claveJug(lado, j.id)) ? " pz-ficha--foco" : ""}${
+                    seleccion.includes(clave) ? " pz-ficha--sel" : ""
+                  }`}
                   style={arriba === clave ? { ...estilo, zIndex: 4 } : estilo}
                   data-clave={clave}
                   onPointerDown={moverDown}
@@ -761,15 +952,15 @@ export default function Pizarra({
                 >
                   {j.photo ? (
                     <span className="pz-ficha__cara">
-                      <Cara j={j} color={COLOR[lado]} tam={36} />
+                      <Cara j={j} color={colores[lado]} tam={36} />
                       {j.number != null && (
-                        <span className="pz-ficha__dorsal" style={{ background: COLOR[lado] }}>
+                        <span className="pz-ficha__dorsal" style={{ background: colores[lado] }}>
                           {j.number}
                         </span>
                       )}
                     </span>
                   ) : (
-                    <span className="pz-ficha__num" style={{ background: COLOR[lado] }}>
+                    <span className="pz-ficha__num" style={{ background: colores[lado] }}>
                       {j.number ?? ""}
                     </span>
                   )}
@@ -778,6 +969,25 @@ export default function Pizarra({
               );
             }),
           )}
+          {textos.map((t, k) => {
+            const { left, top } = aPantalla(t.p);
+            return (
+              <div
+                key={`t${k}`}
+                className="pz-texto"
+                style={{ left: `${left}%`, top: `${top}%` }}
+                data-clave={`texto:${k}`}
+                onPointerDown={moverDown}
+                onPointerMove={moverMove}
+                onPointerUp={moverUp}
+                onPointerCancel={cancelar}
+                role="button"
+                aria-label={`Texto «${t.t}»: arrástralo o tócalo para editarlo`}
+              >
+                {t.t}
+              </div>
+            );
+          })}
           {(fot ? fot.balon : balon) && (
             <div
               className="pz-balon"
@@ -815,9 +1025,104 @@ export default function Pizarra({
 
       {fantasma && (
         <div className="pz-fantasma" style={{ left: fantasma.cx, top: fantasma.cy }}>
-          <span className="pz-ficha__num" style={{ background: COLOR[fantasma.lado] }}>
+          <span className="pz-ficha__num" style={{ background: colores[fantasma.lado] }}>
             {jugador(fantasma.lado, fantasma.id)?.number ?? ""}
           </span>
+        </div>
+      )}
+
+      {publicar && (
+        <div className="pmodal-backdrop" onClick={() => setPublicar(null)} role="dialog" aria-modal>
+          <form
+            className="pmodal pz-elegir"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setPublicar({ ...publicar, enviando: true, error: null });
+              const r = await publicarPizarra({
+                titulo: publicar.titulo,
+                local: local.id,
+                visitante: visitante.id,
+                partido,
+                p: codificar(estado),
+              });
+              setPublicar((x) => x && (r.ok ? { ...x, enviando: false, id: r.id ?? "" } : { ...x, enviando: false, error: r.error }));
+            }}
+          >
+            <h3>Publicar en la comunidad</h3>
+            {!conectado ? (
+              <p style={{ margin: "0 0 12px", color: "var(--text-dim)" }}>
+                Para publicar tu pizarra necesitas una cuenta.{" "}
+                <a href={`/login?redirect=${encodeURIComponent("/pizarra")}`}>Inicia sesión o regístrate</a>.
+              </p>
+            ) : publicar.id != null ? (
+              <p style={{ margin: "0 0 12px" }}>
+                ✅ ¡Publicada! <a href="/pizarra/comunidad">Ver la galería de la comunidad</a>
+              </p>
+            ) : (
+              <>
+                <p style={{ margin: "0 0 10px", color: "var(--text-dim)", fontSize: "0.88rem" }}>
+                  Saldrá en la galería con tu nombre, para que cualquiera la vea, le dé «me gusta» y la abra.
+                </p>
+                <input
+                  className="pz-busca__input"
+                  value={publicar.titulo}
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="Título: p. ej. «Así se puede romper la presión del Betis»"
+                  onChange={(e) => setPublicar({ ...publicar, titulo: e.target.value })}
+                  autoFocus
+                />
+                {publicar.error && <p style={{ color: "#ff8a8a", margin: "8px 0 0" }}>{publicar.error}</p>}
+              </>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              {conectado && publicar.id == null && (
+                <button type="submit" className="btn btn--accent" style={{ flex: 1 }} disabled={publicar.enviando}>
+                  {publicar.enviando ? "Publicando…" : "Publicar"}
+                </button>
+              )}
+              <button type="button" className="btn btn--ghost" onClick={() => setPublicar(null)}>
+                Cerrar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {editorTexto && (
+        <div className="pmodal-backdrop" onClick={() => setEditorTexto(null)} role="dialog" aria-modal>
+          <form
+            className="pmodal pz-elegir"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              guardarTexto();
+            }}
+          >
+            <h3>{editorTexto.k == null ? "Añadir texto" : "Editar texto"}</h3>
+            <input
+              className="pz-busca__input"
+              value={editorTexto.valor}
+              maxLength={MAX_LARGO_TEXTO}
+              placeholder="Ej.: presión alta, hueco a la espalda…"
+              onChange={(e) => setEditorTexto({ ...editorTexto, valor: e.target.value })}
+              autoFocus
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button type="submit" className="btn btn--accent" style={{ flex: 1 }}>
+                Guardar
+              </button>
+              {editorTexto.k != null && (
+                <button type="button" className="btn" onClick={borrarTexto}>
+                  Borrar
+                </button>
+              )}
+              <button type="button" className="btn btn--ghost" onClick={() => setEditorTexto(null)}>
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -871,9 +1176,9 @@ export default function Pizarra({
                         setElegir(null);
                       }}
                     >
-                      <Cara j={j} color={COLOR[elegir.lado]} tam={30} />
+                      <Cara j={j} color={colores[elegir.lado]} tam={30} />
                       <span className="pz-jug__nom">
-                        <b className="pz-jug__dorsal" style={{ background: COLOR[elegir.lado] }}>
+                        <b className="pz-jug__dorsal" style={{ background: colores[elegir.lado] }}>
                           {j.number ?? "–"}
                         </b>
                         {nombreCorto(j.name)}
@@ -899,9 +1204,19 @@ const posGrupo = (g?: string) => ({ G: "POR", D: "DEF", M: "MED", F: "DEL" })[g 
 type Escena = {
   titulo: string;
   subtitulo: string;
-  fichas: { x: number; y: number; color: string; numero: number | null; nombre: string; foto: string | null }[];
+  fichas: {
+    x: number;
+    y: number;
+    color: string;
+    numero: number | null;
+    nombre: string;
+    foto: string | null;
+    foco: boolean;
+  }[];
   flechas: Flecha[];
   balon: Punto | null;
+  zonas: Zona[];
+  textos: Texto[];
 };
 
 /** Caras para el canvas: la CDN de fotos manda CORS abierto, así que el
@@ -972,6 +1287,22 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.strokeRect(cx + cw * 0.26, cy, cw * 0.48, ch * 0.12);
   g.strokeRect(cx + cw * 0.26, cy + ch * 0.88, cw * 0.48, ch * 0.12);
 
+  // Zonas, debajo de todo.
+  for (const z of e.zonas) {
+    const a = aLienzo(z.a);
+    const b = aLienzo(z.b);
+    const [x, y, w, h] = [Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y)];
+    g.globalAlpha = 0.22;
+    g.fillStyle = z.color;
+    g.fillRect(x, y, w, h);
+    g.globalAlpha = 1;
+    g.strokeStyle = z.color;
+    g.lineWidth = 4;
+    g.setLineDash([16, 12]);
+    g.strokeRect(x, y, w, h);
+    g.setLineDash([]);
+  }
+
   // Flechas debajo de las fichas.
   for (const f of e.flechas) {
     const a = aLienzo(f.a);
@@ -999,6 +1330,16 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   for (const f of e.fichas) {
     const { x, y } = aLienzo(f);
     const foto = f.foto ? fotos.get(f.foto) : undefined;
+    if (f.foco) {
+      // Foco: halo amarillo alrededor del jugador.
+      g.beginPath();
+      g.arc(x, y, 54, 0, Math.PI * 2);
+      g.fillStyle = "rgba(250,204,21,0.28)";
+      g.fill();
+      g.lineWidth = 5;
+      g.strokeStyle = "#facc15";
+      g.stroke();
+    }
     g.beginPath();
     g.arc(x, y, 38, 0, Math.PI * 2);
     g.fillStyle = foto ? "#e2e8f0" : f.color;
@@ -1046,6 +1387,19 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
     const { x, y } = aLienzo(e.balon);
     g.font = "44px sans-serif";
     g.fillText("⚽", x, y + 15);
+  }
+
+  // Textos, encima de todo, con fondo para que se lean sobre el césped.
+  g.font = "700 30px sans-serif";
+  for (const t of e.textos) {
+    const { x, y } = aLienzo(t.p);
+    const ancho = Math.min(W - 40, g.measureText(t.t).width + 28);
+    g.fillStyle = "rgba(10,16,48,0.82)";
+    g.beginPath();
+    g.roundRect(x - ancho / 2, y - 26, ancho, 44, 10);
+    g.fill();
+    g.fillStyle = "#ffffff";
+    g.fillText(t.t, x, y + 7, ancho - 20);
   }
 
   g.font = "700 34px sans-serif";

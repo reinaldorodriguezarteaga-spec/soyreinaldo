@@ -12,6 +12,10 @@ describe("estado de la pizarra en la URL", () => {
       movidos: { "local:1": { x: 0.3, y: 0.25 } },
       flechas: [{ a: { x: 0.1, y: 0.2 }, b: { x: 0.5, y: 0.6 }, tipo: "carrera" }],
       balon: { x: 0.5, y: 0.5 },
+      zonas: [{ a: { x: 0.1, y: 0.1 }, b: { x: 0.3, y: 0.4 }, color: "#facc15" }],
+      textos: [{ p: { x: 0.5, y: 0.2 }, t: "Presión alta" }],
+      focos: ["l:2"],
+      colores: { local: "#a50044", visitante: "#ffffff" },
       etapas: [
         { jug: { "l:1": { x: 0.2, y: 0.3 }, "v:10": { x: 0.8, y: 0.7 } }, balon: null, flechas: [] },
         {
@@ -46,6 +50,23 @@ describe("estado de la pizarra en la URL", () => {
     expect(e.movidos["visitante:2"]).toEqual({ x: 0.5, y: 1 });
     expect(e.flechas).toHaveLength(1);
     expect(e.balon).toBeNull();
+  });
+
+  it("zonas, textos, focos y colores: solo lo válido", () => {
+    const raro = btoa(
+      JSON.stringify({
+        z: [[0, 0, 500, 500, 99], [0, 0, 500, 500, 5]],
+        t: [[100, 100, "  " + "x".repeat(80)], [1, 1, 7], [1, 1, "   "]],
+        k: ["l:1", "l:1", "l:99", "zz"],
+        c: [3, 999],
+      }),
+    );
+    const e = decodificar(raro, plantillas)!;
+    expect(e.zonas).toEqual([{ a: { x: 0, y: 0 }, b: { x: 0.5, y: 0.5 }, color: "#facc15" }]);
+    expect(e.textos).toHaveLength(1);
+    expect(e.textos[0].t).toHaveLength(60);
+    expect(e.focos).toEqual(["l:1"]);
+    expect(e.colores).toEqual({ local: "#a50044", visitante: "#ff5b8a" });
   });
 
   it("basura o demasiado largo: null", () => {
