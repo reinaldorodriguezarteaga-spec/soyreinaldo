@@ -580,8 +580,12 @@ export default async function LigaPartidoPage({
               {formatKickoff(fx.fixture.date)}
               {fx.fixture.venue?.name ? ` · ${fx.fixture.venue.name}` : ""}
             </p>
-            {/* Compartir el partido (17-oct, pedido del dueño). */}
-            <p style={{ textAlign: "center", margin: "12px 0 0" }}>
+            {/* Compartir el partido (17-oct, pedido del dueño) y abrirlo en la
+                pizarra con sus alineaciones (20-oct). */}
+            <p style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, margin: "12px 0 0" }}>
+              <Link href={`/pizarra?partido=${fixtureId}`} className="compartir__btn" prefetch={false}>
+                <span aria-hidden>🧩</span> Abrir en la pizarra
+              </Link>
               <BotonCompartir
                 url={`https://www.soyreinaldo.com/liga/${slug}/partido/${fixtureId}`}
                 texto={

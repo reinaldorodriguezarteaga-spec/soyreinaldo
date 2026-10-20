@@ -12,8 +12,21 @@ describe("estado de la pizarra en la URL", () => {
       movidos: { "local:1": { x: 0.3, y: 0.25 } },
       flechas: [{ a: { x: 0.1, y: 0.2 }, b: { x: 0.5, y: 0.6 }, tipo: "carrera" }],
       balon: { x: 0.5, y: 0.5 },
+      etapas: [
+        { jug: { "l:1": { x: 0.2, y: 0.3 }, "v:10": { x: 0.8, y: 0.7 } }, balon: null, flechas: [] },
+        {
+          jug: { "l:1": { x: 0.4, y: 0.3 } },
+          balon: { x: 0.4, y: 0.31 },
+          flechas: [{ a: { x: 0.4, y: 0.3 }, b: { x: 0.6, y: 0.5 }, tipo: "pase" }],
+        },
+      ],
     };
     expect(decodificar(codificar(e), plantillas)).toEqual(e);
+  });
+
+  it("etapas: fuera los jugadores que no son de la plantilla", () => {
+    const raro = btoa(JSON.stringify({ e: [[[["l:1", 100, 100], ["l:99", 1, 1], ["x:1", 1, 1]], 0, []]] }));
+    expect(decodificar(raro, plantillas)!.etapas[0].jug).toEqual({ "l:1": { x: 0.1, y: 0.1 } });
   });
 
   it("descarta lo que no vale: formaciones, jugadores ajenos y repetidos, claves raras", () => {
@@ -37,7 +50,7 @@ describe("estado de la pizarra en la URL", () => {
 
   it("basura o demasiado largo: null", () => {
     expect(decodificar("no-es-base64!!", plantillas)).toBeNull();
-    expect(decodificar("a".repeat(5000), plantillas)).toBeNull();
+    expect(decodificar("a".repeat(13000), plantillas)).toBeNull();
     expect(decodificar(undefined, plantillas)).toBeNull();
   });
 });
