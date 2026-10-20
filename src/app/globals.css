@@ -2402,6 +2402,17 @@ select.field { appearance: none; }
 .pz-etapa.on button:first-child { background: var(--accent); color: #fff; }
 .pz-etapa button + button { color: var(--text-dim); font-weight: 400; padding: 6px 8px; border-left: 1px solid var(--line); }
 .pz-campo--anim .pz-ficha, .pz-campo--anim .pz-balon { pointer-events: none; }
+/* Fase 4: zonas, textos, foco, grupo y colores. */
+.pz-texto { position: absolute; transform: translate(-50%, -50%); z-index: 3; background: rgba(10,16,48,0.82); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; cursor: grab; touch-action: none; user-select: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
+.pz-campo--dibujo .pz-texto { pointer-events: none; }
+.pz-ficha--foco .pz-ficha__cara, .pz-ficha--foco .pz-ficha__num { box-shadow: 0 0 0 3px #facc15, 0 0 14px 4px rgba(250,204,21,0.55); border-radius: 50%; }
+.pz-ficha--sel .pz-ficha__cara, .pz-ficha--sel .pz-ficha__num { outline: 2px dashed #fff; outline-offset: 3px; border-radius: 50%; }
+.pz-campo--foco .pz-ficha { cursor: pointer; }
+.pz-color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; flex: none; padding: 0; }
+.pz-paleta { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pz-paleta button { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); cursor: pointer; padding: 0; }
+.pz-paleta button.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+.pz-paleta--lista { margin: -2px 0 8px; }
 @media (min-width: 640px) {
   .pz-vs { display: inline; }
   .pz-botones { display: flex; flex-wrap: wrap; }
