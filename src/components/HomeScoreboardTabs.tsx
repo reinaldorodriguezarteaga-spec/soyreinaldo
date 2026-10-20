@@ -37,8 +37,12 @@ export default function HomeScoreboardTabs({
 
   if (!hasLive && !hasCalendar) return null;
 
+  // Con clave propia: HomeCalendarView la coloca entre sus listas de días y,
+  // al venir ya creada desde aquí (componente de servidor), React avisaba de
+  // «Each child in a list should have a unique key» en la portada.
   const liveCard = hasLive ? (
     <HomeMatchWidgetClient
+      key="directo"
       initial={widgetData!}
       liveOnly
       favoriteTeamIds={favoriteTeamIds}
