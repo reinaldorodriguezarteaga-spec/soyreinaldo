@@ -22,6 +22,7 @@ import {
 } from "@/lib/pizarra/estado";
 import { duracion, fotograma, type Fotograma } from "@/lib/pizarra/animacion";
 import { nombreCorto } from "@/lib/sports/nombres";
+import { publicarPizarra } from "./acciones";
 
 /**
  * Pizarra táctica (20-oct, pedido del dueño). Cada equipo tiene su formación
@@ -95,6 +96,7 @@ export default function Pizarra({
   inicial,
   preparado,
   partido,
+  conectado = false,
 }: {
   local: EquipoConPlantilla;
   visitante: EquipoConPlantilla;
@@ -104,6 +106,8 @@ export default function Pizarra({
   preparado?: Estado;
   /** Partido del que sale (viaja en el enlace compartido). */
   partido?: number;
+  /** ¿Hay sesión? (para publicar en la comunidad). */
+  conectado?: boolean;
 }) {
   const router = useRouter();
   const equipos: PorLado<EquipoConPlantilla> = { local, visitante };
@@ -141,6 +145,9 @@ export default function Pizarra({
   const [caja, setCaja] = useState<{ a: Punto; b: Punto } | null>(null);
   const [editorTexto, setEditorTexto] = useState<{ k: number | null; p: Punto; valor: string } | null>(null);
   const [paletaDe, setPaletaDe] = useState<Lado | null>(null);
+  const [publicar, setPublicar] = useState<{ titulo: string; enviando: boolean; error: string | null; id: string | null } | null>(
+    null,
+  );
   const campo = useRef<HTMLDivElement>(null);
   const gesto = useRef<{ x: number; y: number; activo: boolean; ultimo?: Punto | null } | null>(null);
   const { formacion, once, movidos, flechas, balon, zonas, textos, focos, colores } = estado;
@@ -748,6 +755,13 @@ export default function Pizarra({
         <button type="button" className="btn" onClick={compartirEnlace}>
           🔗 Compartir enlace
         </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => setPublicar({ titulo: `${local.name} vs ${visitante.name}`, enviando: false, error: null, id: null })}
+        >
+          🌍 Publicar
+        </button>
         <button type="button" className="btn btn--accent" onClick={compartirImagen} disabled={compartiendo}>
           📸 {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
@@ -1014,6 +1028,65 @@ export default function Pizarra({
           <span className="pz-ficha__num" style={{ background: colores[fantasma.lado] }}>
             {jugador(fantasma.lado, fantasma.id)?.number ?? ""}
           </span>
+        </div>
+      )}
+
+      {publicar && (
+        <div className="pmodal-backdrop" onClick={() => setPublicar(null)} role="dialog" aria-modal>
+          <form
+            className="pmodal pz-elegir"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setPublicar({ ...publicar, enviando: true, error: null });
+              const r = await publicarPizarra({
+                titulo: publicar.titulo,
+                local: local.id,
+                visitante: visitante.id,
+                partido,
+                p: codificar(estado),
+              });
+              setPublicar((x) => x && (r.ok ? { ...x, enviando: false, id: r.id ?? "" } : { ...x, enviando: false, error: r.error }));
+            }}
+          >
+            <h3>Publicar en la comunidad</h3>
+            {!conectado ? (
+              <p style={{ margin: "0 0 12px", color: "var(--text-dim)" }}>
+                Para publicar tu pizarra necesitas una cuenta.{" "}
+                <a href={`/login?redirect=${encodeURIComponent("/pizarra")}`}>Inicia sesión o regístrate</a>.
+              </p>
+            ) : publicar.id != null ? (
+              <p style={{ margin: "0 0 12px" }}>
+                ✅ ¡Publicada! <a href="/pizarra/comunidad">Ver la galería de la comunidad</a>
+              </p>
+            ) : (
+              <>
+                <p style={{ margin: "0 0 10px", color: "var(--text-dim)", fontSize: "0.88rem" }}>
+                  Saldrá en la galería con tu nombre, para que cualquiera la vea, le dé «me gusta» y la abra.
+                </p>
+                <input
+                  className="pz-busca__input"
+                  value={publicar.titulo}
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="Título: p. ej. «Así se puede romper la presión del Betis»"
+                  onChange={(e) => setPublicar({ ...publicar, titulo: e.target.value })}
+                  autoFocus
+                />
+                {publicar.error && <p style={{ color: "#ff8a8a", margin: "8px 0 0" }}>{publicar.error}</p>}
+              </>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              {conectado && publicar.id == null && (
+                <button type="submit" className="btn btn--accent" style={{ flex: 1 }} disabled={publicar.enviando}>
+                  {publicar.enviando ? "Publicando…" : "Publicar"}
+                </button>
+              )}
+              <button type="button" className="btn btn--ghost" onClick={() => setPublicar(null)}>
+                Cerrar
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

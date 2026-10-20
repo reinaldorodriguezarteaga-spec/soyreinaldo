@@ -124,8 +124,11 @@ export function codificar(e: Estado): string {
 }
 
 /** El estado de un `?p=`, o null si no vale. Los jugadores que no estén en
- * la plantilla de su equipo se descartan (hueco vacío). */
-export function decodificar(p: string | undefined | null, plantillas: PorLado<number[]>): Estado | null {
+ * la plantilla de su equipo se descartan (hueco vacío). Sin plantillas
+ * (miniaturas de la galería), vale cualquier id. */
+export function decodificar(p: string | undefined | null, plantillas: PorLado<number[]> | null): Estado | null {
+  const vale = (lado: "l" | "v", id: number) =>
+    Number.isInteger(id) && id > 0 && (!plantillas || (lado === "l" ? plantillas.local : plantillas.visitante).includes(id));
   if (!p || p.length > MAX_URL) return null;
   let d: Record<string, unknown>;
   try {
@@ -144,11 +147,10 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
   const o = Array.isArray(d.o) ? d.o : [];
   (["local", "visitante"] as Lado[]).forEach((lado, n) => {
     const fila = Array.isArray(o[n]) ? o[n] : [];
-    const validos = new Set(plantillas[lado]);
     const usados = new Set<number>();
     e.once[lado] = vacio().map((_, i) => {
       const id = fila[i];
-      if (typeof id !== "number" || !validos.has(id) || usados.has(id)) return null;
+      if (typeof id !== "number" || !vale(lado === "local" ? "l" : "v", id) || usados.has(id)) return null;
       usados.add(id);
       return id;
     });
@@ -168,10 +170,9 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
   e.flechas = leerFlechas(d.a);
   e.balon = leerPunto(d.b);
 
-  const validos: Record<string, Set<number>> = { l: new Set(plantillas.local), v: new Set(plantillas.visitante) };
   const claveValida = (k: unknown): k is string => {
     const m = typeof k === "string" ? /^([lv]):(\d{1,9})$/.exec(k) : null;
-    return !!m && validos[m[1]].has(Number(m[2]));
+    return !!m && vale(m[1] as "l" | "v", Number(m[2]));
   };
 
   if (Array.isArray(d.z)) {
@@ -194,7 +195,8 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
   if (Array.isArray(d.k)) e.focos = [...new Set(d.k.filter(claveValida))].slice(0, 22);
   if (Array.isArray(d.c)) {
     (["local", "visitante"] as Lado[]).forEach((lado, n) => {
-      const color = PALETA[typeof d.c === "object" && Array.isArray(d.c) && typeof d.c[n] === "number" ? d.c[n] : -1];
+      const i = (d.c as unknown[])[n];
+      const color = PALETA[typeof i === "number" ? i : -1];
       if (color) e.colores[lado] = color;
     });
   }

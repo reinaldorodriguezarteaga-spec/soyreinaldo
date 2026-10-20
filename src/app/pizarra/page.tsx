@@ -7,7 +7,9 @@ import {
   type LineupTeam,
   type SquadPlayer,
 } from "@/lib/sports/api-football";
+import Link from "next/link";
 import { COMPETITIONS } from "@/lib/sports/competitions";
+import { createClient } from "@/lib/supabase/server";
 import { equiposEnEspanol } from "@/lib/sports/nombres";
 import { equiposPizarra, type EquipoPizarra, type GrupoEquipos } from "@/lib/pizarra/equipos";
 import { desdeAlineacion } from "@/lib/pizarra/desde-alineacion";
@@ -41,7 +43,9 @@ export default async function PizarraPage({
   searchParams: Promise<{ local?: string; visitante?: string; p?: string; partido?: string }>;
 }) {
   const { local, visitante, p, partido } = await searchParams;
-  const grupos = await equiposPizarra();
+  const [grupos, {
+    data: { user },
+  }] = await Promise.all([equiposPizarra(), (await createClient()).auth.getUser()]);
   const porId = new Map<number, EquipoPizarra>(grupos.flatMap((g) => g.equipos.map((e) => [e.id, e])));
 
   // ¿Viene de un partido?
@@ -119,7 +123,9 @@ export default async function PizarraPage({
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
         <div className="wrap">
-          <p className="eyebrow">Análisis</p>
+          <p className="eyebrow">
+            Análisis · <Link href="/pizarra/comunidad">Pizarras de la comunidad →</Link>
+          </p>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 6px" }}>
             Pizarra táctica
           </h1>
@@ -142,6 +148,7 @@ export default async function PizarraPage({
               inicial={p}
               preparado={preparado}
               partido={delPartido ? idPartido : undefined}
+              conectado={!!user}
             />
           ) : (
             <div className="panel" style={{ padding: 24, marginTop: 18, color: "var(--text-dim)", textAlign: "center" }}>
