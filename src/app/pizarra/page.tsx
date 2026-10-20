@@ -21,9 +21,9 @@ export const metadata: Metadata = {
 export default async function PizarraPage({
   searchParams,
 }: {
-  searchParams: Promise<{ local?: string; visitante?: string }>;
+  searchParams: Promise<{ local?: string; visitante?: string; p?: string }>;
 }) {
-  const { local, visitante } = await searchParams;
+  const { local, visitante, p } = await searchParams;
   const grupos = await equiposPizarra();
   const porId = new Map<number, EquipoPizarra>(grupos.flatMap((g) => g.equipos.map((e) => [e.id, e])));
   const equipoDe = (v?: string) => {
@@ -38,7 +38,7 @@ export default async function PizarraPage({
     const plantilla = await getTeamSquad(e.id).catch(() => [] as SquadPlayer[]);
     return {
       ...e,
-      plantilla: plantilla.map((p) => ({ id: p.id, name: p.name, number: p.number, position: p.position })),
+      plantilla: plantilla.map((p) => ({ id: p.id, name: p.name, number: p.number, position: p.position, photo: p.photo })),
     };
   };
   const [pl, pv] = await Promise.all([conPlantilla(eqLocal), conPlantilla(eqVisitante)]);
@@ -57,7 +57,7 @@ export default async function PizarraPage({
           </p>
           <SelectorEquipos grupos={grupos} local={eqLocal?.id ?? null} visitante={eqVisitante?.id ?? null} />
           {pl && pv ? (
-            <Pizarra key={`${pl.id}-${pv.id}`} local={pl} visitante={pv} />
+            <Pizarra key={`${pl.id}-${pv.id}`} local={pl} visitante={pv} inicial={p} />
           ) : (
             <div className="panel" style={{ padding: 24, marginTop: 18, color: "var(--text-dim)", textAlign: "center" }}>
               Elige el equipo local y el visitante para empezar.
