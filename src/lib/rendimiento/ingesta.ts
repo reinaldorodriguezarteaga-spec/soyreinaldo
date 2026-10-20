@@ -4,7 +4,7 @@ import {
   getCompetitionAllFixtures,
   getFixtureById,
   getFixtureLineups,
-  getFixturePlayers,
+  getFixturePlayersTodos,
   getFixtureSubEvents,
   isFinal,
 } from "@/lib/sports/api-football";
@@ -39,7 +39,7 @@ function temporadaDe(leagueId: number, fecha: string): number {
 export async function procesarPartido(db: SupabaseClient, id: number, meta?: Meta): Promise<number> {
   const [alineaciones, jugadores, cambios, info] = await Promise.all([
     getFixtureLineups(id).catch(() => []),
-    getFixturePlayers(id).catch(() => []),
+    getFixturePlayersTodos(id).catch(() => []),
     getFixtureSubEvents(id).catch(() => []),
     meta ? Promise.resolve(null) : getFixtureById(id).catch(() => null),
   ]);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { equiposVistaPrevia } from "@/lib/pizarra/equipos-vista-previa";
 import {
   getFixtureById,
   getFixtureLineups,
@@ -17,12 +18,32 @@ import { estadoInicial, type Estado } from "@/lib/pizarra/estado";
 import Pizarra, { type EquipoConPlantilla, type JugadorPizarra } from "./pizarra";
 import SelectorEquipos from "./selector-equipos";
 
-export const metadata: Metadata = {
+const metadataBase: Metadata = {
   title: "Pizarra táctica: monta las alineaciones y analiza el partido | Soy Reinaldo",
   description:
     "Elige dos equipos, su formación y coloca a los jugadores en el campo. Muévelos, anima la jugada y compártela como imagen o vídeo.",
   alternates: { canonical: "/pizarra" },
 };
+
+export async function generateMetadata({ searchParams }: {
+  searchParams: Promise<{ local?: string; visitante?: string; p?: string; partido?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const equipos = await equiposVistaPrevia(params.local, params.visitante, params.partido);
+  if (!equipos) return metadataBase;
+  const titulo = `${equipos.local.name} vs ${equipos.visitante.name} · Pizarra táctica | Soy Reinaldo`;
+  const query = new URLSearchParams();
+  for (const clave of ["local", "visitante", "partido", "p"] as const) {
+    if (params[clave] !== undefined) query.set(clave, params[clave]);
+  }
+  const imagen = `/pizarra/imagen?${query}`;
+  return {
+    ...metadataBase,
+    title: titulo,
+    openGraph: { title: titulo, images: [{ url: imagen, width: 1200, height: 630, alt: titulo }] },
+    twitter: { card: "summary_large_image", title: titulo, images: [imagen] },
+  };
+}
 
 /**
  * Pizarra táctica (20-oct, pedido del dueño): local y visitante con su
