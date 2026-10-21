@@ -170,9 +170,9 @@ export async function writeCache(key: string, data: unknown): Promise<void> {
   if (data == null || (Array.isArray(data) && data.length === 0)) return;
   const supabase = serviceClient();
   if (!supabase) return;
-  await supabase
-    .from("sports_cache")
-    .upsert({ cache_key: key, data, updated_at: new Date().toISOString() });
+  // Con firma (migración 081): si el JSON no cambió, solo se renueva la
+  // fecha y Postgres no vuelve a escribir el dato (aviso de Disk IO, 21-oct).
+  await supabase.rpc("guardar_cache", { p_key: key, p_data: data });
 }
 
 /**

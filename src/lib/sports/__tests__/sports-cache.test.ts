@@ -4,13 +4,13 @@ vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
 }));
 
-const upsert = vi.fn(async () => ({ error: null }));
+const rpc = vi.fn(async () => ({ error: null }));
 const abortar = vi.fn();
 let fila: { data: unknown; updated_at: string } | null = null;
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
+    rpc,
     from: () => ({
-      upsert,
       select: () => ({
         eq: () => ({ abortSignal: (signal: AbortSignal) => { abortar(signal); return { maybeSingle: async () => ({ data: fila }) }; } }),
       }),
@@ -26,7 +26,7 @@ describe("sports_cache", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
-    upsert.mockClear();
+    rpc.mockClear();
     fila = null;
     abortar.mockClear();
   });
@@ -34,9 +34,10 @@ describe("sports_cache", () => {
   it("no pisa datos buenos con un vacío (API sin cuota)", async () => {
     await writeCache("standings:laliga", []);
     await writeCache("standings:laliga", null);
-    expect(upsert).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
     await writeCache("standings:laliga", [{ rank: 1 }]);
-    expect(upsert).toHaveBeenCalledTimes(1);
+    // Con firma: la función de la base decide si reescribe el dato o solo la fecha.
+    expect(rpc).toHaveBeenCalledWith("guardar_cache", { p_key: "standings:laliga", p_data: [{ rank: 1 }] });
   });
 
   it("propaga el presupuesto del cron a Supabase", async () => {
