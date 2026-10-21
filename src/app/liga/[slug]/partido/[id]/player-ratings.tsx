@@ -198,10 +198,10 @@ function teamNodes(
         // que su izquierda es la derecha de la pantalla (antes estaba al
         // revés y Koundé/Lamine salían en la banda contraria, 13-oct).
         if (side === "home") {
-          y = 0.06 + d * 0.36;
+          y = 0.05 + d * 0.39;
           x = 1 - w;
         } else {
-          y = 0.94 - d * 0.36;
+          y = 0.95 - d * 0.39;
           x = w;
         }
       }
@@ -402,7 +402,9 @@ function PitchView({
       <div
         className="pitch"
         style={{
-          aspectRatio: horizontal ? "16 / 10" : "10 / 15",
+          // Vertical (móvil) más alargado: con 10 / 15 las filas iban a ~46 px
+          // y la nota de cada jugador pisaba el nombre del de arriba (21-oct).
+          aspectRatio: horizontal ? "16 / 10" : "10 / 17.5",
           maxWidth: horizontal ? 760 : 460,
         }}
       >

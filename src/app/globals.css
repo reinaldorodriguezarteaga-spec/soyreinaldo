@@ -1503,6 +1503,11 @@ select.field { appearance: none; }
 /* Minuto del cambio (17-oct): a la izquierda de la flecha del que sale
  * (encima pisaba el nombre de la fila de arriba en móvil) y en el chip del
  * que entra. */
+/* Móvil: avatares algo más pequeños para que nota y nombre no se pisen
+ * entre filas (21-oct). */
+@media (max-width: 520px) {
+  .pava, .pava img, .pava > span.ph { width: 36px; height: 36px; }
+}
 .pava .pmin { position: absolute; top: -3px; right: calc(100% + 5px); z-index: 2; font-size: 0.6rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.85); font-variant-numeric: tabular-nums; }
 .subschip__min { font-size: 0.72rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .subschip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; color: inherit; font: inherit; }
@@ -1791,7 +1796,7 @@ select.field { appearance: none; }
 /* el campo fija la altura y las estadísticas se reparten para llegar
    exactamente a la misma altura (620: un poco más compacto, pedido del dueño
    para que con muchos goles arriba la tarjeta no se alargue) */
-.ficha__pitchcol { position: relative; height: 620px; }
+.ficha__pitchcol { position: relative; height: 680px; }
 .ficha__statscol { padding: 14px 16px 16px 8px; display: flex; flex-direction: column; gap: 6px; }
 .ficha__h { margin: 0 0 4px; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
 .ficha__empty { color: var(--text-dim); font-size: 0.85rem; }
@@ -1876,7 +1881,7 @@ select.field { appearance: none; }
    estando ya a su ancho completo en modo captura. */
 @container (max-width: 700px) {
   .ficha__body { grid-template-columns: 1fr; }
-  .ficha__pitchcol { height: 560px; }
+  .ficha__pitchcol { height: 680px; }
   .ficha__benchcols { grid-template-columns: 1fr; }
   /* En el móvil el marcador grande dejaba los nombres en "B…" y "G…". */
   .ficha__name { font-size: 1.05rem; }
