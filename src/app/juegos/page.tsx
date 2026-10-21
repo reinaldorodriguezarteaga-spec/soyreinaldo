@@ -32,11 +32,11 @@ const JUEGOS = [
     listo: true,
   },
   {
-    href: null,
+    href: "/juegos/adivina-el-once",
     emoji: "📋",
     titulo: "Adivina el once",
-    texto: "Antes de cada partido del Barça, monta el once que crees que saldrá y suma puntos por cada acierto.",
-    listo: false,
+    texto: "Antes de cada partido del Barça, apuesta el once titular y suma puntos por cada acierto.",
+    listo: true,
   },
 ] as const;
 

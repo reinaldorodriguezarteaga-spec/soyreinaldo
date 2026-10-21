@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { pasada } from "@/lib/rendimiento/ingesta";
+import { puntuarPendientes } from "@/lib/juegos/adivina-once";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ export const maxDuration = 60;
  * partidos terminados que ya están en el archivo (gratis) y hasta 10 de esta
  * temporada de las competiciones principales que falten (esos sí pueden
  * costar 3-4 llamadas cada uno: ≤ 40 por hora).
+ *
+ * De paso puntúa «Adivina el once» (la página también lo hace al visitarla).
  */
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -20,7 +23,8 @@ export async function GET(request: Request) {
   const db = clienteServicio();
   if (!db) return NextResponse.json({ error: "Missing env vars" }, { status: 500 });
   try {
-    return NextResponse.json({ ok: true, ...(await pasada(db)) });
+    const once = await puntuarPendientes(db).catch(() => 0);
+    return NextResponse.json({ ok: true, once, ...(await pasada(db)) });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : JSON.stringify(e) }, { status: 500 });
   }
