@@ -18,11 +18,39 @@ const JUEGOS = [
     listo: true,
   },
   {
-    href: null,
+    href: "/juegos/adivina-el-jugador",
+    emoji: "🕵️",
+    titulo: "Adivina el jugador",
+    texto: "Los clubes por los que pasó, en orden. ¿Sabes quién es? Reto diario y práctica.",
+    listo: true,
+  },
+  {
+    href: "/juegos/tiki-taka-toe",
+    emoji: "#️⃣",
+    titulo: "Tiki-taka-toe",
+    texto: "El tres en raya del fútbol: jugadores que pasaron por los dos clubes de cada casilla.",
+    listo: true,
+  },
+  {
+    href: "/juegos/once-de-leyenda",
+    emoji: "⭐",
+    titulo: "Once de leyenda",
+    texto: "Once rondas, tres leyendas por puesto. Elige y descubre la media de tu once histórico.",
+    listo: true,
+  },
+  {
+    href: "/juegos/mas-o-menos",
+    emoji: "⚖️",
+    titulo: "¿Más o menos?",
+    texto: "¿Quién tiene más goles o asistencias esta temporada? Racha hasta que falles.",
+    listo: true,
+  },
+  {
+    href: "/juegos/adivina-el-once",
     emoji: "📋",
     titulo: "Adivina el once",
-    texto: "Antes de cada partido del Barça, monta el once que crees que saldrá y suma puntos por cada acierto.",
-    listo: false,
+    texto: "Antes de cada partido del Barça, apuesta el once titular y suma puntos por cada acierto.",
+    listo: true,
   },
 ] as const;
 

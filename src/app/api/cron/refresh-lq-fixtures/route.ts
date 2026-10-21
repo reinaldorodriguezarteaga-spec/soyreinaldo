@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { equiposEnEspanol } from "@/lib/sports/nombres";
+import { jornadaChampions } from "@/lib/quiniela-liga/champions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +26,67 @@ export const maxDuration = 60;
  * rutas de cron. Lo llama el job de pg_cron `fechas-lq` (migración 043).
  */
 
-/** Competiciones de la quiniela de clubes: slug en BD → liga/temporada API. */
-const COMPETITIONS = [{ competition: "laliga", leagueId: 140, season: 2026 }];
+/** Competiciones de la quiniela de clubes: slug en BD → liga/temporada API.
+ * La Champions (21-oct) además CREA los partidos que falten —las
+ * eliminatorias aparecen según avanza el sorteo— y van con
+ * counts_for_scoring = false: es otra quiniela (migración 084). */
+const COMPETITIONS = [
+  { competition: "laliga", leagueId: 140, season: 2026, crear: false },
+  { competition: "champions", leagueId: 2, season: 2026, crear: true },
+];
 
 type ApiFixture = {
   fixture: { id: number; date: string; status?: { short: string } };
+  league?: { round: string };
+  teams?: { home: { id: number; name: string; logo: string }; away: { id: number; name: string; logo: string } };
+  goals?: { home: number | null; away: number | null };
 };
+
+/** Da de alta los partidos (y equipos) que aún no estén. Nunca pisa filas
+ * existentes: de los cambios de fecha se encarga el bucle de abajo y de los
+ * marcadores, la ingesta. */
+async function crearPartidos(
+  supabase: SupabaseClient,
+  c: (typeof COMPETITIONS)[number],
+  list: ApiFixture[],
+): Promise<number> {
+  const nuevos = list
+    .map((f) => ({ f: equiposEnEspanol(f), jornada: f.league ? jornadaChampions(f.league.round) : null }))
+    .filter((x): x is { f: ApiFixture & Required<Pick<ApiFixture, "teams">>; jornada: number } => x.jornada != null && !!x.f.teams);
+  if (nuevos.length === 0) return 0;
+  const equipos = new Map<number, { id: number; name: string; logo: string }>();
+  for (const { f } of nuevos) {
+    equipos.set(f.teams.home.id, f.teams.home);
+    equipos.set(f.teams.away.id, f.teams.away);
+  }
+  await supabase.from("lq_teams").upsert([...equipos.values()], { onConflict: "id", ignoreDuplicates: true });
+  const FINAL = ["FT", "AET", "PEN"];
+  const { data } = await supabase
+    .from("lq_matches")
+    .upsert(
+      nuevos.map(({ f, jornada }) => {
+        const terminado = FINAL.includes(f.fixture.status?.short ?? "");
+        return {
+          id: f.fixture.id,
+          competition: c.competition,
+          season: c.season,
+          matchday: jornada,
+          round: f.league?.round ?? null,
+          team_home: f.teams.home.id,
+          team_away: f.teams.away.id,
+          kickoff_at: f.fixture.date,
+          status: f.fixture.status?.short ?? null,
+          finished: terminado,
+          score_home: terminado ? (f.goals?.home ?? null) : null,
+          score_away: terminado ? (f.goals?.away ?? null) : null,
+          counts_for_scoring: false,
+        };
+      }),
+      { onConflict: "id", ignoreDuplicates: true },
+    )
+    .select("id");
+  return data?.length ?? 0;
+}
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -50,6 +107,7 @@ export async function GET(request: Request) {
 
   const moved: { id: number; from: string; to: string }[] = [];
   const errors: string[] = [];
+  let creados = 0;
 
   for (const c of COMPETITIONS) {
     try {
@@ -69,6 +127,7 @@ export async function GET(request: Request) {
         errors.push(`${c.competition}: la API no devolvió partidos`);
         continue;
       }
+      if (c.crear) creados += await crearPartidos(supabase, c, list);
 
       // Solo los que aún no han terminado: reescribir la fecha de un partido
       // ya jugado no aporta nada y arriesga a pisar datos buenos.
@@ -121,6 +180,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: errors.length === 0,
     moved: moved.length,
+    creados,
     changes: moved,
     errors,
   });

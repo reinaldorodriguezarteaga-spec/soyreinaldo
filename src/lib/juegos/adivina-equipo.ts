@@ -6,6 +6,9 @@ import {
   type LigaJuego,
   type Reto,
 } from "./equipos-historicos";
+import { delDia } from "./diario";
+
+export { numeroDelDia } from "./diario";
 
 /**
  * Reglas de «Adivina el equipo»: cinco intentos y una pista nueva tras cada
@@ -14,8 +17,6 @@ import {
  */
 
 export const MAX_INTENTOS = 5;
-/** Día 1 del reto diario. */
-const INICIO = Date.UTC(2026, 9, 22);
 
 export type EquipoOpcion = { id: number; nombre: string; liga: LigaJuego };
 
@@ -56,31 +57,8 @@ export function opcionesDe(dificultad: Dificultad): EquipoOpcion[] {
   return [...porId.values()].filter((e) => ligas.includes(e.liga)).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }
 
-/** Número del reto del día según la fecha de Madrid (1 = 22-oct-2026). */
-export function numeroDelDia(ahora = new Date()): number {
-  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" })
-    .format(ahora)
-    .split("-")
-    .map(Number);
-  return Math.max(1, Math.floor((Date.UTC(y, m - 1, d) - INICIO) / 86_400_000) + 1);
-}
-
-/** Barajado fijo (LCG con semilla): cada vuelta completa a la lista sale en
- * otro orden, y nunca se repite un reto hasta haber salido todos. */
-function barajado(vuelta: number): Reto[] {
-  let s = Math.imul(vuelta + 1, 2654435761) >>> 0;
-  const r = [...RETOS];
-  for (let i = r.length - 1; i > 0; i--) {
-    s = (Math.imul(s, 1103515245) + 12345) >>> 0;
-    const j = s % (i + 1);
-    [r[i], r[j]] = [r[j], r[i]];
-  }
-  return r;
-}
-
 export function retoDelDia(numero: number): Reto {
-  const i = numero - 1;
-  return barajado(Math.floor(i / RETOS.length))[i % RETOS.length];
+  return delDia(RETOS, numero);
 }
 
 export type Pista = { titulo: string; texto: string };

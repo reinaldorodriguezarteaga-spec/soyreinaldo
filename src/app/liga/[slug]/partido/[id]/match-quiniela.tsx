@@ -86,6 +86,22 @@ export default async function MatchQuiniela({
     </>
   );
 
+  // Los de la Champions (counts_for_scoring = false) son de su propia
+  // quiniela, con su clasificación (21-oct).
+  if (!partido.counts_for_scoring) {
+    return (
+      <Caja>
+        <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
+          <T>Este partido entra en la quiniela de la Champions. Pronostica el marcador y sube en la clasificación.</T>
+        </p>
+        {bloqueComunidad}
+        <Link href="/quiniela-champions" className="btn btn--accent">
+          <T>Quiniela de la Champions</T> <span className="arr">→</span>
+        </Link>
+      </Caja>
+    );
+  }
+
   if (!user) {
     return (
       <Caja>
