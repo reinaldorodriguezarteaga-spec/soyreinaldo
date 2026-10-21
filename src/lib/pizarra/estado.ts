@@ -21,6 +21,8 @@ export type Zona = { a: Punto; b: Punto; color: string; rayas?: boolean };
  * ("l:154"), así sigue su forma cuando se mueven y en la animación. Con dos,
  * es una línea. */
 export type Enlace = { jug: string[]; color: string };
+/** Trazo a mano alzada con el pincel (21-oct). */
+export type Trazo = { puntos: Punto[]; color: string };
 export type Texto = { p: Punto; t: string };
 
 /** Colores para equipaciones y zonas (los únicos que acepta la URL). */
@@ -41,6 +43,8 @@ export const COLOR_INICIAL: PorLado<string> = { local: "#3b82f6", visitante: "#f
 const MAX_ZONAS = 20;
 const MAX_TEXTOS = 20;
 const MAX_ENLACES = 10;
+const MAX_TRAZOS = 30;
+export const MAX_PUNTOS_TRAZO = 200;
 export const MAX_LARGO_TEXTO = 60;
 export type Estado = {
   formacion: PorLado<string>;
@@ -55,6 +59,7 @@ export type Estado = {
   /** Jugadores destacados ("l:154"). */
   focos: string[];
   enlaces: Enlace[];
+  trazos: Trazo[];
   colores: PorLado<string>;
 };
 
@@ -75,6 +80,7 @@ export const estadoInicial = (): Estado => ({
   textos: [],
   focos: [],
   enlaces: [],
+  trazos: [],
   colores: { ...COLOR_INICIAL },
 });
 
@@ -127,6 +133,8 @@ export function codificar(e: Estado): string {
       ...(z.rayas ? [1] : []),
     ]),
     n: e.enlaces.map((n) => [n.jug, PALETA.indexOf(n.color as (typeof PALETA)[number])]),
+    // Trazo: [color, x1, y1, x2, y2…] en milésimas (el enlace sigue corto).
+    r: e.trazos.map((t) => [PALETA.indexOf(t.color as (typeof PALETA)[number]), ...t.puntos.flatMap((p) => [aMil(p.x), aMil(p.y)])]),
     t: e.textos.map((t) => [aMil(t.p.x), aMil(t.p.y), t.t]),
     k: e.focos,
     c: [PALETA.indexOf(e.colores.local as (typeof PALETA)[number]), PALETA.indexOf(e.colores.visitante as (typeof PALETA)[number])],
@@ -214,6 +222,18 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
       const jug = [...new Set((n[0] as unknown[]).filter(claveValida))].slice(0, 22);
       const color = PALETA[typeof n[1] === "number" ? n[1] : -1];
       if (jug.length >= 2 && color) e.enlaces.push({ jug, color });
+    }
+  }
+  if (Array.isArray(d.r)) {
+    for (const t of d.r.slice(0, MAX_TRAZOS)) {
+      if (!Array.isArray(t)) continue;
+      const color = PALETA[typeof t[0] === "number" ? t[0] : -1];
+      const puntos: Punto[] = [];
+      for (let i = 1; i + 1 < t.length && puntos.length < MAX_PUNTOS_TRAZO; i += 2) {
+        const p = leerPunto([t[i], t[i + 1]]);
+        if (p) puntos.push(p);
+      }
+      if (color && puntos.length >= 2) e.trazos.push({ puntos, color });
     }
   }
   if (Array.isArray(d.k)) e.focos = [...new Set(d.k.filter(claveValida))].slice(0, 22);

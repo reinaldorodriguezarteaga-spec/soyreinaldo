@@ -17,6 +17,7 @@ describe("estado de la pizarra en la URL", () => {
         { a: { x: 0.5, y: 0.1 }, b: { x: 0.6, y: 0.4 }, color: "#ef4444", rayas: true },
       ],
       enlaces: [{ jug: ["l:1", "l:2", "v:10"], color: "#22c55e" }],
+      trazos: [{ puntos: [{ x: 0.1, y: 0.2 }, { x: 0.15, y: 0.25 }, { x: 0.2, y: 0.22 }], color: "#ffffff" }],
       textos: [{ p: { x: 0.5, y: 0.2 }, t: "Presión alta" }],
       focos: ["l:2"],
       colores: { local: "#a50044", visitante: "#ffffff" },
@@ -76,6 +77,11 @@ describe("estado de la pizarra en la URL", () => {
   it("enlaces: solo jugadores de la plantilla, sin repetir y con al menos dos", () => {
     const raro = btoa(JSON.stringify({ n: [[["l:1", "l:1", "l:99", "v:10"], 6], [["l:1"], 6], [["l:2", "v:11"], 99]] }));
     expect(decodificar(raro, plantillas)!.enlaces).toEqual([{ jug: ["l:1", "v:10"], color: "#22c55e" }]);
+  });
+
+  it("trazos: color de la paleta y al menos dos puntos", () => {
+    const raro = btoa(JSON.stringify({ r: [[9, 100, 100, 200, 200], [99, 1, 1, 2, 2], [9, 5, 5], "x"] }));
+    expect(decodificar(raro, plantillas)!.trazos).toEqual([{ puntos: [{ x: 0.1, y: 0.1 }, { x: 0.2, y: 0.2 }], color: "#ffffff" }]);
   });
 
   it("basura o demasiado largo: null", () => {
