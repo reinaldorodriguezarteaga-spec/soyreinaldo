@@ -2705,3 +2705,6 @@ select.field { appearance: none; }
   .af-contexto-movil { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
   .af-contexto-movil .pz-tool { padding: 6px 10px; }
 }
+/* Vídeos como fuente de fotogramas (22-oct). */
+.af-video { margin-bottom: 20px; }
+.af-video video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: 10px; margin-bottom: 12px; }

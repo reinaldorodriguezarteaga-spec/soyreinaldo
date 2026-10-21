@@ -3,9 +3,9 @@ import Link from "next/link";
 import Analizador from "./analizador";
 
 export const metadata: Metadata = {
-  title: "Analiza tu jugada: marca fotos del partido | Soy Reinaldo",
+  title: "Analiza tu jugada: marca fotos y vídeos del partido | Soy Reinaldo",
   description:
-    "Sube capturas de una jugada y márcalas como en la tele: flechas, círculos, zonas, rayas, pincel y texto. Varias fotos a la vez y sin subir nada a ningún servidor.",
+    "Sube fotos o un vídeo de una jugada, captura fotogramas del vídeo y márcalos como en la tele: flechas, círculos, zonas, rayas, pincel y texto. Sin subir nada a ningún servidor.",
   alternates: { canonical: "/pizarra/fotos" },
 };
 
