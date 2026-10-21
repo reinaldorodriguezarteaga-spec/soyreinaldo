@@ -163,7 +163,8 @@ export default async function PizarraPage({
       <section className="section" style={{ paddingTop: 28 }}>
         <div className="wrap">
           <p className="eyebrow">
-            Análisis · <Link href="/pizarra/comunidad">Pizarras de la comunidad →</Link>
+            Análisis · <Link href="/pizarra/comunidad">Pizarras de la comunidad →</Link> ·{" "}
+            <Link href="/pizarra/fotos">🖼️ Analiza tu jugada (fotos) →</Link>
           </p>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 6px" }}>
             Pizarra táctica
