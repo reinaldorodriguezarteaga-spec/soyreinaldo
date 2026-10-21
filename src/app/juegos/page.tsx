@@ -32,6 +32,13 @@ const JUEGOS = [
     listo: true,
   },
   {
+    href: "/juegos/mas-o-menos",
+    emoji: "⚖️",
+    titulo: "¿Más o menos?",
+    texto: "¿Quién tiene más goles o asistencias esta temporada? Racha hasta que falles.",
+    listo: true,
+  },
+  {
     href: "/juegos/adivina-el-once",
     emoji: "📋",
     titulo: "Adivina el once",

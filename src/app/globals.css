@@ -2591,3 +2591,22 @@ select.field { appearance: none; }
 .ao-clasif__n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ao-clasif__p { color: var(--text-dim); font-size: 0.8rem; }
 .ao-clasif__p b { color: var(--text); font-size: 0.95rem; }
+/* ¿Más o menos? */
+.mm-marcador { display: flex; justify-content: center; gap: 24px; color: var(--text-dim); font-size: 0.9rem; }
+.mm-marcador b { color: var(--text); font-family: var(--font-display-stack); font-size: 1.4rem; margin-left: 4px; }
+.mm-pregunta { text-align: center; font-weight: 800; font-size: 1.15rem; margin: 10px 0 14px; }
+.mm-duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 640px; margin: 0 auto; }
+.mm-jug { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 10px; border-radius: var(--radius); border: 2px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; text-align: center; transition: border-color 0.15s, transform 0.15s; }
+.mm-jug:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.mm-jug:disabled { cursor: default; }
+.mm-jug.is-ok { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+.mm-jug.is-mal { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+.mm-jug__foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: var(--bg); }
+.mm-jug b { font-size: 1.05rem; }
+.mm-jug__eq { display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; color: var(--text-dim); }
+.mm-jug__eq img { width: 18px; height: 18px; object-fit: contain; }
+.mm-jug__liga { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.mm-jug__num { font-family: var(--font-display-stack); font-size: 2.6rem; line-height: 1; margin-top: 4px; }
+.mm-vs { position: absolute; right: -22px; top: 50%; transform: translateY(-50%); z-index: 1; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-2); color: #111; font-weight: 900; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+.mm-fin { text-align: center; color: #fca5a5; font-weight: 700; }
+@media (max-width: 480px) { .mm-jug__foto { width: 72px; height: 72px; } .mm-jug__num { font-size: 2rem; } }
