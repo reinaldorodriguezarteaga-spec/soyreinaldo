@@ -60,9 +60,9 @@ export async function guardarArchivo(
   try {
     const db = cliente();
     if (!db) return;
-    await db
-      .from("apif_archivo")
-      .upsert({ url, respuesta, final, actualizado: new Date().toISOString() });
+    // Con firma (migración 081): una respuesta idéntica a la guardada solo
+    // renueva la fecha, sin reescribir el JSON (aviso de Disk IO, 21-oct).
+    await db.rpc("guardar_archivo", { p_url: url, p_respuesta: respuesta, p_final: final });
   } catch {
     // best-effort
   }
