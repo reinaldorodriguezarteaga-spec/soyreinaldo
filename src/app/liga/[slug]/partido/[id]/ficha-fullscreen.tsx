@@ -157,13 +157,34 @@ export default function FichaFullscreen({
     if (foto !== "off") return;
     setFoto("preparando");
     try {
-      // Que la copia se monte y cargue escudos y fotos antes de capturar.
-      await new Promise((r) => setTimeout(r, 400));
+      // Que la copia se monte antes de capturar.
+      await new Promise((r) => setTimeout(r, 100));
       const nodo = fotoRef.current;
       if (!nodo) throw new Error("sin nodo");
+      // Escudos y fotos: next/image los pone en carga diferida y la copia
+      // está fuera de la pantalla, así que nunca se cargaban y la foto salía
+      // sin caras ni escudos (21-oct, iPhone). Se fuerzan y se esperan (4 s
+      // como mucho cada una).
+      const imgs = [...nodo.querySelectorAll("img")];
+      for (const img of imgs) img.loading = "eager";
+      await Promise.all(
+        imgs.map((img) =>
+          img.complete && img.naturalWidth > 0
+            ? Promise.resolve()
+            : new Promise<void>((listo) => {
+                const fin = setTimeout(listo, 4000);
+                img.addEventListener("load", () => (clearTimeout(fin), listo()), { once: true });
+                img.addEventListener("error", () => (clearTimeout(fin), listo()), { once: true });
+              }),
+        ),
+      );
       const { toBlob } = await import("html-to-image");
       const fondo = getComputedStyle(document.body).backgroundColor || "#0a1030";
-      const blob = await toBlob(nodo, { pixelRatio: 2, backgroundColor: fondo });
+      const opciones = { pixelRatio: 2, backgroundColor: fondo };
+      // Safari pinta las imágenes del SVG intermedio tarde: la primera pasada
+      // sale sin ellas (fallo conocido de html-to-image). Una de calentamiento.
+      if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) await toBlob(nodo, opciones).catch(() => null);
+      const blob = await toBlob(nodo, opciones);
       if (!blob) throw new Error("sin imagen");
       const archivo = new File([blob], nombreFoto, { type: "image/png" });
       if (navigator.canShare?.({ files: [archivo] })) {
