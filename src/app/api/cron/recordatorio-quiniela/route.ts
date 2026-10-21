@@ -51,6 +51,9 @@ export async function GET(request: Request) {
   const { data: proximos } = await db
     .from("lq_matches")
     .select("id, kickoff_at, home:team_home(name), away:team_away(name)")
+    // Solo LaLiga: los de la Champions (counts_for_scoring = false, 21-oct)
+    // son otra quiniela y no deben salir en el aviso de quien no la juega.
+    .eq("counts_for_scoring", true)
     .eq("finished", false)
     .gt("kickoff_at", ahora.toISOString())
     .lte("kickoff_at", hasta.toISOString())

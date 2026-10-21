@@ -2627,3 +2627,5 @@ select.field { appearance: none; }
 .na-num { text-align: center; font-family: var(--font-mono-stack); font-weight: 700; font-size: 0.9rem; }
 .na-num small { display: block; font-size: 0.62rem; color: var(--text-dim); font-weight: 400; }
 .na-lista select { padding: 4px 6px; width: 100%; }
+/* Quiniela de la Champions */
+.qc-vistas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }

@@ -151,6 +151,8 @@ export const tarjetaJornada = (usuario: string, jornada: number) =>
         .from("lq_matches")
         .select("competition, season")
         .eq("matchday", jornada)
+        // La jornada de LaLiga, no la de la Champions con el mismo número.
+        .eq("counts_for_scoring", true)
         .order("season", { ascending: false })
         .limit(1)
         .maybeSingle<{ competition: string; season: number }>();

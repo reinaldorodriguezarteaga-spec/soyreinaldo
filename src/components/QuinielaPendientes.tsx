@@ -29,6 +29,8 @@ async function contarPendientes(): Promise<number> {
       supabase
         .from("lq_matches")
         .select("id")
+        // Solo los de LaLiga (los de la Champions son otra quiniela).
+        .eq("counts_for_scoring", true)
         .eq("finished", false)
         .gt("kickoff_at", ahora.toISOString())
         .lte("kickoff_at", hasta.toISOString())

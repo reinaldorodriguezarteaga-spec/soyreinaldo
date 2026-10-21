@@ -108,6 +108,7 @@ export async function GET(request: Request) {
   const { data: prox } = await db
     .from("lq_matches")
     .select("matchday, kickoff_at")
+    .eq("counts_for_scoring", true)
     .gt("kickoff_at", new Date().toISOString())
     .order("kickoff_at", { ascending: true })
     .limit(1)

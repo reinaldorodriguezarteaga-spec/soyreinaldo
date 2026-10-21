@@ -45,7 +45,15 @@ export async function savePrediction(
     return { ok: false, reason: "error", message: "Marcador inválido" };
   }
 
-  await ensureLeague(supabase);
+  // Alta en la liga solo con partidos de LaLiga: quien juega solo la
+  // Champions (otra quiniela, counts_for_scoring = false) no debe aparecer
+  // con 0 puntos en la clasificación de LaLiga.
+  const { data: partido } = await supabase
+    .from("lq_matches")
+    .select("counts_for_scoring")
+    .eq("id", matchId)
+    .maybeSingle<{ counts_for_scoring: boolean }>();
+  if (partido?.counts_for_scoring) await ensureLeague(supabase);
 
   const { error } = await supabase.from("lq_predictions").upsert({
     user_id: user.id,
