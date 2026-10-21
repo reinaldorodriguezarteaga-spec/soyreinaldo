@@ -32,6 +32,13 @@ const JUEGOS = [
     listo: true,
   },
   {
+    href: "/juegos/once-de-leyenda",
+    emoji: "⭐",
+    titulo: "Once de leyenda",
+    texto: "Once rondas, tres leyendas por puesto. Elige y descubre la media de tu once histórico.",
+    listo: true,
+  },
+  {
     href: "/juegos/mas-o-menos",
     emoji: "⚖️",
     titulo: "¿Más o menos?",

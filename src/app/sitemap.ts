@@ -131,6 +131,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/juegos/adivina-el-equipo`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     { url: `${SITE}/juegos/adivina-el-jugador`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     { url: `${SITE}/juegos/adivina-el-once`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
+    { url: `${SITE}/juegos/once-de-leyenda`, lastModified: now, changeFrequency: "daily" as const, priority: 0.6 },
     { url: `${SITE}/juegos/mas-o-menos`, lastModified: now, changeFrequency: "daily" as const, priority: 0.6 },
     { url: `${SITE}/juegos/tiki-taka-toe`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     ...analisis,
