@@ -318,7 +318,9 @@ function place(chips: Chip[], lado: "arriba" | "abajo") {
   for (const [row, ps] of rows) {
     const sorted = ps.slice().sort((a, b) => col(a) - col(b));
     sorted.forEach((p, i) => {
-      const yHalf = 8 + ((row - 1) / Math.max(nRows - 1, 1)) * 36; // 8%..44% de cada mitad
+      // 5%..44% de cada mitad (antes 8%..44%: con cinco líneas las notas
+      // pisaban los nombres de la fila de arriba, 21-oct).
+      const yHalf = 5 + ((row - 1) / Math.max(nRows - 1, 1)) * 39;
       const x = ((i + 0.5) / sorted.length) * 100;
       out.push(
         lado === "arriba" ? { p, x: 100 - x, y: yHalf } : { p, x, y: 100 - yHalf },
