@@ -1,3 +1,4 @@
+import { nombreCorto } from "@/lib/sports/nombres";
 import Image from "next/image";
 import { MarcasJugador } from "@/components/IconosPartido";
 import Cronologia, { type Ev } from "./cronologia";
@@ -329,8 +330,9 @@ function place(chips: Chip[], lado: "arriba" | "abajo") {
 
 function ListaEntradas({ lista, lado }: { lista: Entrada[]; lado: "home" | "away" }) {
   if (lista.length === 0) return <div />;
-  const apellido = (n: string | null) =>
-    (n ?? "").replace(/^([A-Z]\.\s?)+/, "").split(" ").slice(-1)[0] || n || "";
+  // El mismo nombre corto que el resto de la web (alias incluidos: antes se
+  // quedaba con la última palabra y Cubarsí salía como «Paredes», 21-oct).
+  const apellido = (n: string | null) => (n ? nombreCorto(n) : "");
   return (
     <ul className="ficha__entradas" data-side={lado}>
       {lista.map((e) => (
@@ -372,7 +374,7 @@ function ListaEntradas({ lista, lado }: { lista: Entrada[]; lado: "home" | "away
 }
 
 function PlayerChip({ p, x, y }: { p: Chip; x: number; y: number }) {
-  const short = p.name.replace(/^([A-Z]\.\s?)+/, "").split(" ").slice(-1)[0] || p.name;
+  const short = nombreCorto(p.name);
   return (
     <div className="ficha__chip" style={{ left: `${x}%`, top: `${y}%` }}>
       <div className="ficha__avatar">
