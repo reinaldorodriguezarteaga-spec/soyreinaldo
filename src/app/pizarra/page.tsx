@@ -3,7 +3,9 @@ import { equiposVistaPrevia } from "@/lib/pizarra/equipos-vista-previa";
 import {
   getFixtureById,
   getFixtureLineups,
+  getTeamFixtures,
   getTeamSquad,
+  type Fixture,
   type LineupPlayer,
   type LineupTeam,
   type SquadPlayer,
@@ -86,7 +88,22 @@ export default async function PizarraPage({
   };
   const eqLocal = equipoDe(local, "home");
   const eqVisitante = equipoDe(visitante, "away");
-  const alineacionDe = (e: EquipoPizarra | null) => (e ? (alineaciones.find((l) => l.teamId === e.id) ?? null) : null);
+  // Sin partido ni pizarra compartida: cada equipo arranca con su última
+  // alineación titular (22-oct, pedido del dueño). Sale de la misma caché
+  // que el calendario de los equipos y del archivo de partidos terminados.
+  const ultimaAlineacion = async (e: EquipoPizarra | null): Promise<LineupTeam | null> => {
+    if (!e || delPartido || p) return null;
+    const { recent } = await getTeamFixtures(e.id, { last: 1, next: 0 }).catch(() => ({ recent: [] as Fixture[] }));
+    const ultimo = recent[0];
+    if (!ultimo) return null;
+    return (await getFixtureLineups(ultimo.fixture.id).catch(() => [])).find((l) => l.teamId === e.id) ?? null;
+  };
+  const [ultLocal, ultVisitante] = await Promise.all([ultimaAlineacion(eqLocal), ultimaAlineacion(eqVisitante)]);
+  const alineacionDe = (e: EquipoPizarra | null) =>
+    e
+      ? (alineaciones.find((l) => l.teamId === e.id) ??
+        (e.id === eqLocal?.id ? ultLocal : e.id === eqVisitante?.id ? ultVisitante : null))
+      : null;
 
   const conPlantilla = async (e: EquipoPizarra | null): Promise<EquipoConPlantilla | null> => {
     if (!e) return null;
@@ -114,7 +131,8 @@ export default async function PizarraPage({
   };
   const [pl, pv] = await Promise.all([conPlantilla(eqLocal), conPlantilla(eqVisitante)]);
 
-  // La pizarra con las alineaciones del partido, si ya están publicadas.
+  // La pizarra con las alineaciones del partido (si ya están publicadas) o
+  // con la última de cada equipo.
   let preparado: Estado | undefined;
   const aLocal = desdeAlineacion(alineacionDe(eqLocal), "local");
   const aVisitante = desdeAlineacion(alineacionDe(eqVisitante), "visitante");
