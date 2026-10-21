@@ -10,6 +10,7 @@ import { guardarEnGaleria } from "@/lib/app-galeria";
  * flechas, zonas, rayas, círculos y texto). Cada foto guarda sus dibujos y
  * se pasa de una a otra con la tira de miniaturas. Todo ocurre en el
  * navegador: las fotos no se suben a ningún sitio.
+ * Los vídeos sirven como fuente de fotogramas para marcar (22-oct).
  *
  * Coordenadas: de 0 a 1 sobre la foto (x a lo ancho, y a lo alto); el SVG
  * de encima usa los píxeles de la foto para que los trazos no se deformen.
@@ -56,6 +57,7 @@ const capturar = (e: React.PointerEvent) => {
 
 export default function Analizador() {
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [video, setVideo] = useState<{ url: string; nombre: string } | null>(null);
   const [actual, setActual] = useState(0);
   const [herr, setHerr] = useState<Herramienta>("pincel");
   const [color, setColor] = useState<string>("#facc15");
@@ -65,9 +67,11 @@ export default function Analizador() {
   const [exportando, setExportando] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
   const entrada = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cantidadFotos = useRef(0);
   const urls = useRef<string[]>([]);
 
-  // Liberar las fotos al salir.
+  // Liberar las fotos y los vídeos al salir.
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
   const foto = fotos[actual] ?? null;
@@ -79,7 +83,16 @@ export default function Analizador() {
   async function anadir(lista: FileList | null) {
     if (!lista?.length) return;
     const nuevas: Foto[] = [];
-    for (const f of [...lista].filter((x) => x.type.startsWith("image/")).slice(0, MAX_FOTOS - fotos.length)) {
+    let hayVideo = false;
+    for (const f of lista) {
+      if (f.type.startsWith("video/")) {
+        const url = URL.createObjectURL(f);
+        urls.current.push(url);
+        setVideo({ url, nombre: f.name });
+        hayVideo = true;
+        continue;
+      }
+      if (!f.type.startsWith("image/") || nuevas.length >= MAX_FOTOS - cantidadFotos.current) continue;
       const url = URL.createObjectURL(f);
       urls.current.push(url);
       const dim = await new Promise<{ w: number; h: number } | null>((ok) => {
@@ -90,16 +103,62 @@ export default function Analizador() {
       });
       if (dim) nuevas.push({ id: `${Date.now()}-${nuevas.length}`, url, nombre: f.name, ...dim, dibujos: [] });
     }
-    if (!nuevas.length) return avisar("No se pudo abrir ninguna imagen");
-    setFotos((fs) => [...fs, ...nuevas]);
-    setActual(fotos.length);
-    if (fotos.length + nuevas.length >= MAX_FOTOS) avisar(`Como mucho ${MAX_FOTOS} fotos a la vez`);
+    const indice = cantidadFotos.current;
+    const disponibles = nuevas.slice(0, MAX_FOTOS - indice);
+    if (disponibles.length) {
+      cantidadFotos.current += disponibles.length;
+      setFotos((fs) => [...fs, ...disponibles]);
+      setActual(indice);
+    }
+    if (cantidadFotos.current >= MAX_FOTOS) avisar(`Como mucho ${MAX_FOTOS} fotos a la vez`);
+    else if (!disponibles.length && !hayVideo) avisar("No se pudo abrir ninguna imagen");
+  }
+
+  function pasoVideo(paso: number) {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    if (!Number.isFinite(v.duration)) return;
+    v.currentTime = Math.min(v.duration, Math.max(0, v.currentTime + paso));
+  }
+
+  async function capturarFotograma() {
+    const v = videoRef.current;
+    if (!v || !video) return;
+    try {
+      v.pause();
+      if (!v.videoWidth) return avisar("El vídeo aún no está listo");
+      if (cantidadFotos.current >= MAX_FOTOS) return avisar(`Como mucho ${MAX_FOTOS} fotos a la vez`);
+      const t = v.currentTime;
+      const k = Math.min(1, MAX_LADO / Math.max(v.videoWidth, v.videoHeight));
+      const w = Math.round(v.videoWidth * k);
+      const h = Math.round(v.videoHeight * k);
+      const lienzo = document.createElement("canvas");
+      lienzo.width = w;
+      lienzo.height = h;
+      const g = lienzo.getContext("2d");
+      if (!g) return avisar("No se pudo capturar este vídeo");
+      g.drawImage(v, 0, 0, w, h);
+      const blob = await new Promise<Blob | null>((ok) => lienzo.toBlob(ok, "image/jpeg", 0.92));
+      if (!blob) return avisar("No se pudo capturar este vídeo");
+      if (cantidadFotos.current >= MAX_FOTOS) return avisar(`Como mucho ${MAX_FOTOS} fotos a la vez`);
+      const url = URL.createObjectURL(blob);
+      urls.current.push(url);
+      const indice = cantidadFotos.current;
+      cantidadFotos.current++;
+      setFotos((fs) => [...fs, { id: `${Date.now()}`, url, nombre: `${video.nombre} ${t.toFixed(1)}s`, w, h, dibujos: [] }]);
+      setActual(indice);
+      avisar("Fotograma añadido ✓");
+    } catch {
+      avisar("No se pudo capturar este vídeo");
+    }
   }
 
   const cambiarDibujos = (f: (d: Dibujo[]) => Dibujo[]) =>
     setFotos((fs) => fs.map((x, i) => (i === actual ? { ...x, dibujos: f(x.dibujos) } : x)));
 
   function quitarFoto(i: number) {
+    cantidadFotos.current--;
     setFotos((fs) => fs.filter((_, k) => k !== i));
     setActual((a) => Math.max(0, a > i || a === fotos.length - 1 ? a - 1 : a));
   }
@@ -228,7 +287,7 @@ export default function Analizador() {
       <input
         ref={entrada}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         hidden
         onChange={(e) => {
@@ -237,17 +296,38 @@ export default function Analizador() {
         }}
       />
 
+      {video && (
+        <div className="af-video">
+          <video ref={videoRef} src={video.url} controls playsInline preload="metadata" />
+          <div className="af-acciones">
+            <button type="button" className="btn btn--accent" onClick={() => void capturarFotograma()}>
+              📸 Capturar fotograma
+            </button>
+            <button type="button" className="pz-tool" onClick={() => pasoVideo(-0.1)}>
+              −0,1 s
+            </button>
+            <button type="button" className="pz-tool" onClick={() => pasoVideo(0.1)}>
+              +0,1 s
+            </button>
+            <button type="button" className="btn" onClick={() => setVideo(null)}>
+              Quitar vídeo
+            </button>
+          </div>
+          <p className="pz-ayuda">Pausa el vídeo en el momento clave y captura el fotograma: se añade como foto para marcarlo.</p>
+        </div>
+      )}
+
       {fotos.length === 0 ? (
         <button type="button" className="af-vacio" onClick={() => entrada.current?.click()}>
           <span aria-hidden>🖼️</span>
-          <b>Sube una o varias fotos de la jugada</b>
-          <span>Capturas de la tele, de un vídeo o del campo. Se quedan en tu móvil: no se suben a ningún sitio.</span>
+          <b>Sube fotos o un vídeo de la jugada</b>
+          <span>Capturas de la tele, clips o fotos del campo. Del vídeo sacas los fotogramas que quieras. Todo se queda en tu móvil: no se sube a ningún sitio.</span>
         </button>
       ) : (
         <>
           <div className="af-acciones">
-            <button type="button" className="btn" onClick={() => entrada.current?.click()} disabled={fotos.length >= MAX_FOTOS}>
-              + Añadir fotos
+            <button type="button" className="btn" onClick={() => entrada.current?.click()}>
+              + Añadir fotos o vídeo
             </button>
             <button type="button" className="btn btn--accent" onClick={() => exportar(false)} disabled={exportando}>
               📸 {exportando ? "Preparando…" : "Guardar esta"}
