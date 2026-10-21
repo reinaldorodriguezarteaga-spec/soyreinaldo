@@ -20,6 +20,9 @@ const PUBLIC_EXCEPTIONS = [
   "/quiniela-liga",
   "/quiniela-liga/ranking",
   "/quiniela-liga/reglas",
+  // La de la Champions (21-oct) trata al anónimo ella sola: ve partidos y
+  // clasificación, y pronosticar le pide entrar.
+  "/quiniela-champions",
 ];
 
 const PENDING_INVITE_COOKIE = "pending_invite";
