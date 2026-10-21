@@ -24,9 +24,16 @@ const PRODUCTOS = [
 
 const NAV_LINKS = [
   { href: "/analisis", label: "Análisis" },
-  { href: "/pizarra", label: "Pizarra" },
   { href: "/juegos", label: "Juegos" },
   { href: "/quiniela-liga", label: "Quiniela" },
+];
+
+/** Las tres pizarras (22-oct, pedido del dueño: no se distinguían). Van
+ * entre Análisis y Juegos. */
+const PIZARRAS = [
+  { href: "/pizarra", label: "Pizarra táctica", desc: "Monta los onces, mueve jugadores y anima la jugada" },
+  { href: "/pizarra/fotos", label: "Analiza tu jugada", desc: "Marca fotos y fotogramas de vídeo del partido real" },
+  { href: "/pizarra/comunidad", label: "Pizarras de la comunidad", desc: "Las que ha publicado la gente" },
 ];
 
 /** Estadios, Redes y Contáctame se agrupan aquí: sueltos eran tres enlaces
@@ -87,10 +94,10 @@ export default function Header({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<
-    "favoritos" | "competiciones" | "contacto" | "productos" | null
+    "favoritos" | "competiciones" | "contacto" | "productos" | "pizarra" | null
   >(null);
   const [mAcc, setMAcc] = useState<
-    "favoritos" | "competiciones" | "contacto" | "productos" | null
+    "favoritos" | "competiciones" | "contacto" | "productos" | "pizarra" | null
   >(null);
   const linksRef = useRef<HTMLDivElement>(null);
   // Buscador desplegable del header: mientras está abierto, los enlaces del
@@ -207,8 +214,33 @@ export default function Header({
                 )}
               </div>
 
-              {/* Links simples */}
-              {NAV_LINKS.map((n) => (
+              {/* Links simples, con el desplegable de la pizarra tras Análisis */}
+              {NAV_LINKS.slice(0, 1).map((n) => (
+                <Link key={n.href} href={n.href} className={isActive(n.href) ? "is-active" : ""}>
+                  <T>{n.label}</T>
+                </Link>
+              ))}
+              <div className="navdrop">
+                <button
+                  type="button"
+                  className={`navdrop__btn${pathname.startsWith("/pizarra") ? " is-active" : ""}`}
+                  aria-expanded={openMenu === "pizarra"}
+                  onClick={() => setOpenMenu((m) => (m === "pizarra" ? null : "pizarra"))}
+                >
+                  Pizarra <Caret />
+                </button>
+                {openMenu === "pizarra" && (
+                  <div className="navdrop__menu">
+                    {PIZARRAS.map((p) => (
+                      <Link key={p.href} href={p.href} className="navdrop__item">
+                        {p.label}
+                        <span className="d">{p.desc}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {NAV_LINKS.slice(1).map((n) => (
                 <Link
                   key={n.href}
                   href={n.href}
@@ -353,7 +385,29 @@ export default function Header({
                   </div>
                 )}
 
-                {NAV_LINKS.map((n) => (
+                {NAV_LINKS.slice(0, 1).map((n) => (
+                  <MobileLink key={n.href} href={n.href}>
+                    <T>{n.label}</T>
+                  </MobileLink>
+                ))}
+                <button
+                  type="button"
+                  className="navacc__btn"
+                  aria-expanded={mAcc === "pizarra"}
+                  onClick={() => setMAcc((m) => (m === "pizarra" ? null : "pizarra"))}
+                >
+                  Pizarra <Caret />
+                </button>
+                {mAcc === "pizarra" && (
+                  <div className="navacc__sub">
+                    {PIZARRAS.map((p) => (
+                      <Link key={p.href} href={p.href}>
+                        {p.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                {NAV_LINKS.slice(1).map((n) => (
                   <MobileLink key={n.href} href={n.href}>
                     <T>{n.label}</T>
                   </MobileLink>
