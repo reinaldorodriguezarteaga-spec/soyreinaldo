@@ -37,6 +37,7 @@ import MatchVideos from "./match-videos";
 import MatchEncuestas from "./match-encuestas";
 import MatchNotasAficion from "./match-notas-aficion";
 import BotonCompartir from "@/components/BotonCompartir";
+import CompartirImagen from "@/components/CompartirImagen";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
 import MatchCronica from "./match-cronica";
@@ -604,6 +605,15 @@ export default async function LigaPartidoPage({
               <Link href={`/pizarra?partido=${fixtureId}`} className="compartir__btn" prefetch={false}>
                 <span aria-hidden>🧩</span> Abrir en la pizarra
               </Link>
+              {played && (
+                <CompartirImagen
+                  soloBoton
+                  imagen={`/liga/${slug}/partido/${fixtureId}/imagen`}
+                  nombreArchivo={`${home.name}-${away.name}.png`.replace(/\s+/g, "-")}
+                  url={`https://www.soyreinaldo.com/liga/${slug}/partido/${fixtureId}`}
+                  texto={`${conTildes(home.name)} ${fx.goals.home ?? 0}–${fx.goals.away ?? 0} ${conTildes(away.name)} · ${competition.name}`}
+                />
+              )}
               <BotonCompartir
                 url={`https://www.soyreinaldo.com/liga/${slug}/partido/${fixtureId}`}
                 texto={

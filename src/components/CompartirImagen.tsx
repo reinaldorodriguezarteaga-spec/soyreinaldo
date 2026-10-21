@@ -15,6 +15,7 @@ export default function CompartirImagen({
   nombreArchivo,
   url,
   texto,
+  soloBoton = false,
 }: {
   /** Ruta de la imagen en esta web. */
   imagen: string;
@@ -22,6 +23,9 @@ export default function CompartirImagen({
   /** URL absoluta de la página. */
   url: string;
   texto: string;
+  /** Solo el botón de la imagen, con el estilo pequeño de las fichas (el
+   * de compartir enlace ya está al lado). */
+  soloBoton?: boolean;
 }) {
   const [cargando, setCargando] = useState(false);
 
@@ -53,6 +57,14 @@ export default function CompartirImagen({
       setCargando(false);
     }
   };
+
+  if (soloBoton) {
+    return (
+      <button type="button" className="compartir__btn" onClick={compartir} disabled={cargando}>
+        <span aria-hidden>📸</span> {cargando ? "Preparando…" : "Imagen para redes"}
+      </button>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
