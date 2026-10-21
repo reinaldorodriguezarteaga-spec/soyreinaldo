@@ -35,6 +35,7 @@ import StandingsImpact from "./standings-impact";
 import MatchQuiniela from "./match-quiniela";
 import MatchVideos from "./match-videos";
 import MatchEncuestas from "./match-encuestas";
+import MatchNotasAficion from "./match-notas-aficion";
 import BotonCompartir from "@/components/BotonCompartir";
 import MatchAnalisis from "./match-analisis";
 import MatchPrevia from "./match-previa";
@@ -481,6 +482,23 @@ export default async function LigaPartidoPage({
         .map((p) => ({ id: String(p.id), texto: nombreConocido(p.name, p.id, nombrePlantilla) }))
     : null;
 
+  // Nota de la afición: los que jugaron de cada equipo, por minutos. Se vota
+  // la semana siguiente al partido (como la encuesta del MVP).
+  const equiposNotas = final
+    ? [
+        { t: home, ps: homePlayers },
+        { t: away, ps: awayPlayers },
+      ].map(({ t, ps }) => ({
+        id: t.id,
+        nombre: t.name,
+        escudo: t.logo,
+        jugadores: ps
+          .filter((p) => (p.minutes ?? 0) > 0)
+          .sort((a, b) => (b.minutes ?? 0) - (a.minutes ?? 0))
+          .map((p) => ({ id: p.id, nombre: nombreConocido(p.name, p.id, nombrePlantilla), foto: p.photo, nota: p.rating })),
+      }))
+    : null;
+
   const homeLineup = lineups.find((l) => l.teamId === home.id) ?? null;
   const awayLineup = lineups.find((l) => l.teamId === away.id) ?? null;
   const hasRatings = homePlayers.length > 0 || awayPlayers.length > 0;
@@ -623,6 +641,11 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchEncuestas fixtureId={fixtureId} candidatosMvp={candidatosMvp} />
           </Suspense>
+          {equiposNotas && equiposNotas.some((e) => e.jugadores.length > 0) && (
+            <Suspense fallback={null}>
+              <MatchNotasAficion fixtureId={fixtureId} equipos={equiposNotas} abierto={empezoHaceMenosDe(fx.fixture.date, 7)} />
+            </Suspense>
+          )}
           {!played && (
             <Suspense fallback={null}>
               <MatchPrevia

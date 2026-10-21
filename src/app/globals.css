@@ -2610,3 +2610,20 @@ select.field { appearance: none; }
 .mm-vs { position: absolute; right: -22px; top: 50%; transform: translateY(-50%); z-index: 1; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-2); color: #111; font-weight: 900; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
 .mm-fin { text-align: center; color: #fca5a5; font-weight: 700; }
 @media (max-width: 480px) { .mm-jug__foto { width: 72px; height: 72px; } .mm-jug__num { font-size: 2rem; } }
+/* Nota de la afición (ficha del partido) */
+.na { padding: 14px; }
+.na-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.na-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.na-tabs button.is-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.na-tabs img { width: 20px; height: 20px; object-fit: contain; }
+.na-cab, .na-lista li { display: grid; grid-template-columns: minmax(0, 1fr) 48px 64px 64px; align-items: center; gap: 8px; }
+.na-lista li.na-sin-voto, .na:not(:has(select)) .na-cab { grid-template-columns: minmax(0, 1fr) 48px 64px; }
+.na-cab { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 4px 6px; text-align: center; }
+.na-lista { list-style: none; margin: 0; padding: 0; }
+.na-lista li { padding: 6px 4px; border-top: 1px solid var(--line); }
+.na-jug { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.na-jug img, .na-jug__sin { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: none; background: var(--bg); }
+.na-jug__n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; }
+.na-num { text-align: center; font-family: var(--font-mono-stack); font-weight: 700; font-size: 0.9rem; }
+.na-num small { display: block; font-size: 0.62rem; color: var(--text-dim); font-weight: 400; }
+.na-lista select { padding: 4px 6px; width: 100%; }
