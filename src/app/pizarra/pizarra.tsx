@@ -1,5 +1,6 @@
 "use client";
 
+import { guardarEnGaleria } from "@/lib/app-galeria";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FORMACIONES, huecoParaJugador, huecos, onceAutomatico, type Lado } from "@/lib/pizarra/formaciones";
@@ -488,7 +489,10 @@ export default function Pizarra({
     setCompartiendo(true);
     try {
       const blob = await imagenPizarra(escena(null));
-      if (blob) await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
+      if (!blob) return;
+      // En la app (1.1): directa a la galería.
+      if (await guardarEnGaleria(blob, "pizarra-soyreinaldo.png")) return avisar("Guardada en tu galería ✓");
+      await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
     } finally {
       setCompartiendo(false);
     }
@@ -604,6 +608,7 @@ export default function Pizarra({
     try {
       const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando);
       if (!r) return avisar("Tu navegador no permite grabar vídeo");
+      if (await guardarEnGaleria(r.blob, `jugada-soyreinaldo.${r.ext}`)) return avisar("Vídeo guardado en tu galería ✓");
       // Descarga directa (pedido del dueño: nada de hoja de compartir).
       descargar(r.blob, `jugada-soyreinaldo.${r.ext}`);
       avisar("Vídeo descargado");
