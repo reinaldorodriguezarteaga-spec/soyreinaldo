@@ -1,5 +1,6 @@
 "use client";
 
+import { guardarEnGaleria } from "@/lib/app-galeria";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FORMACIONES, huecoParaJugador, huecos, onceAutomatico, type Lado } from "@/lib/pizarra/formaciones";
@@ -18,7 +19,9 @@ import {
   type Punto,
   type Texto,
   type TipoFlecha,
+  type Trazo,
   type Zona,
+  MAX_PUNTOS_TRAZO,
 } from "@/lib/pizarra/estado";
 import { duracion, fotograma, type Fotograma } from "@/lib/pizarra/animacion";
 import { nombreCorto } from "@/lib/sports/nombres";
@@ -47,15 +50,16 @@ export type JugadorPizarra = {
   photo: string | null;
 };
 export type EquipoConPlantilla = { id: number; name: string; logo: string; plantilla: JugadorPizarra[] };
-type Modo = "mover" | TipoFlecha | "zona" | "rayas" | "enlace" | "texto" | "foco" | "grupo";
+type Modo = "mover" | TipoFlecha | "pincel" | "zona" | "rayas" | "enlace" | "texto" | "foco" | "grupo";
 /** Modos que dibujan arrastrando o tocando el césped (las fichas no estorban). */
-const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "zona", "rayas", "texto", "grupo"];
+const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "pincel", "zona", "rayas", "texto", "grupo"];
 /** Qué hace cada herramienta (ayuda bajo el campo y al pasar el ratón). */
 const AYUDA: Record<Modo, string> = {
   mover:
     "Toca un «+» o un jugador de la lista para colocarlo, o arrástralo al campo. Las fichas se mueven libremente; suéltalas fuera del campo para quitarlas.",
   pase: "Arrastra sobre el campo para dibujar un pase (flecha blanca).",
   carrera: "Arrastra sobre el campo para dibujar una carrera o desmarque (flecha amarilla discontinua).",
+  pincel: "Dibuja a mano alzada sobre el campo con el color que elijas.",
   zona: "Arrastra sobre el campo para sombrear una zona (elige el color arriba).",
   rayas: "Arrastra sobre el campo para marcar una zona con relleno de rayas (elige el color arriba).",
   enlace:
@@ -66,6 +70,19 @@ const AYUDA: Record<Modo, string> = {
     "Dibuja un recuadro alrededor de varios jugadores: se iluminan en azul y luego, al arrastrar uno, se mueven todos juntos (para mover una línea entera).",
 };
 type Orden = "posicion" | "numero";
+/** Herramientas: icono y nombre (barra de escritorio y columna del móvil). */
+const HERRAMIENTAS: [Modo, string, string][] = [
+  ["mover", "✋", "Mover"],
+  ["pase", "➜", "Pase"],
+  ["carrera", "⤳", "Carrera"],
+  ["pincel", "✎", "Pincel"],
+  ["zona", "▭", "Zona"],
+  ["rayas", "▨", "Rayas"],
+  ["enlace", "⬠", "Unir"],
+  ["texto", "T", "Texto"],
+  ["foco", "◎", "Destacar"],
+  ["grupo", "⬚", "Mover grupo"],
+];
 
 const LADOS: Lado[] = ["local", "visitante"];
 const POS_ES: Record<string, string> = { Goalkeeper: "POR", Defender: "DEF", Midfielder: "MED", Attacker: "DEL" };
@@ -149,6 +166,10 @@ export default function Pizarra({
   const [elegir, setElegir] = useState<{ lado: Lado; hueco: number } | null>(null);
   const [fantasma, setFantasma] = useState<{ lado: Lado; id: number; cx: number; cy: number } | null>(null);
   const [trazo, setTrazo] = useState<Flecha | null>(null);
+  /** Trazo del pincel que se está dibujando. */
+  const [pincel, setPincel] = useState<Punto[] | null>(null);
+  /** Columna de herramientas del móvil abierta (con los nombres). */
+  const [railAbierto, setRailAbierto] = useState(false);
   const [horizontal, setHorizontal] = useState(false);
   const [compartiendo, setCompartiendo] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -174,7 +195,7 @@ export default function Pizarra({
   );
   const campo = useRef<HTMLDivElement>(null);
   const gesto = useRef<{ x: number; y: number; activo: boolean; ultimo?: Punto | null } | null>(null);
-  const { formacion, once, movidos, flechas, balon, zonas, textos, focos, enlaces, colores } = estado;
+  const { formacion, once, movidos, flechas, balon, zonas, textos, focos, enlaces, trazos, colores } = estado;
   /** Jugadores que se van uniendo con la herramienta «Unir» ("l:154"). */
   const [enlaceEnCurso, setEnlaceEnCurso] = useState<string[]>([]);
 
@@ -362,6 +383,7 @@ export default function Pizarra({
     setFantasma(null);
     setTrazo(null);
     setCaja(null);
+    setPincel(null);
   };
 
   // ---- Flechas: en modo pase/carrera, se dibujan arrastrando sobre el campo.
@@ -376,17 +398,30 @@ export default function Pizarra({
     if (!p) return;
     if (modo === "texto") return setEditorTexto({ k: null, p, valor: "" });
     capturar(e);
+    if (modo === "pincel") return setPincel([p]);
     if (modo === "zona" || modo === "rayas" || modo === "grupo") return setCaja({ a: p, b: p });
     setTrazo({ a: p, b: p, tipo: modo });
   };
   const dibujoMove = (e: React.PointerEvent) => {
-    if (!trazo && !caja) return;
+    if (!trazo && !caja && !pincel) return;
     const p = aCanonico(e.clientX, e.clientY, false);
     if (!p) return;
+    if (pincel) {
+      // Un punto cada poco: el enlace ?p= no crece sin control.
+      const u = pincel[pincel.length - 1];
+      if (Math.hypot(p.x - u.x, p.y - u.y) >= 0.008 && pincel.length < MAX_PUNTOS_TRAZO) setPincel([...pincel, p]);
+      return;
+    }
     if (trazo) setTrazo({ ...trazo, b: p });
     if (caja) setCaja({ ...caja, b: p });
   };
   const dibujoUp = () => {
+    if (pincel) {
+      const t = pincel;
+      setPincel(null);
+      if (t.length >= 2) cambiar((e) => ({ ...e, trazos: [...e.trazos, { puntos: t, color: colorZona }].slice(-30) }));
+      return;
+    }
     if (caja) {
       const c = caja;
       setCaja(null);
@@ -488,7 +523,10 @@ export default function Pizarra({
     setCompartiendo(true);
     try {
       const blob = await imagenPizarra(escena(null));
-      if (blob) await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
+      if (!blob) return;
+      // En la app (1.1): directa a la galería.
+      if (await guardarEnGaleria(blob, "pizarra-soyreinaldo.png")) return avisar("Guardada en tu galería ✓");
+      await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
     } finally {
       setCompartiendo(false);
     }
@@ -593,6 +631,7 @@ export default function Pizarra({
       balon: f ? f.balon : balon,
       zonas,
       enlaces: enlaces.map((n) => ({ puntos: puntosEnlace(n.jug, f), color: n.color })),
+      trazos,
       textos,
     };
   };
@@ -604,6 +643,7 @@ export default function Pizarra({
     try {
       const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando);
       if (!r) return avisar("Tu navegador no permite grabar vídeo");
+      if (await guardarEnGaleria(r.blob, `jugada-soyreinaldo.${r.ext}`)) return avisar("Vídeo guardado en tu galería ✓");
       // Descarga directa (pedido del dueño: nada de hoja de compartir).
       descargar(r.blob, `jugada-soyreinaldo.${r.ext}`);
       avisar("Vídeo descargado");
@@ -765,6 +805,58 @@ export default function Pizarra({
     );
   };
 
+  const elegirModo = (m: Modo) => {
+    setModo(m);
+    setEnlaceEnCurso([]);
+    setCaja(null);
+    setPincel(null);
+  };
+  /** Mandos de la herramienta activa (colores, cerrar, soltar grupo): en la
+   * barra de escritorio y, en el móvil, justo encima del campo. */
+  const contexto = (
+    <>
+        {modo === "enlace" && enlaceEnCurso.length > 0 && (
+        <>
+          <button type="button" className="pz-tool on" onClick={cerrarEnlace} disabled={enlaceEnCurso.length < 2}>
+            ✓ Cerrar ({enlaceEnCurso.length})
+          </button>
+          <button type="button" className="pz-tool" onClick={() => setEnlaceEnCurso([])}>
+            Cancelar
+          </button>
+        </>
+      )}
+      {(modo === "pincel" || modo === "zona" || modo === "rayas" || modo === "enlace") && (
+        <span className="pz-paleta" role="radiogroup" aria-label="Color de la zona">
+          {PALETA.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={colorZona === c}
+              aria-label={`Color ${c}`}
+              className={colorZona === c ? "on" : ""}
+              style={{ background: c }}
+              onClick={() => setColorZona(c)}
+            />
+          ))}
+        </span>
+      )}
+      {seleccion.length > 0 && (
+        <button type="button" className="pz-tool on" onClick={() => setSeleccion([])}>
+          Soltar grupo ({seleccion.length})
+        </button>
+      )}
+    </>
+  );
+  const hayContexto =
+    (modo === "enlace" && enlaceEnCurso.length > 0) ||
+    ["pincel", "zona", "rayas", "enlace"].includes(modo) ||
+    seleccion.length > 0;
+
+  const hayDibujos = !!(flechas.length || zonas.length || textos.length || focos.length || enlaces.length || trazos.length);
+  const borrarDibujos = () =>
+    cambiar((e) => ({ ...e, flechas: [], zonas: [], textos: [], focos: [], enlaces: [], trazos: [] }));
+
   const pintarZona = (a: Punto, b: Punto, color: string, k: string, seleccionando = false, rayas = false) => {
     const p = enSvg(a);
     const q = enSvg(b);
@@ -784,6 +876,18 @@ export default function Pizarra({
       />
     );
   };
+
+  const pintarTrazo = (puntos: Punto[], color: string, k: string) => (
+    <polyline
+      key={k}
+      points={puntos.map((p) => `${enSvg(p).x},${enSvg(p).y}`).join(" ")}
+      fill="none"
+      stroke={color}
+      strokeWidth={0.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  );
 
   /** Zona entre jugadores: polígono (o línea con dos) que sigue sus posiciones. */
   const pintarEnlace = (puntos: Punto[], color: string, k: string, enCurso = false) => {
@@ -850,19 +954,7 @@ export default function Pizarra({
 
       <div className="pz-herramientas" role="toolbar" aria-label="Herramientas de la pizarra">
         <div className="pz-modos" role="radiogroup" aria-label="Qué hace el dedo en el campo">
-          {(
-            [
-              ["mover", "✋ Mover"],
-              ["pase", "➜ Pase"],
-              ["carrera", "⤳ Carrera"],
-              ["zona", "▭ Zona"],
-              ["rayas", "▨ Rayas"],
-              ["enlace", "⬠ Unir"],
-              ["texto", "T Texto"],
-              ["foco", "◎ Destacar"],
-              ["grupo", "⬚ Mover grupo"],
-            ] as [Modo, string][]
-          ).map(([m, etiqueta]) => (
+          {HERRAMIENTAS.map(([m, icono, etiqueta]) => (
             <button
               key={m}
               type="button"
@@ -870,55 +962,21 @@ export default function Pizarra({
               role="radio"
               aria-checked={modo === m}
               className={modo === m ? "on" : ""}
-              onClick={() => {
-                setModo(m);
-                setEnlaceEnCurso([]);
-                setCaja(null);
-              }}
+              onClick={() => elegirModo(m)}
             >
-              {etiqueta}
+              {icono} {etiqueta}
             </button>
           ))}
         </div>
         <button type="button" className={`pz-tool${balon ? " on" : ""}`} onClick={alternarBalon} aria-pressed={!!balon}>
           ⚽ Balón
         </button>
-        {modo === "enlace" && enlaceEnCurso.length > 0 && (
-          <>
-            <button type="button" className="pz-tool on" onClick={cerrarEnlace} disabled={enlaceEnCurso.length < 2}>
-              ✓ Cerrar ({enlaceEnCurso.length})
-            </button>
-            <button type="button" className="pz-tool" onClick={() => setEnlaceEnCurso([])}>
-              Cancelar
-            </button>
-          </>
-        )}
-        {(modo === "zona" || modo === "rayas" || modo === "enlace") && (
-          <span className="pz-paleta" role="radiogroup" aria-label="Color de la zona">
-            {PALETA.map((c) => (
-              <button
-                key={c}
-                type="button"
-                role="radio"
-                aria-checked={colorZona === c}
-                aria-label={`Color ${c}`}
-                className={colorZona === c ? "on" : ""}
-                style={{ background: c }}
-                onClick={() => setColorZona(c)}
-              />
-            ))}
-          </span>
-        )}
-        {seleccion.length > 0 && (
-          <button type="button" className="pz-tool on" onClick={() => setSeleccion([])}>
-            Soltar grupo ({seleccion.length})
-          </button>
-        )}
+        {contexto}
         <button
           type="button"
           className="pz-tool"
-          onClick={() => cambiar((e) => ({ ...e, flechas: [], zonas: [], textos: [], focos: [], enlaces: [] }))}
-          disabled={!flechas.length && !zonas.length && !textos.length && !focos.length && !enlaces.length}
+          onClick={borrarDibujos}
+          disabled={!hayDibujos}
         >
           Borrar dibujos
         </button>
@@ -968,6 +1026,51 @@ export default function Pizarra({
 
       <div className="pz-cuerpo">
         {lista("local")}
+        <div className="pz-campo-zona">
+          {/* Móvil (22-oct, pedido del dueño): herramientas en una columna a la
+              izquierda del campo; «»» la abre por encima con los nombres. */}
+          <div className={`pz-rail${railAbierto ? " is-abierto" : ""}`} role="toolbar" aria-label="Herramientas">
+            <button
+              type="button"
+              className="pz-rail__abrir"
+              onClick={() => setRailAbierto((a) => !a)}
+              aria-expanded={railAbierto}
+              aria-label={railAbierto ? "Cerrar los nombres" : "Ver los nombres de las herramientas"}
+            >
+              {railAbierto ? "«" : "»"}
+            </button>
+            {HERRAMIENTAS.map(([m, icono, etiqueta]) => (
+              <button
+                key={m}
+                type="button"
+                className={modo === m ? "on" : ""}
+                aria-pressed={modo === m}
+                aria-label={etiqueta}
+                onClick={() => {
+                  elegirModo(m);
+                  setRailAbierto(false);
+                }}
+              >
+                <span className="pz-rail__ic">{icono}</span>
+                <span className="pz-rail__et">{etiqueta}</span>
+              </button>
+            ))}
+            <span className="pz-rail__sep" />
+            <button type="button" className={balon ? "on" : ""} onClick={alternarBalon} aria-pressed={!!balon} aria-label="Balón">
+              <span className="pz-rail__ic">⚽</span>
+              <span className="pz-rail__et">Balón</span>
+            </button>
+            <button type="button" onClick={deshacer} disabled={historial.length === 0} aria-label="Deshacer">
+              <span className="pz-rail__ic">↶</span>
+              <span className="pz-rail__et">Deshacer</span>
+            </button>
+            <button type="button" onClick={borrarDibujos} disabled={!hayDibujos} aria-label="Borrar dibujos">
+              <span className="pz-rail__ic">🗑</span>
+              <span className="pz-rail__et">Borrar dibujos</span>
+            </button>
+          </div>
+          <div className="pz-campo-col">
+          {hayContexto && <div className="pz-contexto-movil">{contexto}</div>}
         <div
           ref={campo}
           className={`pz-campo${horizontal ? " pz-campo--h" : ""}${MODOS_DIBUJO.includes(modo) ? " pz-campo--dibujo" : ""}${modo === "foco" || modo === "enlace" ? " pz-campo--foco" : ""}${fot ? " pz-campo--anim" : ""}`}
@@ -1020,6 +1123,8 @@ export default function Pizarra({
             {enlaceEnCurso.length > 0 && pintarEnlace(puntosEnlace(enlaceEnCurso, null), colorZona, "n-curso", true)}
             {(fot ? fot.flechas : flechas).map((f, k) => pintarFlecha(f, k))}
             {trazo && pintarFlecha(trazo, "trazo")}
+            {trazos.map((t, k) => pintarTrazo(t.puntos, t.color, `r${k}`))}
+            {pincel && pintarTrazo(pincel, colorZona, "r-curso")}
           </svg>
           {LADOS.map((lado) =>
             huecos(formacion[lado], lado).map((h, i) => {
@@ -1116,6 +1221,8 @@ export default function Pizarra({
               ⚽
             </div>
           )}
+        </div>
+          </div>
         </div>
         {lista("visitante")}
       </div>
@@ -1326,6 +1433,7 @@ type Escena = {
   balon: Punto | null;
   zonas: Zona[];
   enlaces: { puntos: Punto[]; color: string }[];
+  trazos: Trazo[];
   textos: Texto[];
 };
 
@@ -1384,7 +1492,7 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.beginPath();
   g.roundRect(cx, cy, cw, ch, 24);
   g.fill();
-  g.strokeStyle = "rgba(255,255,255,0.22)";
+  g.strokeStyle = "rgba(255,255,255,0.75)";
   g.lineWidth = 3;
   g.stroke();
   g.beginPath();
@@ -1451,6 +1559,19 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
     }
     g.strokeStyle = n.color;
     g.lineWidth = 5;
+    g.lineJoin = "round";
+    g.stroke();
+  }
+
+  // Pincel.
+  for (const t of e.trazos) {
+    const pts = t.puntos.map(aLienzo);
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
+    g.strokeStyle = t.color;
+    g.lineWidth = 8;
+    g.lineCap = "round";
     g.lineJoin = "round";
     g.stroke();
   }

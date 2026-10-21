@@ -2334,7 +2334,7 @@ select.field { appearance: none; }
 .pz-cuerpo { display: grid; gap: 14px; grid-template-columns: 1fr; }
 /* Móvil: visitante arriba (ataca hacia abajo), campo, local abajo. */
 .pz-lista--visitante { order: 0; }
-.pz-campo { order: 1; }
+.pz-campo-zona { order: 1; min-width: 0; }
 .pz-lista--local { order: 2; }
 .pz-lista { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; min-width: 0; }
 .pz-lista__cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -2429,7 +2429,7 @@ select.field { appearance: none; }
 @media (min-width: 900px) {
   .pz-cuerpo { grid-template-columns: 220px minmax(0, 1fr) 220px; align-items: start; }
   .pz-lista--local { order: 0; }
-  .pz-campo { order: 1; }
+  .pz-campo-zona { order: 1; }
   .pz-lista--visitante { order: 2; }
   .pz-lista__jug { flex-direction: column; overflow-x: visible; overflow-y: auto; max-height: 560px; touch-action: pan-y; }
   .pz-jug { width: 100%; }
@@ -2645,3 +2645,35 @@ select.field { appearance: none; }
 .ol-repaso span.is-mio { border-color: var(--accent); color: var(--text); font-weight: 700; }
 /* Pizarra: jugadores que se van uniendo con «Unir» (21-oct). */
 .pz-ficha--enlace .pz-ficha__cara, .pz-ficha--enlace .pz-ficha__num { box-shadow: 0 0 0 3px #22c55e, 0 0 12px 3px rgba(34,197,94,0.5); border-radius: 50%; }
+
+/* Pizarra en el móvil (22-oct): herramientas en una columna estrecha a la
+   izquierda del campo; «»» la despliega por encima del campo con nombres.
+   En escritorio sigue la barra de arriba. */
+.pz-rail, .pz-contexto-movil { display: none; }
+.pz-campo-col { min-width: 0; }
+@media (max-width: 899px) {
+  .pz-herramientas { display: none; }
+  .pz-campo-zona { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 6px; align-items: start; }
+  .pz-rail { display: flex; flex-direction: column; gap: 1px; position: sticky; top: 76px; z-index: 5; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .pz-rail button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 29px; padding: 2px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; justify-content: center; }
+  .pz-rail button.on { background: var(--accent); color: #fff; }
+  .pz-rail button:disabled { opacity: 0.35; }
+  .pz-rail__ic { width: 22px; text-align: center; font-size: 0.95rem; line-height: 1; flex: none; }
+  .pz-rail__et { display: none; white-space: nowrap; }
+  .pz-rail__abrir { color: var(--accent) !important; font-weight: 900; font-size: 1rem !important; }
+  .pz-rail__sep { height: 1px; background: var(--line); margin: 2px 4px; }
+  .pz-rail.is-abierto { position: absolute; top: 0; left: 0; width: 170px; box-shadow: 0 12px 30px rgba(0,0,0,0.55); }
+  .pz-rail.is-abierto button { justify-content: flex-start; padding: 4px 8px; }
+  .pz-rail.is-abierto .pz-rail__et { display: inline; }
+  .pz-campo-col { grid-column: 2; }
+  .pz-contexto-movil { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .pz-contexto-movil .pz-tool { padding: 6px 10px; }
+}
+/* Líneas del césped bien blancas (22-oct): antes apenas se veían. */
+.pz-campo .pitch-mid, .pz-campo .pitch-midv { background: rgba(255,255,255,0.75); height: 2px; }
+.pz-campo .pitch-midv { width: 2px; height: auto; }
+.pz-campo .pitch-circle, .pz-campo .pitch-box { border: 2px solid rgba(255,255,255,0.75); }
+.pz-campo .pitch-box.t { border-top: 0; }
+.pz-campo .pitch-box.b { border-bottom: 0; }
+.pz-campo .pitch-box.l { border-left: 0; }
+.pz-campo .pitch-box.r { border-right: 0; }

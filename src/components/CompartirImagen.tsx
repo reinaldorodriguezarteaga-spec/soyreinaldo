@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import BotonCompartir from "@/components/BotonCompartir";
+import { guardarEnGaleria } from "@/lib/app-galeria";
 
 /**
  * Compartir una IMAGEN, no solo el enlace (18-oct, pedido del dueño: que la
@@ -36,6 +37,10 @@ export default function CompartirImagen({
         if (!r.ok) throw new Error(String(r.status));
         return r.blob();
       });
+      if (await guardarEnGaleria(blob, nombreArchivo)) {
+        alert("Imagen guardada en tu galería ✓");
+        return;
+      }
       const archivo = new File([blob], nombreArchivo, { type: blob.type || "image/png" });
       if (navigator.canShare?.({ files: [archivo] })) {
         try {

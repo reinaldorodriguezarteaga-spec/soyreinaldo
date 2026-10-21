@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { guardarEnGaleria } from "@/lib/app-galeria";
 
 /** Aire alrededor de la tarjeta al escalarla para que quepa en el viewport. */
 const MARGIN = 24;
@@ -186,6 +187,11 @@ export default function FichaFullscreen({
       if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) await toBlob(nodo, opciones).catch(() => null);
       const blob = await toBlob(nodo, opciones);
       if (!blob) throw new Error("sin imagen");
+      // En la app (1.1): directa a la galería.
+      if (await guardarEnGaleria(blob, nombreFoto)) {
+        alert("Foto guardada en tu galería ✓");
+        return;
+      }
       const archivo = new File([blob], nombreFoto, { type: "image/png" });
       if (navigator.canShare?.({ files: [archivo] })) {
         try {
