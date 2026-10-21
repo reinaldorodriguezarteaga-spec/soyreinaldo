@@ -25,6 +25,7 @@ const PRODUCTOS = [
 const NAV_LINKS = [
   { href: "/analisis", label: "Análisis" },
   { href: "/pizarra", label: "Pizarra" },
+  { href: "/juegos", label: "Juegos" },
   { href: "/quiniela-liga", label: "Quiniela" },
 ];
 

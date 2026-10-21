@@ -2459,3 +2459,67 @@ select.field { appearance: none; }
 .rpos td:last-child, .rpos th:last-child { padding-right: 16px; }
 .rpos--mejor td { background: color-mix(in oklch, var(--accent) 14%, transparent); }
 .rpos--mejor td:first-child { font-weight: 700; }
+
+/* Juegos (21-oct): portada de juegos y «Adivina el equipo». */
+.jg-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.jg-tarjeta { display: flex; flex-direction: column; gap: 6px; padding: 20px; text-decoration: none; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
+.jg-tarjeta:hover { border-color: var(--accent); transform: translateY(-2px); }
+.jg-tarjeta b { font-family: var(--font-display-stack); font-size: 1.35rem; text-transform: uppercase; letter-spacing: 0.02em; }
+.jg-tarjeta span { color: var(--text-dim); font-size: 0.9rem; }
+.jg-tarjeta__emoji { font-size: 1.8rem; }
+.jg-tarjeta .jg-tarjeta__ir { margin-top: auto; padding-top: 8px; color: var(--accent); font-weight: 700; }
+.jg-tarjeta.is-pronto { opacity: 0.6; }
+.jg-tarjeta.is-pronto:hover { transform: none; border-color: var(--line); }
+.jg-tarjeta.is-pronto .jg-tarjeta__ir { color: var(--text-dim); }
+
+.jg-modos, .jg-dif { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+.jg-modos button, .jg-dif button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+.jg-modos button.is-on, .jg-dif button.is-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.jg-dif__nota { color: var(--text-dim); font-size: 0.8rem; margin-left: 4px; }
+
+.jg-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 18px; align-items: start; }
+@media (max-width: 800px) { .jg-cuerpo { grid-template-columns: minmax(0, 1fr); } }
+.jg-campo { position: relative; display: flex; flex-direction: column-reverse; justify-content: space-around; gap: 6px; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 10 / 12; padding: 18px 8px; border-radius: 16px; border: 1px solid var(--line);
+  background:
+    linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14)) center / 100% 1px no-repeat,
+    radial-gradient(circle at center, transparent 54px, rgba(255,255,255,0.14) 55px, rgba(255,255,255,0.14) 56px, transparent 57px),
+    repeating-linear-gradient(180deg, #10271c 0 12.5%, #0d2219 12.5% 25%); }
+.jg-campo__form { position: absolute; top: 8px; left: 10px; font-family: var(--font-mono-stack); font-size: 0.75rem; color: rgba(255,255,255,0.7); }
+.jg-linea { display: flex; flex-direction: row-reverse; justify-content: space-around; }
+.jg-jug { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; flex: 1; }
+.jg-jug img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); background: #fff; }
+.jg-jug__n { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.55); background: rgba(10,16,48,0.7); padding: 1px 6px; border-radius: 4px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jg-jug__n.is-visto { color: #fff; }
+@media (max-width: 480px) { .jg-jug img { width: 32px; height: 32px; } .jg-jug__n { font-size: 0.62rem; padding: 1px 3px; } }
+
+.jg-panel { display: flex; flex-direction: column; gap: 12px; }
+.jg-puntos { display: flex; gap: 6px; }
+.jg-punto { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); }
+.jg-punto.is-mal { background: #ef4444; border-color: #ef4444; }
+.jg-punto.is-ok { background: #22c55e; border-color: #22c55e; }
+.jg-busca { display: flex; flex-direction: column; gap: 6px; }
+.jg-busca__lab { font-weight: 700; font-size: 0.92rem; }
+.jg-busca input { width: 100%; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-size: 1rem; }
+.jg-opciones { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.jg-opciones button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; background: transparent; color: var(--text); text-align: left; cursor: pointer; font-size: 0.92rem; }
+.jg-opciones button:hover, .jg-opciones button:focus-visible { background: var(--surface-2); }
+.jg-opciones img { width: 22px; height: 22px; object-fit: contain; }
+.jg-opciones__vacio { padding: 10px; color: var(--text-dim); font-size: 0.85rem; }
+.jg-fallos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.jg-fallos li { padding: 3px 10px; border-radius: 999px; background: rgba(239,68,68,0.15); color: #fca5a5; font-size: 0.82rem; font-weight: 700; }
+.jg-pistas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.jg-pistas li { padding: 8px 10px; border-left: 3px solid var(--accent-2); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; font-size: 0.88rem; }
+.jg-pistas b { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-2); }
+.jg-final { display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: var(--radius); border: 1px solid; }
+.jg-final.is-ok { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+.jg-final.is-mal { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+.jg-final img { width: 56px; height: 56px; object-fit: contain; flex: none; }
+.jg-final p { margin: 0; }
+.jg-final__tit { font-weight: 800; }
+.jg-final__eq { font-family: var(--font-display-stack); font-size: 1.4rem; text-transform: uppercase; }
+.jg-final__ctx { color: var(--text-dim); font-size: 0.85rem; }
+.jg-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.jg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.jg-stats div { padding: 10px 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.jg-stats b { display: block; font-family: var(--font-display-stack); font-size: 1.5rem; }
+.jg-stats span { color: var(--text-dim); font-size: 0.75rem; }
