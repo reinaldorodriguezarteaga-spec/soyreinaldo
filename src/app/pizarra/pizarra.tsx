@@ -47,9 +47,9 @@ export type JugadorPizarra = {
   photo: string | null;
 };
 export type EquipoConPlantilla = { id: number; name: string; logo: string; plantilla: JugadorPizarra[] };
-type Modo = "mover" | TipoFlecha | "zona" | "texto" | "foco" | "grupo";
+type Modo = "mover" | TipoFlecha | "zona" | "rayas" | "enlace" | "texto" | "foco" | "grupo";
 /** Modos que dibujan arrastrando o tocando el césped (las fichas no estorban). */
-const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "zona", "texto", "grupo"];
+const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "zona", "rayas", "texto", "grupo"];
 /** Qué hace cada herramienta (ayuda bajo el campo y al pasar el ratón). */
 const AYUDA: Record<Modo, string> = {
   mover:
@@ -57,6 +57,9 @@ const AYUDA: Record<Modo, string> = {
   pase: "Arrastra sobre el campo para dibujar un pase (flecha blanca).",
   carrera: "Arrastra sobre el campo para dibujar una carrera o desmarque (flecha amarilla discontinua).",
   zona: "Arrastra sobre el campo para sombrear una zona (elige el color arriba).",
+  rayas: "Arrastra sobre el campo para marcar una zona con relleno de rayas (elige el color arriba).",
+  enlace:
+    "Toca jugadores uno tras otro para unirlos: se forma una zona entre ellos que sigue su forma cuando se mueven (también en la animación). Toca el primero otra vez o «Cerrar» para terminar.",
   texto: "Toca el campo donde quieras poner un texto. Luego puedes arrastrarlo o tocarlo para cambiarlo.",
   foco: "Toca un jugador para destacarlo con un halo amarillo (en la imagen y el vídeo también). Tócalo otra vez para quitarlo.",
   grupo:
@@ -171,7 +174,9 @@ export default function Pizarra({
   );
   const campo = useRef<HTMLDivElement>(null);
   const gesto = useRef<{ x: number; y: number; activo: boolean; ultimo?: Punto | null } | null>(null);
-  const { formacion, once, movidos, flechas, balon, zonas, textos, focos, colores } = estado;
+  const { formacion, once, movidos, flechas, balon, zonas, textos, focos, enlaces, colores } = estado;
+  /** Jugadores que se van uniendo con la herramienta «Unir» ("l:154"). */
+  const [enlaceEnCurso, setEnlaceEnCurso] = useState<string[]>([]);
 
   // Campo horizontal en escritorio, vertical en el móvil. Arranca vertical
   // (= SSR) y se ajusta al montar.
@@ -244,7 +249,7 @@ export default function Pizarra({
   const moverMove = (e: React.PointerEvent) => {
     const clave = claveDe(e);
     const g = gesto.current;
-    if (!g || modo === "foco") return;
+    if (!g || modo === "foco" || modo === "enlace") return;
     if (!g.activo) {
       if (Math.hypot(e.clientX - g.x, e.clientY - g.y) < 4) return;
       g.activo = true;
@@ -295,6 +300,14 @@ export default function Pizarra({
       if (id == null) return;
       const k = claveJug(lado, id);
       return cambiar((s) => ({ ...s, focos: s.focos.includes(k) ? s.focos.filter((x) => x !== k) : [...s.focos, k] }));
+    }
+    if (!g.activo && modo === "enlace") {
+      const id = once[lado][i];
+      if (id == null) return;
+      const k = claveJug(lado, id);
+      // Tocar el primero otra vez cierra la zona; tocar otro ya unido lo quita.
+      if (k === enlaceEnCurso[0] && enlaceEnCurso.length >= 2) return cerrarEnlace();
+      return setEnlaceEnCurso((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]));
     }
     if (!g.activo) return abrirElegir({ lado, hueco: i }); // toque: cambiar jugador
     if (!aCanonico(e.clientX, e.clientY)) {
@@ -358,12 +371,12 @@ export default function Pizarra({
       if (seleccion.length) setSeleccion([]);
       return;
     }
-    if (modo === "foco") return;
+    if (modo === "foco" || modo === "enlace") return;
     const p = aCanonico(e.clientX, e.clientY);
     if (!p) return;
     if (modo === "texto") return setEditorTexto({ k: null, p, valor: "" });
     capturar(e);
-    if (modo === "zona" || modo === "grupo") return setCaja({ a: p, b: p });
+    if (modo === "zona" || modo === "rayas" || modo === "grupo") return setCaja({ a: p, b: p });
     setTrazo({ a: p, b: p, tipo: modo });
   };
   const dibujoMove = (e: React.PointerEvent) => {
@@ -380,7 +393,10 @@ export default function Pizarra({
       const [x0, x1] = [Math.min(c.a.x, c.b.x), Math.max(c.a.x, c.b.x)];
       const [y0, y1] = [Math.min(c.a.y, c.b.y), Math.max(c.a.y, c.b.y)];
       if (x1 - x0 < 0.02 && y1 - y0 < 0.02) return;
-      if (modo === "zona") return cambiar((e) => ({ ...e, zonas: [...e.zonas, { ...c, color: colorZona }].slice(-20) }));
+      if (modo === "zona" || modo === "rayas") {
+        const z = modo === "rayas" ? { ...c, color: colorZona, rayas: true } : { ...c, color: colorZona };
+        return cambiar((e) => ({ ...e, zonas: [...e.zonas, z].slice(-20) }));
+      }
       // Grupo: las fichas dentro del rectángulo.
       const dentro: string[] = [];
       for (const lado of LADOS) {
@@ -480,6 +496,22 @@ export default function Pizarra({
 
   // ---- Animación por etapas (fase 3)
   const claveJug = (lado: Lado, id: number) => `${lado === "local" ? "l" : "v"}:${id}`;
+  /** Dónde está un jugador ("l:154") ahora o en un fotograma; null si no está en el campo. */
+  const puntoDe = (k: string, f: Fotograma | null): Punto | null => {
+    for (const lado of LADOS) {
+      const i = once[lado].findIndex((id) => id != null && claveJug(lado, id) === k);
+      if (i >= 0) return f?.jug[k] ?? posicion(lado, i);
+    }
+    return null;
+  };
+  const puntosEnlace = (jug: string[], f: Fotograma | null) =>
+    jug.map((k) => puntoDe(k, f)).filter((p): p is Punto => p != null);
+  function cerrarEnlace() {
+    const jug = enlaceEnCurso;
+    setEnlaceEnCurso([]);
+    if (jug.length < 2) return;
+    cambiar((e) => ({ ...e, enlaces: [...e.enlaces, { jug, color: colorZona }].slice(-10) }));
+  }
   const etapaActual = (): Etapa => {
     const jug: Record<string, Punto> = {};
     for (const lado of LADOS) {
@@ -560,6 +592,7 @@ export default function Pizarra({
       flechas: f ? f.flechas : flechas,
       balon: f ? f.balon : balon,
       zonas,
+      enlaces: enlaces.map((n) => ({ puntos: puntosEnlace(n.jug, f), color: n.color })),
       textos,
     };
   };
@@ -732,7 +765,7 @@ export default function Pizarra({
     );
   };
 
-  const pintarZona = (a: Punto, b: Punto, color: string, k: string, seleccionando = false) => {
+  const pintarZona = (a: Punto, b: Punto, color: string, k: string, seleccionando = false, rayas = false) => {
     const p = enSvg(a);
     const q = enSvg(b);
     return (
@@ -743,12 +776,26 @@ export default function Pizarra({
         width={Math.abs(q.x - p.x)}
         height={Math.abs(q.y - p.y)}
         rx={1.5}
-        fill={seleccionando ? "rgba(59,130,246,0.16)" : color}
-        fillOpacity={seleccionando ? 1 : 0.22}
+        fill={seleccionando ? "rgba(59,130,246,0.16)" : rayas ? `url(#pz-rayas-${PALETA.indexOf(color as (typeof PALETA)[number])})` : color}
+        fillOpacity={seleccionando || rayas ? 1 : 0.22}
         stroke={color}
         strokeWidth={0.5}
         strokeDasharray="1.6 1.2"
       />
+    );
+  };
+
+  /** Zona entre jugadores: polígono (o línea con dos) que sigue sus posiciones. */
+  const pintarEnlace = (puntos: Punto[], color: string, k: string, enCurso = false) => {
+    if (puntos.length < 2) return null;
+    const pts = puntos.map((p) => {
+      const q = enSvg(p);
+      return `${q.x},${q.y}`;
+    });
+    return puntos.length === 2 || enCurso ? (
+      <polyline key={k} points={pts.join(" ")} fill="none" stroke={color} strokeWidth={0.7} strokeDasharray={enCurso ? "1.6 1.2" : undefined} strokeLinejoin="round" />
+    ) : (
+      <polygon key={k} points={pts.join(" ")} fill={color} fillOpacity={0.24} stroke={color} strokeWidth={0.6} strokeLinejoin="round" />
     );
   };
 
@@ -809,6 +856,8 @@ export default function Pizarra({
               ["pase", "➜ Pase"],
               ["carrera", "⤳ Carrera"],
               ["zona", "▭ Zona"],
+              ["rayas", "▨ Rayas"],
+              ["enlace", "⬠ Unir"],
               ["texto", "T Texto"],
               ["foco", "◎ Destacar"],
               ["grupo", "⬚ Mover grupo"],
@@ -821,7 +870,11 @@ export default function Pizarra({
               role="radio"
               aria-checked={modo === m}
               className={modo === m ? "on" : ""}
-              onClick={() => setModo(m)}
+              onClick={() => {
+                setModo(m);
+                setEnlaceEnCurso([]);
+                setCaja(null);
+              }}
             >
               {etiqueta}
             </button>
@@ -830,7 +883,17 @@ export default function Pizarra({
         <button type="button" className={`pz-tool${balon ? " on" : ""}`} onClick={alternarBalon} aria-pressed={!!balon}>
           ⚽ Balón
         </button>
-        {modo === "zona" && (
+        {modo === "enlace" && enlaceEnCurso.length > 0 && (
+          <>
+            <button type="button" className="pz-tool on" onClick={cerrarEnlace} disabled={enlaceEnCurso.length < 2}>
+              ✓ Cerrar ({enlaceEnCurso.length})
+            </button>
+            <button type="button" className="pz-tool" onClick={() => setEnlaceEnCurso([])}>
+              Cancelar
+            </button>
+          </>
+        )}
+        {(modo === "zona" || modo === "rayas" || modo === "enlace") && (
           <span className="pz-paleta" role="radiogroup" aria-label="Color de la zona">
             {PALETA.map((c) => (
               <button
@@ -854,8 +917,8 @@ export default function Pizarra({
         <button
           type="button"
           className="pz-tool"
-          onClick={() => cambiar((e) => ({ ...e, flechas: [], zonas: [], textos: [], focos: [] }))}
-          disabled={!flechas.length && !zonas.length && !textos.length && !focos.length}
+          onClick={() => cambiar((e) => ({ ...e, flechas: [], zonas: [], textos: [], focos: [], enlaces: [] }))}
+          disabled={!flechas.length && !zonas.length && !textos.length && !focos.length && !enlaces.length}
         >
           Borrar dibujos
         </button>
@@ -907,7 +970,7 @@ export default function Pizarra({
         {lista("local")}
         <div
           ref={campo}
-          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${MODOS_DIBUJO.includes(modo) ? " pz-campo--dibujo" : ""}${modo === "foco" ? " pz-campo--foco" : ""}${fot ? " pz-campo--anim" : ""}`}
+          className={`pz-campo${horizontal ? " pz-campo--h" : ""}${MODOS_DIBUJO.includes(modo) ? " pz-campo--dibujo" : ""}${modo === "foco" || modo === "enlace" ? " pz-campo--foco" : ""}${fot ? " pz-campo--anim" : ""}`}
           aria-label="Campo de fútbol"
           onPointerDown={dibujoDown}
           onPointerMove={dibujoMove}
@@ -944,8 +1007,17 @@ export default function Pizarra({
                 </marker>
               ))}
             </defs>
-            {zonas.map((z, k) => pintarZona(z.a, z.b, z.color, `z${k}`))}
-            {caja && pintarZona(caja.a, caja.b, modo === "zona" ? colorZona : "#3b82f6", "caja", modo === "grupo")}
+            {PALETA.map((c, i) => (
+              <pattern key={c} id={`pz-rayas-${i}`} patternUnits="userSpaceOnUse" width={2.4} height={2.4} patternTransform="rotate(45)">
+                <rect width={2.4} height={2.4} fill={c} fillOpacity={0.08} />
+                <rect width={0.9} height={2.4} fill={c} fillOpacity={0.55} />
+              </pattern>
+            ))}
+            {zonas.map((z, k) => pintarZona(z.a, z.b, z.color, `z${k}`, false, !!z.rayas))}
+            {caja &&
+              pintarZona(caja.a, caja.b, modo === "grupo" ? "#3b82f6" : colorZona, "caja", modo === "grupo", modo === "rayas")}
+            {enlaces.map((n, k) => pintarEnlace(puntosEnlace(n.jug, fot), n.color, `n${k}`))}
+            {enlaceEnCurso.length > 0 && pintarEnlace(puntosEnlace(enlaceEnCurso, null), colorZona, "n-curso", true)}
             {(fot ? fot.flechas : flechas).map((f, k) => pintarFlecha(f, k))}
             {trazo && pintarFlecha(trazo, "trazo")}
           </svg>
@@ -974,6 +1046,8 @@ export default function Pizarra({
                 <div
                   key={`${lado}-${i}`}
                   className={`pz-ficha${focos.includes(claveJug(lado, j.id)) ? " pz-ficha--foco" : ""}${
+                    enlaceEnCurso.includes(claveJug(lado, j.id)) ? " pz-ficha--enlace" : ""
+                  }${
                     seleccion.includes(clave) || enCaja.has(clave) ? " pz-ficha--sel" : ""
                   }`}
                   style={arriba === clave ? { ...estilo, zIndex: 4 } : estilo}
@@ -1251,6 +1325,7 @@ type Escena = {
   flechas: Flecha[];
   balon: Punto | null;
   zonas: Zona[];
+  enlaces: { puntos: Punto[]; color: string }[];
   textos: Texto[];
 };
 
@@ -1327,15 +1402,57 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
     const a = aLienzo(z.a);
     const b = aLienzo(z.b);
     const [x, y, w, h] = [Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y)];
-    g.globalAlpha = 0.22;
-    g.fillStyle = z.color;
-    g.fillRect(x, y, w, h);
-    g.globalAlpha = 1;
+    if (z.rayas) {
+      // Rayas diagonales recortadas a la zona.
+      g.save();
+      g.beginPath();
+      g.rect(x, y, w, h);
+      g.clip();
+      g.globalAlpha = 0.08;
+      g.fillStyle = z.color;
+      g.fillRect(x, y, w, h);
+      g.globalAlpha = 0.55;
+      g.strokeStyle = z.color;
+      g.lineWidth = 9;
+      for (let d = -h; d < w + h; d += 26) {
+        g.beginPath();
+        g.moveTo(x + d, y + h);
+        g.lineTo(x + d + h, y);
+        g.stroke();
+      }
+      g.restore();
+      g.globalAlpha = 1;
+    } else {
+      g.globalAlpha = 0.22;
+      g.fillStyle = z.color;
+      g.fillRect(x, y, w, h);
+      g.globalAlpha = 1;
+    }
     g.strokeStyle = z.color;
     g.lineWidth = 4;
     g.setLineDash([16, 12]);
     g.strokeRect(x, y, w, h);
     g.setLineDash([]);
+  }
+
+  // Zonas entre jugadores, con la forma del fotograma.
+  for (const n of e.enlaces) {
+    if (n.puntos.length < 2) continue;
+    const pts = n.puntos.map(aLienzo);
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
+    if (pts.length > 2) {
+      g.closePath();
+      g.globalAlpha = 0.24;
+      g.fillStyle = n.color;
+      g.fill();
+      g.globalAlpha = 1;
+    }
+    g.strokeStyle = n.color;
+    g.lineWidth = 5;
+    g.lineJoin = "round";
+    g.stroke();
   }
 
   // Flechas debajo de las fichas.

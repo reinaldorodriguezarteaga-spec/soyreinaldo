@@ -114,10 +114,12 @@ export default async function QuinielaLigaPartidosPage({
     predByMatch.set(p.match_id, { home: p.score_home, away: p.score_away });
   }
 
+  // Solo los de LaLiga: los de la Champions son otra quiniela (21-oct).
   const { count: totalPredictions } = await supabase
     .from("lq_predictions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id);
+    .select("match_id, lq_matches!inner(counts_for_scoring)", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("lq_matches.counts_for_scoring", true);
 
   // Forma de cada equipo (puesto, DG, último resultado) para ayudar a
   // decidir. Tabla oficial de la caché del cron (sin gastar cuota); si no la

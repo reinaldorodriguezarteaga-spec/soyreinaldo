@@ -109,7 +109,10 @@ export default function MatchFicha({
   const awayEntradas = entradas(awayLineup, awayPlayers, awaySubs);
 
   return (
-    <FichaFullscreen>
+    <FichaFullscreen
+      nombreFoto={`${home.name}-${away.name}.png`.replace(/\s+/g, "-")}
+      textoFoto={`${home.name} ${fx.goals.home ?? 0}–${fx.goals.away ?? 0} ${away.name} · soyreinaldo.com`}
+    >
       <article className="ficha" aria-label={`Ficha ${home.name} - ${away.name}`}>
         <header className="ficha__head">
           <div className="ficha__meta">

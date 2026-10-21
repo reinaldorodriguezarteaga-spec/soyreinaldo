@@ -1740,7 +1740,9 @@ select.field { appearance: none; }
 /* ====================== FICHA VISUAL DEL PARTIDO (pestaña "Ficha") ====================== */
 /* La misma tarjeta que el marcador completo del Multichat, con el tema de la
    web: pensada para capturarla y comentarla en los vídeos. */
-.ficha__tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.ficha__tools { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+/* Copia de la ficha para «Crear foto»: el ancho de diseño y un margen de fondo. */
+.ficha__foto { width: max-content; padding: 24px; background: var(--bg); }
 .ficha__stage { display: flex; justify-content: center; }
 .ficha__stage:fullscreen { background: var(--bg); align-items: center; padding: 24px; overflow: auto; }
 /* Fallback para navegadores sin Fullscreen API real (iOS Safari no la
@@ -2641,3 +2643,5 @@ select.field { appearance: none; }
 .ol-repaso b { width: 34px; color: var(--text-dim); font-size: 0.7rem; }
 .ol-repaso span { padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim); }
 .ol-repaso span.is-mio { border-color: var(--accent); color: var(--text); font-weight: 700; }
+/* Pizarra: jugadores que se van uniendo con «Unir» (21-oct). */
+.pz-ficha--enlace .pz-ficha__cara, .pz-ficha--enlace .pz-ficha__num { box-shadow: 0 0 0 3px #22c55e, 0 0 12px 3px rgba(34,197,94,0.5); border-radius: 50%; }
