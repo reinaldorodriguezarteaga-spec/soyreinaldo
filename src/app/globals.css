@@ -1740,7 +1740,9 @@ select.field { appearance: none; }
 /* ====================== FICHA VISUAL DEL PARTIDO (pestaña "Ficha") ====================== */
 /* La misma tarjeta que el marcador completo del Multichat, con el tema de la
    web: pensada para capturarla y comentarla en los vídeos. */
-.ficha__tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.ficha__tools { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+/* Copia de la ficha para «Crear foto»: el ancho de diseño y un margen de fondo. */
+.ficha__foto { width: max-content; padding: 24px; background: var(--bg); }
 .ficha__stage { display: flex; justify-content: center; }
 .ficha__stage:fullscreen { background: var(--bg); align-items: center; padding: 24px; overflow: auto; }
 /* Fallback para navegadores sin Fullscreen API real (iOS Safari no la

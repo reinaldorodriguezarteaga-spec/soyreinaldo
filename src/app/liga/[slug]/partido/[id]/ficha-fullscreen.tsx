@@ -32,8 +32,20 @@ type Mode = "off" | "native" | "fake";
  *    scale()` para que quepa en lo que haya de viewport — la misma ficha,
  *    más pequeña, nunca la versión apilada.
  */
-export default function FichaFullscreen({ children }: { children: React.ReactNode }) {
+export default function FichaFullscreen({
+  children,
+  nombreFoto = "ficha.png",
+  textoFoto = "",
+}: {
+  children: React.ReactNode;
+  /** Nombre del archivo de «Crear foto». */
+  nombreFoto?: string;
+  /** Texto que acompaña a la foto al compartirla. */
+  textoFoto?: string;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const fotoRef = useRef<HTMLDivElement>(null);
+  const [foto, setFoto] = useState<"off" | "preparando">("off");
   const cardRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<Mode>("off");
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -134,6 +146,46 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
     setMode("fake");
   }
 
+  /**
+   * «Crear foto» (21-oct, pedido del dueño): la ficha como imagen sin pasar
+   * por la pantalla completa. Se pinta una copia fuera de la pantalla a su
+   * ancho de diseño (720 px, dos columnas también en el móvil: el layout va
+   * por @container) y html-to-image la convierte en PNG. En el móvil abre
+   * la hoja de compartir con la foto; en el escritorio la descarga.
+   */
+  async function crearFoto() {
+    if (foto !== "off") return;
+    setFoto("preparando");
+    try {
+      // Que la copia se monte y cargue escudos y fotos antes de capturar.
+      await new Promise((r) => setTimeout(r, 400));
+      const nodo = fotoRef.current;
+      if (!nodo) throw new Error("sin nodo");
+      const { toBlob } = await import("html-to-image");
+      const fondo = getComputedStyle(document.body).backgroundColor || "#0a1030";
+      const blob = await toBlob(nodo, { pixelRatio: 2, backgroundColor: fondo });
+      if (!blob) throw new Error("sin imagen");
+      const archivo = new File([blob], nombreFoto, { type: "image/png" });
+      if (navigator.canShare?.({ files: [archivo] })) {
+        try {
+          await navigator.share({ files: [archivo], text: textoFoto });
+        } catch {
+          // Hoja cerrada: no es un error.
+        }
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = nombreFoto;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+      }
+    } catch {
+      alert("No se pudo crear la foto. Prueba con la pantalla completa y una captura.");
+    } finally {
+      setFoto("off");
+    }
+  }
+
   const scale =
     capturing && natural && viewport && natural.w > 0 && natural.h > 0
       ? Math.min(
@@ -146,6 +198,9 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
   return (
     <div>
       <div className="ficha__tools">
+        <button type="button" className="btn btn--accent" onClick={crearFoto} disabled={foto !== "off"}>
+          📸 {foto === "off" ? "Crear foto" : "Creando foto…"}
+        </button>
         <button type="button" className="btn" onClick={toggle}>
           {capturing ? "✕ Salir de pantalla completa" : "⛶ Pantalla completa (para capturar)"}
         </button>
@@ -201,6 +256,15 @@ export default function FichaFullscreen({ children }: { children: React.ReactNod
           </button>
         )}
       </div>
+      {/* La copia para «Crear foto»: fuera de la pantalla, a su ancho de
+          diseño, solo mientras se prepara. */}
+      {foto !== "off" && (
+        <div aria-hidden style={{ position: "fixed", left: -10000, top: 0, width: "max-content", pointerEvents: "none" }}>
+          <div ref={fotoRef} className="ficha__foto">
+            {children}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
