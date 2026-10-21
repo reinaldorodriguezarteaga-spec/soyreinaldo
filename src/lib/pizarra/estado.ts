@@ -14,8 +14,13 @@ export type PorLado<T> = Record<Lado, T>;
 /** Una etapa de la animación: dónde está cada jugador ("l:154" / "v:874",
  * por id, así sigue valiendo si se cambian huecos), el balón y las flechas. */
 export type Etapa = { jug: Record<string, Punto>; balon: Punto | null; flechas: Flecha[] };
-/** Zona sombreada (rectángulo entre dos esquinas) y texto suelto en el campo. */
-export type Zona = { a: Punto; b: Punto; color: string };
+/** Zona sombreada (rectángulo entre dos esquinas; `rayas`: relleno rayado,
+ * 21-oct) y texto suelto en el campo. */
+export type Zona = { a: Punto; b: Punto; color: string; rayas?: boolean };
+/** Zona entre jugadores (21-oct): un polígono cuyos vértices son jugadores
+ * ("l:154"), así sigue su forma cuando se mueven y en la animación. Con dos,
+ * es una línea. */
+export type Enlace = { jug: string[]; color: string };
 export type Texto = { p: Punto; t: string };
 
 /** Colores para equipaciones y zonas (los únicos que acepta la URL). */
@@ -35,6 +40,7 @@ export const PALETA = [
 export const COLOR_INICIAL: PorLado<string> = { local: "#3b82f6", visitante: "#ff5b8a" };
 const MAX_ZONAS = 20;
 const MAX_TEXTOS = 20;
+const MAX_ENLACES = 10;
 export const MAX_LARGO_TEXTO = 60;
 export type Estado = {
   formacion: PorLado<string>;
@@ -48,6 +54,7 @@ export type Estado = {
   textos: Texto[];
   /** Jugadores destacados ("l:154"). */
   focos: string[];
+  enlaces: Enlace[];
   colores: PorLado<string>;
 };
 
@@ -67,6 +74,7 @@ export const estadoInicial = (): Estado => ({
   zonas: [],
   textos: [],
   focos: [],
+  enlaces: [],
   colores: { ...COLOR_INICIAL },
 });
 
@@ -110,7 +118,15 @@ export function codificar(e: Estado): string {
     ),
     a: e.flechas.map(flechaACompacta),
     b: e.balon ? [aMil(e.balon.x), aMil(e.balon.y)] : 0,
-    z: e.zonas.map((z) => [aMil(z.a.x), aMil(z.a.y), aMil(z.b.x), aMil(z.b.y), PALETA.indexOf(z.color as (typeof PALETA)[number])]),
+    z: e.zonas.map((z) => [
+      aMil(z.a.x),
+      aMil(z.a.y),
+      aMil(z.b.x),
+      aMil(z.b.y),
+      PALETA.indexOf(z.color as (typeof PALETA)[number]),
+      ...(z.rayas ? [1] : []),
+    ]),
+    n: e.enlaces.map((n) => [n.jug, PALETA.indexOf(n.color as (typeof PALETA)[number])]),
     t: e.textos.map((t) => [aMil(t.p.x), aMil(t.p.y), t.t]),
     k: e.focos,
     c: [PALETA.indexOf(e.colores.local as (typeof PALETA)[number]), PALETA.indexOf(e.colores.visitante as (typeof PALETA)[number])],
@@ -181,7 +197,7 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
       const a = leerPunto([z[0], z[1]]);
       const b = leerPunto([z[2], z[3]]);
       const color = PALETA[typeof z[4] === "number" ? z[4] : -1];
-      if (a && b && color) e.zonas.push({ a, b, color });
+      if (a && b && color) e.zonas.push(z[5] === 1 ? { a, b, color, rayas: true } : { a, b, color });
     }
   }
   if (Array.isArray(d.t)) {
@@ -190,6 +206,14 @@ export function decodificar(p: string | undefined | null, plantillas: PorLado<nu
       const p = leerPunto([t[0], t[1]]);
       const texto = t[2].trim().slice(0, MAX_LARGO_TEXTO);
       if (p && texto) e.textos.push({ p, t: texto });
+    }
+  }
+  if (Array.isArray(d.n)) {
+    for (const n of d.n.slice(0, MAX_ENLACES)) {
+      if (!Array.isArray(n) || !Array.isArray(n[0])) continue;
+      const jug = [...new Set((n[0] as unknown[]).filter(claveValida))].slice(0, 22);
+      const color = PALETA[typeof n[1] === "number" ? n[1] : -1];
+      if (jug.length >= 2 && color) e.enlaces.push({ jug, color });
     }
   }
   if (Array.isArray(d.k)) e.focos = [...new Set(d.k.filter(claveValida))].slice(0, 22);

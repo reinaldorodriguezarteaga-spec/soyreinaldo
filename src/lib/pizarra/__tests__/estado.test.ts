@@ -12,7 +12,11 @@ describe("estado de la pizarra en la URL", () => {
       movidos: { "local:1": { x: 0.3, y: 0.25 } },
       flechas: [{ a: { x: 0.1, y: 0.2 }, b: { x: 0.5, y: 0.6 }, tipo: "carrera" }],
       balon: { x: 0.5, y: 0.5 },
-      zonas: [{ a: { x: 0.1, y: 0.1 }, b: { x: 0.3, y: 0.4 }, color: "#facc15" }],
+      zonas: [
+        { a: { x: 0.1, y: 0.1 }, b: { x: 0.3, y: 0.4 }, color: "#facc15" },
+        { a: { x: 0.5, y: 0.1 }, b: { x: 0.6, y: 0.4 }, color: "#ef4444", rayas: true },
+      ],
+      enlaces: [{ jug: ["l:1", "l:2", "v:10"], color: "#22c55e" }],
       textos: [{ p: { x: 0.5, y: 0.2 }, t: "Presión alta" }],
       focos: ["l:2"],
       colores: { local: "#a50044", visitante: "#ffffff" },
@@ -67,6 +71,11 @@ describe("estado de la pizarra en la URL", () => {
     expect(e.textos[0].t).toHaveLength(60);
     expect(e.focos).toEqual(["l:1"]);
     expect(e.colores).toEqual({ local: "#a50044", visitante: "#ff5b8a" });
+  });
+
+  it("enlaces: solo jugadores de la plantilla, sin repetir y con al menos dos", () => {
+    const raro = btoa(JSON.stringify({ n: [[["l:1", "l:1", "l:99", "v:10"], 6], [["l:1"], 6], [["l:2", "v:11"], 99]] }));
+    expect(decodificar(raro, plantillas)!.enlaces).toEqual([{ jug: ["l:1", "v:10"], color: "#22c55e" }]);
   });
 
   it("basura o demasiado largo: null", () => {
