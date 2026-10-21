@@ -18,6 +18,20 @@ const JUEGOS = [
     listo: true,
   },
   {
+    href: "/juegos/adivina-el-jugador",
+    emoji: "🕵️",
+    titulo: "Adivina el jugador",
+    texto: "Los clubes por los que pasó, en orden. ¿Sabes quién es? Reto diario y práctica.",
+    listo: true,
+  },
+  {
+    href: "/juegos/tiki-taka-toe",
+    emoji: "#️⃣",
+    titulo: "Tiki-taka-toe",
+    texto: "El tres en raya del fútbol: jugadores que pasaron por los dos clubes de cada casilla.",
+    listo: true,
+  },
+  {
     href: null,
     emoji: "📋",
     titulo: "Adivina el once",

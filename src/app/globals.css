@@ -2523,3 +2523,28 @@ select.field { appearance: none; }
 .jg-stats div { padding: 10px 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .jg-stats b { display: block; font-family: var(--font-display-stack); font-size: 1.5rem; }
 .jg-stats span { color: var(--text-dim); font-size: 0.75rem; }
+/* Adivina el jugador: la carrera, club a club. */
+.jg-carrera { list-style: none; margin: 0 0 16px; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.jg-club { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 86px; text-align: center; }
+.jg-club img { width: 48px; height: 48px; object-fit: contain; }
+.jg-club span { font-size: 0.72rem; font-weight: 700; line-height: 1.15; }
+.jg-carrera__flecha { color: var(--text-dim); font-size: 1.1rem; }
+.jg-panel--ancho { max-width: 560px; margin: 0 auto; }
+.jg-final__bandera { border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
+.jg-pistas__bandera { vertical-align: middle; border-radius: 3px; object-fit: cover; }
+.jg-aviso { margin: 0; color: #fca5a5; font-weight: 700; font-size: 0.88rem; }
+/* Tiki-taka-toe */
+.tt { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 440px; margin: 0 auto; }
+.tt-fila { display: contents; }
+.tt-esquina { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tt-esquina b { font-family: var(--font-display-stack); font-size: 1.8rem; line-height: 1; }
+.tt-esquina span { color: var(--text-dim); font-size: 0.7rem; }
+.tt-cab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 2px; text-align: center; }
+.tt-cab img { width: 40px; height: 40px; object-fit: contain; }
+.tt-cab span { font-size: 0.68rem; font-weight: 700; line-height: 1.1; }
+.tt-celda { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text-dim); font-size: 1.4rem; font-weight: 700; cursor: pointer; text-align: center; line-height: 1.1; }
+.tt-celda:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.tt-celda.is-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; color: var(--text); }
+.tt-celda.is-ok { background: rgba(34,197,94,0.18); border-color: #22c55e; color: #fff; font-size: 0.78rem; cursor: default; }
+.tt-celda i { font-size: 0.72rem; font-weight: 600; color: var(--text-dim); }
+.tt-celda:disabled:not(.is-ok) { cursor: default; }

@@ -136,8 +136,10 @@ export default function Juego({ numero }: { numero: number }) {
   }
 
   const texto = textoCompartir({ numero: modo === "dia" ? numero : null, acertado, intentos: intentos.length });
-  const jugados = Object.keys(guardado.dias).length;
-  const ganados = Object.values(guardado.dias).filter((d) => d.ok).length;
+  // Solo cuentan los días terminados (acertados o con los cinco intentos).
+  const cerrados = Object.values(guardado.dias).filter((d) => d.ok || d.ids.length >= MAX_INTENTOS);
+  const jugados = cerrados.length;
+  const ganados = cerrados.filter((d) => d.ok).length;
 
   return (
     <div className="jg">
