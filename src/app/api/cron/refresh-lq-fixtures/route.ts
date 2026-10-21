@@ -55,13 +55,16 @@ async function crearPartidos(
     .filter((x): x is { f: ApiFixture & Required<Pick<ApiFixture, "teams">>; jornada: number } => x.jornada != null && !!x.f.teams);
   if (nuevos.length === 0) return 0;
   const equipos = new Map<number, { id: number; name: string; logo: string }>();
+  // Solo las columnas de lq_teams: el equipo del API trae también `winner`.
   for (const { f } of nuevos) {
-    equipos.set(f.teams.home.id, f.teams.home);
-    equipos.set(f.teams.away.id, f.teams.away);
+    for (const t of [f.teams.home, f.teams.away]) equipos.set(t.id, { id: t.id, name: t.name, logo: t.logo });
   }
-  await supabase.from("lq_teams").upsert([...equipos.values()], { onConflict: "id", ignoreDuplicates: true });
+  const { error: errEquipos } = await supabase
+    .from("lq_teams")
+    .upsert([...equipos.values()], { onConflict: "id", ignoreDuplicates: true });
+  if (errEquipos) throw new Error(`lq_teams: ${errEquipos.message}`);
   const FINAL = ["FT", "AET", "PEN"];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("lq_matches")
     .upsert(
       nuevos.map(({ f, jornada }) => {
@@ -85,6 +88,7 @@ async function crearPartidos(
       { onConflict: "id", ignoreDuplicates: true },
     )
     .select("id");
+  if (error) throw new Error(`lq_matches: ${error.message}`);
   return data?.length ?? 0;
 }
 
