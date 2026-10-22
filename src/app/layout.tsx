@@ -110,7 +110,7 @@ export default async function RootLayout({
   // aparte, dentro de las pastillas de la cabecera.
   const [perfilRes, favoritosRes] = await Promise.all([
     user
-      ? supabase.from("profiles").select("is_admin, favoritos_elegidos_at").eq("id", user.id).single()
+      ? supabase.from("profiles").select("is_admin, favoritos_elegidos_at, permisos").eq("id", user.id).single()
       : Promise.resolve({ data: null }),
     user
       ? supabase
@@ -120,10 +120,16 @@ export default async function RootLayout({
           .order("created_at", { ascending: true })
       : Promise.resolve({ data: null }),
   ]);
-  const profile = perfilRes.data as { is_admin: boolean | null; favoritos_elegidos_at: string | null } | null;
+  const profile = perfilRes.data as {
+    is_admin: boolean | null;
+    favoritos_elegidos_at: string | null;
+    permisos: string[] | null;
+  } | null;
   // Para el atajo "Admin" en el menú de usuario — evita que quien no sea
   // admin vea enlaces a páginas que igualmente le rechazaría /admin/layout.tsx.
   const isAdmin = !!profile?.is_admin;
+  // Permisos por sección (migración 087): sus atajos en el menú de usuario.
+  const permisos = isAdmin ? [] : (profile?.permisos ?? []);
   // ¿Le falta pasar por el selector de favoritos? (migración 067)
   const pedirFavoritos = !!profile && !profile.favoritos_elegidos_at;
   // Favoritos del usuario para el desplegable del header.
@@ -178,6 +184,7 @@ export default async function RootLayout({
           hasLiveMatch={hasLiveMatch}
           favorites={favorites}
           isAdmin={isAdmin}
+          permisos={permisos}
         />
         {/* En flujo normal, no fixed: aparece bajo el header sticky al
             cargar y se va con el scroll como cualquier otro contenido —
