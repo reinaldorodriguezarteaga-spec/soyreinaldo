@@ -130,6 +130,10 @@ export default async function PizarraPage({
     return { ...e, plantilla: [...plantilla, ...extra] };
   };
   const [pl, pv] = await Promise.all([conPlantilla(eqLocal), conPlantilla(eqVisitante)]);
+  // Un solo equipo (22-oct): basta con elegir uno; el otro lado queda vacío.
+  const solo = !delPartido && !!(pl || pv) && !(pl && pv);
+  const unico = pl ?? pv;
+  const VACIO: EquipoConPlantilla = { id: 0, name: "", logo: "", plantilla: [] };
 
   // La pizarra con las alineaciones del partido (si ya están publicadas) o
   // con la última de cada equipo.
@@ -149,6 +153,15 @@ export default async function PizarraPage({
       Object.assign(e.movidos, aVisitante.movidos);
     }
     preparado = e;
+  }
+  // Un solo equipo: su última alineación, siempre en el lado local.
+  let preparadoSolo: Estado | undefined;
+  const aSolo = solo && unico ? desdeAlineacion(alineacionDe(unico), "local") : null;
+  if (aSolo) {
+    preparadoSolo = estadoInicial();
+    preparadoSolo.formacion.local = aSolo.formacion;
+    preparadoSolo.once.local = aSolo.once;
+    Object.assign(preparadoSolo.movidos, aSolo.movidos);
   }
 
   // Equipos del partido que no están en la lista (p. ej. de una copa): se
@@ -190,9 +203,16 @@ export default async function PizarraPage({
               partido={delPartido ? idPartido : undefined}
               conectado={!!user}
             />
+          ) : solo && unico ? (
+            <>
+              <p className="pz-ayuda" style={{ marginTop: 10 }}>
+                Analizando solo a {unico.name}. Elige un rival arriba si quieres los dos equipos.
+              </p>
+              <Pizarra key={`solo-${unico.id}`} local={unico} visitante={VACIO} inicial={p} preparado={preparadoSolo} solo conectado={!!user} />
+            </>
           ) : (
             <div className="panel" style={{ padding: 24, marginTop: 18, color: "var(--text-dim)", textAlign: "center" }}>
-              Elige el equipo local y el visitante para empezar.
+              Elige un equipo para empezar (o dos, para enfrentarlos).
             </div>
           )}
         </div>
