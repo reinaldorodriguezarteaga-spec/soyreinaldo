@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { createClient } from "@/lib/supabase/server";
 import Editor, { type Borrador } from "./editor";
 import { borrarAnalisis, equiposDeCompeticion } from "./actions";
@@ -22,6 +23,7 @@ export default async function AdminAnalisis({
 }: {
   searchParams: Promise<{ editar?: string; guardado?: string }>;
 }) {
+  await exigirSeccion("analisis");
   const { editar, guardado } = await searchParams;
   const supabase = await createClient();
 

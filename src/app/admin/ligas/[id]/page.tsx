@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import EditLeagueForm from "./edit-league-form";
@@ -40,6 +41,7 @@ export default async function LeagueDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await exigirSeccion("admin");
   const { id } = await params;
   const supabase = await createClient();
 

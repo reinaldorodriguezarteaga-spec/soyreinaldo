@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import SorteoBoard, { type PoolTeam } from "./sorteo-board";
 import pool from "./equipos-pool.json";
 
@@ -27,7 +28,8 @@ function logoUrl(teamId: number): string {
   return `https://media.api-sports.io/football/teams/${teamId}.png`;
 }
 
-export default function AdminSorteoPage() {
+export default async function AdminSorteoPage() {
+  await exigirSeccion("admin");
   // El pool del buscador es un JSON estático generado por
   // scripts/gen-sorteo-pool.mjs — NADA de llamadas a API-Football en runtime:
   // el día del sorteo esta página no puede depender de la cuota (pedir las

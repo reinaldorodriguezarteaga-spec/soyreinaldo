@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { createClient } from "@/lib/supabase/server";
 import CreateLeagueForm from "./create-league-form";
 
@@ -16,6 +17,7 @@ type LeagueWithCount = {
 };
 
 export default async function AdminLeaguesPage() {
+  await exigirSeccion("admin");
   const supabase = await createClient();
 
   const { data, error } = await supabase

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/supabase/require-admin";
+import { requirePermiso } from "@/lib/supabase/require-admin";
 import { validarUrlPublica } from "@/lib/imagenes/ssrf";
 
 export const runtime = "nodejs";
@@ -34,7 +34,7 @@ function nombreFichero(url: URL, tipo: string, pedido: string | null): string {
 // Proxy de descarga: salta el hotlink protection (referer + UA de navegador)
 // y fuerza Content-Disposition. Con ?inline=1 sirve la imagen para previews.
 export async function GET(request: Request) {
-  const admin = await requireAdmin();
+  const admin = await requirePermiso("imagenes");
   if (!admin) {
     return NextResponse.json({ error: "Solo admin" }, { status: 403 });
   }

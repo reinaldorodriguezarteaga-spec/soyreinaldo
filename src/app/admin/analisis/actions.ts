@@ -18,7 +18,7 @@ export type EstadoAnalisis = {
   message?: string;
 };
 
-/** El admin del sitio es el único que escribe. La RLS de `articles` lo impone
+/** Escriben el admin y quien tenga el permiso «analisis». La RLS de `articles` lo impone
  * igualmente; esto solo da un error legible en vez de uno de base de datos. */
 async function exigirAdmin() {
   const supabase = await createClient();
@@ -26,12 +26,9 @@ async function exigirAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  if (!perfil?.is_admin) throw new Error("No autorizado");
+  // Admin o permiso «analisis» (migración 087).
+  const { data: puede } = await supabase.rpc("tiene_permiso", { p: "analisis" });
+  if (puede !== true) throw new Error("No autorizado");
   return { supabase, user };
 }
 
