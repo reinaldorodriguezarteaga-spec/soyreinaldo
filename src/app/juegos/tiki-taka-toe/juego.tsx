@@ -1,5 +1,6 @@
 "use client";
 
+import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { JUGADORES, clubId, clubNombre } from "@/lib/juegos/carreras";
 import { normalizar } from "@/lib/juegos/diario";
@@ -222,7 +223,19 @@ export default function Juego({ numero }: { numero: number }) {
                         setAviso(null);
                       }}
                     >
-                      {puesto ? nombreDe(puesto) : solucion ? <i>{solucion.nombre}</i> : "+"}
+                      {puesto ? (
+                        <span className="tt-cara">
+                          {caraDe(puesto) && (
+                            // eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API
+                            <img src={caraDe(puesto)!} alt="" width={40} height={40} />
+                          )}
+                          {nombreDe(puesto)}
+                        </span>
+                      ) : solucion ? (
+                        <i>{solucion.nombre}</i>
+                      ) : (
+                        "+"
+                      )}
                     </button>
                   );
                 })}

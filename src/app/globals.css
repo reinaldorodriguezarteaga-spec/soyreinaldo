@@ -2735,3 +2735,7 @@ select.field { appearance: none; }
 .jc__puntos b { font-family: var(--font-display-stack); font-size: 2.2rem; line-height: 1; color: var(--accent-2); }
 .jc__puntos span { color: var(--text-dim); font-size: 0.85rem; }
 .jc__ranking { margin: 0; font-size: 0.88rem; }
+/* Caras en los juegos (22-oct) */
+.tt-cara { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tt-cara img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.jg-final__bandera { background: #e2e8f0; }

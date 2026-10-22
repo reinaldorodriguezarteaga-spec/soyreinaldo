@@ -1,5 +1,6 @@
 "use client";
 
+import { caraPorNombre } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { HUECOS, LINEAS, NOMBRE_PUESTO, resultado, ternas, type Leyenda } from "@/lib/juegos/leyendas";
 import { NIVELES, puntosLeyenda, reloj, type Nivel } from "@/lib/juegos/niveles";
@@ -150,7 +151,7 @@ export default function Juego({ numero }: { numero: number }) {
                     <div key={h} className={`jg-jug${h === ronda && !terminado ? " is-turno" : ""}`}>
                       {x ? (
                         // eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API
-                        <img src={bandera(x.pais)} alt="" width={40} height={40} />
+                        <img src={caraPorNombre(x.nombre) ?? bandera(x.pais)} alt="" width={40} height={40} />
                       ) : (
                         <span className="jg-jug__vacio">{HUECOS[h]}</span>
                       )}
@@ -180,7 +181,7 @@ export default function Juego({ numero }: { numero: number }) {
                   {ts[ronda].map((x, k) => (
                     <button key={x.nombre} type="button" className="ol-carta" onClick={() => elegir(k, Date.now())}>
                       {/* eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API */}
-                      <img src={bandera(x.pais)} alt="" width={36} height={36} />
+                      <img src={caraPorNombre(x.nombre) ?? bandera(x.pais)} alt="" width={36} height={36} />
                       <b>{x.nombre}</b>
                     </button>
                   ))}
