@@ -16,13 +16,18 @@ export async function cambiarPermiso(
   if (!(permiso in PERMISOS)) return { ok: false, error: "Permiso no válido" };
   const db = clienteServicio();
   if (!db) return { ok: false, error: "Sin conexión" };
-  const nombre = username.trim().replace(/^@/, "").toLowerCase();
-  const { data: perfil } = await db
-    .from("profiles")
-    .select("id, permisos")
-    .eq("username", nombre)
-    .maybeSingle<{ id: string; permisos: string[] | null }>();
-  if (!perfil) return { ok: false, error: `No hay ningún usuario «${nombre}»` };
+  // Por nombre de usuario o, si no tiene (muchos no lo pusieron), por el
+  // nombre visible. Si hay varios con ese nombre, no se adivina.
+  const nombre = username.trim().replace(/^@/, "");
+  type Fila = { id: string; permisos: string[] | null };
+  const { data: porUsuario } = await db.from("profiles").select("id, permisos").eq("username", nombre.toLowerCase()).returns<Fila[]>();
+  const { data: porNombre } = porUsuario?.length
+    ? { data: [] as Fila[] }
+    : await db.from("profiles").select("id, permisos").ilike("display_name", nombre).returns<Fila[]>();
+  const encontrados = porUsuario?.length ? porUsuario : (porNombre ?? []);
+  if (encontrados.length === 0) return { ok: false, error: `No hay ningún usuario «${nombre}»` };
+  if (encontrados.length > 1) return { ok: false, error: `Hay ${encontrados.length} con el nombre «${nombre}»: usa su nombre de usuario` };
+  const perfil = encontrados[0];
   const actuales = new Set(perfil.permisos ?? []);
   if (dar) actuales.add(permiso);
   else actuales.delete(permiso);

@@ -23,8 +23,8 @@ export function DarPermiso() {
       }}
     >
       <label className="flex flex-col gap-1 text-sm">
-        Usuario
-        <input value={usuario} onChange={(e) => setUsuario(e.target.value)} placeholder="nombre de usuario" className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2" required />
+        Usuario o nombre
+        <input value={usuario} onChange={(e) => setUsuario(e.target.value)} placeholder="nombre de usuario o nombre visible" className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2" required />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         Permiso
