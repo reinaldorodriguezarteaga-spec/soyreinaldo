@@ -35,13 +35,13 @@ export default async function AdminPermisosPage() {
             <ul className="flex flex-col gap-2">
               {(data ?? []).map((u) => (
                 <li key={u.id} className="flex flex-wrap items-center gap-2 rounded border border-zinc-800 px-3 py-2 text-sm">
-                  <b>{u.username ?? "—"}</b>
+                  <b>{u.username || u.display_name || "—"}</b>
                   <span className="text-zinc-500">{u.display_name}</span>
                   <span className="ml-auto flex flex-wrap gap-1">
                     {u.permisos
                       .filter((p): p is Permiso => p in PERMISOS)
                       .map((p) => (
-                        <QuitarPermiso key={p} usuario={u.username ?? ""} permiso={p} />
+                        <QuitarPermiso key={p} usuario={u.username || u.display_name || ""} permiso={p} />
                       ))}
                   </span>
                 </li>
