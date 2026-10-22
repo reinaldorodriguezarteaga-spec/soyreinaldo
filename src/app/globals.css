@@ -2708,3 +2708,30 @@ select.field { appearance: none; }
 /* Vídeos como fuente de fotogramas (22-oct). */
 .af-video { margin-bottom: 20px; }
 .af-video video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: 10px; margin-bottom: 12px; }
+/* Cabecera (22-oct): con Pizarra y Juegos el menú ya no cabía entre 960 y
+   ~1400 px y empujaba la lupa fuera. Por debajo de 1280 px, menú ☰ como en el
+   móvil; por encima, enlaces más juntos y sin partirse en dos líneas. */
+.navdrop__btn, .nav__links a { white-space: nowrap; }
+.nav__cta { flex-shrink: 0; }
+@media (max-width: 1279px) { .nav__links { display: none; } }
+@media (min-width: 1280px) and (max-width: 1500px) { .nav__links { gap: 18px; } .nav__in { gap: 16px; } }
+/* Juegos: nivel, reloj y cierre (22-oct) */
+.jn { display: flex; flex-direction: column; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.jn__tit { margin: 0; font-weight: 800; font-size: 1.05rem; }
+.jn__opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.jn__op { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 6px; border-radius: var(--radius); border: 2px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: inherit; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+.jn__op:hover { transform: translateY(-2px); }
+.jn__op b { font-family: var(--font-display-stack); font-size: 1.25rem; text-transform: uppercase; }
+.jn__op span { font-size: 0.85rem; color: var(--text-dim); }
+.jn__op .jn__mult { color: var(--text); font-weight: 700; }
+.jn__op--facil:hover { border-color: #22c55e; }
+.jn__op--medio:hover { border-color: #f59e0b; }
+.jn__op--dificil:hover { border-color: #ef4444; }
+.jreloj { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-strong); font-family: var(--font-mono-stack); font-weight: 700; font-size: 0.95rem; }
+.jreloj.is-poco { border-color: #ef4444; color: #fca5a5; animation: jreloj-latido 1s infinite; }
+@keyframes jreloj-latido { 50% { opacity: 0.55; } }
+.jc { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.jc__puntos { display: flex; align-items: baseline; gap: 8px; }
+.jc__puntos b { font-family: var(--font-display-stack); font-size: 2.2rem; line-height: 1; color: var(--accent-2); }
+.jc__puntos span { color: var(--text-dim); font-size: 0.85rem; }
+.jc__ranking { margin: 0; font-size: 0.88rem; }

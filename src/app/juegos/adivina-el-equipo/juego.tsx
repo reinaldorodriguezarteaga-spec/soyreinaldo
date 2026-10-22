@@ -10,15 +10,25 @@ import {
   textoCompartir,
 } from "@/lib/juegos/adivina-equipo";
 import { NOMBRE_DIFICULTAD, type Dificultad, type Reto } from "@/lib/juegos/equipos-historicos";
+import { NIVELES, puntosAdivinar, reloj, type Nivel } from "@/lib/juegos/niveles";
+import ElegirNivel from "@/components/juegos/ElegirNivel";
+import CierreJuego from "@/components/juegos/CierreJuego";
+import { useCronometro } from "@/components/juegos/useCronometro";
 
 /**
  * «Adivina el equipo»: un once histórico con solo las banderas. El reto del
  * día es igual para todos y su resultado (y la racha) se guarda en el
  * navegador; la práctica va por dificultades y no guarda nada.
+ *
+ * Nivel y reloj (22-oct): antes de empezar se elige nivel (2:00, 1:30 o
+ * 1:00); si se acaba el tiempo, la partida termina. Los puntos del reto del
+ * día van al ranking (CierreJuego). El inicio queda guardado: recargar no
+ * reinicia el reloj.
  */
 
 const CLAVE = "jg-equipo-v1";
-type Guardado = { dias: Record<number, { ids: number[]; ok: boolean }> };
+type Dia = { ids: number[]; ok: boolean; nivel?: Nivel; inicio?: number; fin?: number };
+type Guardado = { dias: Record<number, Dia> };
 
 const escudo = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 const bandera = (pais: string) => `https://media.api-sports.io/flags/${pais}.svg`;
@@ -62,6 +72,9 @@ export default function Juego({ numero }: { numero: number }) {
   const [guardado, setGuardado] = useState<Guardado>({ dias: {} });
   const [busca, setBusca] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [nivel, setNivel] = useState<Nivel | null>(null);
+  const [inicio, setInicio] = useState<number | null>(null);
+  const [fin, setFin] = useState<number | null>(null);
   const nativo = useSyncExternalStore(sinSuscripcion, () => "share" in navigator, () => false);
 
   const delDia = useMemo(() => retoDelDia(numero), [numero]);
@@ -73,11 +86,46 @@ export default function Juego({ numero }: { numero: number }) {
     const g = leer();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hidratación única al montar, no cascada
     setGuardado(g);
-    if (g.dias[numero]) setIntentos(g.dias[numero].ids);
+    const d = g.dias[numero];
+    if (d) {
+      setIntentos(d.ids);
+      setNivel(d.nivel ?? null);
+      setInicio(d.inicio ?? null);
+      setFin(d.fin ?? null);
+    }
   }, [numero]);
 
+  const restante = useCronometro(NIVELES[nivel ?? "facil"].segundos, inicio, fin);
   const acertado = intentos.includes(reto.equipoId);
-  const terminado = acertado || intentos.length >= MAX_INTENTOS;
+  const agotado = inicio != null && fin == null && restante === 0;
+  const terminado = acertado || intentos.length >= MAX_INTENTOS || fin != null || agotado;
+
+  /** Guarda el estado del día en el navegador (solo en el reto del día). */
+  function apuntar(parcial: Partial<Dia>) {
+    if (modo !== "dia") return;
+    const previo: Dia = guardado.dias[numero] ?? { ids: [], ok: false };
+    const g: Guardado = { dias: { ...guardado.dias, [numero]: { ...previo, ...parcial } } };
+    setGuardado(g);
+    guardar(g);
+  }
+
+  // Se acabó el tiempo: la partida se cierra.
+  useEffect(() => {
+    if (!agotado) return;
+    const ahora = Date.now();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- respuesta al reloj (externo), una sola vez
+    setFin(ahora);
+    apuntar({ fin: ahora });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al agotarse
+  }, [agotado]);
+
+  function empezar(n: Nivel) {
+    const ahora = Date.now();
+    setNivel(n);
+    setInicio(ahora);
+    setFin(null);
+    apuntar({ nivel: n, inicio: ahora });
+  }
   const fallos = intentos.filter((id) => id !== reto.equipoId).length;
   const pistasVistas = pistas(reto, terminado ? 4 : fallos);
   const nombreDe = (id: number) => opciones.find((o) => o.id === id)?.nombre ?? "—";
@@ -103,15 +151,12 @@ export default function Juego({ numero }: { numero: number }) {
   function intentar(id: number) {
     if (terminado || intentos.includes(id)) return;
     const nuevos = [...intentos, id];
+    const acaba = nuevos.includes(reto.equipoId) || nuevos.length >= MAX_INTENTOS;
+    const ahora = Date.now();
     setIntentos(nuevos);
     setBusca("");
-    if (modo === "dia") {
-      const g: Guardado = {
-        dias: { ...guardado.dias, [numero]: { ids: nuevos, ok: nuevos.includes(reto.equipoId) } },
-      };
-      setGuardado(g);
-      guardar(g);
-    }
+    if (acaba) setFin(ahora);
+    apuntar({ ids: nuevos, ok: nuevos.includes(reto.equipoId), ...(acaba ? { fin: ahora } : {}) });
   }
 
   function nuevoReto(d: Dificultad = dificultad) {
@@ -124,6 +169,9 @@ export default function Juego({ numero }: { numero: number }) {
     setIntentos([]);
     setBusca("");
     setCopiado(false);
+    // En práctica se sigue con el mismo nivel y el reloj arranca de nuevo.
+    setInicio(nivel ? Date.now() : null);
+    setFin(null);
   }
 
   function irA(m: "dia" | "practica") {
@@ -131,13 +179,20 @@ export default function Juego({ numero }: { numero: number }) {
     setModo(m);
     setCopiado(false);
     setBusca("");
-    if (m === "dia") setIntentos(guardado.dias[numero]?.ids ?? []);
-    else nuevoReto();
+    if (m === "dia") {
+      const d = guardado.dias[numero];
+      setIntentos(d?.ids ?? []);
+      setNivel(d?.nivel ?? null);
+      setInicio(d?.inicio ?? null);
+      setFin(d?.fin ?? null);
+    } else nuevoReto();
   }
 
+  const puntos = nivel ? puntosAdivinar({ acertado, fallos, sobra: restante, nivel }) : 0;
+  const cuadros = Array.from({ length: intentos.length }, (_, i) => (acertado && i === intentos.length - 1 ? "🟩" : "🟥")).join("");
   const texto = textoCompartir({ numero: modo === "dia" ? numero : null, acertado, intentos: intentos.length });
   // Solo cuentan los días terminados (acertados o con los cinco intentos).
-  const cerrados = Object.values(guardado.dias).filter((d) => d.ok || d.ids.length >= MAX_INTENTOS);
+  const cerrados = Object.values(guardado.dias).filter((d) => d.ok || d.ids.length >= MAX_INTENTOS || d.fin != null);
   const jugados = cerrados.length;
   const ganados = cerrados.filter((d) => d.ok).length;
 
@@ -177,6 +232,9 @@ export default function Juego({ numero }: { numero: number }) {
         </div>
       )}
 
+      {!nivel && !terminado ? (
+        <ElegirNivel onElegir={empezar} />
+      ) : (
       <div className="jg-cuerpo">
         <div className="jg-campo" aria-label={`Once en ${reto.formacion}`}>
           <span className="jg-campo__form">{reto.formacion}</span>
@@ -201,6 +259,11 @@ export default function Juego({ numero }: { numero: number }) {
               return <span key={i} className={`jg-punto ${cls}`} />;
             })}
           </div>
+          {nivel && !terminado && (
+            <span className={`jreloj${restante <= 10 ? " is-poco" : ""}`} aria-label="Tiempo que queda">
+              ⏱ {reloj(restante)} · {NIVELES[nivel].nombre}
+            </span>
+          )}
 
           {terminado ? (
             <div className={`jg-final ${acertado ? "is-ok" : "is-mal"}`}>
@@ -212,6 +275,7 @@ export default function Juego({ numero }: { numero: number }) {
                   {reto.equipo} {reto.temporada}
                 </p>
                 <p className="jg-final__ctx">{reto.contexto}</p>
+                {!acertado && agotado && <p className="jg-final__ctx">⏱ Se acabó el tiempo.</p>}
               </div>
             </div>
           ) : (
@@ -270,6 +334,15 @@ export default function Juego({ numero }: { numero: number }) {
             </p>
           )}
 
+          {terminado && nivel && (
+            <CierreJuego
+              juego="equipo"
+              dia={modo === "dia" ? numero : null}
+              nivel={nivel}
+              puntos={puntos}
+              resultado={`${cuadros} ${acertado ? intentos.length : "X"}/${MAX_INTENTOS}`}
+            />
+          )}
           {terminado && (
             <div className="jg-acciones">
               {nativo ? (
@@ -329,6 +402,7 @@ export default function Juego({ numero }: { numero: number }) {
           {modo === "dia" && terminado && <p className="pz-ayuda">Mañana, un equipo nuevo.</p>}
         </div>
       </div>
+      )}
     </div>
   );
 }

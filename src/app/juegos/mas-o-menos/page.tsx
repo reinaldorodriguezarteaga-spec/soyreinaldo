@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
+import { numeroDelDia } from "@/lib/juegos/diario";
 import { jugadoresMasOMenos } from "@/lib/juegos/mas-o-menos";
 import Juego from "./juego";
 
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MasOMenosPage() {
+  await connection();
   const jugadores = await jugadoresMasOMenos();
   return (
     <main className="page">
@@ -30,7 +33,7 @@ export default async function MasOMenosPage() {
               Ahora mismo no hay datos de la temporada. Prueba en un rato.
             </div>
           ) : (
-            <Juego jugadores={jugadores} />
+            <Juego jugadores={jugadores} numero={numeroDelDia()} />
           )}
         </div>
       </section>

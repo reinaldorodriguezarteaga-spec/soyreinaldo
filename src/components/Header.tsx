@@ -317,7 +317,7 @@ export default function Header({
                 type="button"
                 aria-label="Menú"
                 onClick={() => setMobileOpen((v) => !v)}
-                className="md:hidden grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
+                className="min-[1280px]:hidden grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
                   {mobileOpen ? (
@@ -332,7 +332,7 @@ export default function Header({
 
           {/* Menú móvil desplegable */}
           {mobileOpen && (
-            <div className="nav__movil md:hidden border-t border-[var(--line)] py-3">
+            <div className="nav__movil min-[1280px]:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
                 {/* Favoritos acordeón — primero */}
                 {favorites.length > 0 && (
