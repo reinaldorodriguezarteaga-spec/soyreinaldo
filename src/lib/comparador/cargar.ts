@@ -3,7 +3,7 @@ import { totalesGoats } from "@/lib/goats";
 import { getJugadorTemporada, getTemporadasJugador, type EstadisticaJugadorApi } from "@/lib/sports/api-football";
 import { nombreVisible } from "@/lib/sports/nombres";
 import { nombreCurado } from "@/lib/juegos/caras";
-import { competiciones, edadEnTemporada, filasDeTemporada, nombreTemporada, sinDuplicados, sumar, type CompeticionJugador, type Totales } from "./datos";
+import { competiciones, edadQueCumple, filasDeTemporada, nombreTemporada, sinDuplicados, sumar, type CompeticionJugador, type Totales } from "./datos";
 
 /** Lo que pide cada lado del comparador (va en la URL). */
 /** `c`: competiciones elegidas (claves); vacío = todas. */
@@ -20,8 +20,8 @@ export type Lado = {
   etiqueta: string;
   t: "carrera" | number;
   c: string[];
-  /** Año de nacimiento (para la edad de cada temporada), si el API lo da. */
-  nacido: number | null;
+  /** Fecha de nacimiento («1987-06-24»), si el API la da. */
+  nacimiento: string | null;
 };
 
 /** Solo jugadores de nuestras plantillas guardadas o de la lista curada: así
@@ -56,8 +56,8 @@ export async function cargarLado(p: Peticion): Promise<Lado | null> {
   const comps = competiciones(stats);
   const c = p.c.filter((k) => comps.some((x) => x.clave === k));
   const comp = c.length ? c.map((k) => comps.find((x) => x.clave === k)!.nombre).join(" + ") : "Todas las competiciones";
-  const nacimiento = Number((datos.find((d) => d?.player.birth?.date)?.player.birth?.date ?? "").slice(0, 4));
-  const nacido = Number.isInteger(nacimiento) && nacimiento > 1900 ? nacimiento : null;
+  const fecha = datos.find((d) => d?.player.birth?.date)?.player.birth?.date ?? "";
+  const nacimiento = /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : null;
   // Messi y Cristiano, carrera entera y todas las competiciones: las cifras
   // oficiales que mantenemos a mano para Messi vs Cristiano (el API se deja
   // goles y repite filas), para que las dos páginas digan lo mismo.
@@ -85,8 +85,8 @@ export async function cargarLado(p: Peticion): Promise<Lado | null> {
     temporadas,
     comps,
     totales,
-    etiqueta: `${t === "carrera" ? "Toda la carrera" : `${nombreTemporada(t)}${nacido ? ` (${edadEnTemporada(t, nacido)} años)` : ""}`} · ${comp}${oficial ? " (cifras oficiales)" : ""}`,
-    nacido,
+    etiqueta: `${t === "carrera" ? "Toda la carrera" : `${nombreTemporada(t)}${nacimiento ? ` (cumplió ${edadQueCumple(t, nacimiento)})` : ""}`} · ${comp}${oficial ? " (cifras oficiales)" : ""}`,
+    nacimiento,
     t,
     c,
   };
