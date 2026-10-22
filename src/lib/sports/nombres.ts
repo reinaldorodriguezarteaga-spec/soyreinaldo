@@ -117,6 +117,11 @@ const NOMBRE_VISIBLE: Record<string, string> = {
   "pau cubarsi": "Cubarsí",
 };
 
+/** Jugadores que el API mete en la primera plantilla y no son de ella: el
+ * dueño, 22-oct, «quita a ese Aller que aparece siempre con el 1» (portero
+ * del filial con el dorsal de Joan García). Por id del API. */
+export const FUERA_DE_PLANTILLA = new Set<number>([543468]);
+
 /** El nombre con el que se enseña a un jugador en las plantillas. */
 export function nombreVisible(nombre: string): string {
   return NOMBRE_VISIBLE[sinTildes(nombre.trim())] ?? nombre;

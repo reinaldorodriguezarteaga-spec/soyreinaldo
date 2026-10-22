@@ -18,7 +18,7 @@ import {
 import { cachedOrLive, conUltimoBueno, readCache } from "./sports-cache";
 import { guardarArchivo, leerArchivo, respuestaUtil } from "./archivo";
 import { eventosDirecto, filasDirecto, filasDirectoVigentes, superponer } from "./directo";
-import { equiposEnEspanol, nombreVisible } from "./nombres";
+import { FUERA_DE_PLANTILLA, equiposEnEspanol, nombreVisible } from "./nombres";
 
 const BASE = "https://v3.football.api-sports.io";
 
@@ -2417,7 +2417,8 @@ export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
   );
   // Nombres como los quiere el dueño (Cubarsí, no «Pau Cubarsí Paredes»):
   // aquí, para que valga en la ficha del equipo, la pizarra y los juegos.
-  const conNombres = (ps: SquadPlayer[]) => ps.map((p) => ({ ...p, name: nombreVisible(p.name) }));
+  const conNombres = (ps: SquadPlayer[]) =>
+    ps.filter((p) => !FUERA_DE_PLANTILLA.has(p.id)).map((p) => ({ ...p, name: nombreVisible(p.name) }));
   if (precalculada && precalculada.length > 0) return conNombres(precalculada);
   return conNombres(await conUltimoBueno(teamSquadCacheKey(teamId), await getTeamSquadLive(teamId)));
 }
