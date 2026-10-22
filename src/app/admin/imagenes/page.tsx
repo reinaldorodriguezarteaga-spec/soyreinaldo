@@ -1,10 +1,12 @@
+import { exigirSeccion } from "@/lib/permisos";
 import ExtractorImagenes from "./extractor-client";
 
 export const metadata = {
   title: "Imágenes | Admin | Soy Reinaldo",
 };
 
-export default function AdminImagenesPage() {
+export default async function AdminImagenesPage() {
+  await exigirSeccion("imagenes");
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
       <div className="mx-auto w-full max-w-6xl">

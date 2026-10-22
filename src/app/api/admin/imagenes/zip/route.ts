@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/supabase/require-admin";
+import { requirePermiso } from "@/lib/supabase/require-admin";
 import { validarUrlPublica } from "@/lib/imagenes/ssrf";
 
 export const runtime = "nodejs";
@@ -118,7 +118,7 @@ function nombreDesdeUrl(u: string, indice: number): string {
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
+  const admin = await requirePermiso("imagenes");
   if (!admin) {
     return NextResponse.json({ error: "Solo admin" }, { status: 403 });
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { createClient } from "@/lib/supabase/server";
 import ResultsForm, { type Team, type CurrentResult } from "./results-form";
 
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function AdminQuinielaLigaPage() {
+  await exigirSeccion("admin");
   const supabase = await createClient();
 
   const { data: teamsData } = await supabase

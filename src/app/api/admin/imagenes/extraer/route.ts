@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/supabase/require-admin";
+import { requirePermiso } from "@/lib/supabase/require-admin";
 import { validarUrlPublica } from "@/lib/imagenes/ssrf";
 import {
   extraerCandidatas,
@@ -85,7 +85,7 @@ async function sondear(url: string, referer: string): Promise<Sonda | null> {
 }
 
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
+  const admin = await requirePermiso("imagenes");
   if (!admin) {
     return NextResponse.json({ error: "Solo admin" }, { status: 403 });
   }

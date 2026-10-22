@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 
 export const metadata = { title: "Métricas | Admin | Soy Reinaldo" };
@@ -30,6 +31,7 @@ const corto = (dia: string) =>
   new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(dia));
 
 export default async function AdminMetricasPage() {
+  await exigirSeccion("admin");
   const db = clienteServicio();
   const { data } = db ? await db.rpc("admin_metricas") : { data: null };
   const m = data as Metricas | null;

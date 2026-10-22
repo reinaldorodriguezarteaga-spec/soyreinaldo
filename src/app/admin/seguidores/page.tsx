@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { exigirSeccion } from "@/lib/permisos";
 import { getSocialStats } from "@/lib/social-stats";
 import StatsForm from "./stats-form";
 
@@ -7,6 +8,7 @@ export const metadata = {
 };
 
 export default async function AdminSocialStatsPage() {
+  await exigirSeccion("admin");
   const stats = await getSocialStats();
   return (
     <main className="flex flex-1 flex-col px-6 py-12">
