@@ -1,5 +1,6 @@
 "use client";
 
+import { caraDe } from "@/lib/juegos/caras";
 import { Fragment, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { MAX_INTENTOS, jugadorDelDia, pistasJugador, textoCompartirJugador } from "@/lib/juegos/adivina-jugador";
 import { JUGADORES, clubId, clubNombre, type Jugador } from "@/lib/juegos/carreras";
@@ -218,7 +219,7 @@ export default function Juego({ numero }: { numero: number }) {
             {terminado ? (
               <div className={`jg-final ${acertado ? "is-ok" : "is-mal"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API */}
-                <img src={bandera(reto.pais)} alt="" width={56} height={56} className="jg-final__bandera" />
+                <img src={caraDe(reto.id) ?? bandera(reto.pais)} alt="" width={56} height={56} className="jg-final__bandera" />
                 <div>
                   <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
                   <p className="jg-final__eq">{reto.nombre}</p>
