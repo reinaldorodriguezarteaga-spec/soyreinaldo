@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstadisticaJugadorApi } from "@/lib/sports/api-football";
-import { competiciones, filas, formatear, sumar } from "../datos";
+import { competiciones, filas, formatear, sinDuplicados, sumar } from "../datos";
 
 const est = (liga: string, id: number | null, o: Partial<{ ap: number; min: number; g: number; a: number | null; r: string | null }>): EstadisticaJugadorApi => ({
   team: { id: 1, name: "X", logo: null },
@@ -41,5 +41,23 @@ describe("comparador", () => {
     expect(f.find((x) => x.etiqueta === "Goles por partido")!.b).toBeCloseTo(43 / 38, 5);
     expect(formatear(1.1315, "decimal")).toBe("1,13");
     expect(formatear(null)).toBe("—");
+  });
+
+  it("quita las filas repetidas del API (se queda la que tiene id) y respeta las de 1-2 partidos", () => {
+    const liga = est("Pro League", 307, { ap: 16, min: 1400, g: 14 });
+    const copiaSinId = est("King's Cup", null, { ap: 16, min: 1400, g: 14 });
+    const otraCopia = est("King's Cup", null, { ap: 16, min: 1400, g: 14 });
+    const supercopa1 = est("Super Cup", 826, { ap: 1, min: 90, g: 0 });
+    const supercopa2 = est("Super Cup", 826, { ap: 1, min: 90, g: 0 });
+    const limpio = sinDuplicados([copiaSinId, liga, otraCopia, supercopa1, supercopa2]);
+    expect(limpio).toEqual([liga, supercopa1, supercopa2]);
+    expect(sumar(limpio).goles).toBe(14);
+  });
+
+  it("fuera la copia sin id de una competición que ya está, y las supercopas imposibles", () => {
+    const copa = est("King's Cup", 504, { ap: 4, min: 300, g: 3 });
+    const fantasma = est("King's Cup", null, { ap: 16, min: 1400, g: 14 });
+    const superMal = est("Super Cup", 826, { ap: 31, min: 2700, g: 35 });
+    expect(sinDuplicados([copa, fantasma, superMal])).toEqual([copa]);
   });
 });

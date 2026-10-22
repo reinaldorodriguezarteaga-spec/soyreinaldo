@@ -37,6 +37,46 @@ const AMISTOSO = /friendl/i;
 export const esAmistoso = (s: EstadisticaJugadorApi) => AMISTOSO.test(s.league.name);
 export const claveCompeticion = (s: EstadisticaJugadorApi) => String(s.league.id ?? s.league.name);
 
+/**
+ * El API repite filas: la misma línea con otro nombre («Euro» y «UEFA
+ * European Championship» en 2004), copias sin id que reaparecen en varias
+ * temporadas (una «King's Cup» con los números de la liga de 2022-23 en
+ * cuatro temporadas de Cristiano) o una liga entera etiquetada como otra
+ * competición. Sumadas, inflaban la carrera (Cristiano salía con 1019 goles,
+ * 22-oct). Se quita toda fila idéntica a otra ya vista (mismo equipo,
+ * partidos, titularidades, minutos y goles) con 3 partidos o más; las de 1-2
+ * partidos pueden coincidir de verdad (dos supercopas de un partido).
+ * Entre las repetidas se queda la que trae id de competición. Además: la
+ * misma competición repetida sin id en la misma temporada, fuera; y una
+ * supercopa con más de tres partidos, fuera (es otra mal etiquetada).
+ */
+export function sinDuplicados(stats: EstadisticaJugadorApi[]): EstadisticaJugadorApi[] {
+  const firma = (s: EstadisticaJugadorApi) =>
+    [s.team.id ?? s.team.name, s.games.appearences, s.games.lineups, s.games.minutes, s.goals.total].join("|");
+  const orden = [...stats].sort((a, b) => Number(b.league.id != null) - Number(a.league.id != null));
+  const vistas = new Set<string>();
+  const fuera = new Set<EstadisticaJugadorApi>();
+  for (const s of orden) {
+    if ((s.games.appearences ?? 0) < 3) continue;
+    const f = firma(s);
+    if (vistas.has(f)) fuera.add(s);
+    else vistas.add(f);
+  }
+  // La misma competición dos veces (mismo equipo y temporada): una con id y
+  // otra sin él → la sin id es la copia fantasma.
+  const nombre = (s: EstadisticaJugadorApi) => `${s.team.id ?? s.team.name}|${s.league.season}|${s.league.name.toLowerCase().trim()}`;
+  const conId = new Set(stats.filter((s) => s.league.id != null).map(nombre));
+  for (const s of stats) if (s.league.id == null && conId.has(nombre(s))) fuera.add(s);
+  // Una supercopa no tiene más de tres partidos: si sale con más, es otra
+  // competición mal etiquetada (la «Super Cup» de 31 partidos de Cristiano).
+  for (const s of stats) {
+    if (/super ?cup|supercopa|community shield|troph[eé]e des champions|supercoppa/i.test(s.league.name) && (s.games.appearences ?? 0) > 3) {
+      fuera.add(s);
+    }
+  }
+  return stats.filter((s) => !fuera.has(s));
+}
+
 /** Competiciones de una lista de estadísticas (sin amistosos), sin repetir. */
 export function competiciones(stats: EstadisticaJugadorApi[]): CompeticionJugador[] {
   const m = new Map<string, CompeticionJugador>();

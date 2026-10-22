@@ -1,8 +1,9 @@
 import { clientePublico } from "@/lib/supabase/publico";
+import { totalesGoats } from "@/lib/goats";
 import { getJugadorTemporada, getTemporadasJugador, type EstadisticaJugadorApi } from "@/lib/sports/api-football";
 import { nombreVisible } from "@/lib/sports/nombres";
 import { nombreCurado } from "@/lib/juegos/caras";
-import { competiciones, nombreTemporada, sumar, type CompeticionJugador, type Totales } from "./datos";
+import { competiciones, nombreTemporada, sinDuplicados, sumar, type CompeticionJugador, type Totales } from "./datos";
 
 /** Lo que pide cada lado del comparador (va en la URL). */
 export type Peticion = { id: number; t: "carrera" | number; c: string | null };
@@ -40,20 +41,40 @@ export async function cargarLado(p: Peticion): Promise<Lado | null> {
   for (let i = 0; i < anos.length; i += 6) {
     datos.push(...(await Promise.all(anos.slice(i, i + 6).map((s) => getJugadorTemporada(p.id, s).catch(() => null)))));
   }
-  const stats: EstadisticaJugadorApi[] = datos.flatMap((d) => d?.statistics ?? []);
+  const stats: EstadisticaJugadorApi[] = sinDuplicados(datos.flatMap((d) => d?.statistics ?? []));
   const info = datos.find((d) => d)?.player;
   if (!info) return null;
   const comps = competiciones(stats);
   const c = p.c && comps.some((x) => x.clave === p.c) ? p.c : null;
   const comp = c ? comps.find((x) => x.clave === c)!.nombre : "Todas las competiciones";
+  // Messi y Cristiano, carrera entera y todas las competiciones: las cifras
+  // oficiales que mantenemos a mano para Messi vs Cristiano (el API se deja
+  // goles y repite filas), para que las dos páginas digan lo mismo.
+  let totales = sumar(stats, c);
+  let oficial = false;
+  if (t === "carrera" && c == null && (p.id === 154 || p.id === 874)) {
+    const g = await totalesGoats(clientePublico()).catch(() => null);
+    const o = g ? (p.id === 154 ? g.messi : g.ronaldo) : null;
+    if (o) {
+      totales = {
+        ...totales,
+        partidos: o.partidos,
+        goles: o.goles,
+        asistencias: o.asistencias,
+        penMarcados: o.penMarcados,
+        penFallados: o.penLanzados - o.penMarcados,
+      };
+      oficial = true;
+    }
+  }
   return {
     id: p.id,
     nombre: nombreCurado(p.id) ?? nombreVisible(info.name),
     foto: info.photo ?? `https://media.api-sports.io/football/players/${p.id}.png`,
     temporadas,
     comps,
-    totales: sumar(stats, c),
-    etiqueta: `${t === "carrera" ? "Toda la carrera" : nombreTemporada(t)} · ${comp}`,
+    totales,
+    etiqueta: `${t === "carrera" ? "Toda la carrera" : nombreTemporada(t)} · ${comp}${oficial ? " (cifras oficiales)" : ""}`,
     t,
     c,
   };
