@@ -138,6 +138,7 @@ export default function Pizarra({
   preparado,
   partido,
   conectado = false,
+  solo = false,
 }: {
   local: EquipoConPlantilla;
   visitante: EquipoConPlantilla;
@@ -149,9 +150,13 @@ export default function Pizarra({
   partido?: number;
   /** ¿Hay sesión? (para publicar en la comunidad). */
   conectado?: boolean;
+  /** Un solo equipo, sin rival (22-oct, pedido del dueño): el visitante ni
+   * se pinta ni tiene lista. */
+  solo?: boolean;
 }) {
   const router = useRouter();
   const equipos: PorLado<EquipoConPlantilla> = { local, visitante };
+  const titulo = solo ? local.name : `${local.name} vs ${visitante.name}`;
   const [estado, setEstado] = useState<Estado>(
     () =>
       decodificar(inicial, {
@@ -502,7 +507,7 @@ export default function Pizarra({
     const url = `${window.location.origin}/pizarra?local=${local.id}&visitante=${visitante.id}${
       partido ? `&partido=${partido}` : ""
     }&p=${codificar(estado)}`;
-    const texto = `${local.name} vs ${visitante.name}: mira mi pizarra`;
+    const texto = `${titulo}: mira mi pizarra`;
     if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
       try {
         await navigator.share({ url, text: texto });
@@ -526,7 +531,7 @@ export default function Pizarra({
       if (!blob) return;
       // En la app (1.1): directa a la galería.
       if (await guardarEnGaleria(blob, "pizarra-soyreinaldo.png")) return avisar("Guardada en tu galería ✓");
-      await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${local.name} vs ${visitante.name} en la pizarra de soyreinaldo.com`);
+      await compartirArchivo(blob, "pizarra-soyreinaldo.png", `${titulo} en la pizarra de soyreinaldo.com`);
     } finally {
       setCompartiendo(false);
     }
@@ -624,7 +629,7 @@ export default function Pizarra({
       });
     }
     return {
-      titulo: `${local.name} vs ${visitante.name}`,
+      titulo: `${titulo}`,
       subtitulo: `${formacion.local}  ·  ${formacion.visitante}`,
       fichas,
       flechas: f ? f.flechas : flechas,
@@ -940,13 +945,16 @@ export default function Pizarra({
         <button type="button" className="btn" onClick={compartirEnlace}>
           🔗 Compartir enlace
         </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setPublicar({ titulo: `${local.name} vs ${visitante.name}`, enviando: false, error: null, id: null })}
-        >
-          🌍 Publicar
-        </button>
+        {/* La comunidad es de partidos (dos equipos): con uno solo no se publica. */}
+        {!solo && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setPublicar({ titulo: `${titulo}`, enviando: false, error: null, id: null })}
+          >
+            🌍 Publicar
+          </button>
+        )}
         <button type="button" className="btn btn--accent" onClick={compartirImagen} disabled={compartiendo}>
           📸 {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
@@ -1024,7 +1032,7 @@ export default function Pizarra({
         )}
       </div>
 
-      <div className="pz-cuerpo">
+      <div className={`pz-cuerpo${solo ? " pz-cuerpo--solo" : ""}`}>
         {lista("local")}
         <div className="pz-campo-zona">
           {/* Móvil (22-oct, pedido del dueño): herramientas en una columna a la
@@ -1126,7 +1134,7 @@ export default function Pizarra({
             {trazos.map((t, k) => pintarTrazo(t.puntos, t.color, `r${k}`))}
             {pincel && pintarTrazo(pincel, colorZona, "r-curso")}
           </svg>
-          {LADOS.map((lado) =>
+          {(solo ? (["local"] as Lado[]) : LADOS).map((lado) =>
             huecos(formacion[lado], lado).map((h, i) => {
               const j = jugador(lado, once[lado][i]);
               const { left, top } = aPantalla((j && fot?.jug[claveJug(lado, j.id)]) || posicion(lado, i));
@@ -1224,7 +1232,7 @@ export default function Pizarra({
         </div>
           </div>
         </div>
-        {lista("visitante")}
+        {!solo && lista("visitante")}
       </div>
 
       <p className="pz-ayuda">
