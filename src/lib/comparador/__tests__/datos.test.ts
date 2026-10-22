@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstadisticaJugadorApi } from "@/lib/sports/api-football";
-import { competiciones, filas, formatear, sinDuplicados, sumar } from "../datos";
+import { competiciones, edadEnTemporada, esTorneoDeVerano, filas, filasDeTemporada, formatear, sinDuplicados, sumar } from "../datos";
 
 const est = (liga: string, id: number | null, o: Partial<{ ap: number; min: number; g: number; a: number | null; r: string | null }>): EstadisticaJugadorApi => ({
   team: { id: 1, name: "X", logo: null },
@@ -59,5 +59,21 @@ describe("comparador", () => {
     const fantasma = est("King's Cup", null, { ap: 16, min: 1400, g: 14 });
     const superMal = est("Super Cup", 826, { ap: 31, min: 2700, g: 35 });
     expect(sinDuplicados([copa, fantasma, superMal])).toEqual([copa]);
+  });
+
+  it("el Mundial de verano cuenta en la temporada que acaba, no en la que empieza", () => {
+    const mundial = { ...est("World Cup", 1, { ap: 8, min: 700, g: 10 }), league: { id: 1, name: "World Cup", logo: null, season: 2026 } };
+    const clasif = est("World Cup - Qualification Europe", 32, { ap: 6, min: 500, g: 4 });
+    const liga26 = est("La Liga", 140, { ap: 9, min: 800, g: 9 });
+    const liga25 = est("La Liga", 140, { ap: 34, min: 3000, g: 31 });
+    expect(esTorneoDeVerano(mundial)).toBe(true);
+    expect(esTorneoDeVerano(clasif)).toBe(false);
+    // 2026-27: sin el Mundial 2026. 2025-26: con él.
+    expect(sumar(filasDeTemporada([mundial, liga26], [])).goles).toBe(9);
+    expect(sumar(filasDeTemporada([liga25], [mundial, liga26])).goles).toBe(41);
+  });
+  it("edad a mitad de temporada", () => {
+    expect(edadEnTemporada(2005, 1987)).toBe(18); // Messi
+    expect(edadEnTemporada(2025, 2007)).toBe(18); // Lamine
   });
 });

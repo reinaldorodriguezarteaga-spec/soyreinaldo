@@ -56,7 +56,14 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
         <span className="pz-ayuda">Jugador no disponible: busca otro.</span>
       )}
       <Suspense fallback={null}>
-        <Controles lado={lado} temporadas={l?.temporadas ?? []} comps={l?.comps ?? []} t={l?.t ?? "carrera"} c={l?.c ?? null} />
+        <Controles
+          lado={lado}
+          temporadas={l?.temporadas ?? []}
+          comps={l?.comps ?? []}
+          t={l?.t ?? "carrera"}
+          c={l?.c ?? []}
+          nacido={l?.nacido ?? null}
+        />
       </Suspense>
     </div>
   );
@@ -72,8 +79,8 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
             Comparador de jugadores
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 680 }}>
-            Elige dos jugadores y compáralos como quieras: una temporada concreta, una competición o toda su carrera. Sin
-            amistosos.
+            Elige dos jugadores y compáralos como quieras: una temporada concreta, una competición, la misma edad (Messi
+            a los 18 contra Lamine a los 18) o toda su carrera. Sin amistosos.
           </p>
 
           <div className="cmp">
@@ -116,8 +123,9 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
                 </div>
                 <p className="pz-ayuda">
                   Datos de API-Football. En temporadas antiguas faltan algunas estadísticas (asistencias, tiros…): salen
-                  como «—». En una temporada también entran las competiciones de selecciones que el API apunta en ese
-                  año (por ejemplo, el Mundial de 2014 en la 2014-15).
+                  como «—». Los torneos de selecciones de verano (Mundial, Eurocopa, Copa América) cuentan en la temporada
+                  que acaba ese verano; las clasificaciones y la Liga de Naciones, en la del año en que se juegan. La edad
+                  es la que el jugador tiene a mitad de temporada (31 de diciembre).
                 </p>
               </>
             )}

@@ -3,10 +3,11 @@ import { totalesGoats } from "@/lib/goats";
 import { getJugadorTemporada, getTemporadasJugador, type EstadisticaJugadorApi } from "@/lib/sports/api-football";
 import { nombreVisible } from "@/lib/sports/nombres";
 import { nombreCurado } from "@/lib/juegos/caras";
-import { competiciones, nombreTemporada, sinDuplicados, sumar, type CompeticionJugador, type Totales } from "./datos";
+import { competiciones, edadEnTemporada, filasDeTemporada, nombreTemporada, sinDuplicados, sumar, type CompeticionJugador, type Totales } from "./datos";
 
 /** Lo que pide cada lado del comparador (va en la URL). */
-export type Peticion = { id: number; t: "carrera" | number; c: string | null };
+/** `c`: competiciones elegidas (claves); vacío = todas. */
+export type Peticion = { id: number; t: "carrera" | number; c: string[] };
 
 export type Lado = {
   id: number;
@@ -18,7 +19,9 @@ export type Lado = {
   /** «2014-15 · Champions League» */
   etiqueta: string;
   t: "carrera" | number;
-  c: string | null;
+  c: string[];
+  /** Año de nacimiento (para la edad de cada temporada), si el API lo da. */
+  nacido: number | null;
 };
 
 /** Solo jugadores de nuestras plantillas guardadas o de la lista curada: así
@@ -35,24 +38,32 @@ export async function cargarLado(p: Peticion): Promise<Lado | null> {
   const temporadas = await getTemporadasJugador(p.id).catch(() => [] as number[]);
   if (temporadas.length === 0) return null;
   const t = p.t === "carrera" || temporadas.includes(p.t) ? p.t : temporadas[0];
-  const anos = t === "carrera" ? temporadas : [t];
+  // Una temporada pide también la siguiente: sus torneos de verano (el
+  // Mundial de ese verano) son de esta.
+  const anos = t === "carrera" ? temporadas : [t, ...(temporadas.includes(t + 1) ? [t + 1] : [])];
   const datos: Awaited<ReturnType<typeof getJugadorTemporada>>[] = [];
   // De seis en seis: una carrera larga son ~20 temporadas (cacheadas 30 días).
   for (let i = 0; i < anos.length; i += 6) {
     datos.push(...(await Promise.all(anos.slice(i, i + 6).map((s) => getJugadorTemporada(p.id, s).catch(() => null)))));
   }
-  const stats: EstadisticaJugadorApi[] = sinDuplicados(datos.flatMap((d) => d?.statistics ?? []));
+  const crudo =
+    t === "carrera"
+      ? datos.flatMap((d) => d?.statistics ?? [])
+      : filasDeTemporada(datos[0]?.statistics ?? [], datos[1]?.statistics ?? []);
+  const stats: EstadisticaJugadorApi[] = sinDuplicados(crudo);
   const info = datos.find((d) => d)?.player;
   if (!info) return null;
   const comps = competiciones(stats);
-  const c = p.c && comps.some((x) => x.clave === p.c) ? p.c : null;
-  const comp = c ? comps.find((x) => x.clave === c)!.nombre : "Todas las competiciones";
+  const c = p.c.filter((k) => comps.some((x) => x.clave === k));
+  const comp = c.length ? c.map((k) => comps.find((x) => x.clave === k)!.nombre).join(" + ") : "Todas las competiciones";
+  const nacimiento = Number((datos.find((d) => d?.player.birth?.date)?.player.birth?.date ?? "").slice(0, 4));
+  const nacido = Number.isInteger(nacimiento) && nacimiento > 1900 ? nacimiento : null;
   // Messi y Cristiano, carrera entera y todas las competiciones: las cifras
   // oficiales que mantenemos a mano para Messi vs Cristiano (el API se deja
   // goles y repite filas), para que las dos páginas digan lo mismo.
   let totales = sumar(stats, c);
   let oficial = false;
-  if (t === "carrera" && c == null && (p.id === 154 || p.id === 874)) {
+  if (t === "carrera" && c.length === 0 && (p.id === 154 || p.id === 874)) {
     const g = await totalesGoats(clientePublico()).catch(() => null);
     const o = g ? (p.id === 154 ? g.messi : g.ronaldo) : null;
     if (o) {
@@ -74,7 +85,8 @@ export async function cargarLado(p: Peticion): Promise<Lado | null> {
     temporadas,
     comps,
     totales,
-    etiqueta: `${t === "carrera" ? "Toda la carrera" : nombreTemporada(t)} · ${comp}${oficial ? " (cifras oficiales)" : ""}`,
+    etiqueta: `${t === "carrera" ? "Toda la carrera" : `${nombreTemporada(t)}${nacido ? ` (${edadEnTemporada(t, nacido)} años)` : ""}`} · ${comp}${oficial ? " (cifras oficiales)" : ""}`,
+    nacido,
     t,
     c,
   };
@@ -85,5 +97,6 @@ export function peticionDe(id?: string, t?: string, c?: string): Peticion | null
   const n = Number(id);
   if (!Number.isInteger(n) || n <= 0) return null;
   const ano = Number(t);
-  return { id: n, t: t && Number.isInteger(ano) && ano > 1900 ? ano : "carrera", c: c && c.length <= 60 ? c : null };
+  const comps = (c ?? "").split(",").map((x) => x.trim()).filter((x) => x && x.length <= 60).slice(0, 8);
+  return { id: n, t: t && Number.isInteger(ano) && ano > 1900 ? ano : "carrera", c: [...new Set(comps)] };
 }

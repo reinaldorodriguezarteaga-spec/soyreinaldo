@@ -90,8 +90,10 @@ export function competiciones(stats: EstadisticaJugadorApi[]): CompeticionJugado
 
 /** Suma de las estadísticas (los nulos del API no cuentan como cero: si
  * ninguna competición trae un dato, el total es null y se enseña «—»). */
-export function sumar(stats: EstadisticaJugadorApi[], comp: string | null = null): Totales {
-  const sel = stats.filter((s) => !esAmistoso(s) && (comp == null || claveCompeticion(s) === comp));
+export function sumar(stats: EstadisticaJugadorApi[], comps: string[] | string | null = null): Totales {
+  // Una o varias competiciones (liga + Champions…); vacío o null = todas.
+  const lista = comps == null ? [] : Array.isArray(comps) ? comps : [comps];
+  const sel = stats.filter((s) => !esAmistoso(s) && (lista.length === 0 || lista.includes(claveCompeticion(s))));
   const n = (f: (s: EstadisticaJugadorApi) => number | null | undefined): number | null => {
     let hay = false;
     let t = 0;
@@ -192,6 +194,34 @@ export function formatear(v: number | null, f: Fila["formato"] = "entero"): stri
   if (f === "decimal") return v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return Math.round(v).toLocaleString("es-ES");
 }
+
+/**
+ * Torneos de verano (Mundial, Eurocopa, Copa América…): el API los apunta en
+ * el año en que se juegan, que es el de inicio de la temporada SIGUIENTE (el
+ * Mundial 2026 salía en la 2026-27 de Mbappé, 22-oct). Pertenecen a la que
+ * acaba ese verano. Las clasificaciones y la Liga de Naciones no: se juegan
+ * a lo largo de la temporada. El Mundial de Clubes es de verano desde 2025.
+ */
+export function esTorneoDeVerano(s: EstadisticaJugadorApi): boolean {
+  const n = s.league.name.toLowerCase();
+  if (/qualif|clasif/.test(n)) return false;
+  if (/club world cup|mundial de clubes/.test(n)) return (s.league.season ?? 0) >= 2025;
+  return /world cup|euro(pean)? championship|^euro\b|copa am[eé]rica|gold cup|confederations cup|finalissima|olympic/.test(n);
+}
+
+/** Las filas de la temporada `s`: lo suyo menos los torneos de verano (son
+ * de la anterior) más los torneos de verano del año siguiente. */
+export function filasDeTemporada(
+  deEse: EstadisticaJugadorApi[],
+  delSiguiente: EstadisticaJugadorApi[],
+): EstadisticaJugadorApi[] {
+  return [...deEse.filter((x) => !esTorneoDeVerano(x)), ...delSiguiente.filter(esTorneoDeVerano)];
+}
+
+/** Edad «de una temporada»: la que tiene el 31 de diciembre del año en que
+ * empieza (mitad de temporada). Messi, nacido en junio de 1987, tenía 18 en
+ * la 2005-06; Lamine, nacido en julio de 2007, 18 en la 2025-26. */
+export const edadEnTemporada = (temporada: number, anoNacimiento: number) => temporada - anoNacimiento;
 
 /** «2014-15» (o «2014» en competiciones de un solo año, que el API también
  * guarda con el año de inicio). */

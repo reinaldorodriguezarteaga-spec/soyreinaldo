@@ -3813,7 +3813,15 @@ export type EstadisticaJugadorApi = {
   penalty: { scored: number | null; missed: number | null };
 };
 export type JugadorTemporadaApi = {
-  player: { id: number; name: string; firstname: string | null; lastname: string | null; nationality: string | null; photo: string | null };
+  player: {
+    id: number;
+    name: string;
+    firstname: string | null;
+    lastname: string | null;
+    nationality: string | null;
+    photo: string | null;
+    birth?: { date: string | null } | null;
+  };
   statistics: EstadisticaJugadorApi[];
 };
 
