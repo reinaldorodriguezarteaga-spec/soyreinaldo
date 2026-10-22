@@ -111,3 +111,12 @@ export function caraPorNombre(nombre: string): string | null {
   const id = porNombre.get(nombre);
   return id ? caraDe(id) : null;
 }
+
+const porApiId = new Map(Object.entries(IDS).map(([k, v]) => [v, k]));
+/** Nombre completo de las carreras («Lionel Messi») para un id del API; los
+ * de fuera de la lista, null. También vale para saber si el id es «de los
+ * nuestros» (comparador). */
+export function nombreCurado(apiId: number): string | null {
+  const k = porApiId.get(apiId);
+  return k ? (JUGADORES.find((j) => j.id === k)?.nombre ?? null) : null;
+}

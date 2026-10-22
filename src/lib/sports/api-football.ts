@@ -3794,3 +3794,40 @@ export async function getTemporadaJugador(
     }))
     .sort((a, b) => b.partidos - a.partidos);
 }
+
+// ---- Comparador de jugadores (22-oct) -------------------------------------
+
+/** Una competición de una temporada de un jugador, tal cual la da /players. */
+export type EstadisticaJugadorApi = {
+  team: { id: number | null; name: string; logo: string | null };
+  league: { id: number | null; name: string; logo: string | null; season: number | null };
+  games: { appearences: number | null; lineups: number | null; minutes: number | null; rating: string | null };
+  goals: { total: number | null; assists: number | null; conceded: number | null; saves: number | null };
+  shots: { total: number | null; on: number | null };
+  passes: { total: number | null; key: number | null; accuracy: number | null };
+  dribbles: { attempts: number | null; success: number | null };
+  duels: { total: number | null; won: number | null };
+  tackles: { total: number | null; blocks: number | null; interceptions: number | null };
+  fouls: { drawn: number | null; committed: number | null };
+  cards: { yellow: number | null; yellowred: number | null; red: number | null };
+  penalty: { scored: number | null; missed: number | null };
+};
+export type JugadorTemporadaApi = {
+  player: { id: number; name: string; firstname: string | null; lastname: string | null; nationality: string | null; photo: string | null };
+  statistics: EstadisticaJugadorApi[];
+};
+
+/** Temporadas en las que el API tiene datos del jugador (caché de una semana). */
+export async function getTemporadasJugador(id: number): Promise<number[]> {
+  const r = await get<number>("/players/seasons", { player: id }, 7 * 86400);
+  return [...r.response].filter((s) => Number.isInteger(s)).sort((a, b) => b - a);
+}
+
+/** Estadísticas de un jugador en una temporada, por competición. Las
+ * temporadas pasadas ya no cambian: caché de 30 días; la actual, 6 horas. */
+export async function getJugadorTemporada(id: number, season: number): Promise<JugadorTemporadaApi | null> {
+  const actual = new Date().getUTCFullYear() - (new Date().getUTCMonth() < 6 ? 1 : 0);
+  const rv = season >= actual ? 6 * 3600 : 30 * 86400;
+  const r = await get<JugadorTemporadaApi>("/players", { id, season }, rv);
+  return r.response[0] ?? null;
+}

@@ -2739,3 +2739,35 @@ select.field { appearance: none; }
 .tt-cara { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .tt-cara img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
 .jg-final__bandera { background: #e2e8f0; }
+/* Comparador de jugadores (22-oct) */
+.cmp { display: flex; flex-direction: column; gap: 16px; }
+.cmp-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.cmp-vs { align-self: center; font-family: var(--font-display-stack); font-size: 1.8rem; color: var(--accent-2); }
+.cmp-jug { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); min-width: 0; }
+.cmp-jug--a { border-top: 3px solid #2c8fff; }
+.cmp-jug--b { border-top: 3px solid #ff5b8a; }
+.cmp-jug__foto { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.cmp-jug__nombre { font-family: var(--font-display-stack); font-size: 1.4rem; text-transform: uppercase; line-height: 1.1; }
+.cmp-jug__ambito { color: var(--text-dim); font-size: 0.8rem; }
+.cmp-ctl { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 6px; }
+.cmp-ctl.is-cargando { opacity: 0.6; }
+.cmp-ctl select, .cmp-busca input { width: 100%; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.85rem; }
+.cmp-busca { position: relative; }
+.cmp-sug { position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 4px); list-style: none; margin: 0; padding: 4px; max-height: 260px; overflow-y: auto; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); text-align: left; }
+.cmp-sug button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 0.88rem; cursor: pointer; border-radius: 6px; }
+.cmp-sug button:hover { background: var(--surface-2); }
+.cmp-sug img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.cmp-filas { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.cmp-filas li { display: grid; grid-template-columns: 80px minmax(0, 1fr) 80px; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line); }
+.cmp-filas li:first-child { border-top: 0; }
+.cmp-v { font-family: var(--font-mono-stack); font-weight: 700; font-size: 1rem; color: var(--text-dim); }
+.cmp-filas li .cmp-v:last-child { text-align: right; }
+.cmp-v.is-gana { color: var(--text); font-size: 1.1rem; }
+.cmp-filas li .cmp-v.is-gana:first-child { color: #60a5fa; }
+.cmp-filas li .cmp-v.is-gana:last-child { color: #ff8fb0; }
+.cmp-et { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.82rem; color: var(--text-dim); text-align: center; }
+.cmp-barra { display: flex; width: 100%; height: 5px; border-radius: 3px; overflow: hidden; gap: 2px; }
+.cmp-barra__a { background: #2c8fff; }
+.cmp-barra__b { background: #ff5b8a; margin-left: auto; }
+.cmp-compartir { display: flex; justify-content: center; }
+@media (max-width: 600px) { .cmp-vs { font-size: 1.1rem; } .cmp-jug { padding: 10px 8px; } .cmp-jug__foto { width: 64px; height: 64px; } .cmp-jug__nombre { font-size: 1.05rem; } .cmp-filas li { grid-template-columns: 60px minmax(0, 1fr) 60px; padding: 8px 10px; } }
