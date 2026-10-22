@@ -2771,3 +2771,7 @@ select.field { appearance: none; }
 .cmp-barra__b { background: #ff5b8a; margin-left: auto; }
 .cmp-compartir { display: flex; justify-content: center; }
 @media (max-width: 600px) { .cmp-vs { font-size: 1.1rem; } .cmp-jug { padding: 10px 8px; } .cmp-jug__foto { width: 64px; height: 64px; } .cmp-jug__nombre { font-size: 1.05rem; } .cmp-filas li { grid-template-columns: 60px minmax(0, 1fr) 60px; padding: 8px 10px; } }
+.cmp-comps { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.cmp-comp { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; border: 1px solid var(--accent); background: color-mix(in oklch, var(--accent) 18%, transparent); font-size: 0.78rem; }
+.cmp-comp.is-todas { border-color: var(--line); background: transparent; color: var(--text-dim); padding: 3px 10px; }
+.cmp-comp button { width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.3); color: var(--text); cursor: pointer; line-height: 1; padding: 0; }
