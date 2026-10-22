@@ -109,6 +109,19 @@ const ALIAS: Record<string, string> = {
 
 const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+/** Jugadores que no se muestran con el nombre completo del API en ningún
+ * sitio (plantillas, pizarra, juegos): el dueño, 22-oct, «a Cubarsí, solo
+ * Cubarsí». */
+const NOMBRE_VISIBLE: Record<string, string> = {
+  "pau cubarsi paredes": "Cubarsí",
+  "pau cubarsi": "Cubarsí",
+};
+
+/** El nombre con el que se enseña a un jugador en las plantillas. */
+export function nombreVisible(nombre: string): string {
+  return NOMBRE_VISIBLE[sinTildes(nombre.trim())] ?? nombre;
+}
+
 /** Nombre corto como en los marcadores de los móviles: primero el alias; si
  * no, el apellido ("Dani Olmo" → "Olmo", "K. Mbappé" → "Mbappé", "Marten de
  * Roon" → "de Roon"); los de una palabra ("Endrick", "Pedri"), tal cual. */
