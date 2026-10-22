@@ -34,6 +34,7 @@ const PIZARRAS = [
   { href: "/pizarra", label: "Pizarra táctica", desc: "Monta los onces, mueve jugadores y anima la jugada" },
   { href: "/pizarra/fotos", label: "Analiza tu jugada", desc: "Marca fotos y fotogramas de vídeo del partido real" },
   { href: "/pizarra/comunidad", label: "Pizarras de la comunidad", desc: "Las que ha publicado la gente" },
+  { href: "/comparador", label: "Comparador de jugadores", desc: "Dos jugadores, la temporada y la competición que quieras" },
 ];
 
 /** Estadios, Redes y Contáctame se agrupan aquí: sueltos eran tres enlaces

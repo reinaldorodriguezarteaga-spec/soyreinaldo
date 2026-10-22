@@ -72,6 +72,11 @@ export default async function MessiVsRonaldoPage() {
             <Suspense fallback={null}>
               <GoatsCard />
             </Suspense>
+            <p style={{ margin: 0 }}>
+              <Link href="/comparador" className="btn">
+                ⚖️ Compara a cualquier jugador, por temporada o competición →
+              </Link>
+            </p>
             <CompartirImagen
               imagen="/messi-vs-ronaldo/imagen"
               nombreArchivo="messi-vs-cristiano.png"
