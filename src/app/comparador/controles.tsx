@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { buscarJugadores, type Sugerencia } from "./acciones";
-import { edadEnTemporada, nombreTemporada, type CompeticionJugador } from "@/lib/comparador/datos";
+import { edadQueCumple, nombreTemporada, temporadaEnQueCumple, type CompeticionJugador } from "@/lib/comparador/datos";
 
 /** Selector de un lado: buscar jugador, temporada (o carrera) y competición.
  * Todo va a la URL (?a=&ta=&ca= / ?b=&tb=&cb=), así el enlace se comparte. */
@@ -13,15 +13,15 @@ export default function Controles({
   comps,
   t,
   c,
-  nacido,
+  nacimiento,
 }: {
   lado: "a" | "b";
   temporadas: number[];
   comps: CompeticionJugador[];
   t: "carrera" | number;
   c: string[];
-  /** Año de nacimiento: para el selector de edad («Messi a los 18»). */
-  nacido: number | null;
+  /** Fecha de nacimiento: para «la temporada en la que cumplió N». */
+  nacimiento: string | null;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -93,20 +93,19 @@ export default function Controles({
         {temporadas.map((s) => (
           <option key={s} value={s}>
             {nombreTemporada(s)}
-            {nacido ? ` · ${edadEnTemporada(s, nacido)} años` : ""}
           </option>
         ))}
       </select>
-      {nacido && (
+      {nacimiento && (
         <select
-          aria-label="Edad"
-          value={t === "carrera" ? "" : String(edadEnTemporada(t, nacido))}
-          onChange={(e) => e.target.value && ir({ [`t${lado}`]: String(nacido + Number(e.target.value)), [`c${lado}`]: null })}
+          aria-label="Temporada en la que cumplió…"
+          value={t === "carrera" ? "" : String(edadQueCumple(t, nacimiento))}
+          onChange={(e) => e.target.value && ir({ [`t${lado}`]: String(temporadaEnQueCumple(Number(e.target.value), nacimiento)), [`c${lado}`]: null })}
         >
           <option value="">Por edad…</option>
           {[...temporadas].reverse().map((s) => (
-            <option key={s} value={edadEnTemporada(s, nacido)}>
-              Con {edadEnTemporada(s, nacido)} años ({nombreTemporada(s)})
+            <option key={s} value={edadQueCumple(s, nacimiento)}>
+              La temporada en la que cumplió {edadQueCumple(s, nacimiento)} ({nombreTemporada(s)})
             </option>
           ))}
         </select>

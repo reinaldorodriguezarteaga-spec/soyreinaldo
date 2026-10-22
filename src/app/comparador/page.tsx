@@ -62,7 +62,7 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
           comps={l?.comps ?? []}
           t={l?.t ?? "carrera"}
           c={l?.c ?? []}
-          nacido={l?.nacido ?? null}
+          nacimiento={l?.nacimiento ?? null}
         />
       </Suspense>
     </div>
@@ -79,8 +79,8 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
             Comparador de jugadores
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 680 }}>
-            Elige dos jugadores y compáralos como quieras: una temporada concreta, una competición, la misma edad (Messi
-            a los 18 contra Lamine a los 18) o toda su carrera. Sin amistosos.
+            Elige dos jugadores y compáralos como quieras: una temporada concreta, una competición, la temporada en la
+            que cumplieron la misma edad o toda su carrera. Sin amistosos.
           </p>
 
           <div className="cmp">
@@ -124,8 +124,9 @@ export default async function ComparadorPage({ searchParams }: { searchParams: P
                 <p className="pz-ayuda">
                   Datos de API-Football. En temporadas antiguas faltan algunas estadísticas (asistencias, tiros…): salen
                   como «—». Los torneos de selecciones de verano (Mundial, Eurocopa, Copa América) cuentan en la temporada
-                  que acaba ese verano; las clasificaciones y la Liga de Naciones, en la del año en que se juegan. La edad
-                  es la que el jugador tiene a mitad de temporada (31 de diciembre).
+                  que acaba ese verano; las clasificaciones y la Liga de Naciones, en la del año en que se juegan. Por edad se
+                  compara la temporada (de julio a junio) en la que el jugador cumplió esos años: el API no tiene datos
+                  partido a partido antes de 2016, así que no se puede cortar justo en el cumpleaños.
                 </p>
               </>
             )}

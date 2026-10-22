@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstadisticaJugadorApi } from "@/lib/sports/api-football";
-import { competiciones, edadEnTemporada, esTorneoDeVerano, filas, filasDeTemporada, formatear, sinDuplicados, sumar } from "../datos";
+import { competiciones, edadQueCumple, temporadaEnQueCumple, esTorneoDeVerano, filas, filasDeTemporada, formatear, sinDuplicados, sumar } from "../datos";
 
 const est = (liga: string, id: number | null, o: Partial<{ ap: number; min: number; g: number; a: number | null; r: string | null }>): EstadisticaJugadorApi => ({
   team: { id: 1, name: "X", logo: null },
@@ -72,8 +72,10 @@ describe("comparador", () => {
     expect(sumar(filasDeTemporada([mundial, liga26], [])).goles).toBe(9);
     expect(sumar(filasDeTemporada([liga25], [mundial, liga26])).goles).toBe(41);
   });
-  it("edad a mitad de temporada", () => {
-    expect(edadEnTemporada(2005, 1987)).toBe(18); // Messi
-    expect(edadEnTemporada(2025, 2007)).toBe(18); // Lamine
+  it("temporada en la que cumplió N años", () => {
+    expect(temporadaEnQueCumple(18, "1987-06-24")).toBe(2004); // Messi: 24-jun-2005, final de la 2004-05
+    expect(temporadaEnQueCumple(18, "2007-07-13")).toBe(2025); // Lamine: 13-jul-2025, inicio de la 2025-26
+    expect(edadQueCumple(2004, "1987-06-24")).toBe(18);
+    expect(edadQueCumple(2025, "2007-07-13")).toBe(18);
   });
 });

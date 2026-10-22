@@ -218,10 +218,25 @@ export function filasDeTemporada(
   return [...deEse.filter((x) => !esTorneoDeVerano(x)), ...delSiguiente.filter(esTorneoDeVerano)];
 }
 
-/** Edad «de una temporada»: la que tiene el 31 de diciembre del año en que
- * empieza (mitad de temporada). Messi, nacido en junio de 1987, tenía 18 en
- * la 2005-06; Lamine, nacido en julio de 2007, 18 en la 2025-26. */
-export const edadEnTemporada = (temporada: number, anoNacimiento: number) => temporada - anoNacimiento;
+/**
+ * Temporada (de julio a junio) en la que el jugador cumple `edad` años. El
+ * API solo da totales por temporada, y partido a partido no tiene nada antes
+ * de 2016: la edad exacta (de cumpleaños a cumpleaños) no se puede calcular,
+ * pero sí decir con verdad «la temporada en la que cumplió 18» (22-oct).
+ * Messi (24-jun-1987) cumplió 18 en la 2004-05; Lamine (13-jul-2007), en la 2025-26.
+ */
+export function temporadaEnQueCumple(edad: number, nacimiento: string): number {
+  const ano = Number(nacimiento.slice(0, 4));
+  const mes = Number(nacimiento.slice(5, 7));
+  return ano + edad - (mes < 7 ? 1 : 0);
+}
+
+/** Años que cumple durante la temporada `s` (la inversa de la anterior). */
+export function edadQueCumple(s: number, nacimiento: string): number {
+  const ano = Number(nacimiento.slice(0, 4));
+  const mes = Number(nacimiento.slice(5, 7));
+  return s - ano + (mes < 7 ? 1 : 0);
+}
 
 /** «2014-15» (o «2014» en competiciones de un solo año, que el API también
  * guarda con el año de inicio). */
