@@ -66,6 +66,11 @@ export default function JuegosPage() {
           <p style={{ color: "var(--text-dim)", margin: "0 0 22px", maxWidth: 640 }}>
             Retos de fútbol para jugar cada día y picar a tus amigos.
           </p>
+          <p style={{ margin: "0 0 18px" }}>
+            <Link href="/juegos/ranking" className="btn btn--accent">
+              🏆 Ranking de la semana
+            </Link>
+          </p>
           <div className="jg-hub">
             {JUEGOS.map((j) =>
               j.listo ? (
