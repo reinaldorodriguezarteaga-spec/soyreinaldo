@@ -21,6 +21,12 @@ const ADMIN_LINKS: AdminLink[] = [
   { href: "/admin/imagenes", label: "Imágenes (extractor)" },
 ];
 
+/** Qué permiso abre cada atajo (migración 087). */
+const PERMISO_DE: Record<string, string | undefined> = {
+  "/admin/analisis": "analisis",
+  "/admin/imagenes": "imagenes",
+};
+
 // Apps hermanas fuera de esta web y URLs para pegar en OBS — todo lo que
 // hace falta a mano durante un directo, agrupado aparte porque antes había
 // que ir pidiéndolo enlace a enlace.
@@ -79,9 +85,11 @@ function AdminLinkItem({ a, onClick }: { a: AdminLink; onClick: () => void }) {
 export default function UserMenu({
   initialUser,
   isAdmin = false,
+  permisos = [],
 }: {
   initialUser: User | null;
   isAdmin?: boolean;
+  permisos?: string[];
 }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [open, setOpen] = useState(false);
@@ -179,6 +187,12 @@ export default function UserMenu({
           >
             Perfil
           </Link>
+
+          {/* Quien tiene permiso para alguna sección (sin ser admin): sus atajos. */}
+          {!isAdmin &&
+            ADMIN_LINKS.filter((a) => PERMISO_DE[a.href] && permisos.includes(PERMISO_DE[a.href]!)).map((a) => (
+              <AdminLinkItem key={a.href} a={a} onClick={closeMenu} />
+            ))}
 
           {isAdmin && (
             <>

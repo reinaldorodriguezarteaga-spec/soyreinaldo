@@ -86,11 +86,14 @@ export default function Header({
   hasLiveMatch = false,
   favorites = [],
   isAdmin = false,
+  permisos = [],
 }: {
   initialUser: User | null;
   hasLiveMatch?: boolean | Promise<boolean>;
   favorites?: FavoriteNavItem[];
   isAdmin?: boolean;
+  /** Permisos por sección de quien no es admin («imagenes», «analisis»). */
+  permisos?: string[];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -307,7 +310,7 @@ export default function Header({
                 onCerrar={() => setBuscando(false)}
               />
               {initialUser ? (
-                <UserMenu initialUser={initialUser} isAdmin={isAdmin} />
+                <UserMenu initialUser={initialUser} isAdmin={isAdmin} permisos={permisos} />
               ) : (
                 <Link href="/login" className="btn btn--ghost hidden sm:inline-flex">
                   Iniciar sesión
