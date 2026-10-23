@@ -3840,3 +3840,10 @@ export async function getJugadorTemporada(id: number, season: number): Promise<J
   const r = await get<JugadorTemporadaApi>("/players", { id, season }, rv);
   return r.response[0] ?? null;
 }
+
+/** Clubes (y selecciones) por los que ha pasado un jugador, con sus ids.
+ * Para validar el tiki-taka-toe con cualquier jugador (23-oct). Caché 30 días. */
+export async function getEquiposJugador(id: number): Promise<number[]> {
+  const r = await get<{ team: { id: number; name: string } }>("/players/teams", { player: id }, 30 * 86400);
+  return r.response.map((x) => x.team.id);
+}
