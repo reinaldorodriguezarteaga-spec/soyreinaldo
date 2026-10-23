@@ -36,6 +36,8 @@ import MatchQuiniela from "./match-quiniela";
 import MatchVideos from "./match-videos";
 import MatchEncuestas from "./match-encuestas";
 import MatchNotasAficion from "./match-notas-aficion";
+import MatchSiguienteGol from "./match-siguiente-gol";
+import { golesDe } from "@/lib/partido/siguiente-gol";
 import BotonCompartir from "@/components/BotonCompartir";
 import CompartirImagen from "@/components/CompartirImagen";
 import MatchAnalisis from "./match-analisis";
@@ -648,6 +650,20 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
           </Suspense>
+          {played && (
+            <Suspense fallback={null}>
+              <MatchSiguienteGol
+                fixtureId={fixtureId}
+                local={home.name}
+                visitante={away.name}
+                estado={fx.fixture.status.short}
+                transcurrido={fx.fixture.status.elapsed}
+                enJuego={live}
+                terminado={final}
+                goles={golesDe(goals, home.id)}
+              />
+            </Suspense>
+          )}
           <Suspense fallback={null}>
             <MatchEncuestas fixtureId={fixtureId} candidatosMvp={candidatosMvp} />
           </Suspense>

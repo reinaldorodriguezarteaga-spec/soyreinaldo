@@ -15,6 +15,10 @@ export function numeroDelDia(ahora = new Date()): number {
   return Math.max(1, Math.floor((Date.UTC(y, m - 1, d) - INICIO) / 86_400_000) + 1);
 }
 
+/** Primer día (lunes) de la semana del reto `hoy`. El día 1 (22-oct-2026)
+ * fue jueves. */
+export const lunesDeLaSemana = (hoy: number) => Math.max(1, hoy - ((hoy + 2) % 7));
+
 /** Generador pseudoaleatorio con semilla (LCG de 32 bits): mismo número,
  * misma secuencia en cualquier navegador. */
 export function aleatorio(semilla: number): () => number {

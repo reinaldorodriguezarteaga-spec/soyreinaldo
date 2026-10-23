@@ -2492,6 +2492,9 @@ select.field { appearance: none; }
 .jg-jug img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); background: #fff; }
 .jg-jug__n { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.55); background: rgba(10,16,48,0.7); padding: 1px 6px; border-radius: 4px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jg-jug__n.is-visto { color: #fff; }
+.jg-jug__foto { position: relative; display: inline-flex; }
+.jg-jug img.jg-jug__cara { object-position: top; }
+.jg-jug img.jg-jug__bandera { position: absolute; right: -5px; bottom: -3px; width: 17px; height: 17px; border-width: 1px; }
 @media (max-width: 480px) { .jg-jug img { width: 32px; height: 32px; } .jg-jug__n { font-size: 0.62rem; padding: 1px 3px; } }
 
 .jg-panel { display: flex; flex-direction: column; gap: 12px; }
@@ -2735,6 +2738,23 @@ select.field { appearance: none; }
 .jc__puntos b { font-family: var(--font-display-stack); font-size: 2.2rem; line-height: 1; color: var(--accent-2); }
 .jc__puntos span { color: var(--text-dim); font-size: 0.85rem; }
 .jc__ranking { margin: 0; font-size: 0.88rem; }
+.jg-racha { margin: 0 0 18px; display: flex; flex-direction: column; gap: 8px; }
+.jg-racha__linea { margin: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 0.98rem; }
+.jg-racha__linea b { font-family: var(--font-display-stack); font-size: 1.5rem; line-height: 1; color: var(--accent-2); }
+.jg-racha__linea strong { color: var(--text); }
+.jg-racha__fuego { font-size: 1.3rem; }
+.jg-racha__nota { margin: 0; color: var(--text-dim); font-size: 0.85rem; }
+.jg-ligas { display: grid; gap: 14px; max-width: 720px; }
+.jg-ligas__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.jg-ligas__lista li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.jg-ligas__lista li a.jg-ligas__nombre { font-weight: 700; flex: 1; min-width: 140px; }
+.jg-ligas__codigo { font-family: ui-monospace, monospace; letter-spacing: 2px; color: var(--text-dim); font-size: 0.85rem; }
+.jg-ligas__form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.jg-ligas__form input { flex: 1; min-width: 160px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+.jg-ligas__aviso { margin: 0; font-size: 0.88rem; color: var(--text-dim); }
+.jg-ligas__aviso.is-error { color: #f87171; }
+.jc__racha { margin: 0; font-size: 0.95rem; }
+.jc__racha b { color: var(--accent-2); font-size: 1.15rem; }
 /* Caras en los juegos (22-oct) */
 .tt-cara { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .tt-cara img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
@@ -2787,3 +2807,21 @@ select.field { appearance: none; }
   .tt-cuerpo .tt-cab img { width: 32px; height: 32px; }
   .tt-cuerpo .tt-cab span { font-size: 0.6rem; }
 }
+
+/* ¿Quién marca el siguiente gol? (23-oct) */
+.sg { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.sg__opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sg__opcion { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: center; min-width: 0; }
+.sg__opcion b { font-size: 0.95rem; overflow-wrap: anywhere; }
+.sg__opcion span { font-size: 0.75rem; color: var(--text-dim); }
+.sg__opcion:hover:not(:disabled) { border-color: var(--accent-2); }
+.sg__opcion:disabled { cursor: default; opacity: 0.75; }
+.sg__opcion.is-elegido { border-color: var(--accent-2); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-2) 35%, transparent); opacity: 1; }
+.sg__nota { margin: 0; font-size: 0.85rem; color: var(--text-dim); }
+.sg__nota.is-error { color: #f87171; }
+.sg__aciertos { margin: 0 0 6px; }
+.sg__aciertos b { font-family: var(--font-display-stack); font-size: 1.4rem; color: var(--accent-2); }
+.sg__mios ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.82rem; }
+.sg__mios li { padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.sg__mios li.is-ok { border-color: #22c55e; }
+.sg__mios li.is-mal { opacity: 0.75; }

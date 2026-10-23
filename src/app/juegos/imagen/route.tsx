@@ -5,6 +5,8 @@ import { jugadorDelDia } from "@/lib/juegos/adivina-jugador";
 import { tableroDelDia } from "@/lib/juegos/tikitaka";
 import { clubId, clubNombre } from "@/lib/juegos/carreras";
 import { HUECOS, LINEAS, ternas } from "@/lib/juegos/leyendas";
+import { caraPorNombre } from "@/lib/juegos/caras";
+import { caraOnce } from "@/lib/juegos/caras-onces";
 
 /**
  * Imagen del resultado de un juego para compartir en redes (22-oct): formato
@@ -137,7 +139,13 @@ function Avance({ juego, dia, q }: { juego: JuegoRanking; dia: number | null; q:
               {linea.map((h) => (
                 <div key={h} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element -- Satori solo entiende <img> */}
-                  <img src={bandera(elegidos[h].pais)} width={58} height={58} alt="" style={{ borderRadius: 29, border: "3px solid #fff", objectFit: "cover" }} />
+                  <img
+                    src={caraPorNombre(elegidos[h].nombre) ?? caraOnce(elegidos[h].nombre, elegidos[h].pais) ?? bandera(elegidos[h].pais)}
+                    width={58}
+                    height={58}
+                    alt=""
+                    style={{ borderRadius: 29, border: "3px solid #fff", objectFit: "cover", background: "#fff" }}
+                  />
                   <div style={{ display: "flex", fontSize: 22, fontWeight: 700, color: "#fff" }}>{elegidos[h].nombre.length <= 14 ? elegidos[h].nombre : elegidos[h].nombre.split(" ").at(-1)}</div>
                 </div>
               ))}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { numeroDelDia } from "@/lib/juegos/diario";
+import { lunesDeLaSemana, numeroDelDia } from "@/lib/juegos/diario";
 
 export const metadata: Metadata = {
   title: "Ranking de los juegos | Soy Reinaldo",
@@ -18,8 +18,7 @@ export default async function RankingJuegosPage({ searchParams }: { searchParams
   const { v } = await searchParams;
   const total = v === "total";
   const hoy = numeroDelDia();
-  // Día 1 (22-oct-2026) fue jueves: el lunes de esta semana.
-  const lunes = Math.max(1, hoy - ((hoy + 2) % 7));
+  const lunes = lunesDeLaSemana(hoy);
   const supabase = await createClient();
   const [{ data }, { data: auth }] = await Promise.all([
     supabase.rpc("juegos_ranking", { p_desde_dia: total ? 1 : lunes, p_limite: 100 }),
@@ -48,6 +47,9 @@ export default async function RankingJuegosPage({ searchParams }: { searchParams
             </Link>
             <Link href="/juegos/ranking?v=total" className={`chip-pill${total ? " on" : ""}`}>
               De siempre
+            </Link>
+            <Link href="/juegos/ligas" className="chip-pill">
+              👥 Mis ligas
             </Link>
           </nav>
           <div className="panel" style={{ padding: 8, maxWidth: 720 }}>
