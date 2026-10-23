@@ -340,7 +340,9 @@ export default function Juego({ numero }: { numero: number }) {
             {aviso && <p className="jg-aviso">{aviso}</p>}
 
             {terminado && nivel && (
-              <CierreJuego juego="tikitaka" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${aciertos}/9`} />
+              <CierreJuego juego="tikitaka" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${aciertos}/9`}
+                extra={{ m: Array.from({ length: 9 }, (_, i) => (partida.celdas[i] ? "1" : "0")).join("") }}
+              />
             )}
             {terminado && (
               <div className="jg-acciones">
