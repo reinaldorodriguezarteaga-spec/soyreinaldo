@@ -97,12 +97,17 @@ export default function Juego({ numero }: { numero: number }) {
   useEffect(() => {
     const q = busca.trim();
     if (q.length < 3) return;
+    // Una respuesta vieja (más lenta) no pisa a la de lo último escrito.
+    let vigente = true;
     const t = setTimeout(() => {
       buscarTikitaka(q)
-        .then(setFiltrados)
-        .catch(() => setFiltrados([]));
-    }, 250);
-    return () => clearTimeout(t);
+        .then((r) => vigente && setFiltrados(r))
+        .catch(() => vigente && setFiltrados([]));
+    }, 300);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
   }, [busca]);
   const ficha = (v: string): Ficha => {
     const f = partida.fichas?.[v];
@@ -218,7 +223,7 @@ export default function Juego({ numero }: { numero: number }) {
       {!nivel && !terminado ? (
         <ElegirNivel onElegir={empezar} />
       ) : (
-        <div className="jg-cuerpo">
+        <div className="jg-cuerpo tt-cuerpo">
           <div className="tt">
             <div className="tt-esquina">
               <b>{MAX_INTENTOS_TT - partida.intentos}</b>
@@ -308,7 +313,7 @@ export default function Juego({ numero }: { numero: number }) {
                   value={busca}
                   onChange={(e) => {
                     setBusca(e.target.value);
-                    if (e.target.value.trim().length < 3) setFiltrados([]);
+                    setFiltrados([]);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && filtrados.length === 1) void intentar(filtrados[0]);
