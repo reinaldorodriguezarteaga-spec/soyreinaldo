@@ -6,8 +6,8 @@
  * regreso al mismo club cuenta como etapa nueva.
  *
  * Los ids de club están comprobados contra API-Football (escudos). Las
- * carreras van hasta el verano de 2026: si un jugador cambia de equipo, se
- * añade aquí.
+ * carreras van hasta el verano de 2026 (revisadas contra /players/teams el
+ * 23-oct): si un jugador cambia de equipo, se añade aquí.
  */
 
 export type Posicion = "POR" | "DEF" | "MED" | "DEL";
@@ -32,6 +32,9 @@ export const CLUBES = {
   nassr: [2939, "Al Nassr"],
   santos: [128, "Santos"],
   hilal: [2932, "Al Hilal"],
+  chicago: [1607, "Chicago Fire"],
+  trabzonspor: [998, "Trabzonspor"],
+  shamal: [2916, "Al Shamal"],
   monaco: [91, "Mónaco"],
   malmo: [375, "Malmö"],
   ajax: [194, "Ajax"],
@@ -41,7 +44,7 @@ export const CLUBES = {
   znicz: [6964, "Znicz Pruszków"],
   lech: [347, "Lech Poznań"],
   dortmund: [165, "Borussia Dortmund"],
-  bayern: [1860, "Bayern de Múnich"],
+  bayern: [157, "Bayern de Múnich"], // 1860 es el femenino (corregido el 23-oct)
   lyon: [80, "Olympique de Lyon"],
   ittihad: [2938, "Al Ittihad"],
   nacional: [2356, "Nacional"],
@@ -230,15 +233,15 @@ export const JUGADORES: Jugador[] = [
   j("neymar", "Neymar", "br", "DEL", 1992, ["santos", "barcelona", "psg", "hilal", "santos"]),
   j("mbappe", "Kylian Mbappé", "fr", "DEL", 1998, ["monaco", "psg", "madrid"]),
   j("zlatan", "Zlatan Ibrahimović", "se", "DEL", 1981, ["malmo", "ajax", "juventus", "inter", "barcelona", "milan", "psg", "united", "galaxy", "milan"]),
-  j("lewandowski", "Robert Lewandowski", "pl", "DEL", 1988, ["znicz", "lech", "dortmund", "bayern", "barcelona"]),
-  j("benzema", "Karim Benzema", "fr", "DEL", 1987, ["lyon", "madrid", "ittihad"]),
+  j("lewandowski", "Robert Lewandowski", "pl", "DEL", 1988, ["znicz", "lech", "dortmund", "bayern", "barcelona", "chicago"]),
+  j("benzema", "Karim Benzema", "fr", "DEL", 1987, ["lyon", "madrid", "ittihad", "hilal"]),
   j("suarez", "Luis Suárez", "uy", "DEL", 1987, ["nacional", "groningen", "ajax", "liverpool", "barcelona", "atletico", "nacional", "gremio", "miami"]),
   j("aguero", "Sergio Agüero", "ar", "DEL", 1988, ["independiente", "atletico", "city", "barcelona"]),
   j("higuain", "Gonzalo Higuaín", "ar", "DEL", 1987, ["river", "madrid", "napoli", "juventus", "milan", "chelsea", "juventus", "miami"]),
   j("falcao", "Radamel Falcao", "co", "DEL", 1986, ["river", "porto", "atletico", "monaco", "united", "chelsea", "monaco", "galatasaray", "rayo", "millonarios"]),
   j("torres", "Fernando Torres", "es", "DEL", 1984, ["atletico", "liverpool", "chelsea", "milan", "atletico", "sagan"]),
   j("cavani", "Edinson Cavani", "uy", "DEL", 1987, ["danubio", "palermo", "napoli", "psg", "united", "valencia", "boca"]),
-  j("lukaku", "Romelu Lukaku", "be", "DEL", 1993, ["anderlecht", "chelsea", "westbrom", "everton", "united", "inter", "chelsea", "inter", "roma", "napoli"]),
+  j("lukaku", "Romelu Lukaku", "be", "DEL", 1993, ["anderlecht", "chelsea", "westbrom", "everton", "united", "inter", "chelsea", "inter", "roma", "napoli", "fenerbahce"]),
   j("ronaldinho", "Ronaldinho", "br", "MED", 1980, ["gremio", "psg", "barcelona", "milan", "flamengo", "mineiro", "queretaro", "fluminense"]),
   j("kaka", "Kaká", "br", "MED", 1982, ["saopaulo", "milan", "madrid", "milan", "saopaulo", "orlando"]),
   j("ronaldo", "Ronaldo Nazário", "br", "DEL", 1976, ["cruzeiro", "psv", "barcelona", "inter", "madrid", "milan", "corinthians"]),
@@ -274,7 +277,7 @@ export const JUGADORES: Jugador[] = [
   j("rooney", "Wayne Rooney", "gb-eng", "DEL", 1985, ["everton", "united", "everton", "dcunited", "derby"]),
   j("beckham", "David Beckham", "gb-eng", "MED", 1975, ["united", "preston", "united", "madrid", "galaxy", "milan", "galaxy", "milan", "galaxy", "psg"]),
   j("owen", "Michael Owen", "gb-eng", "DEL", 1979, ["liverpool", "madrid", "newcastle", "united", "stoke"]),
-  j("salah", "Mohamed Salah", "eg", "DEL", 1992, ["mokawloon", "basel", "chelsea", "fiorentina", "roma", "liverpool"]),
+  j("salah", "Mohamed Salah", "eg", "DEL", 1992, ["mokawloon", "basel", "chelsea", "fiorentina", "roma", "liverpool", "trabzonspor"]),
   j("debruyne", "Kevin De Bruyne", "be", "MED", 1991, ["genk", "chelsea", "werder", "chelsea", "wolfsburg", "city", "napoli"]),
   j("haaland", "Erling Haaland", "no", "DEL", 2000, ["bryne", "molde", "salzburg", "dortmund", "city"]),
   j("kane", "Harry Kane", "gb-eng", "DEL", 1993, ["tottenham", "leytonorient", "millwall", "norwich", "leicester", "tottenham", "bayern"]),
@@ -300,10 +303,10 @@ export const JUGADORES: Jugador[] = [
   j("muller", "Thomas Müller", "de", "MED", 1989, ["bayern", "vancouver"]),
   j("gotze", "Mario Götze", "de", "MED", 1992, ["dortmund", "bayern", "dortmund", "psv", "frankfurt"]),
   j("reus", "Marco Reus", "de", "DEL", 1989, ["ahlen", "gladbach", "dortmund", "galaxy"]),
-  j("casemiro", "Casemiro", "br", "MED", 1992, ["saopaulo", "madrid", "porto", "madrid", "united"]),
+  j("casemiro", "Casemiro", "br", "MED", 1992, ["saopaulo", "madrid", "porto", "madrid", "united", "miami"]),
   j("valverde", "Federico Valverde", "uy", "MED", 1998, ["penarol", "madrid", "deportivo", "madrid"]),
-  j("alexis", "Alexis Sánchez", "cl", "DEL", 1988, ["cobreloa", "udinese", "colocolo", "river", "udinese", "barcelona", "arsenal", "united", "inter", "marseille", "inter", "udinese", "sevilla"]),
-  j("mahrez", "Riyad Mahrez", "dz", "DEL", 1991, ["lehavre", "leicester", "city", "alahli"]),
+  j("alexis", "Alexis Sánchez", "cl", "DEL", 1988, ["cobreloa", "udinese", "colocolo", "river", "udinese", "barcelona", "arsenal", "united", "inter", "marseille", "inter", "udinese", "sevilla", "montreal"]),
+  j("mahrez", "Riyad Mahrez", "dz", "DEL", 1991, ["lehavre", "leicester", "city", "alahli", "shamal"]),
   j("odegaard", "Martin Ødegaard", "no", "MED", 1998, ["stromsgodset", "madrid", "heerenveen", "vitesse", "realsociedad", "madrid", "arsenal"]),
   j("hakimi", "Achraf Hakimi", "ma", "DEF", 1998, ["madrid", "dortmund", "inter", "psg"]),
   j("seedorf", "Clarence Seedorf", "nl", "MED", 1976, ["ajax", "sampdoria", "madrid", "inter", "milan", "botafogo"]),

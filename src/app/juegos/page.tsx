@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import RachaJuegos from "@/components/juegos/RachaJuegos";
 
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
   description:
-    "Juegos de fútbol para retar a tus amigos: adivina el equipo por las banderas de su once y más retos que llegan pronto.",
+    "Juegos de fútbol diarios para retar a tus amigos: adivina el equipo o el jugador, tiki-taka-toe, once de leyenda, ¿más o menos? y el once del Barça. Ranking semanal y ligas privadas.",
   alternates: { canonical: "/juegos" },
 };
 
@@ -66,11 +67,15 @@ export default function JuegosPage() {
           <p style={{ color: "var(--text-dim)", margin: "0 0 22px", maxWidth: 640 }}>
             Retos de fútbol para jugar cada día y picar a tus amigos.
           </p>
-          <p style={{ margin: "0 0 18px" }}>
+          <p style={{ margin: "0 0 14px", display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/juegos/ranking" className="btn btn--accent">
               🏆 Ranking de la semana
             </Link>
+            <Link href="/juegos/ligas" className="btn">
+              👥 Ligas con amigos
+            </Link>
           </p>
+          <RachaJuegos />
           <div className="jg-hub">
             {JUEGOS.map((j) =>
               j.listo ? (

@@ -19,7 +19,7 @@ export async function guardarResultado(datos: {
   dia: number;
   nivel: Nivel;
   puntos: number;
-}): Promise<{ ok: true; nuevo: boolean } | { ok: false; error: "sesion" | "invalido" | "error" }> {
+}): Promise<{ ok: true; nuevo: boolean; racha: number } | { ok: false; error: "sesion" | "invalido" | "error" }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,9 +49,26 @@ export async function guardarResultado(datos: {
     .eq("juego", datos.juego)
     .eq("dia", datos.dia)
     .maybeSingle<{ puntos: number }>();
-  if (previa && (datos.juego !== "masomenos" || previa.puntos >= puntos)) return { ok: true, nuevo: false };
+  const racha = async () => ((await supabase.rpc("juegos_mi_racha", { p_hoy: hoy })).data as number | null) ?? 0;
+  if (previa && (datos.juego !== "masomenos" || previa.puntos >= puntos)) return { ok: true, nuevo: false, racha: await racha() };
   const { error } = await db.from("juego_resultados").upsert(fila, { onConflict: "user_id,juego,dia" });
   if (error) return { ok: false, error: "error" };
   revalidatePath("/juegos/ranking");
-  return { ok: true, nuevo: true };
+  return { ok: true, nuevo: true, racha: await racha() };
+}
+
+/** Racha de quien tiene sesión (migración 090) y si ya jugó hoy; sin
+ * sesión, null y la web usa la del navegador. */
+export async function miRacha(): Promise<{ racha: number; hoy: boolean } | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const hoy = numeroDelDia();
+  const [{ data: racha }, { count }] = await Promise.all([
+    supabase.rpc("juegos_mi_racha", { p_hoy: hoy }),
+    supabase.from("juego_resultados").select("dia", { count: "exact", head: true }).eq("user_id", user.id).eq("dia", hoy),
+  ]);
+  return { racha: (racha as number | null) ?? 0, hoy: (count ?? 0) > 0 };
 }

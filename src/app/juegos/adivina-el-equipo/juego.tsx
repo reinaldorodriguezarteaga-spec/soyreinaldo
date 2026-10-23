@@ -11,6 +11,7 @@ import {
 } from "@/lib/juegos/adivina-equipo";
 import { NOMBRE_DIFICULTAD, type Dificultad, type Reto } from "@/lib/juegos/equipos-historicos";
 import { NIVELES, puntosAdivinar, reloj, type Nivel } from "@/lib/juegos/niveles";
+import { caraOnce } from "@/lib/juegos/caras-onces";
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
@@ -240,13 +241,26 @@ export default function Juego({ numero }: { numero: number }) {
           <span className="jg-campo__form">{reto.formacion}</span>
           {reto.lineas.map((linea, i) => (
             <div key={i} className="jg-linea">
-              {linea.map(([nombre, pais], j) => (
-                <div key={j} className="jg-jug">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- banderas SVG de la CDN de la API */}
-                  <img src={bandera(pais)} alt={terminado ? nombre : "Bandera de un jugador"} width={40} height={40} />
-                  <span className={terminado ? "jg-jug__n is-visto" : "jg-jug__n"}>{terminado ? nombre : "?"}</span>
-                </div>
-              ))}
+              {linea.map(([nombre, pais], j) => {
+                // Al terminar, la cara (si la API la tiene) con la bandera en pequeño.
+                const cara = terminado ? caraOnce(nombre, pais, reto.equipoId) : null;
+                return (
+                  <div key={j} className="jg-jug">
+                    {cara ? (
+                      <span className="jg-jug__foto">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- fotos de la CDN de la API */}
+                        <img src={cara} alt={nombre} width={40} height={40} className="jg-jug__cara" />
+                        {/* eslint-disable-next-line @next/next/no-img-element -- banderas SVG de la CDN de la API */}
+                        <img src={bandera(pais)} alt="" width={16} height={16} className="jg-jug__bandera" />
+                      </span>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element -- banderas SVG de la CDN de la API
+                      <img src={bandera(pais)} alt={terminado ? nombre : "Bandera de un jugador"} width={40} height={40} />
+                    )}
+                    <span className={terminado ? "jg-jug__n is-visto" : "jg-jug__n"}>{terminado ? nombre : "?"}</span>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
