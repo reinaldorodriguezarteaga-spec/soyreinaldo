@@ -3847,3 +3847,13 @@ export async function getEquiposJugador(id: number): Promise<number[]> {
   const r = await get<{ team: { id: number; name: string } }>("/players/teams", { player: id }, 30 * 86400);
   return r.response.map((x) => x.team.id);
 }
+
+export type PerfilJugadorApi = {
+  player: { id: number; name: string; firstname: string | null; lastname: string | null; photo: string | null; birth?: { date: string | null } | null };
+};
+/** Búsqueda en todos los jugadores del API (incluidos retirados) por una
+ * palabra de 4+ letras. Caché de 30 días: la misma búsqueda no se repite. */
+export async function buscarPerfilesApi(palabra: string): Promise<PerfilJugadorApi[]> {
+  const r = await get<PerfilJugadorApi>("/players/profiles", { search: palabra }, 30 * 86400);
+  return r.response;
+}

@@ -2777,3 +2777,13 @@ select.field { appearance: none; }
 .cmp-comp button { width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.3); color: var(--text); cursor: pointer; line-height: 1; padding: 0; }
 /* Pizarra con un solo equipo: sin la columna del rival. */
 @media (min-width: 900px) { .pz-cuerpo--solo { grid-template-columns: 220px minmax(0, 1fr); } }
+/* Tiki-taka en el móvil (23-oct): reloj y buscador ARRIBA, el tablero justo
+   debajo; antes el buscador quedaba bajo el tablero y había que subir para
+   ver si el jugador entraba. Más compacto para que quepan los dos. */
+@media (max-width: 800px) {
+  .tt-cuerpo .jg-panel { order: -1; gap: 8px; }
+  .tt-cuerpo .jg-opciones { max-height: 168px; }
+  .tt-cuerpo .tt { max-width: 380px; gap: 4px; }
+  .tt-cuerpo .tt-cab img { width: 32px; height: 32px; }
+  .tt-cuerpo .tt-cab span { font-size: 0.6rem; }
+}

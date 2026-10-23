@@ -1,4 +1,6 @@
 import { clientePublico } from "@/lib/supabase/publico";
+import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
+import { buscarPerfilesApi } from "@/lib/sports/api-football";
 import { JUGADORES } from "./carreras";
 import { caraDe } from "./caras";
 import { normalizar } from "./diario";
@@ -9,6 +11,10 @@ import { normalizar } from "./diario";
  * guardadas (~10.000, sin gastar cuota). En las plantillas el nombre viene
  * abreviado («E. Fernández»): se busca por el apellido y se comprueba la
  * inicial («enzo fernandez» → E. Fernández).
+ *
+ * Si con eso salen pocos (retirados, ligas que no seguimos: Zambrotta,
+ * Thuram), se busca en todo el API (/players/profiles, caché 30 días) y los
+ * encontrados se apuntan en jugadores_api para poder validarlos después.
  */
 export type Sugerencia = { id: number; nombre: string; foto: string | null; equipo: number | null };
 
@@ -40,5 +46,40 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
   };
   const deSquads = filas.filter((f) => encaja(f.nombre)).map((f) => ({ id: f.id, nombre: f.nombre, foto: f.foto, equipo: f.equipo }));
   const vistos = new Set<number>();
-  return [...curados, ...deSquads].filter((x) => (vistos.has(x.id) ? false : (vistos.add(x.id), true))).slice(0, limite);
+  const locales = [...curados, ...deSquads].filter((x) => (vistos.has(x.id) ? false : (vistos.add(x.id), true)));
+  // Al API, con la última palabra (lo normal es «nombre apellido»).
+  const palabraApi = palabras[palabras.length - 1].length >= 4 ? palabras[palabras.length - 1] : apellido;
+  if (locales.length >= 6 || palabraApi.length < 4) return locales.slice(0, limite);
+
+  // Pocos: al API, con los ya buscados apuntados en jugadores_api.
+  const { data: guardados } = await clientePublico()
+    .from("jugadores_api")
+    .select("id, nombre, foto")
+    .ilike("nombre", `%${palabraApi}%`)
+    .limit(20);
+  const deTabla = ((guardados ?? []) as { id: number; nombre: string; foto: string | null }[])
+    .filter((g) => encaja(g.nombre))
+    .map((g) => ({ id: g.id, nombre: g.nombre, foto: g.foto, equipo: null }));
+  // Con la última palabra; si no aparece nadie, con las demás («arthur melo»:
+  // el API lo llama «Arthur» y por «melo» no sale). Dos búsquedas como mucho.
+  const candidatas = [palabraApi, ...palabras.filter((w) => w !== palabraApi && w.length >= 4)].slice(0, 2);
+  const deApi: Sugerencia[] = [];
+  const nuevos: { id: number; nombre: string; foto: string | null; nacimiento: string | null }[] = [];
+  for (const palabra of candidatas) {
+    if (deApi.length) break;
+    const perfiles = await buscarPerfilesApi(palabra).catch(() => []);
+    for (const { player: p } of perfiles) {
+      // «M. Pjanić» → «Miralem Pjanić» con el primer nombre.
+      const nombre = /^[A-Z]\. /.test(p.name) && p.firstname ? `${p.firstname.split(" ")[0]} ${p.name.slice(3)}` : p.name;
+      const texto = `${p.firstname ?? ""} ${p.lastname ?? ""} ${p.name}`;
+      if (!palabras.every((w) => normalizar(texto).includes(w))) continue;
+      deApi.push({ id: p.id, nombre, foto: p.photo, equipo: null });
+      nuevos.push({ id: p.id, nombre, foto: p.photo, nacimiento: p.birth?.date ?? null });
+    }
+  }
+  if (nuevos.length) {
+    const db = clienteServicio();
+    if (db) await db.from("jugadores_api").upsert(nuevos, { onConflict: "id", ignoreDuplicates: true });
+  }
+  return [...locales, ...deTabla, ...deApi].filter((x) => (vistos.has(x.id) ? false : (vistos.add(x.id), true))).slice(0, limite);
 }
