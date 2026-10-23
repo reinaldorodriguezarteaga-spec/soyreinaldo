@@ -216,7 +216,9 @@ export default function Juego({ numero }: { numero: number }) {
                     ))}
                   </ul>
                   {nivel && (
-                    <CierreJuego juego="leyenda" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${res.mejores}/11 ⭐`} />
+                    <CierreJuego juego="leyenda" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${res.mejores}/11 ⭐`}
+                      extra={picks.length === 11 ? { k: picks.join("") } : undefined}
+                    />
                   )}
                   <div className="jg-acciones">
                     {nativo ? (

@@ -16,6 +16,7 @@ export default function CierreJuego({
   nivel,
   puntos,
   resultado,
+  extra,
 }: {
   juego: JuegoRanking;
   /** Número del reto del día; null en práctica (no cuenta para el ranking). */
@@ -24,6 +25,8 @@ export default function CierreJuego({
   puntos: number;
   /** Línea corta para la imagen: «🟥🟩 2/5», «7/9», «racha 12». */
   resultado: string;
+  /** Datos del avance de la imagen (casillas del tiki-taka, once de leyenda). */
+  extra?: Record<string, string>;
 }) {
   const [estado, setEstado] = useState<"guardando" | "nuevo" | "ya" | "sesion" | "nada" | "error">(dia ? "guardando" : "nada");
   const enviado = useRef(false);
@@ -36,7 +39,7 @@ export default function CierreJuego({
       .catch(() => setEstado("error"));
   }, [juego, dia, nivel, puntos]);
 
-  const q = new URLSearchParams({ j: juego, n: nivel, p: String(puntos), r: resultado.slice(0, 40), ...(dia ? { d: String(dia) } : {}) });
+  const q = new URLSearchParams({ j: juego, n: nivel, p: String(puntos), r: resultado.slice(0, 40), ...(dia ? { d: String(dia) } : {}), ...(extra ?? {}) });
   const texto = `${NOMBRE_JUEGO[juego]}${dia ? ` #${dia}` : ""}: ${puntos} puntos en ${NIVELES[nivel].nombre.toLowerCase()} 🎮`;
 
   return (
