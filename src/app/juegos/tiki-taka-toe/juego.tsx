@@ -3,8 +3,9 @@
 import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { JUGADORES, clubId, clubNombre } from "@/lib/juegos/carreras";
-import { normalizar } from "@/lib/juegos/diario";
-import { MAX_INTENTOS_TT, jugaronEnAmbos, tableroDelDia, valeEn, type Tablero } from "@/lib/juegos/tikitaka";
+import { MAX_INTENTOS_TT, jugaronEnAmbos, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
+import { buscarTikitaka, validarCasilla } from "./acciones";
+import type { Sugerencia } from "@/lib/juegos/buscar";
 import { NIVELES, puntosTikitaka, reloj, type Nivel } from "@/lib/juegos/niveles";
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
@@ -17,13 +18,21 @@ import { useCronometro } from "@/components/juegos/useCronometro";
  */
 
 const CLAVE = "jg-tikitaka-v1";
-type Partida = { celdas: Record<number, string>; intentos: number; nivel?: Nivel; inicio?: number; fin?: number };
+/** `celdas`: casilla → id del API del jugador (las partidas viejas guardaban
+ * el id de la lista curada, «messi»); `fichas`: su nombre y foto. */
+type Ficha = { nombre: string; foto: string | null };
+type Partida = {
+  celdas: Record<number, string>;
+  fichas?: Record<string, Ficha>;
+  intentos: number;
+  nivel?: Nivel;
+  inicio?: number;
+  fin?: number;
+};
 type Guardado = { dias: Record<number, Partida> };
 
-const escudo = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 const sinSuscripcion = () => () => {};
-const ORDENADOS = [...JUGADORES].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-const nombreDe = (id: string) => JUGADORES.find((j) => j.id === id)?.nombre ?? "—";
+const escudo = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 const VACIA: Partida = { celdas: {}, intentos: 0 };
 
 function leer(): Guardado {
@@ -82,11 +91,25 @@ export default function Juego({ numero }: { numero: number }) {
   const filaDe = (i: number) => tablero.filas[Math.floor(i / 3)];
   const columnaDe = (i: number) => tablero.columnas[i % 3];
 
-  const filtrados = useMemo(() => {
-    const q = normalizar(busca);
-    if (q.length < 2) return [];
-    return ORDENADOS.filter((j) => normalizar(j.nombre).includes(q)).slice(0, 8);
+  // Cualquier jugador (23-oct): buscador del servidor (plantillas + lista).
+  const [filtrados, setFiltrados] = useState<Sugerencia[]>([]);
+  const [validando, setValidando] = useState(false);
+  useEffect(() => {
+    const q = busca.trim();
+    if (q.length < 3) return;
+    const t = setTimeout(() => {
+      buscarTikitaka(q)
+        .then(setFiltrados)
+        .catch(() => setFiltrados([]));
+    }, 250);
+    return () => clearTimeout(t);
   }, [busca]);
+  const ficha = (v: string): Ficha => {
+    const f = partida.fichas?.[v];
+    if (f) return f;
+    const j = JUGADORES.find((x) => x.id === v);
+    return { nombre: j?.nombre ?? "—", foto: j ? caraDe(j.id) : null };
+  };
 
   function apuntar(parcial: Partial<Partida>) {
     const p = { ...partida, ...parcial };
@@ -116,18 +139,25 @@ export default function Juego({ numero }: { numero: number }) {
     apuntar({ nivel: n, inicio: ahora });
   }
 
-  function intentar(id: string) {
-    if (casilla == null || terminado) return;
-    const j = JUGADORES.find((x) => x.id === id);
-    if (!j) return;
-    if (usados.has(id)) {
-      setAviso(`${j.nombre} ya está en otra casilla.`);
+  async function intentar(sug: Sugerencia) {
+    if (casilla == null || terminado || validando) return;
+    const clave = String(sug.id);
+    if (usados.has(clave)) {
+      setAviso(`${sug.nombre} ya está en otra casilla.`);
       return;
     }
-    const ok = valeEn(j, filaDe(casilla), columnaDe(casilla));
+    setValidando(true);
+    const r = await validarCasilla(sug.id, filaDe(casilla), columnaDe(casilla)).catch(() => ({ ok: false, error: "Error" }));
+    setValidando(false);
+    if ("error" in r && r.error) {
+      setAviso(r.error);
+      return;
+    }
+    const ok = r.ok;
     const p: Partida = {
       ...partida,
-      celdas: ok ? { ...partida.celdas, [casilla]: id } : partida.celdas,
+      celdas: ok ? { ...partida.celdas, [casilla]: clave } : partida.celdas,
+      fichas: ok ? { ...(partida.fichas ?? {}), [clave]: { nombre: sug.nombre, foto: sug.foto } } : partida.fichas,
       intentos: partida.intentos + 1,
     };
     if (Object.keys(p.celdas).length === 9 || p.intentos >= MAX_INTENTOS_TT) {
@@ -135,8 +165,9 @@ export default function Juego({ numero }: { numero: number }) {
       setFin(p.fin);
     }
     apuntar(p);
-    setAviso(ok ? null : `${j.nombre} no jugó en los dos.`);
+    setAviso(ok ? null : `${sug.nombre} no jugó en los dos.`);
     setBusca("");
+    setFiltrados([]);
     if (ok) setCasilla(null);
   }
 
@@ -225,11 +256,11 @@ export default function Juego({ numero }: { numero: number }) {
                     >
                       {puesto ? (
                         <span className="tt-cara">
-                          {caraDe(puesto) && (
+                          {ficha(puesto).foto && (
                             // eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API
-                            <img src={caraDe(puesto)!} alt="" width={40} height={40} />
+                            <img src={ficha(puesto).foto!} alt="" width={40} height={40} />
                           )}
-                          {nombreDe(puesto)}
+                          {ficha(puesto).nombre}
                         </span>
                       ) : solucion ? (
                         <i>{solucion.nombre}</i>
@@ -273,23 +304,35 @@ export default function Juego({ numero }: { numero: number }) {
                   type="search"
                   autoComplete="off"
                   autoFocus
-                  placeholder="Escribe al menos dos letras…"
+                  placeholder="Nombre o apellido (al menos tres letras)…"
                   value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
+                  onChange={(e) => {
+                    setBusca(e.target.value);
+                    if (e.target.value.trim().length < 3) setFiltrados([]);
+                  }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && filtrados.length === 1) intentar(filtrados[0].id);
+                    if (e.key === "Enter" && filtrados.length === 1) void intentar(filtrados[0]);
                   }}
                 />
-                {busca.trim().length >= 2 && (
+                {validando && <p className="pz-ayuda" style={{ margin: 0 }}>Comprobando…</p>}
+                {busca.trim().length >= 3 && (
                   <ul className="jg-opciones">
                     {filtrados.map((j) => (
                       <li key={j.id}>
-                        <button type="button" onClick={() => intentar(j.id)}>
+                        <button type="button" onClick={() => void intentar(j)} disabled={validando}>
+                          {j.foto && (
+                            // eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API
+                            <img src={j.foto} alt="" width={22} height={22} style={{ borderRadius: "50%" }} />
+                          )}
                           {j.nombre}
+                          {j.equipo && (
+                            // eslint-disable-next-line @next/next/no-img-element -- escudo de su equipo actual
+                            <img src={escudo(j.equipo)} alt="" width={18} height={18} style={{ marginLeft: "auto" }} />
+                          )}
                         </button>
                       </li>
                     ))}
-                    {filtrados.length === 0 && <li className="jg-opciones__vacio">No está en nuestra lista</li>}
+                    {filtrados.length === 0 && <li className="jg-opciones__vacio">Sin resultados (prueba con el apellido)</li>}
                   </ul>
                 )}
               </div>

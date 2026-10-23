@@ -26,7 +26,7 @@ export type Lado = {
 
 /** Solo jugadores de nuestras plantillas guardadas o de la lista curada: así
  * la URL no sirve para gastar cuota con ids al azar. */
-async function permitido(id: number): Promise<boolean> {
+export async function permitido(id: number): Promise<boolean> {
   if (!Number.isInteger(id) || id <= 0) return false;
   if (nombreCurado(id)) return true;
   const { data } = await clientePublico().rpc("comparador_existe", { p_id: id });
