@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { partidosDelDia } from "@/app/acciones-portada";
 import CompactMatchRow from "@/components/CompactMatchRow";
 import { esDeFavoritos, useSoloFavoritos, type Seguidos } from "@/lib/solo-favoritos";
@@ -82,24 +82,34 @@ export default function HomeFechas({
     if (!caja || !el) return;
     const izquierda = el.offsetLeft - (caja.clientWidth - el.clientWidth) / 2; // la tira es el offsetParent
     caja.scrollTo({ left: izquierda, behavior: primera.current ? "auto" : "smooth" });
-    // Al cambiar de día (no al cargar), si ya se había bajado por la lista,
-    // se vuelve al principio del día elegido: la lista nueva suele ser más
-    // corta y dejaba al usuario abajo del todo (24-oct, pedido del dueño).
-    const arriba = raiz.current?.getBoundingClientRect().top ?? 0;
-    if (!primera.current && arriba < altoNav) {
-      window.scrollTo({ top: window.scrollY + arriba - altoNav - 8, behavior: "auto" });
-    }
     primera.current = false;
-  }, [elegido, altoNav]);
+  }, [elegido]);
 
   const mover = (n: number) => {
     const i = dias.indexOf(elegido) + n;
-    if (i >= 0 && i < dias.length) setElegido(dias[i]);
+    if (i >= 0 && i < dias.length) elegir(dias[i]);
   };
 
   const dia = elegido === hoy ? null : datos[elegido];
   const cargando = elegido !== hoy && !(elegido in datos);
   const tieneSeguidos = !!seguidos && seguidos.equipos.length > 0;
+
+  // Al cambiar de día, la lista del día elegido empieza arriba (24-oct,
+  // pedido del dueño: «empieza abajo y hay que subir»). Se coloca DESPUÉS de
+  // pintar la lista (al llegar los partidos, el anclaje de scroll del
+  // navegador empujaba la página hacia abajo) y sin animación: la web tiene
+  // scroll suave y un salto suave se quedaba a medias al cambiar la lista.
+  const colocar = useRef(false);
+  useLayoutEffect(() => {
+    if (!colocar.current) return;
+    const arriba = raiz.current?.getBoundingClientRect().top ?? 0;
+    if (arriba < altoNav) window.scrollTo({ top: window.scrollY + arriba - altoNav - 8, behavior: "instant" });
+    if (!cargando) colocar.current = false;
+  }, [elegido, cargando, altoNav]);
+  const elegir = (d: string) => {
+    colocar.current = true;
+    setElegido(d);
+  };
   const grupos = (dia?.grupos ?? [])
     .map((g) =>
       soloFav && tieneSeguidos
@@ -118,7 +128,7 @@ export default function HomeFechas({
       : [];
 
   return (
-    <div className="space-y-3" style={{ minWidth: 0, ["--alto-nav" as string]: `${altoNav}px` }} ref={raiz}>
+    <div className="space-y-3" style={{ minWidth: 0, overflowAnchor: "none", ["--alto-nav" as string]: `${altoNav}px` }} ref={raiz}>
       <div className="hfechas" role="tablist" aria-label="Elegir día">
         <button type="button" className="hfechas__flecha" onClick={() => mover(-1)} aria-label="Día anterior">
           ‹
@@ -134,7 +144,7 @@ export default function HomeFechas({
                 aria-selected={d === elegido}
                 data-dia={d}
                 className={`hfechas__dia${d === elegido ? " is-on" : ""}${d === hoy ? " is-hoy" : ""}`}
-                onClick={() => setElegido(d)}
+                onClick={() => elegir(d)}
               >
                 <span>{e.arriba}</span>
                 <b>{e.abajo}</b>
@@ -154,7 +164,7 @@ export default function HomeFechas({
       ) : grupos.length === 0 ? (
         <p className="panel hfechas__aviso">
           {soloFav && tieneSeguidos ? "Ese día no jugó ninguno de tus favoritos." : "Ese día no hay partidos de nuestras competiciones."}{" "}
-          <button type="button" className="hfechas__volver" onClick={() => setElegido(hoy)}>
+          <button type="button" className="hfechas__volver" onClick={() => elegir(hoy)}>
             Volver a hoy
           </button>
         </p>
