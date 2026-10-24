@@ -9,7 +9,7 @@ type Linea = { icon: string; who: string; minutos: string; primero: number };
  * der), en formato compacto para las tarjetas de marcador. Como en la ficha
  * del partido (15-oct, pedido del dueño): un jugador por línea con todos sus
  * minutos, "(pen)" / "(p.p.)" detrás del minuto y el nombre corto. El
- * autogol cuenta para el equipo rival.
+ * autogol va bajo el equipo beneficiado, que es el que ya trae el API.
  */
 export default function MatchCardEvents({
   ev,
@@ -21,9 +21,6 @@ export default function MatchCardEvents({
   awayId: number;
 }) {
   if (!ev || (ev.goals.length === 0 && ev.reds.length === 0)) return null;
-
-  const benef = (teamId: number, detail: string) =>
-    detail === "Own Goal" ? (teamId === homeId ? awayId : homeId) : teamId;
 
   const agrupar = (
     icon: string,
@@ -44,7 +41,7 @@ export default function MatchCardEvents({
     const goles = agrupar(
       "⚽",
       ev.goals
-        .filter((g) => benef(g.teamId, g.detail) === teamId)
+        .filter((g) => g.teamId === teamId)
         .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
         .map((g) => ({
           player: g.player,

@@ -819,8 +819,11 @@ img {
   align-items: start;
 }
 .home3col__side { display: grid; gap: 20px; position: sticky; top: 90px; }
+/* minmax(0, …): sin él, una fila ancha (la tira de fechas, 24-oct) ensancha
+   la columna en vez de hacer scroll dentro. */
+.home3col__main { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 1099px) {
-  .home3col { grid-template-columns: 1fr; }
+  .home3col { grid-template-columns: minmax(0, 1fr); }
   .home3col__side { position: static; }
   .home3col__main { order: 1; }
   .home3col__left { order: 2; }
@@ -2825,3 +2828,22 @@ select.field { appearance: none; }
 .sg__mios li { padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); }
 .sg__mios li.is-ok { border-color: #22c55e; }
 .sg__mios li.is-mal { opacity: 0.75; }
+
+/* Tira de fechas de la portada (24-oct) */
+.hfechas { display: flex; align-items: stretch; gap: 6px; width: 100%; min-width: 0; }
+.hfechas__tira { position: relative; }
+.hfechas__flecha { flex: 0 0 auto; width: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+.hfechas__flecha:hover { border-color: var(--accent); }
+.hfechas__tira { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.hfechas__tira::-webkit-scrollbar { display: none; }
+.hfechas__dia { flex: 0 0 auto; min-width: 54px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text-dim); cursor: pointer; scroll-snap-align: center; font: inherit; }
+.hfechas__dia span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.hfechas__dia b { font-size: 1rem; color: var(--text); }
+.hfechas__dia.is-hoy span { color: var(--accent); }
+.hfechas__dia.is-on { background: var(--accent); border-color: var(--accent); }
+.hfechas__dia.is-on span, .hfechas__dia.is-on b { color: #fff; }
+.hfechas__aviso { padding: 14px 16px; color: var(--text-dim); font-size: 0.88rem; margin: 0; }
+.hfechas__volver { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.hfechas__cab { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+.hfechas__cab b { flex: 1; min-width: 0; }
+.hfechas__cab .mono { color: var(--text-dim); font-size: 0.66rem; }

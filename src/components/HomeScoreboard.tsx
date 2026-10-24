@@ -1,11 +1,11 @@
 import {
+  fixtureLigero as ligero,
   getHomeWidgetData,
   getUpcomingCalendar,
   type FavoriteTeamRef,
 } from "@/lib/sports/widget-data";
 import { COMPETITIONS, COMPETITIONS_BY_SLUG, FEATURED_TEAMS } from "@/lib/sports/competitions";
 import { createClient } from "@/lib/supabase/server";
-import type { Fixture } from "@/lib/sports/api-football";
 import HomeScoreboardTabs from "@/components/HomeScoreboardTabs";
 
 /** Equipos favoritos (⭐) del usuario logueado, para la sección "Tus
@@ -49,24 +49,6 @@ async function getFavoriteTeams(): Promise<FavoriteTeamRef[]> {
  * (pestañas si hay algo en ambos, directo si solo hay uno). Ambas funciones
  * pasan por `unstable_cache`, así que fallar una no debe tumbar la otra.
  */
-/**
- * Solo los campos de un partido que pinta la portada (17-oct): cada partido
- * de la API trae sede, árbitro, periodos, marcas de tiempo, bandera, país...
- * y la portada manda ~45 al navegador: eran ~50 KB de los 224 KB del HTML.
- */
-function ligero<T extends Fixture>(f: T): T {
-  return {
-    ...f,
-    fixture: { id: f.fixture.id, date: f.fixture.date, status: f.fixture.status },
-    league: { id: f.league.id, name: f.league.name, logo: f.league.logo, round: f.league.round },
-    teams: {
-      home: { id: f.teams.home.id, name: f.teams.home.name, logo: f.teams.home.logo, winner: f.teams.home.winner },
-      away: { id: f.teams.away.id, name: f.teams.away.name, logo: f.teams.away.logo, winner: f.teams.away.winner },
-    },
-    score: undefined,
-  } as unknown as T;
-}
-
 export default async function HomeScoreboard() {
   // El directo no depende de los favoritos: va en paralelo con ellos.
   const widgetPromise = getHomeWidgetData(COMPETITIONS).catch(() => null);
@@ -91,6 +73,7 @@ export default async function HomeScoreboard() {
       calendarDays={calendarDays}
       favoriteTeamIds={favorites.map((f) => f.id)}
       seguidos={{ equipos: favorites.map((f) => f.id) }}
+      hoy={new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date())}
     />
   );
 }

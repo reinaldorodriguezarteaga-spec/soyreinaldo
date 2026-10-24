@@ -346,13 +346,10 @@ export default async function LigaPartidoPage({
   const final = isFinal(fx);
   const played = live || final;
 
-  // Goles y expulsiones bajo cada equipo (el autogol cuenta para el rival).
-  const benefTeam = (g: FixtureGoal) =>
-    g.detail === "Own Goal"
-      ? g.teamId === home.id
-        ? away.id
-        : home.id
-      : g.teamId;
+  // Goles y expulsiones bajo cada equipo. El autogol va bajo el equipo al
+  // que sube al marcador: el API ya lo trae así en `teamId` (24-oct: se
+  // invertía y salía bajo el equipo equivocado).
+  const benefTeam = (g: FixtureGoal) => g.teamId;
   const linesFor = (teamId: number): Ev[] => {
     const gs: Ev[] = goals
       .filter((g) => benefTeam(g) === teamId)
@@ -444,11 +441,10 @@ export default async function LigaPartidoPage({
         visitante: { id: away.id, nombre: conTildes(away.name) },
         golesLocal: fx.goals.home ?? 0,
         golesVisitante: fx.goals.away ?? 0,
-        // El API pone el autogol en el equipo que lo encaja: aquí cuenta para el rival.
+        // El API ya pone el autogol en el equipo beneficiado.
         goles: goals.map((g) => ({
           minuto: g.minute,
-          equipoId:
-            g.detail === "Own Goal" ? (g.teamId === home.id ? away.id : home.id) : g.teamId,
+          equipoId: g.teamId,
           jugador: nombreConocido(g.player, g.playerId, nombrePlantilla),
           tipo: g.detail,
         })),
