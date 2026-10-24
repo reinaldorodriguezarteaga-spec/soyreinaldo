@@ -2831,6 +2831,8 @@ select.field { appearance: none; }
 
 /* Tira de fechas de la portada (24-oct) */
 .hfechas { display: flex; align-items: stretch; gap: 6px; width: 100%; min-width: 0; }
+/* Pegada bajo la cabecera mientras se baja por los partidos del día. */
+.hfechas { position: sticky; top: var(--alto-nav, 72px); z-index: 5; background: var(--bg); padding: 6px 0; margin-top: -6px; }
 .hfechas__tira { position: relative; }
 .hfechas__flecha { flex: 0 0 auto; width: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; }
 .hfechas__flecha:hover { border-color: var(--accent); }

@@ -48,6 +48,18 @@ export default function HomeFechas({
   const [datos, setDatos] = useState<Record<string, DiaPortada | null>>({});
   const [soloFav] = useSoloFavoritos();
   const tira = useRef<HTMLDivElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
+  // Alto de la cabecera fija: la tira se pega justo debajo.
+  const [altoNav, setAltoNav] = useState(72);
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>("nav.nav");
+    if (!nav) return;
+    const medir = () => setAltoNav(nav.offsetHeight);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
   const dias = Array.from({ length: DIAS * 2 + 1 }, (_, i) => sumarDias(hoy, i - DIAS));
 
   useEffect(() => {
@@ -70,8 +82,15 @@ export default function HomeFechas({
     if (!caja || !el) return;
     const izquierda = el.offsetLeft - (caja.clientWidth - el.clientWidth) / 2; // la tira es el offsetParent
     caja.scrollTo({ left: izquierda, behavior: primera.current ? "auto" : "smooth" });
+    // Al cambiar de día (no al cargar), si ya se había bajado por la lista,
+    // se vuelve al principio del día elegido: la lista nueva suele ser más
+    // corta y dejaba al usuario abajo del todo (24-oct, pedido del dueño).
+    const arriba = raiz.current?.getBoundingClientRect().top ?? 0;
+    if (!primera.current && arriba < altoNav) {
+      window.scrollTo({ top: window.scrollY + arriba - altoNav - 8, behavior: "auto" });
+    }
     primera.current = false;
-  }, [elegido]);
+  }, [elegido, altoNav]);
 
   const mover = (n: number) => {
     const i = dias.indexOf(elegido) + n;
@@ -88,9 +107,18 @@ export default function HomeFechas({
         : g,
     )
     .filter((g) => g.fixtures.length > 0);
+  // Los partidos de tus equipos ⭐, los primeros (como en el feed de hoy).
+  const deFavoritos =
+    tieneSeguidos && !soloFav
+      ? grupos.flatMap((g) =>
+          g.fixtures
+            .filter((fx) => esDeFavoritos(seguidos!, fx.teams.home.id, fx.teams.away.id))
+            .map((fx) => ({ fx, slug: g.slug, nombre: g.nombre })),
+        )
+      : [];
 
   return (
-    <div className="space-y-3" style={{ minWidth: 0 }}>
+    <div className="space-y-3" style={{ minWidth: 0, ["--alto-nav" as string]: `${altoNav}px` }} ref={raiz}>
       <div className="hfechas" role="tablist" aria-label="Elegir día">
         <button type="button" className="hfechas__flecha" onClick={() => mover(-1)} aria-label="Día anterior">
           ‹
@@ -131,7 +159,22 @@ export default function HomeFechas({
           </button>
         </p>
       ) : (
-        grupos.map((g) => (
+        <>
+          {deFavoritos.length > 0 && (
+            <div className="panel" style={{ overflow: "hidden" }}>
+              <div className="hfechas__cab">
+                <b className="truncate">⭐ Tus favoritos</b>
+              </div>
+              <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
+                <div className="hmrowlist">
+                  {deFavoritos.map(({ fx, slug, nombre }) => (
+                    <CompactMatchRow key={fx.fixture.id} fx={fx} href={`/liga/${slug}/partido/${fx.fixture.id}`} badge={nombre} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {grupos.map((g) => (
           <div key={g.slug} className="panel" style={{ overflow: "hidden" }}>
             <div className="hfechas__cab">
               <b className="truncate">{g.nombre}</b>
@@ -150,7 +193,8 @@ export default function HomeFechas({
               </div>
             </div>
           </div>
-        ))
+          ))}
+        </>
       )}
     </div>
   );
