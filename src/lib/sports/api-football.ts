@@ -1586,7 +1586,9 @@ export async function getFixtureStatistics(
 /** Un gol de un partido, derivado de los eventos (orden cronológico). */
 export type FixtureGoal = {
   minute: number | null;
-  /** Equipo del jugador que ejecuta (en autogol, el que encaja). */
+  /** Equipo al que sube el gol al marcador. En el autogol, el API ya pone el
+   * equipo beneficiado (el rival del que lo marca): comprobado el 24-oct con
+   * 15 autogoles de LaLiga y la liga saudí. */
   teamId: number;
   player: string;
   /** "Normal Goal" | "Penalty" | "Own Goal". */
@@ -1625,7 +1627,8 @@ function goalsFromEvents(events: FixtureEvent[]): FixtureGoal[] {
  * lista como evento, o eventos y marcador desincronizados en directo. Reconcilia
  * contra el marcador REAL (`goals.home/away`, la fuente autoritativa): si un
  * equipo tiene más goles-evento que goles en el marcador, se quitan los más
- * recientes hasta cuadrar. El autogol cuenta para el equipo rival.
+ * recientes hasta cuadrar. `teamId` ya es el equipo beneficiado, también en
+ * el autogol.
  */
 export function reconcileGoals(
   goals: FixtureGoal[],
@@ -1639,8 +1642,7 @@ export function reconcileGoals(
   const { homeId, awayId, scoreHome, scoreAway } = opts;
   if (scoreHome == null || scoreAway == null) return goals;
 
-  const benef = (g: FixtureGoal): number =>
-    g.detail === "Own Goal" ? (g.teamId === homeId ? awayId : homeId) : g.teamId;
+  const benef = (g: FixtureGoal): number => g.teamId;
   const limit: Record<number, number> = { [homeId]: scoreHome, [awayId]: scoreAway };
   const count: Record<number, number> = { [homeId]: 0, [awayId]: 0 };
 

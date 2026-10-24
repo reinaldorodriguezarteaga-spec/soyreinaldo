@@ -1,6 +1,7 @@
 import type { CalendarDay, HomeWidgetData } from "@/lib/sports/widget-data";
 import HomeMatchWidgetClient from "@/components/HomeMatchWidgetClient";
 import HomeCalendarView from "@/components/HomeCalendarView";
+import HomeFechas from "@/components/HomeFechas";
 import type { Seguidos } from "@/lib/favoritos-puros";
 
 /**
@@ -16,7 +17,10 @@ export default function HomeScoreboardTabs({
   calendarDays,
   favoriteTeamIds,
   seguidos,
+  hoy,
 }: {
+  /** yyyy-mm-dd de hoy en Madrid, para la tira de fechas. */
+  hoy: string;
   widgetData: HomeWidgetData | null;
   calendarDays: CalendarDay[] | null;
   favoriteTeamIds: number[];
@@ -35,8 +39,6 @@ export default function HomeScoreboardTabs({
     );
   const hasCalendar = !!calendarDays && calendarDays.length > 0;
 
-  if (!hasLive && !hasCalendar) return null;
-
   // Con clave propia: HomeCalendarView la coloca entre sus listas de días y,
   // al venir ya creada desde aquí (componente de servidor), React avisaba de
   // «Each child in a list should have a unique key» en la portada.
@@ -50,18 +52,19 @@ export default function HomeScoreboardTabs({
     />
   ) : undefined;
 
-  if (!hasCalendar) {
-    return <div aria-label="Marcador en vivo">{liveCard}</div>;
-  }
-
+  // Tira de fechas encima (24-oct): en «Hoy», este feed; en otro día, sus
+  // partidos. Va siempre, aunque hoy no haya nada: así se llega a ayer.
   return (
     <div aria-label="Marcador y calendario">
-      <HomeCalendarView
-        days={calendarDays!}
-        liveContent={liveCard}
-        vivoPrimero={favEnVivo}
-        seguidos={seguidos}
-      />
+      <HomeFechas hoy={hoy} seguidos={seguidos}>
+        {hasCalendar ? (
+          <HomeCalendarView days={calendarDays!} liveContent={liveCard} vivoPrimero={favEnVivo} seguidos={seguidos} />
+        ) : hasLive ? (
+          <div aria-label="Marcador en vivo">{liveCard}</div>
+        ) : (
+          <p className="panel hfechas__aviso">Hoy no hay partidos de nuestras competiciones.</p>
+        )}
+      </HomeFechas>
     </div>
   );
 }

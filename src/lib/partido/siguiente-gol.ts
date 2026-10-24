@@ -34,11 +34,7 @@ export function resolver(minuto: number, goles: GolDirecto[], terminado: boolean
 }
 
 /** Goles del partido (ya reconciliados con el marcador) en el formato del
- * juego. El autogol cuenta para el rival. */
-export function golesDe(goles: { minute: number | null; teamId: number; detail: string }[], localId: number): GolDirecto[] {
-  return goles.map((g) => {
-    const delLocal = g.teamId === localId;
-    const local = g.detail === "Own Goal" ? !delLocal : delLocal;
-    return { minuto: g.minute ?? 0, equipo: local ? "local" : "visitante" };
-  });
+ * juego. `teamId` ya es el equipo beneficiado, también en el autogol. */
+export function golesDe(goles: { minute: number | null; teamId: number }[], localId: number): GolDirecto[] {
+  return goles.map((g) => ({ minuto: g.minute ?? 0, equipo: g.teamId === localId ? "local" : "visitante" }));
 }

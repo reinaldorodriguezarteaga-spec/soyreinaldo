@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import {
   TEAM_IDS,
+  allFixturesCacheKey,
   getCompetitionFinishedFixtures,
   getCompetitionFixturesWindow,
   getCompetitionUpcomingFixtures,
@@ -19,6 +20,7 @@ import {
   type FixtureCard,
   type FixtureGoal,
 } from "./api-football";
+import { readCache } from "./sports-cache";
 import {
   CALENDAR_EXTRA_LEAGUES,
   type Competition,
@@ -638,4 +640,51 @@ export async function getUpcomingCalendar(
     }));
 
   return favDay ? [favDay, ...days] : days;
+}
+
+/**
+ * Solo los campos de un partido que pinta la portada (17-oct): cada partido
+ * de la API trae sede, árbitro, periodos, marcas de tiempo, bandera, país...
+ * y la portada manda ~45 al navegador: eran ~50 KB de los 224 KB del HTML.
+ */
+export function fixtureLigero<T extends Fixture>(f: T): T {
+  return {
+    ...f,
+    fixture: { id: f.fixture.id, date: f.fixture.date, status: f.fixture.status },
+    league: { id: f.league.id, name: f.league.name, logo: f.league.logo, round: f.league.round },
+    teams: {
+      home: { id: f.teams.home.id, name: f.teams.home.name, logo: f.teams.home.logo, winner: f.teams.home.winner },
+      away: { id: f.teams.away.id, name: f.teams.away.name, logo: f.teams.away.logo, winner: f.teams.away.winner },
+    },
+    score: undefined,
+  } as unknown as T;
+}
+
+/** Partidos de un día, agrupados por competición (en el orden de `COMPETITIONS`). */
+export type DiaPortada = {
+  dateKey: string;
+  grupos: { nombre: string; slug: string; fixtures: CalendarFixture[] }[];
+};
+
+/**
+ * Partidos de cualquier día para la tira de fechas de la portada (24-oct,
+ * pedido del dueño: repasar los partidos de días pasados sin salir de la
+ * portada). Salen del calendario de la temporada que guarda el cron en
+ * `sports_cache`: cero llamadas a API-Football, también para días pasados.
+ * Mismo filtro de equipos que el resto de la portada.
+ */
+export async function getPartidosDelDia(competitions: Competition[], dateKey: string): Promise<DiaPortada> {
+  const grupos = await Promise.all(
+    competitions.map(async (c) => {
+      const todos = (await readCache<Fixture[]>(allFixturesCacheKey(c), 7 * 86_400).catch(() => null)) ?? [];
+      const fixtures = soloEquiposDePortada(
+        todos.filter((f) => madridDateKey(new Date(f.fixture.date)) === dateKey),
+        c,
+      )
+        .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())
+        .map((f): CalendarFixture => ({ ...f, ev: null, competitionLabel: c.name, linkSlug: c.slug }));
+      return { nombre: c.name, slug: c.slug, fixtures };
+    }),
+  );
+  return { dateKey, grupos: grupos.filter((g) => g.fixtures.length > 0) };
 }
