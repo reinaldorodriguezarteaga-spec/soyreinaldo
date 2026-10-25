@@ -33,3 +33,10 @@ qué le pedí y qué volvió.
 
 Si Codex falla dos veces en la misma tarea, la tarea regresa a mí. No hay tercera
 vez.
+
+## Vídeo → artículo
+
+Si el dueño pasa un vídeo de su canal para convertirlo en análisis, usa la skill
+`video-a-articulo` (`.claude/skills/`). Saca la transcripción con
+`scripts/transcripcion.mjs` y guarda el resultado como borrador con
+`scripts/borrador-analisis.mjs`. Nunca publica.

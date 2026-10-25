@@ -2849,3 +2849,7 @@ select.field { appearance: none; }
 .hfechas__cab { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
 .hfechas__cab b { flex: 1; min-width: 0; }
 .hfechas__cab .mono { color: var(--text-dim); font-size: 0.66rem; }
+
+/* Vídeo insertado en un análisis (25-oct) */
+.prosa-video { position: relative; aspect-ratio: 16 / 9; margin: 20px 0; border-radius: var(--radius); overflow: hidden; background: #000; }
+.prosa-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }

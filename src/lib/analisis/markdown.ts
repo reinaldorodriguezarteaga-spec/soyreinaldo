@@ -82,6 +82,19 @@ export function markdownAHtml(markdown: string): string {
       continue;
     }
 
+    // Una línea con solo un enlace de YouTube → el vídeo insertado (25-oct:
+    // los artículos que salen de un vídeo del canal lo llevan dentro). Carga
+    // diferida: el reproductor no pesa hasta que se llega a él.
+    const video = l.match(/^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/)|youtu\.be\/)([\w-]{11})(?:[?&#]\S*)?$/);
+    if (video) {
+      cerrarParrafo();
+      cerrarLista();
+      salida.push(
+        `<div class="prosa-video"><iframe src="https://www.youtube-nocookie.com/embed/${video[1]}" title="Vídeo de Reinaldo" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`,
+      );
+      continue;
+    }
+
     const cita = l.match(/^&gt;\s*(.*)$/);
     if (cita) {
       cerrarParrafo();
