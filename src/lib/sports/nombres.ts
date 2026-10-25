@@ -105,6 +105,9 @@ const ALIAS: Record<string, string> = {
   // El API trae los dos apellidos y la regla se quedaba con el segundo
   // ("Paredes", 18-oct).
   "pau cubarsi paredes": "Cubarsí",
+  // Los eventos traen el nombre completo y la regla se quedaba con el último
+  // apellido («Belloli», 26-oct).
+  "raphael dias belloli": "Raphinha",
 };
 
 const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
