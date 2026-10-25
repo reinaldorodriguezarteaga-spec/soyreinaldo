@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import {
   TEAM_IDS,
   allFixturesCacheKey,
+  teamSquadCacheKey,
+  type SquadPlayer,
   getCompetitionFinishedFixtures,
   getCompetitionFixturesWindow,
   getCompetitionUpcomingFixtures,
@@ -104,10 +106,24 @@ export async function attachEvents(fixtures: Fixture[]): Promise<WcFixture[]> {
     terminados.length ? getFixturesEvents(terminados, 600) : vacio,
   ]).catch((): [Eventos, Eventos] => [vacio, vacio]);
 
+  // Nombre por el que se conoce a cada jugador («Raphinha», no «Raphael Dias
+  // Belloli» como trae el evento; 26-oct). Solo de las plantillas que ya
+  // guarda el cron: sin llamadas a la API.
+  const equipos = [...new Set(fixtures.flatMap((f) => [f.teams.home.id, f.teams.away.id]))];
+  const plantillas = await Promise.all(
+    equipos.map((id) => readCache<SquadPlayer[]>(teamSquadCacheKey(id), 7 * 86_400).catch(() => null)),
+  );
+  const conocido = new Map<number, string>(plantillas.flatMap((ps) => (ps ?? []).map((p) => [p.id, p.name] as const)));
+  const renombrar = <T extends { player: string; playerId?: number | null }>(e: T): T => {
+    const n = e.playerId != null ? conocido.get(e.playerId) : undefined;
+    return n ? { ...e, player: n } : e;
+  };
+
   return fixtures.map((f): WcFixture => {
     if (!isLive(f) && !isFinal(f)) return { ...f, ev: null };
-    const ev = (isLive(f) ? evVivos : evTerminados).get(f.fixture.id);
-    if (!ev) return { ...f, ev: null };
+    const crudo = (isLive(f) ? evVivos : evTerminados).get(f.fixture.id);
+    if (!crudo) return { ...f, ev: null };
+    const ev = { goals: crudo.goals.map(renombrar), cards: crudo.cards.map(renombrar) };
     // Descarta goles anulados/fantasma reconciliando con el marcador real.
     const goals = reconcileGoals(ev.goals, {
       homeId: f.teams.home.id,
