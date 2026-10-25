@@ -91,14 +91,17 @@ export function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Forma reciente (últimos partidos) como puntos V/E/D. */
+/** Forma reciente (últimos partidos) como puntos V/E/D, el más reciente a
+ * la DERECHA. El API la da del más reciente al más antiguo: hasta el 25-oct
+ * se pintaba tal cual y el cuadrito de la derecha, el que todo el mundo lee
+ * como «el último», era el más antiguo (como en match-previa). */
 export function FormMini({ form }: { form: string }) {
   const map: Record<string, { bg: string; fg: string; label: string }> = {
     W: { bg: "#4ade80", fg: "#0a1030", label: "V" },
     D: { bg: "var(--line-strong)", fg: "var(--text)", label: "E" },
     L: { bg: "#ff8a8a", fg: "#0a1030", label: "D" },
   };
-  const chars = form.replace(/[^WDL]/g, "").slice(-5).split("");
+  const chars = form.replace(/[^WDL]/g, "").slice(0, 5).split("").reverse();
   if (chars.length === 0) return null;
   return (
     <span

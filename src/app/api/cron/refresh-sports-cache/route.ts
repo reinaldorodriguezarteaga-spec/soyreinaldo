@@ -13,6 +13,7 @@ import {
   isLive,
   standingsCacheKey,
   type Fixture,
+  type StandingRow,
   teamFixturesLastCacheKey,
   teamFixturesNextCacheKey,
   teamSquadCacheKey,
@@ -25,6 +26,7 @@ import {
   FEATURED_TEAMS,
 } from "@/lib/sports/competitions";
 import { freshCacheKeys, readCache, writeCache } from "@/lib/sports/sports-cache";
+import { completarClasificacion } from "@/lib/sports/live-standings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -157,8 +159,14 @@ export async function GET(request: Request) {
         getCompetitionUpcomingFixtures(c, 12, { forceLive: true }),
         getCompetitionAllFixtures(c, { forceLive: true }),
       ]);
+      // El /standings del API va horas por detrás de los resultados: se
+      // completa con los partidos ya terminados del calendario (25-oct).
+      const tabla =
+        standings && c.standingsMode === "table"
+          ? completarClasificacion(standings as StandingRow[], all)
+          : standings;
       await Promise.all([
-        standings ? writeCache(standingsCacheKey(c), standings) : Promise.resolve(),
+        tabla ? writeCache(standingsCacheKey(c), tabla) : Promise.resolve(),
         writeCache(upcomingCacheKey(c), upcoming),
         writeCache(allFixturesCacheKey(c), all),
       ]);
