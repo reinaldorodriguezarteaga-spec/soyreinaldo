@@ -72,4 +72,12 @@ describe("enlaces y lectura", () => {
     expect(minutosDeLectura("dos palabras")).toBe(1);
     expect(minutosDeLectura("palabra ".repeat(400))).toBe(2);
   });
+
+  it("una línea con solo un enlace de YouTube inserta el vídeo", () => {
+    const html = markdownAHtml("Mira:\n\nhttps://www.youtube.com/watch?v=vE4rBOrF1mc&t=30s\n\nhttps://youtu.be/CWkLtQLEDXo");
+    expect(html).toContain('<iframe src="https://www.youtube-nocookie.com/embed/vE4rBOrF1mc"');
+    expect(html).toContain("embed/CWkLtQLEDXo");
+    // Un enlace dentro de un párrafo no se convierte.
+    expect(markdownAHtml("Lo dije en https://youtu.be/CWkLtQLEDXo ayer")).not.toContain("iframe");
+  });
 });

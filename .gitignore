@@ -41,7 +41,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.claude/
+.claude/*
+# Las skills del proyecto sí van al repo (las usan el Mac y el PC).
+!.claude/skills/
 
 # Copias de conflicto del sync (iCloud/Dropbox): "archivo 2.tsx"
 * [0-9].*
