@@ -32,5 +32,12 @@ export async function validarCasilla(
   if (!(await permitido(apiId))) return { ok: false, error: "Jugador no válido" };
   const deApi = await getEquiposJugador(apiId).catch(() => [] as number[]);
   const clubes = new Set([...deApi, ...clubesCurados(apiId)]);
-  return { ok: clubes.has(CLUBES[fila][0]) && clubes.has(CLUBES[columna][0]) };
+  const ok = clubes.has(CLUBES[fila][0]) && clubes.has(CLUBES[columna][0]);
+  // Todo futbolista tiene algún club: sin ninguno del API es que no se pudo
+  // consultar (cuota, caída), no que no jugara. Se avisa y no gasta intento
+  // (26-oct: Ansu Fati «no había jugado» en el Mónaco).
+  if (!ok && deApi.length === 0) {
+    return { ok: false, error: "No he podido comprobar sus clubes ahora mismo. Prueba en un momento." };
+  }
+  return { ok };
 }

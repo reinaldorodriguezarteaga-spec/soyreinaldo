@@ -538,8 +538,9 @@ async function get<T>(
   revalidateSeconds: number,
   noCache = false,
   retryIfEmpty = false,
+  saltarFreno = false,
 ): Promise<{ response: T[]; errors: unknown }> {
-  const r = await getCrudo<T>(path, params, revalidateSeconds, noCache, retryIfEmpty);
+  const r = await getCrudo<T>(path, params, revalidateSeconds, noCache, retryIfEmpty, saltarFreno);
   const response = equiposEnEspanol(r.response);
   return response === r.response ? r : { ...r, response };
 }
@@ -562,6 +563,11 @@ async function getCrudo<T>(
    * tiene plantilla. En `/injuries` o `/trophies`, vacío es una respuesta
    * legítima y reintentarla sería quemar cuota para nada. */
   retryIfEmpty = false,
+  /** true → no le afecta el freno por ritmo (sí el modo ahorro). Para
+   * consultas sueltas que pide una persona y se guardan 30 días (los clubes
+   * de un jugador en el tiki-taka, 26-oct): con el freno volvían vacías y el
+   * juego decía que Ansu Fati no había jugado en el Mónaco. */
+  saltarFreno = false,
 ): Promise<{ response: T[]; errors: unknown }> {
   const urlStr = urlApi(path, params);
   const paramStr = Object.entries(params)
@@ -615,7 +621,7 @@ async function getCrudo<T>(
     // Modo ahorro: lo último guardado o, si no hay, un fallo más (reintento
     // cada FAILURE_RETRY_S), así se recupera solo cuando vuelve la cuota.
     // Freno por ritmo: lo mismo para todo lo que es "ficha" (último bueno).
-    const frenado = politica === "ultimoBueno" && frenoActivo();
+    const frenado = politica === "ultimoBueno" && !saltarFreno && frenoActivo();
     if ((secundario && enModoAhorro()) || frenado) {
       if (frenado) avisarFreno();
       const u = await ultimoBueno();
@@ -3846,7 +3852,7 @@ export async function getJugadorTemporada(id: number, season: number): Promise<J
 /** Clubes (y selecciones) por los que ha pasado un jugador, con sus ids.
  * Para validar el tiki-taka-toe con cualquier jugador (23-oct). Caché 30 días. */
 export async function getEquiposJugador(id: number): Promise<number[]> {
-  const r = await get<{ team: { id: number; name: string } }>("/players/teams", { player: id }, 30 * 86400);
+  const r = await get<{ team: { id: number; name: string } }>("/players/teams", { player: id }, 30 * 86400, false, false, true);
   return r.response.map((x) => x.team.id);
 }
 
@@ -3856,6 +3862,6 @@ export type PerfilJugadorApi = {
 /** Búsqueda en todos los jugadores del API (incluidos retirados) por una
  * palabra de 4+ letras. Caché de 30 días: la misma búsqueda no se repite. */
 export async function buscarPerfilesApi(palabra: string): Promise<PerfilJugadorApi[]> {
-  const r = await get<PerfilJugadorApi>("/players/profiles", { search: palabra }, 30 * 86400);
+  const r = await get<PerfilJugadorApi>("/players/profiles", { search: palabra }, 30 * 86400, false, false, true);
   return r.response;
 }
