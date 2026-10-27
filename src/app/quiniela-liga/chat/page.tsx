@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
+import { miembrosConNombre } from "@/lib/quiniela-liga/chat-sistema";
 import ChatQuiniela, { type Mensaje, type Reaccion } from "./chat";
 
 export const metadata: Metadata = {
@@ -54,7 +55,7 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
   const [{ data: mensajes }, { data: silencios }, { data: perfil }] = await Promise.all([
     supabase
       .from("lq_chat")
-      .select("id, user_id, autor, tipo, texto, oculto, created_at")
+      .select("id, user_id, autor, tipo, texto, oculto, created_at, menciones")
       .eq("league_id", activa.id)
       .order("id", { ascending: false })
       .limit(INICIALES),
@@ -62,6 +63,9 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
     supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle<{ is_admin: boolean | null }>(),
   ]);
   const lista = ((mensajes ?? []) as Mensaje[]).reverse();
+  // Miembros de la liga para mencionar con «@» (ya sabemos que eres de ella).
+  const conNombre = await miembrosConNombre(activa.id);
+  const miNombre = conNombre.find((m) => m.id === user.id)?.nombre ?? null;
   const { data: reacciones } = lista.length
     ? await supabase
         .from("lq_chat_reacciones")
@@ -87,6 +91,8 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
             iniciales={lista}
             reaccionesIniciales={(reacciones ?? []) as Reaccion[]}
             silenciadosIniciales={((silencios ?? []) as { silenciado: string }[]).map((s) => s.silenciado)}
+            miembros={conNombre.filter((m) => m.id !== user.id).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))}
+            miNombre={miNombre}
           />
         </div>
       </section>
