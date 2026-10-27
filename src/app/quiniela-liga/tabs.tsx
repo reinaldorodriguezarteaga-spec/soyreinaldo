@@ -65,8 +65,6 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
               </Link>
             );
           })}
-          {/* Otra quiniela, con su propia clasificación (21-oct). */}
-          <Link href="/quiniela-champions">🏆 Champions</Link>
           {active?.role === "admin" && (
             <Link
               href={`/quiniela-liga/liga/${encodeURIComponent(active.id)}`}

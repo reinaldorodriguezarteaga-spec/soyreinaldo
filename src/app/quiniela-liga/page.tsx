@@ -5,6 +5,7 @@ import JoinCodeForm from "./join-code-form";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { textoBaremo } from "@/lib/quiniela-liga/league-utils";
 import { T } from "@/components/EnApp";
+import { COMPETICION_CHAMPIONS, TEMPORADA_CHAMPIONS } from "@/lib/quiniela-liga/champions";
 
 export const metadata = {
   alternates: { canonical: "/quiniela-liga" },
@@ -73,6 +74,17 @@ export default async function QuinielaLigaIndex() {
     )
   ).filter((p): p is PrivatePreview => p !== null);
 
+  // La quiniela de la Champions va aparte (27-oct, pedido del dueño: dentro
+  // de la de los Conos «se pierde»): su propia tarjeta, con tu puesto.
+  const { data: rankingChampions } = await supabase.rpc("lq_ranking_competicion", {
+    p_comp: COMPETICION_CHAMPIONS,
+    p_season: TEMPORADA_CHAMPIONS,
+    p_exacto: baremo.exacto,
+    p_acierto: baremo.acierto,
+  });
+  const filasChampions = (rankingChampions ?? []) as { user_id: string; puntos: number }[];
+  const idxChampions = user ? filasChampions.findIndex((r) => r.user_id === user.id) : -1;
+
   // Posición y puntos de cada liga (son pocas; una consulta por liga).
   const stats = new Map<string, { pos: number | null; points: number; members: number }>();
   await Promise.all(
@@ -110,6 +122,32 @@ export default async function QuinielaLigaIndex() {
           {leagues.map((l) => (
             <LeagueCard key={l.id} league={l} stats={stats.get(l.id)} />
           ))}
+
+          <div className="panel qcard-champions" style={{ padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>🏆 Quiniela de la Champions</h2>
+              <span className="mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--text-dim)" }}>
+                2026-27 · OTRA COMPETICIÓN
+              </span>
+            </div>
+            <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
+              Pronostica la Champions jornada a jornada, de la fase liga a la final, con su propia clasificación:
+              aquí no suman los puntos de LaLiga.
+              {idxChampions >= 0
+                ? ` Vas ${idxChampions + 1}.º de ${filasChampions.length} con ${filasChampions[idxChampions].puntos} puntos.`
+                : filasChampions.length > 0
+                  ? ` Ya juegan ${filasChampions.length}.`
+                  : ""}
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link href="/quiniela-champions" className="btn btn--accent">
+                Pronosticar <span className="arr">→</span>
+              </Link>
+              <Link href="/quiniela-champions?vista=clasificacion" className="btn">
+                Clasificación
+              </Link>
+            </div>
+          </div>
 
           {!inPublic && publicLeague && (
             <div className="panel" style={{ padding: 24 }}>
