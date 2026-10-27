@@ -56,3 +56,45 @@ describe("modo carrera", () => {
     expect(e.ofertas.every((id) => clubPorId(id)!.escalon >= 5)).toBe(true);
   });
 });
+
+describe("rejugar una carrera (ranking)", () => {
+  it("las mismas decisiones dan la misma carrera y el mismo legado", async () => {
+    const { aplicar, reproducir } = await import("../replay");
+    const inicio = { nombre: "Repe", nacion: "br", posicion: "MED" as const, clubId: 534, semilla: 4242 };
+    let e = crearCarrera(inicio);
+    const acciones: import("../replay").Accion[] = [];
+    for (let i = 0; i < 200 && e.fase !== "fin"; i++) {
+      const a: import("../replay").Accion =
+        e.fase === "escenario" ? { t: "opcion", i: i % e.escenario!.opciones.length }
+        : e.fase === "resultado" ? { t: "ver" }
+        : e.ofertas[0] && i % 3 === 0 ? { t: "fichar", id: e.ofertas[0] }
+        : e.sinRenovar ? { t: "fichar", id: e.ofertas[0] } : { t: "seguir" };
+      acciones.push(a);
+      e = aplicar(e, a);
+    }
+    const r = reproducir(inicio, acciones);
+    expect(r).not.toBeNull();
+    expect(resumen(r!)).toEqual(resumen(e));
+  });
+
+  it("rechaza trampas: club inicial de primera, ofertas inventadas o carreras a medias", async () => {
+    const { reproducir } = await import("../replay");
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 541, semilla: 1 }, [])).toBeNull();
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1 }, [{ t: "opcion", i: 0 }, { t: "ver" }, { t: "fichar", id: 541 }])).toBeNull();
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1 }, [{ t: "opcion", i: 0 }])).toBeNull();
+  });
+});
+
+describe("canteras", () => {
+  it("si destacas en el Barça Atlètic, te ofrecen subir al primer equipo", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 712, semilla: 9 });
+    e = elegirOpcion(e, 0);
+    e = { ...e, media: 84, historial: [...e.historial.slice(0, -1), { ...e.historial.at(-1)!, nota: 7.6 }] };
+    expect(pasarAOfertas(e).ofertas).toContain(529);
+  });
+
+  it("una cantera nunca ficha a nadie ni recibe cedidos", async () => {
+    const { CLUBES_FICHAN } = await import("../clubes");
+    expect(CLUBES_FICHAN.some((c) => c.matriz)).toBe(false);
+  });
+});

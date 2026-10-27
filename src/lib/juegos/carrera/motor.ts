@@ -1,5 +1,5 @@
 import { aleatorio } from "../diario";
-import { CLUBES_CARRERA, NIVEL_ESCALON, clubPorId, nacionPorCodigo, type ClubCarrera, type Escalon } from "./clubes";
+import { CLUBES_FICHAN, NIVEL_ESCALON, clubPorId, nacionPorCodigo, type ClubCarrera, type Escalon } from "./clubes";
 
 /**
  * Modo carrera (27-oct, pedido del dueño): de los 17 años en un equipo de
@@ -403,7 +403,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   let cedidoEn: number | undefined;
   if (ef.cedido) {
     escalonJuego = Math.min(5, e.escalonClub + 1) as Escalon;
-    const destino = elegirDe(r, CLUBES_CARRERA.filter((c) => c.escalon === escalonJuego && c.id !== e.clubId));
+    const destino = elegirDe(r, CLUBES_FICHAN.filter((c) => c.escalon === escalonJuego && c.id !== e.clubId));
     cedidoEn = destino.id;
   }
   const clubJuego = cedidoEn ? clubPorId(cedidoEn)! : clubPropio;
@@ -447,7 +447,8 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   const pLiga = { 1: 0.32, 2: 0.1, 3: dominante ? 0.33 : 0.03, 4: 0.005, 5: 0.12 }[escalonJuego] + impacto * 0.3;
   if (escalonJuego === 5) {
     if (r() < pLiga) trofeos.push(`Campeón de ${liga}`);
-    if (trofeos.length || r() < 0.22 + impacto * 0.4) {
+    // Una cantera no asciende: su primer equipo ya está arriba.
+    if (!clubJuego.matriz && (trofeos.length || r() < 0.22 + impacto * 0.4)) {
       trofeos.push("Ascenso a Primera");
       if (!cedidoEn) escalonClub = 4;
     }
@@ -549,7 +550,7 @@ export function pasarAOfertas(e: Estado): Estado {
   const t = e.historial[e.historial.length - 1];
   const rendimiento = t.nota ?? 5.5;
   const ofertas: number[] = [];
-  const otros = (escalon: Escalon) => CLUBES_CARRERA.filter((c) => c.escalon === escalon && c.id !== e.clubId);
+  const otros = (escalon: Escalon) => CLUBES_FICHAN.filter((c) => c.escalon === escalon && c.id !== e.clubId);
 
   // Muy por debajo del nivel del club: no te renueva y solo llaman los de un
   // escalón menos (si no, acababas a los 38 en el Madrid jugando 3 partidos).
@@ -559,6 +560,11 @@ export function pasarAOfertas(e: Estado): Estado {
     const b = elegirDe(r, abajo.filter((c) => c.id !== a.id));
     return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: true, ofertas: [a.id, b.id] };
   }
+
+  // Cantera: si destacas, sube al primer equipo (28-oct).
+  const club = clubPorId(e.clubId);
+  const matriz = club?.matriz ? clubPorId(club.matriz) : null;
+  if (matriz && e.media >= NIVEL_ESCALON[matriz.escalon] - 5 && rendimiento >= 6.8) ofertas.push(matriz.id);
 
   // Uno de igual tamaño si la temporada fue aceptable.
   if (rendimiento >= 6.3 || e.media >= nivel(e)) ofertas.push(elegirDe(r, otros(e.escalonClub)).id);
@@ -595,6 +601,7 @@ export function decidir(e: Estado, decision: { tipo: "seguir" } | { tipo: "ficha
     return { ...e, fase: "fin" };
   }
   if (decision.tipo === "seguir" && e.sinRenovar) return e;
+  if (decision.tipo === "fichar" && !e.ofertas.includes(decision.clubId)) return e;
   let clubId = e.clubId;
   let escalonClub = e.escalonClub;
   if (decision.tipo === "fichar" && e.ofertas.includes(decision.clubId)) {

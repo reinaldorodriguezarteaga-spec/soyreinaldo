@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import ModoCarrera from "./juego";
+import type { FilaTop } from "./acciones";
 
 export const metadata: Metadata = {
   title: "Modo carrera: de segunda división al Balón de Oro | Juegos · Soy Reinaldo",
@@ -10,7 +13,15 @@ export const metadata: Metadata = {
 };
 
 /** Modo carrera (27-oct, pedido del dueño). */
-export default function ModoCarreraPage() {
+export default async function ModoCarreraPage() {
+  await connection();
+  const supabase = await createClient();
+  const [
+    {
+      data: { user },
+    },
+    { data: top },
+  ] = await Promise.all([supabase.auth.getUser(), supabase.rpc("carrera_top", { p_limite: 10 })]);
   return (
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
@@ -23,9 +34,10 @@ export default function ModoCarreraPage() {
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 640 }}>
             Empiezas con 17 años en un equipo de segunda. Cada temporada eliges qué hacer, juegas y te llegan ofertas
-            según tu rendimiento. ¿Llegarás al Madrid, al Barça o al City? ¿Cuándo colgarás las botas?
+            según tu rendimiento. ¿Llegarás al Madrid, al Barça o al City? ¿Cuándo colgarás las botas? Las mejores
+            carreras entran en el top 10.
           </p>
-          <ModoCarrera />
+          <ModoCarrera conSesion={!!user} topInicial={(top ?? []) as FilaTop[]} />
         </div>
       </section>
     </main>
