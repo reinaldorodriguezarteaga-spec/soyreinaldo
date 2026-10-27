@@ -2951,3 +2951,4 @@ select.field { appearance: none; }
 .mc-top__legado { display: flex; flex-direction: column; align-items: center; }
 .mc-top__legado b { font-family: var(--font-display-stack); font-size: 1.4rem; line-height: 1; color: var(--accent-2); }
 .mc-top__legado small { font-size: 0.66rem; color: var(--text-dim); }
+.mc-chips span.is-balon { border-color: #facc15; }

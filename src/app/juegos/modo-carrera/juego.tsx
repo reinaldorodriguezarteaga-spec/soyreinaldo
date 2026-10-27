@@ -347,8 +347,9 @@ function Estadisticas({ t, posicion }: { t: Estado["historial"][number]; posicio
           Con la selección: {t.seleccion.partidos} partidos{posicion !== "POR" ? ` y ${t.seleccion.goles} goles` : ""}.
         </p>
       )}
-      {(t.trofeos.length > 0 || t.premios.length > 0) && (
+      {(t.trofeos.length > 0 || t.premios.length > 0 || t.balonPuesto) && (
         <div className="mc-chips">
+          {t.balonPuesto && t.balonPuesto > 1 && <span className="is-balon">🗳️ Balón de Oro: {t.balonPuesto}.º</span>}
           {t.trofeos.map((x) => (
             <span key={x}>🏆 {x}</span>
           ))}
@@ -401,7 +402,13 @@ function Historial({ e }: { e: Estado }) {
                 {e.posicion !== "POR" && <td>{t.asistencias}</td>}
                 {(e.posicion === "POR" || e.posicion === "DEF") && <td>{t.porteriasCero}</td>}
                 <td>{t.nota ?? "—"}</td>
-                <td className="mc-hist__tit">{[...t.trofeos.map((x) => `🏆 ${x}`), ...t.premios.map((x) => `🥇 ${x}`)].join(" · ")}</td>
+                <td className="mc-hist__tit">
+                  {[
+                    ...t.trofeos.map((x) => `🏆 ${x}`),
+                    ...t.premios.map((x) => `🥇 ${x}`),
+                    ...(t.balonPuesto && t.balonPuesto > 1 ? [`🗳️ ${t.balonPuesto}.º Balón de Oro`] : []),
+                  ].join(" · ")}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -452,6 +459,12 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
       <h2 className="mc__h">{r.titulo}</h2>
       <p className="mc-final__legado">
         Legado: <b>{r.legado}</b> puntos · media máxima <b>{r.mediaMax}</b>
+        {r.mejorBalon != null && (
+          <>
+            {" "}
+            · mejor puesto en el Balón de Oro: <b>{r.mejorBalon}.º</b>
+          </>
+        )}
       </p>
       {ranking ? (
         <p className="mc-final__ranking">{ranking}</p>
