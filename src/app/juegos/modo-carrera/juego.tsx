@@ -230,9 +230,50 @@ function PartidaVista({
             {e.extendido ? (e.escenario.mitad ? " · Mitad de temporada" : " · Pretemporada") : ""}
           </p>
           {e.escenario.mitad && e.pendiente && (
-            <p className="mc__nota">
-              En pretemporada: <b>{e.pendiente.eleccion}.</b> {e.pendiente.resultado}
-            </p>
+            <>
+              <p className="mc__nota">
+                En pretemporada: <b>{e.pendiente.eleccion}.</b> {e.pendiente.resultado}
+              </p>
+              <div className="mc-ida">
+                <p className="mc__temp">
+                  Tu primera vuelta
+                  {e.pendiente.cedidoEn ? ` · cedido en ${clubPorId(e.pendiente.cedidoEn)?.nombre}` : ""}
+                  {e.pendiente.primeraMitad.lesionado ? " · con una lesión por medio" : ""}
+                </p>
+                <div className="mc-stats">
+                  <div>
+                    <b>{e.pendiente.primeraMitad.partidos}</b>
+                    <span>partidos</span>
+                  </div>
+                  {e.posicion !== "POR" && (
+                    <div>
+                      <b>{e.pendiente.primeraMitad.goles}</b>
+                      <span>goles</span>
+                    </div>
+                  )}
+                  {e.posicion !== "POR" && (
+                    <div>
+                      <b>{e.pendiente.primeraMitad.asistencias}</b>
+                      <span>asistencias</span>
+                    </div>
+                  )}
+                  {(e.posicion === "POR" || e.posicion === "DEF") && (
+                    <div>
+                      <b>{e.pendiente.primeraMitad.porteriasCero}</b>
+                      <span>porterías a cero</span>
+                    </div>
+                  )}
+                  <div>
+                    <b>{e.pendiente.primeraMitad.nota ?? "—"}</b>
+                    <span>nota</span>
+                  </div>
+                  <div>
+                    <b>{e.pendiente.primeraMitad.media}</b>
+                    <span>media</span>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
           <h2 className="mc__h">{e.escenario.titulo}</h2>
           <p>{e.escenario.texto}</p>

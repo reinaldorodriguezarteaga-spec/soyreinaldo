@@ -2966,3 +2966,4 @@ select.field { appearance: none; }
 .mc-trofeo figcaption { font-size: 0.76rem; line-height: 1.25; }
 .mc-palmares__creditos { font-size: 0.72rem; color: var(--text-dim); }
 .mc-palmares__creditos ul { margin: 6px 0 0; padding-left: 18px; }
+.mc-ida { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid var(--line); }
