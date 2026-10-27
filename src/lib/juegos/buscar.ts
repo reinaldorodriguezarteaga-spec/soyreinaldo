@@ -81,5 +81,8 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
     const db = clienteServicio();
     if (db) await db.from("jugadores_api").upsert(nuevos, { onConflict: "id", ignoreDuplicates: true });
   }
-  return [...locales, ...deTabla, ...deApi].filter((x) => (vistos.has(x.id) ? false : (vistos.add(x.id), true))).slice(0, limite);
+  // Conjunto nuevo: `vistos` ya tiene a todos los locales y los tiraría
+  // (27-oct: Cucurella salía en las plantillas y en el API, y no salía nada).
+  const unicos = new Set<number>();
+  return [...locales, ...deTabla, ...deApi].filter((x) => (unicos.has(x.id) ? false : (unicos.add(x.id), true))).slice(0, limite);
 }
