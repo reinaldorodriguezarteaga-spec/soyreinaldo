@@ -2889,3 +2889,55 @@ select.field { appearance: none; }
 .chat__sugerencias { list-style: none; margin: 0; padding: 6px 10px 0; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--line); }
 .chat__sugerencias button { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 0.85rem; cursor: pointer; }
 .chat__sugerencias li:first-child button { border-color: var(--accent); }
+
+/* Modo carrera (27-oct) */
+.mc { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.mc__h { margin: 0; font-size: 1.3rem; }
+.mc__temp { margin: 0; font-family: var(--font-mono-stack); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-2); }
+.mc__campo { display: flex; flex-direction: column; gap: 8px; }
+.mc__campo > span { font-weight: 700; font-size: 0.9rem; }
+.mc__campo input { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; max-width: 360px; }
+.mc__banderas, .mc__clubes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+.mc__banderas button, .mc__clubes button { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 0.85rem; cursor: pointer; text-align: left; min-width: 0; }
+.mc__banderas button span, .mc__clubes button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc__banderas img { border-radius: 2px; flex: 0 0 auto; }
+.mc__banderas button.is-on, .mc__clubes button.is-on { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 22%, var(--surface)); }
+.mc__opciones { display: flex; flex-direction: column; gap: 8px; }
+.mc__opciones > button { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.mc__opciones > button:hover { border-color: var(--accent); }
+.mc__opciones > button small { flex-basis: 100%; font-weight: 400; color: var(--text-dim); font-size: 0.8rem; }
+.mc__opciones .mc__retiro { border-style: dashed; }
+.mc__eleccion { margin: 0; }
+.mc__nota { margin: 0; color: var(--text-dim); font-size: 0.85rem; }
+.mc__enlace { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.mc-juego { display: flex; flex-direction: column; gap: 14px; }
+.mc-ficha { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.mc-ficha__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mc-ficha__txt b { font-size: 1.15rem; }
+.mc-ficha__txt span { color: var(--text-dim); font-size: 0.85rem; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.mc-ficha__esc { font-family: var(--font-mono-stack); font-size: 0.68rem !important; letter-spacing: 0.08em; text-transform: uppercase; }
+.mc-ficha__media { display: flex; flex-direction: column; align-items: center; }
+.mc-ficha__media b { font-family: var(--font-display-stack); font-size: 2.4rem; line-height: 1; color: var(--accent-2); }
+.mc-ficha__media span { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+.mc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+.mc-stats > div { display: flex; flex-direction: column; align-items: center; padding: 10px 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.mc-stats b { font-family: var(--font-display-stack); font-size: 1.6rem; line-height: 1.1; }
+.mc-stats b small { font-size: 0.8rem; }
+.mc-stats b.is-sube { color: #4ade80; }
+.mc-stats b.is-baja { color: #f87171; }
+.mc-stats span { font-size: 0.72rem; color: var(--text-dim); text-align: center; }
+.mc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mc-chips span { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 0.82rem; }
+.mc-chips span.is-premio { border-color: var(--accent-2); }
+.mc-hist { padding: 14px; }
+.mc-hist h3 { margin: 0 0 10px; font-size: 1rem; }
+.mc-hist__tabla { overflow-x: auto; }
+.mc-hist table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.mc-hist th, .mc-hist td { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.mc-hist th { font-family: var(--font-mono-stack); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.mc-hist__club { text-align: left !important; }
+.mc-hist__club { display: flex; align-items: center; gap: 6px; }
+.mc-hist__tit { text-align: left !important; white-space: normal !important; min-width: 160px; font-size: 0.75rem; }
+.mc-final__legado { margin: 0; }
+.mc-final__clubes { display: flex; gap: 8px; flex-wrap: wrap; }
+.mc-hist__club span { margin-right: 10px; }
