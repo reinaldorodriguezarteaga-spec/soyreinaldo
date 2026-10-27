@@ -23,11 +23,13 @@ export default async function ModoCarreraPage() {
     { data: rapida },
     { data: extendida },
     { data: mundiales },
+    { data: balones },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase.rpc("carrera_top", { p_limite: 10, p_modo: "rapida" }),
     supabase.rpc("carrera_top", { p_limite: 10, p_modo: "extendida" }),
     supabase.rpc("carrera_top_mundiales", { p_limite: 10 }),
+    supabase.rpc("carrera_top_balones", { p_limite: 10 }),
   ]);
   return (
     <main className="page">
@@ -50,6 +52,7 @@ export default async function ModoCarreraPage() {
               rapida: (rapida ?? []) as FilaTop[],
               extendida: (extendida ?? []) as FilaTop[],
               mundiales: (mundiales ?? []) as FilaTop[],
+              balones: (balones ?? []) as FilaTop[],
             }}
           />
         </div>
