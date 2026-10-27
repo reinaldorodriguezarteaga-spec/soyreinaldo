@@ -163,3 +163,42 @@ describe("fin del filial", () => {
     expect(decidir(e, { tipo: "seguir" })).toBe(e);
   });
 });
+
+describe("selección y Mundiales", () => {
+  it("los torneos solo en verano de Mundial o continental, y ganarlo da el trofeo", () => {
+    let torneos = 0;
+    for (let s = 1; s <= 40; s++) {
+      for (const t of jugar(s).historial) {
+        const torneo = t.seleccion?.torneo;
+        const verano = (t.anio + 1) % 4;
+        if (!torneo) continue;
+        torneos++;
+        expect(verano === 2 || verano === 0).toBe(true);
+        expect(torneo.nombre).toBe(`${verano === 2 ? "Mundial" : "Eurocopa"} ${t.anio + 1}`);
+        expect(t.trofeos.includes(`${torneo.nombre} con España`)).toBe(torneo.ronda === "campeon");
+      }
+    }
+    expect(torneos).toBeGreaterThan(0);
+  });
+
+  it("quien se retira de la selección ya no vuelve a ser convocado", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "DEL", clubId: 534, semilla: 4 });
+    e = {
+      ...e,
+      edad: 31,
+      media: 90,
+      escenario: {
+        id: "adios-seleccion",
+        titulo: "",
+        texto: "",
+        opciones: [{ texto: "Retirarse", efecto: { adiosSeleccion: true, texto: "" } }],
+      },
+    };
+    e = elegirOpcion(e, 0);
+    expect(e.adiosSeleccion).toBe(true);
+    expect(e.historial.at(-1)!.seleccion).toBeUndefined();
+    e = decidir(pasarAOfertas(e), { tipo: "seguir" });
+    e = elegirOpcion(e, 0);
+    expect(e.historial.at(-1)!.seleccion).toBeUndefined();
+  });
+});

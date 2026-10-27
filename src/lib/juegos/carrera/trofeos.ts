@@ -70,5 +70,5 @@ export function fotoTrofeo(nombre: string): FotoTrofeo | null {
 /** Club, selección o individual, para agrupar el palmarés. */
 export function tipoTrofeo(nombre: string, esPremio: boolean): "club" | "seleccion" | "individual" {
   if (esPremio) return "individual";
-  return /^(Mundial|Eurocopa|Copa América|Copa África|Copa Oro|Copa Asiática|Oro olímpico)/.test(nombre) ? "seleccion" : "club";
+  return /^(Mundial \d|Mundial Sub-20|Eurocopa|Copa América|Copa África|Copa Oro|Copa Asiática|Oro olímpico|Nations League|Finalissima)/.test(nombre) ? "seleccion" : "club";
 }
