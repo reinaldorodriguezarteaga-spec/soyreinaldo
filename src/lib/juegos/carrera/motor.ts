@@ -38,6 +38,8 @@ export type Efecto = {
   nota?: number;
   /** Lo que puede salir mal: con probabilidad p, otra media y otro texto. */
   riesgo?: { p: number; media: Rango; texto: string };
+  /** Un título que solo da este escenario (oro olímpico, Mundial Sub-20…). */
+  trofeo?: { p: number; nombre: string };
   /** Cómo sale si va bien. */
   texto: string;
 };
@@ -60,6 +62,8 @@ export type Temporada = {
   trofeos: string[];
   premios: string[];
   seleccion?: { partidos: number; goles: number };
+  /** Puesto en la votación del Balón de Oro (si entró entre los 30). */
+  balonPuesto?: number;
   eleccion: string;
   resultadoEleccion: string;
   lesionado: boolean;
@@ -81,7 +85,8 @@ export type Estado = {
   potencial: number;
   fase: "escenario" | "resultado" | "ofertas" | "fin";
   escenario: Escenario | null;
-  ultimoEscenario: string | null;
+  /** Escenarios ya vistos, para no repetirlos (28-oct). */
+  usados: string[];
   ofertas: number[];
   /** El club no te renueva: no hay «seguir». */
   sinRenovar?: boolean;
@@ -308,6 +313,353 @@ const ESCENARIOS: Generador[] = [
       ],
     }),
   },
+
+  {
+    id: "derbi",
+    peso: 3,
+    vale: () => true,
+    crea: () => ({
+      id: "derbi",
+      titulo: "Semana de derbi",
+      texto: "Un jugador del eterno rival te lleva toda la semana provocando en redes.",
+      opciones: [
+        { texto: "Responder en el campo, con un golazo", efecto: { nota: 0.3, media: [0, 1], texto: "Le das la respuesta con el balón y la grada te corea.", riesgo: { p: 0.25, media: [-1, 0], texto: "Te picas, ves la roja y te caen tres partidos." } } },
+        { texto: "Ignorarlo y concentrarte", efecto: { media: [0, 1], texto: "Ni caso. Sales con la cabeza fría." } },
+        { texto: "Contestarle en redes", efecto: { nota: 0.1, texto: "Tu respuesta se hace viral y te convierte en ídolo.", riesgo: { p: 0.45, media: [-2, -1], texto: "Se te va de las manos y el club te multa." } } },
+      ],
+    }),
+  },
+  {
+    id: "dorsal10",
+    peso: 2,
+    vale: (e) => e.edad >= 20 && e.edad <= 29 && e.media >= nivel(e) && e.posicion !== "POR",
+    crea: () => ({
+      id: "dorsal10",
+      titulo: "El 10 está libre",
+      texto: "Se ha ido la estrella del equipo y su dorsal, el 10, queda libre.",
+      opciones: [
+        { texto: "Pedir el 10: es tu momento", efecto: { nota: 0.3, media: [0, 2], texto: "Te pesa cero: el 10 te queda que ni pintado.", riesgo: { p: 0.3, media: [-2, -1], texto: "El 10 te pesa más de la cuenta." } } },
+        { texto: "Quedarte con tu número de siempre", efecto: { media: [0, 1], texto: "Tu número, tu historia." } },
+      ],
+    }),
+  },
+  {
+    id: "titular-lesionado",
+    peso: 3,
+    vale: (e) => e.media < nivel(e) + 2,
+    crea: () => ({
+      id: "titular-lesionado",
+      titulo: "Se abre una puerta",
+      texto: "El titular de tu puesto se rompe en pretemporada. El míster te mira a ti.",
+      opciones: [
+        { texto: "Aprovechar la oportunidad a muerte", efecto: { minutos: 1.35, media: [1, 2], texto: "Te haces con el puesto y ya no lo sueltas." } },
+        { texto: "Ir poco a poco, sin presión", efecto: { minutos: 1.15, media: [0, 1], texto: "Vas sumando minutos sin agobios." } },
+      ],
+    }),
+  },
+  {
+    id: "psicologo",
+    peso: 2,
+    vale: (e) => e.edad >= 19,
+    crea: (e) => ({
+      id: "psicologo",
+      titulo: "Bloqueo",
+      texto: e.posicion === "POR" ? "Llevas semanas dudando en cada salida por alto." : e.posicion === "DEL" ? "Llevas diez partidos sin marcar y te pesa cada ocasión." : "Llevas un mes en el que no te sale nada.",
+      opciones: [
+        { texto: "Trabajar con un psicólogo deportivo", efecto: { media: [1, 2], nota: 0.2, texto: "Recuperas la confianza y vuelves más fuerte." } },
+        { texto: "Tirar de orgullo, ya saldrá", efecto: { media: [0, 1], texto: "Sale. Como siempre.", riesgo: { p: 0.4, media: [-2, -1], texto: "La racha se alarga más de lo que esperabas." } } },
+      ],
+    }),
+  },
+  {
+    id: "documental",
+    peso: 2,
+    vale: (e) => e.media >= 78,
+    crea: () => ({
+      id: "documental",
+      titulo: "Cámaras en casa",
+      texto: "Una plataforma quiere grabar un documental sobre tu temporada, día a día.",
+      opciones: [
+        { texto: "Aceptar: que el mundo te conozca", efecto: { nota: 0.2, media: [-1, 1], texto: "El documental es un éxito y te ganas a medio mundo." } },
+        { texto: "Rechazarlo: tu vida es tuya", efecto: { media: [0, 1], texto: "Privacidad y fútbol, nada más." } },
+      ],
+    }),
+  },
+  {
+    id: "portada",
+    peso: 2,
+    vale: (e) => e.media >= 84,
+    crea: () => ({
+      id: "portada",
+      titulo: "La portada del videojuego",
+      texto: "El videojuego de fútbol más vendido te quiere en su portada. Dicen que está maldita…",
+      opciones: [
+        { texto: "Aceptar, las maldiciones no existen", efecto: { nota: 0.2, lesion: 0.18, texto: "Sales en la portada y en millones de consolas." } },
+        { texto: "Mejor no tentar a la suerte", efecto: { media: [0, 1], texto: "Que salga otro." } },
+      ],
+    }),
+  },
+  {
+    id: "sub20",
+    peso: 4,
+    vale: (e) => e.edad >= 18 && e.edad <= 20 && (e.anio + 1) % 2 === 1,
+    crea: (e) => ({
+      id: "sub20",
+      titulo: "Mundial Sub-20",
+      texto: `${nacionPorCodigo(e.nacion).nombre} te convoca para el Mundial Sub-20 de este verano.`,
+      opciones: [
+        { texto: "Ir a por el Mundial", efecto: { media: [1, 2], trofeo: { p: limitar(nacionPorCodigo(e.nacion).fuerza * 2, 0.05, 0.4), nombre: `Mundial Sub-20 con ${nacionPorCodigo(e.nacion).nombre}` }, texto: "Vuelves con experiencia internacional." } },
+        { texto: "Quedarte a hacer la pretemporada", efecto: { media: [0, 1], minutos: 1.1, texto: "Te ganas al míster desde el primer día." } },
+      ],
+    }),
+  },
+  {
+    id: "olimpicos",
+    peso: 5,
+    vale: (e) => e.edad <= 23 && e.media >= 70 && [2028, 2032, 2036].includes(e.anio + 1),
+    crea: (e) => ({
+      id: "olimpicos",
+      titulo: "Juegos Olímpicos",
+      texto: `Te llaman para los Juegos Olímpicos de ${e.anio + 1}. El club preferiría que te quedases.`,
+      opciones: [
+        { texto: "Ir a por el oro", efecto: { lesion: 0.06, trofeo: { p: limitar(nacionPorCodigo(e.nacion).fuerza * 2.2, 0.05, 0.45), nombre: `Oro olímpico con ${nacionPorCodigo(e.nacion).nombre}` }, texto: "Vives la experiencia de tu vida en la villa olímpica." } },
+        { texto: "Hacer caso al club", efecto: { media: [0, 1], nota: 0.1, texto: "El club valora tu compromiso." } },
+      ],
+    }),
+  },
+  {
+    id: "gira",
+    peso: 2,
+    vale: (e) => e.escalonClub <= 3,
+    crea: () => ({
+      id: "gira",
+      titulo: "Gira de pretemporada",
+      texto: "Pretemporada por Asia y Estados Unidos: vuelos, calor y partidos cada tres días.",
+      opciones: [
+        { texto: "Darlo todo en cada amistoso", efecto: { media: [1, 2], lesion: 0.08, texto: "Llegas al inicio de liga en tu mejor versión." } },
+        { texto: "Dosificarte para la temporada", efecto: { media: [0, 1], texto: "Llegas fresco al primer partido oficial." } },
+      ],
+    }),
+  },
+  {
+    id: "padre",
+    peso: 2,
+    vale: (e) => e.edad >= 24 && e.edad <= 36,
+    crea: () => ({
+      id: "padre",
+      titulo: "¡Vas a ser padre!",
+      texto: "Tu pareja está embarazada y el parto cae en mitad de la temporada.",
+      opciones: [
+        { texto: "Pedir unos días para estar con tu familia", efecto: { minutos: 0.95, nota: 0.2, texto: "Celebras el siguiente gol con el chupete en la boca." } },
+        { texto: "Seguir a tope, no perderte ni un partido", efecto: { media: [0, 1], texto: "Vas del paritorio al estadio." } },
+      ],
+    }),
+  },
+  {
+    id: "vestuario",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "vestuario",
+      titulo: "Bronca en el vestuario",
+      texto: "Dos pesos pesados del equipo se pelean tras una derrota. Todos te miran.",
+      opciones: [
+        { texto: "Mediar y calmar las aguas", efecto: { nota: 0.2, texto: "Te ganas el respeto de todo el vestuario." } },
+        { texto: "Ponerte del lado del capitán", efecto: { media: [0, 1], texto: "El capitán no lo olvida.", riesgo: { p: 0.35, media: [-1, 0], texto: "El otro bando te hace el vacío." } } },
+        { texto: "No meterte", efecto: { texto: "Ni frío ni calor." } },
+      ],
+    }),
+  },
+  {
+    id: "var",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "var",
+      titulo: "El VAR",
+      texto: "El VAR te anula un gol decisivo por un fuera de juego milimétrico.",
+      opciones: [
+        { texto: "Ir a por el árbitro", efecto: { minutos: 0.92, texto: "Te desahogas… y te caen tres partidos." } },
+        { texto: "Morderte la lengua y seguir", efecto: { media: [0, 1], nota: 0.1, texto: "Marcas el siguiente y no hay VAR que lo anule." } },
+      ],
+    }),
+  },
+  {
+    id: "pitos",
+    peso: 3,
+    vale: (e) => e.media < nivel(e) && e.edad >= 20,
+    crea: () => ({
+      id: "pitos",
+      titulo: "Pitos en casa",
+      texto: "Tras un mal partido, tu propia afición te pita al ser sustituido.",
+      opciones: [
+        { texto: "Besar el escudo mirando a la grada", efecto: { nota: 0.2, texto: "La grada acaba coreando tu nombre.", riesgo: { p: 0.4, media: [-1, 0], texto: "Lo toman como una provocación y los pitos van a más." } } },
+        { texto: "Pedir perdón y trabajar el doble", efecto: { media: [1, 2], texto: "Te los ganas a base de sudor." } },
+        { texto: "Cerrar las redes y desconectar", efecto: { media: [0, 1], texto: "Sin ruido, todo fluye mejor." } },
+      ],
+    }),
+  },
+  {
+    id: "preparador",
+    peso: 2,
+    vale: (e) => e.edad >= 21 && e.edad <= 29,
+    crea: () => ({
+      id: "preparador",
+      titulo: "Preparador personal",
+      texto: "Contratas un preparador físico personal. ¿En qué te centras?",
+      opciones: [
+        { texto: "Fuerza y potencia", efecto: { media: [1, 2], lesion: 0.05, texto: "Ganas músculo y ya nadie te mueve." } },
+        { texto: "Velocidad y agilidad", efecto: { media: [1, 2], texto: "Ahora eres un rayo." } },
+        { texto: "Prevención de lesiones", efecto: { media: [0, 1], declive: 0.8, texto: "Tu cuerpo te lo agradecerá en unos años." } },
+      ],
+    }),
+  },
+  {
+    id: "cruzado",
+    peso: 1,
+    vale: (e) => e.edad >= 21,
+    crea: () => ({
+      id: "cruzado",
+      titulo: "Rotura del cruzado",
+      texto: "El peor diagnóstico: rotura del ligamento cruzado.",
+      opciones: [
+        { texto: "Operarte: siete meses fuera", efecto: { minutos: 0.4, media: [-2, 0], texto: "Vuelves en primavera, con mucha hambre." } },
+        { texto: "Tratamiento conservador para volver antes", efecto: { minutos: 0.8, media: [-1, 0], texto: "Vuelves antes de lo previsto.", riesgo: { p: 0.5, media: [-4, -2], texto: "La rodilla no aguanta y vuelves a caer." } } },
+      ],
+    }),
+  },
+  {
+    id: "debut-champions",
+    peso: 4,
+    vale: (e) => e.escalonClub <= 3 && e.edad <= 25 && !e.historial.some((t) => (clubPorId(t.clubId)?.escalon ?? 5) <= 3),
+    crea: () => ({
+      id: "debut-champions",
+      titulo: "Noche de Champions",
+      texto: "Debutas en la Champions con el himno sonando y el estadio lleno.",
+      opciones: [
+        { texto: "Jugar con descaro, como en el patio", efecto: { nota: 0.3, media: [1, 2], texto: "Te sales y medio continente pregunta quién eres.", riesgo: { p: 0.3, media: [-1, 0], texto: "Te pueden los nervios y te cambian al descanso." } } },
+        { texto: "Jugar sencillo, sin errores", efecto: { media: [0, 1], texto: "Partido serio y sin fallos." } },
+      ],
+    }),
+  },
+  {
+    id: "panenka",
+    peso: 2,
+    vale: (e) => e.escalonClub <= 3 && e.posicion !== "POR",
+    crea: () => ({
+      id: "panenka",
+      titulo: "Penalti en la final",
+      texto: "Final de la Supercopa, último minuto, penalti a favor. El balón es tuyo.",
+      opciones: [
+        { texto: "Tirarlo a lo Panenka", efecto: { nota: 0.4, trofeo: { p: 0.55, nombre: "Supercopa" }, texto: "La picas y te sale. Leyenda.", riesgo: { p: 0.45, media: [-1, 0], texto: "El portero se queda quieto y la para con el pecho. Memes para años." } } },
+        { texto: "Fuerte y a la escuadra", efecto: { nota: 0.2, trofeo: { p: 0.75, nombre: "Supercopa" }, texto: "Imparable. Final ganada." } },
+        { texto: "Dejárselo al capitán", efecto: { texto: "El capitán asume la responsabilidad." } },
+      ],
+    }),
+  },
+  {
+    id: "estrella-fichada",
+    peso: 3,
+    vale: (e) => e.escalonClub <= 3 && e.edad <= 30,
+    crea: () => ({
+      id: "estrella-fichada",
+      titulo: "Fichaje galáctico",
+      texto: "El club ficha a una estrella mundial para tu puesto.",
+      opciones: [
+        { texto: "Competir de tú a tú", efecto: { media: [1, 2], texto: "Te creces con la competencia.", riesgo: { p: 0.35, media: [0, 0], texto: "La estrella te come la tostada y juegas poco." } } },
+        { texto: "Aprender de él y esperar", efecto: { media: [1, 2], minutos: 0.75, texto: "Aprendes muchísimo, aunque juegas menos." } },
+      ],
+    }),
+  },
+  {
+    id: "idioma",
+    peso: 3,
+    vale: (e) => {
+      const liga = clubPorId(e.clubId)?.liga ?? "";
+      const casa: Record<string, string[]> = { es: ["LaLiga", "Segunda División", "Primera Federación"], "gb-eng": ["Premier League", "Championship", "Premier League 2"], it: ["Serie A", "Serie B", "Serie C"], fr: ["Ligue 1", "Ligue 2"], de: ["Bundesliga", "2. Bundesliga", "Regionalliga"], pt: ["Liga Portugal", "Liga Portugal 2"], nl: ["Eredivisie", "Eerste Divisie"] };
+      return !(casa[e.nacion] ?? []).includes(liga) && e.historial.length > 0 && e.historial.at(-1)!.clubId !== e.clubId;
+    },
+    crea: () => ({
+      id: "idioma",
+      titulo: "Nuevo país",
+      texto: "Llegas a un país nuevo y no entiendes ni las charlas del míster.",
+      opciones: [
+        { texto: "Clases intensivas del idioma", efecto: { media: [1, 2], texto: "A los dos meses ya bromeas con el utillero." } },
+        { texto: "Tirar de inglés y de gestos", efecto: { media: [-1, 1], texto: "Te apañas como puedes." } },
+      ],
+    }),
+  },
+  {
+    id: "chaval",
+    peso: 3,
+    vale: (e) => e.edad >= 30,
+    crea: () => ({
+      id: "chaval",
+      titulo: "El relevo",
+      texto: "Un chaval de la cantera, de tu posición, te pide que le enseñes.",
+      opciones: [
+        { texto: "Apadrinarlo como hicieron contigo", efecto: { nota: 0.2, declive: 0.9, texto: "Enseñarle te mantiene joven." } },
+        { texto: "Bastante tienes con lo tuyo", efecto: { media: [0, 1], texto: "Te centras en tu juego." } },
+      ],
+    }),
+  },
+  {
+    id: "renovacion",
+    peso: 2,
+    vale: (e) => e.edad >= 22 && e.edad <= 31 && e.media >= nivel(e),
+    crea: () => ({
+      id: "renovacion",
+      titulo: "La renovación",
+      texto: "El club quiere renovarte, pero tu agente pide el doble de lo que ofrecen.",
+      opciones: [
+        { texto: "Firmar ya y olvidarte del tema", efecto: { media: [0, 1], nota: 0.1, texto: "Renovado y con la cabeza en el campo." } },
+        { texto: "Apretar hasta el final", efecto: { media: [0, 1], texto: "Te dan lo que pedías.", riesgo: { p: 0.4, media: [-1, 0], texto: "La directiva te deja unas semanas en la grada." } } },
+      ],
+    }),
+  },
+  {
+    id: "stream",
+    peso: 2,
+    vale: (e) => e.edad <= 28,
+    crea: () => ({
+      id: "stream",
+      titulo: "Streamer",
+      texto: "Te ofrecen hacer directos cada semana con los creadores de contenido más famosos.",
+      opciones: [
+        { texto: "Aceptar: los directos de madrugada molan", efecto: { media: [-2, 0], texto: "Arrasas en audiencia, pero duermes poco." } },
+        { texto: "Solo alguno de vez en cuando", efecto: { media: [0, 0], texto: "Equilibrio perfecto." } },
+        { texto: "Rechazarlo", efecto: { media: [0, 1], texto: "Descanso ante todo." } },
+      ],
+    }),
+  },
+  {
+    id: "arabia",
+    peso: 2,
+    vale: (e) => e.edad >= 28 && e.media >= 80,
+    crea: () => ({
+      id: "arabia",
+      titulo: "Llamada del Golfo",
+      texto: "Un club árabe te ofrece una fortuna. Tu club no te deja salir, pero la cabeza…",
+      opciones: [
+        { texto: "Decir públicamente que no te mueves", efecto: { nota: 0.2, media: [0, 1], texto: "La afición te adora." } },
+        { texto: "Escuchar la oferta en silencio", efecto: { media: [-1, 0], texto: "Te distrae más de lo que pensabas." } },
+      ],
+    }),
+  },
+  {
+    id: "celebracion",
+    peso: 1,
+    vale: (e) => e.posicion !== "POR",
+    crea: () => ({
+      id: "celebracion",
+      titulo: "Tu celebración",
+      texto: "Te inventas una celebración en un partido y se hace viral.",
+      opciones: [
+        { texto: "Hacerla tu marca registrada", efecto: { nota: 0.1, goles: 1.05, texto: "Medio planeta la imita en el patio del colegio." } },
+        { texto: "Celebrar con los compañeros, como siempre", efecto: { nota: 0.1, texto: "Lo importante es el equipo." } },
+      ],
+    }),
+  },
 ];
 
 export function umbralSeleccion(e: Estado): number {
@@ -316,7 +668,12 @@ export function umbralSeleccion(e: Estado): number {
 
 function generarEscenario(e: Estado): Escenario {
   const r = rng(e);
-  const validos = ESCENARIOS.filter((g) => g.vale(e) && g.id !== e.ultimoEscenario);
+  // Primero los que no han salido nunca; si ya salieron todos los que
+  // encajan, cualquiera menos los de los últimos 6 años.
+  const encajan = ESCENARIOS.filter((g) => g.vale(e));
+  const nuevos = encajan.filter((g) => !e.usados.includes(g.id));
+  const recientes = e.usados.slice(-6);
+  const validos = nuevos.length ? nuevos : encajan.filter((g) => !recientes.includes(g.id)).length ? encajan.filter((g) => !recientes.includes(g.id)) : encajan;
   const total = validos.reduce((s, g) => s + g.peso, 0);
   let x = r() * total;
   for (const g of validos) {
@@ -344,7 +701,7 @@ export function crearCarrera(o: { nombre: string; nacion: string; posicion: Posi
     potencial: 0,
     fase: "escenario",
     escenario: null,
-    ultimoEscenario: null,
+    usados: [],
     ofertas: [],
     historial: [],
   };
@@ -396,6 +753,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   }
   const mediaInicio = e.media;
   const media = limitar(e.media + delta, 40, 97);
+  const trofeoEscenario = ef.trofeo && r() < ef.trofeo.p ? ef.trofeo.nombre : null;
 
   // Club donde se juega (cedido: uno de un escalón menos).
   const clubPropio = clubPorId(e.clubId)!;
@@ -441,7 +799,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
 
   // Trofeos del equipo: el escalón manda y tu temporada ayuda.
   const impacto = nota != null ? (nota - 6.5) * 0.25 * (partidos / MAX_PARTIDOS[escalonJuego]) : 0;
-  const trofeos: string[] = [];
+  const trofeos: string[] = trofeoEscenario ? [trofeoEscenario] : [];
   let escalonClub = e.escalonClub;
   const dominante = liga === "Liga Portugal" || liga === "Eredivisie";
   const pLiga = { 1: 0.32, 2: 0.1, 3: dominante ? 0.33 : 0.03, 4: 0.005, 5: 0.12 }[escalonJuego] + impacto * 0.3;
@@ -477,19 +835,49 @@ export function elegirOpcion(e: Estado, i: number): Estado {
 
   // Premios individuales (con una temporada de verdad).
   const premios: string[] = [];
+  let balonPuesto: number | undefined;
   if (nota != null && partidos >= 20) {
     if (e.edad <= 21 && media >= 78 && nota >= 7.2 && r() < 0.6) premios.push("Golden Boy");
+    if (e.edad <= 21 && media >= 80 && nota >= 7.3 && r() < 0.45) premios.push("Trofeo Kopa");
+    if (e.edad <= 22 && nota >= 7.3 && escalonJuego <= 4 && r() < 0.5) premios.push(`Mejor jugador joven de ${liga}`);
+    if (nota >= 7.4 && r() < 0.45) premios.push(`Mejor jugador del ${clubJuego.nombre}`);
+    if ((e.posicion === "DEL" || e.posicion === "MED") && goles >= 8 && r() < 0.02) premios.push("Premio Puskás");
+    if (e.posicion === "POR" && media >= 82 && porteriasCero >= 15 && escalonJuego <= 4 && r() < 0.45)
+      premios.push(liga === "LaLiga" ? "Trofeo Zamora" : `Mejor portero de ${liga}`);
+    if (trofeos.includes("Champions League") && nota >= 7.3) {
+      if (r() < 0.3) premios.push("MVP de la final de la Champions");
+      if (nota >= 7.6 && r() < 0.45) premios.push("Mejor jugador de la Champions");
+    }
+    const mundial = trofeos.find((t) => /^Mundial \d/.test(t));
+    if (seleccion && (e.anio + 1) % 4 === 2 && nota >= 7.4 && r() < (mundial ? 0.35 : 0.08)) premios.push("Balón de Oro del Mundial");
+    if (seleccion && (e.anio + 1) % 4 === 2 && e.posicion === "DEL" && r() < (mundial ? 0.2 : 0.05)) premios.push("Bota de Oro del Mundial");
     const golesLiga = goles * 0.72;
     if (e.posicion === "DEL" && golesLiga >= 30 && r() < 0.7) premios.push("Bota de Oro");
     else if (e.posicion === "DEL" && golesLiga >= 21 && escalonJuego <= 4 && r() < 0.6) premios.push(`Máximo goleador de ${liga}`);
     if (e.posicion === "POR" && media >= 86 && porteriasCero >= 18 && r() < 0.5) premios.push("Trofeo Yashin");
     if (nota >= 7.8 && escalonJuego <= 4 && r() < 0.5) premios.push(`Mejor jugador de ${liga}`);
     if (media >= 88 && nota >= 7.4 && r() < 0.6) premios.push("Once del año FIFA");
-    const grande = trofeos.some((t) => t === "Champions League" || t.startsWith("Mundial"));
+    const grande = trofeos.some((t) => t === "Champions League" || /^Mundial \d/.test(t));
     const pBalon = limitar(0.1 + (media - 88) * 0.1 + (nota - 7.5) * 0.35 + (grande ? 0.25 : 0), 0, 0.75);
     // A porteros y defensas casi nunca se lo dan.
     const factor = e.posicion === "POR" || e.posicion === "DEF" ? 0.3 : 1;
     if (media >= 88 && nota >= 7.4 && escalonJuego <= 2 && r() < pBalon * factor) premios.push("Balón de Oro");
+    if (media >= 87 && nota >= 7.3 && escalonJuego <= 2 && r() < pBalon * factor * 0.9) premios.push("The Best FIFA");
+
+    // La votación del Balón de Oro: entre los 30 si estás a gran nivel.
+    if (premios.includes("Balón de Oro")) balonPuesto = 1;
+    else if (media >= 82 && escalonJuego <= 3) {
+      const peso =
+        media +
+        (nota - 7) * 5 +
+        (trofeos.includes("Champions League") ? 4 : 0) +
+        (trofeos.some((t) => /^Mundial \d/.test(t)) ? 5 : 0) +
+        (trofeos.includes(liga) ? 1.5 : 0) +
+        (e.posicion === "DEL" ? goles / 12 : 0) -
+        (e.posicion === "POR" || e.posicion === "DEF" ? 3 : 0);
+      const puesto = Math.round(limitar(2 + (96 - peso) * 1.7 + (r() * 4 - 2), 2, 40));
+      if (puesto <= 30) balonPuesto = puesto;
+    }
   }
 
   const temporada: Temporada = {
@@ -507,6 +895,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
     trofeos,
     premios,
     seleccion,
+    balonPuesto,
     eleccion: opcion.texto,
     resultadoEleccion,
     lesionado,
@@ -522,7 +911,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
     media: media2,
     escalonClub,
     fase: "resultado",
-    ultimoEscenario: e.escenario.id,
+    usados: [...e.usados, e.escenario.id],
     historial: [...e.historial, temporada],
   };
 }
@@ -624,6 +1013,8 @@ export type Resumen = {
   premios: [string, number][];
   clubes: number[];
   internacional: { partidos: number; goles: number };
+  /** Mejor puesto en la votación del Balón de Oro. */
+  mejorBalon: number | null;
   legado: number;
   titulo: string;
 };
@@ -641,7 +1032,7 @@ export function resumen(e: Estado): Resumen {
   const premios = h.flatMap((t) => t.premios);
   const balones = premios.filter((p) => p === "Balón de Oro").length;
   const champions = trofeos.filter((t) => t === "Champions League").length;
-  const mundiales = trofeos.filter((t) => t.startsWith("Mundial")).length;
+  const mundiales = trofeos.filter((t) => /^Mundial \d/.test(t)).length;
   const mediaMax = Math.max(...h.map((t) => t.media), e.media);
   const legado = Math.round(
     suma((t) => t.goles) * 1 + suma((t) => t.asistencias) * 0.6 + suma((t) => t.porteriasCero) * 0.8 + trofeos.length * 25 + champions * 60 + mundiales * 120 + premios.length * 40 + balones * 250 + (mediaMax - 60) * 12,
@@ -668,6 +1059,7 @@ export function resumen(e: Estado): Resumen {
     premios: contar(premios),
     clubes,
     internacional: { partidos: suma((t) => t.seleccion?.partidos ?? 0), goles: suma((t) => t.seleccion?.goles ?? 0) },
+    mejorBalon: h.some((t) => t.balonPuesto) ? Math.min(...h.filter((t) => t.balonPuesto).map((t) => t.balonPuesto!)) : null,
     legado,
     titulo,
   };
