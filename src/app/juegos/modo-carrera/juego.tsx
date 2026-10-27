@@ -28,7 +28,8 @@ import { guardarCarrera, type FilaTop } from "./acciones";
 import { fotoTrofeo, tipoTrofeo } from "@/lib/juegos/carrera/trofeos";
 
 type Modo = "rapida" | "extendida";
-export type Tops = Record<Modo, FilaTop[]>;
+type Tabla = Modo | "mundiales";
+export type Tops = Record<Tabla, FilaTop[]>;
 
 /**
  * Modo carrera (27-oct, pedido del dueño). Juego rápido: la partida no se
@@ -74,7 +75,7 @@ export default function ModoCarrera({ conSesion, topsIniciales }: { conSesion: b
           hacer={hacer}
           conSesion={conSesion}
           onNueva={() => setPartida(null)}
-          onTop={(modo, t) => setTops((x) => ({ ...x, [modo]: t }))}
+          onTop={(modo, t, mundiales) => setTops((x) => ({ ...x, [modo]: t, mundiales }))}
         />
       ) : (
         <Inicio conSesion={conSesion} onEmpezar={(inicio) => setPartida({ inicio, acciones: [], e: crearCarrera(inicio) })} />
@@ -198,7 +199,7 @@ function PartidaVista({
   hacer: (a: Accion) => void;
   conSesion: boolean;
   onNueva: () => void;
-  onTop: (modo: Modo, t: FilaTop[]) => void;
+  onTop: (modo: Modo, t: FilaTop[], mundiales: FilaTop[]) => void;
 }) {
   const e = p.e;
   const club = clubPorId(e.clubId)!;
@@ -525,7 +526,7 @@ function Historial({ e }: { e: Estado }) {
   );
 }
 
-function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[]) => void }) {
+function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[], mundiales: FilaTop[]) => void }) {
   const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
@@ -542,14 +543,20 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           setRanking(res.error === "limite" ? "Hoy ya has metido muchas carreras: vuelve mañana." : "No se pudo apuntar en el ranking.");
           return;
         }
-        onTop(res.modo, res.top);
+        onTop(res.modo, res.top, res.topMundiales);
         const decimo = res.top[9]?.legado;
+        const mundiales =
+          res.mundiales > 0
+            ? res.puestoMundiales
+              ? ` 🌍 Y con ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""}, puesto ${res.puestoMundiales} en el ranking de Mundiales.`
+              : ` 🌍 Tus ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""} no llegan al top de Mundiales.`
+            : "";
         setRanking(
-          res.puesto
+          (res.puesto
             ? `🏆 ¡Entras en el top 10! Puesto ${res.puesto} con ${res.legado} puntos de legado.`
             : decimo != null
               ? `Te quedas fuera del top 10: el 10.º tiene ${decimo} puntos de legado y tú ${res.legado}.`
-              : `Apuntada en el ranking con ${res.legado} puntos de legado.`,
+              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + mundiales,
         );
       })
       .catch(() => setRanking("No se pudo apuntar en el ranking."));
@@ -641,22 +648,27 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
 }
 
 function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
-  const [elegido, setElegido] = useState<Modo | null>(null);
-  const modo = elegido ?? inicial;
-  const top = tops[modo];
+  const [elegido, setElegido] = useState<Tabla | null>(null);
+  const tabla = elegido ?? inicial;
+  const top = tops[tabla];
+  const deMundiales = tabla === "mundiales";
   return (
     <div className="panel mc-hist mc-top">
-      <h3>🏆 Top 10 de carreras</h3>
+      <h3>{deMundiales ? "🌍 Top 10 de Mundiales ganados" : "🏆 Top 10 de carreras"}</h3>
       <div className="jg-modos" role="tablist">
-        <button type="button" className={modo === "rapida" ? "is-on" : ""} onClick={() => setElegido("rapida")}>
+        <button type="button" className={tabla === "rapida" ? "is-on" : ""} onClick={() => setElegido("rapida")}>
           ⚡ Rápida
         </button>
-        <button type="button" className={modo === "extendida" ? "is-on" : ""} onClick={() => setElegido("extendida")}>
+        <button type="button" className={tabla === "extendida" ? "is-on" : ""} onClick={() => setElegido("extendida")}>
           🧠 Extendida
         </button>
+        <button type="button" className={deMundiales ? "is-on" : ""} onClick={() => setElegido("mundiales")}>
+          🌍 Mundiales
+        </button>
       </div>
+      {deMundiales && <p className="mc__nota">Las carreras con más Mundiales, de las dos versiones. A igualdad, manda el legado.</p>}
       {top.length === 0 ? (
-        <p className="mc__nota">Aún no hay carreras en el ranking. ¡Estrénalo!</p>
+        <p className="mc__nota">{deMundiales ? "Nadie ha ganado aún un Mundial. ¿Serás el primero?" : "Aún no hay carreras en el ranking. ¡Estrénalo!"}</p>
       ) : (
         <ol>
           {top.map((f, i) => (
@@ -670,11 +682,12 @@ function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
                 </small>
                 <small>
                   {f.goles} goles · {f.titulos} títulos{f.balones ? ` · ${f.balones} Balón${f.balones > 1 ? "es" : ""} de Oro` : ""}
+                  {deMundiales ? ` · ${f.legado} de legado · ${f.modo === "extendida" ? "extendida" : "rápida"}` : f.mundiales ? ` · ${f.mundiales} Mundial${f.mundiales > 1 ? "es" : ""}` : ""}
                 </small>
               </span>
               <span className="mc-top__legado">
-                <b>{f.legado}</b>
-                <small>legado</small>
+                <b>{deMundiales ? f.mundiales : f.legado}</b>
+                <small>{deMundiales ? (f.mundiales > 1 ? "Mundiales" : "Mundial") : "legado"}</small>
               </span>
             </li>
           ))}
