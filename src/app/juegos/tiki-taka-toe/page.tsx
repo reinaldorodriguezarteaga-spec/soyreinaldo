@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
@@ -12,15 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/juegos/tiki-taka-toe" },
 };
 
-/**
- * Escondido el 27-oct (pedido del dueño): el buscador no encontraba jugadores
- * válidos (Cucurella, por ejemplo). El código se queda; para volver a
- * enseñarlo, pon esto a false y devuélvelo a /juegos y al sitemap.
- */
-const OCULTO = true;
-
 export default async function TikiTakaToePage() {
-  if (OCULTO) redirect("/juegos");
   // El tablero cambia cada día: la página no puede quedarse prerenderizada.
   await connection();
   return (
