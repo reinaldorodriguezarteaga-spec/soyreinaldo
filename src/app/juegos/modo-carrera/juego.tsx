@@ -28,7 +28,7 @@ import { guardarCarrera, type FilaTop } from "./acciones";
 import { fotoTrofeo, tipoTrofeo } from "@/lib/juegos/carrera/trofeos";
 
 type Modo = "rapida" | "extendida";
-type Tabla = Modo | "mundiales";
+type Tabla = Modo | "mundiales" | "balones";
 export type Tops = Record<Tabla, FilaTop[]>;
 
 /**
@@ -75,7 +75,7 @@ export default function ModoCarrera({ conSesion, topsIniciales }: { conSesion: b
           hacer={hacer}
           conSesion={conSesion}
           onNueva={() => setPartida(null)}
-          onTop={(modo, t, mundiales) => setTops((x) => ({ ...x, [modo]: t, mundiales }))}
+          onTop={(modo, t, otros) => setTops((x) => ({ ...x, [modo]: t, ...otros }))}
         />
       ) : (
         <Inicio conSesion={conSesion} onEmpezar={(inicio) => setPartida({ inicio, acciones: [], e: crearCarrera(inicio) })} />
@@ -199,7 +199,7 @@ function PartidaVista({
   hacer: (a: Accion) => void;
   conSesion: boolean;
   onNueva: () => void;
-  onTop: (modo: Modo, t: FilaTop[], mundiales: FilaTop[]) => void;
+  onTop: (modo: Modo, t: FilaTop[], otros: { mundiales: FilaTop[]; balones: FilaTop[] }) => void;
 }) {
   const e = p.e;
   const club = clubPorId(e.clubId)!;
@@ -526,7 +526,7 @@ function Historial({ e }: { e: Estado }) {
   );
 }
 
-function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[], mundiales: FilaTop[]) => void }) {
+function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[], otros: { mundiales: FilaTop[]; balones: FilaTop[] }) => void }) {
   const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
@@ -543,7 +543,7 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           setRanking(res.error === "limite" ? "Hoy ya has metido muchas carreras: vuelve mañana." : "No se pudo apuntar en el ranking.");
           return;
         }
-        onTop(res.modo, res.top, res.topMundiales);
+        onTop(res.modo, res.top, { mundiales: res.topMundiales, balones: res.topBalones });
         const decimo = res.top[9]?.legado;
         const mundiales =
           res.mundiales > 0
@@ -551,12 +551,18 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
               ? ` 🌍 Y con ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""}, puesto ${res.puestoMundiales} en el ranking de Mundiales.`
               : ` 🌍 Tus ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""} no llegan al top de Mundiales.`
             : "";
+        const balones =
+          res.balones > 0
+            ? res.puestoBalones
+              ? ` 🥇 Con ${res.balones} Balón${res.balones > 1 ? "es" : ""} de Oro, puesto ${res.puestoBalones} en el ranking de Balones de Oro.`
+              : ` 🥇 Tus ${res.balones} Balón${res.balones > 1 ? "es" : ""} de Oro no llegan al top de Balones.`
+            : "";
         setRanking(
           (res.puesto
             ? `🏆 ¡Entras en el top 10! Puesto ${res.puesto} con ${res.legado} puntos de legado.`
             : decimo != null
               ? `Te quedas fuera del top 10: el 10.º tiene ${decimo} puntos de legado y tú ${res.legado}.`
-              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + mundiales,
+              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + mundiales + balones,
         );
       })
       .catch(() => setRanking("No se pudo apuntar en el ranking."));
@@ -647,28 +653,49 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
   );
 }
 
+/** Rankings por un solo número (Mundiales, Balones de Oro): las dos versiones juntas. */
+const ESPECIALES: Record<"mundiales" | "balones", { titulo: string; nota: string; vacio: string; valor: (f: FilaTop) => number; unidad: (n: number) => string }> = {
+  mundiales: {
+    titulo: "🌍 Top 10 de Mundiales ganados",
+    nota: "Las carreras con más Mundiales, de las dos versiones. A igualdad, manda el legado.",
+    vacio: "Nadie ha ganado aún un Mundial. ¿Serás el primero?",
+    valor: (f) => f.mundiales,
+    unidad: (n) => (n > 1 ? "Mundiales" : "Mundial"),
+  },
+  balones: {
+    titulo: "🥇 Top 10 de Balones de Oro",
+    nota: "Las carreras con más Balones de Oro, de las dos versiones. A igualdad, manda el legado.",
+    vacio: "Nadie ha ganado aún un Balón de Oro. ¿Serás el primero?",
+    valor: (f) => f.balones,
+    unidad: (n) => (n > 1 ? "Balones de Oro" : "Balón de Oro"),
+  },
+};
+
+const PESTANAS: [Tabla, string][] = [
+  ["rapida", "⚡ Rápida"],
+  ["extendida", "🧠 Extendida"],
+  ["mundiales", "🌍 Mundiales"],
+  ["balones", "🥇 Balones de Oro"],
+];
+
 function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
   const [elegido, setElegido] = useState<Tabla | null>(null);
   const tabla = elegido ?? inicial;
   const top = tops[tabla];
-  const deMundiales = tabla === "mundiales";
+  const especial = tabla === "mundiales" || tabla === "balones" ? ESPECIALES[tabla] : null;
   return (
     <div className="panel mc-hist mc-top">
-      <h3>{deMundiales ? "🌍 Top 10 de Mundiales ganados" : "🏆 Top 10 de carreras"}</h3>
+      <h3>{especial ? especial.titulo : "🏆 Top 10 de carreras"}</h3>
       <div className="jg-modos" role="tablist">
-        <button type="button" className={tabla === "rapida" ? "is-on" : ""} onClick={() => setElegido("rapida")}>
-          ⚡ Rápida
-        </button>
-        <button type="button" className={tabla === "extendida" ? "is-on" : ""} onClick={() => setElegido("extendida")}>
-          🧠 Extendida
-        </button>
-        <button type="button" className={deMundiales ? "is-on" : ""} onClick={() => setElegido("mundiales")}>
-          🌍 Mundiales
-        </button>
+        {PESTANAS.map(([t, texto]) => (
+          <button key={t} type="button" className={tabla === t ? "is-on" : ""} onClick={() => setElegido(t)}>
+            {texto}
+          </button>
+        ))}
       </div>
-      {deMundiales && <p className="mc__nota">Las carreras con más Mundiales, de las dos versiones. A igualdad, manda el legado.</p>}
+      {especial && <p className="mc__nota">{especial.nota}</p>}
       {top.length === 0 ? (
-        <p className="mc__nota">{deMundiales ? "Nadie ha ganado aún un Mundial. ¿Serás el primero?" : "Aún no hay carreras en el ranking. ¡Estrénalo!"}</p>
+        <p className="mc__nota">{especial ? especial.vacio : "Aún no hay carreras en el ranking. ¡Estrénalo!"}</p>
       ) : (
         <ol>
           {top.map((f, i) => (
@@ -681,13 +708,15 @@ function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
                   <img src={bandera(f.nacion)} alt="" width={16} height={11} /> {f.jugador} · {NOMBRE_POSICION[f.posicion as Posicion]} · {f.titulo}
                 </small>
                 <small>
-                  {f.goles} goles · {f.titulos} títulos{f.balones ? ` · ${f.balones} Balón${f.balones > 1 ? "es" : ""} de Oro` : ""}
-                  {deMundiales ? ` · ${f.legado} de legado · ${f.modo === "extendida" ? "extendida" : "rápida"}` : f.mundiales ? ` · ${f.mundiales} Mundial${f.mundiales > 1 ? "es" : ""}` : ""}
+                  {f.goles} goles · {f.titulos} títulos
+                  {tabla !== "balones" && f.balones ? ` · ${f.balones} Balón${f.balones > 1 ? "es" : ""} de Oro` : ""}
+                  {tabla !== "mundiales" && f.mundiales ? ` · ${f.mundiales} Mundial${f.mundiales > 1 ? "es" : ""}` : ""}
+                  {especial ? ` · ${f.legado} de legado · ${f.modo === "extendida" ? "extendida" : "rápida"}` : ""}
                 </small>
               </span>
               <span className="mc-top__legado">
-                <b>{deMundiales ? f.mundiales : f.legado}</b>
-                <small>{deMundiales ? (f.mundiales > 1 ? "Mundiales" : "Mundial") : "legado"}</small>
+                <b>{especial ? especial.valor(f) : f.legado}</b>
+                <small>{especial ? especial.unidad(especial.valor(f)) : "legado"}</small>
               </span>
             </li>
           ))}
