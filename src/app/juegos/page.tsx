@@ -5,7 +5,7 @@ import RachaJuegos from "@/components/juegos/RachaJuegos";
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
   description:
-    "Juegos de fútbol diarios para retar a tus amigos: adivina el equipo o el jugador, tiki-taka-toe, once de leyenda, ¿más o menos? y el once del Barça. Ranking semanal y ligas privadas.",
+    "Juegos de fútbol diarios para retar a tus amigos: adivina el equipo o el jugador, once de leyenda, ¿más o menos? y el once del Barça. Ranking semanal y ligas privadas.",
   alternates: { canonical: "/juegos" },
 };
 
@@ -23,13 +23,6 @@ const JUEGOS = [
     emoji: "🕵️",
     titulo: "Adivina el jugador",
     texto: "Los clubes por los que pasó, en orden. ¿Sabes quién es? Reto diario y práctica.",
-    listo: true,
-  },
-  {
-    href: "/juegos/tiki-taka-toe",
-    emoji: "#️⃣",
-    titulo: "Tiki-taka-toe",
-    texto: "El tres en raya del fútbol: jugadores que pasaron por los dos clubes de cada casilla.",
     listo: true,
   },
   {
