@@ -20,8 +20,13 @@ export default async function ModoCarreraPage() {
     {
       data: { user },
     },
-    { data: top },
-  ] = await Promise.all([supabase.auth.getUser(), supabase.rpc("carrera_top", { p_limite: 10 })]);
+    { data: rapida },
+    { data: extendida },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.rpc("carrera_top", { p_limite: 10, p_modo: "rapida" }),
+    supabase.rpc("carrera_top", { p_limite: 10, p_modo: "extendida" }),
+  ]);
   return (
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
@@ -37,7 +42,10 @@ export default async function ModoCarreraPage() {
             según tu rendimiento. ¿Llegarás al Madrid, al Barça o al City? ¿Cuándo colgarás las botas? Las mejores
             carreras entran en el top 10.
           </p>
-          <ModoCarrera conSesion={!!user} topInicial={(top ?? []) as FilaTop[]} />
+          <ModoCarrera
+            conSesion={!!user}
+            topsIniciales={{ rapida: (rapida ?? []) as FilaTop[], extendida: (extendida ?? []) as FilaTop[] }}
+          />
         </div>
       </section>
     </main>

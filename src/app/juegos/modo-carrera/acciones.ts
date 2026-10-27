@@ -34,7 +34,9 @@ export type FilaTop = {
 export async function guardarCarrera(
   inicio: Inicio,
   acciones: Accion[],
-): Promise<{ ok: true; legado: number; puesto: number | null; top: FilaTop[] } | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }> {
+): Promise<
+  { ok: true; legado: number; puesto: number | null; top: FilaTop[]; modo: "rapida" | "extendida" } | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,12 +67,13 @@ export async function guardarCarrera(
     balones: r.premios.find((p) => p[0] === "Balón de Oro")?.[1] ?? 0,
     media_max: r.mediaMax,
     clubes: r.clubes,
+    modo: e.extendido ? "extendida" : "rapida",
   });
   if (error) return { ok: false, error: "error" };
 
-  const { data } = await supabase.rpc("carrera_top", { p_limite: 10 });
+  const { data } = await supabase.rpc("carrera_top", { p_limite: 10, p_modo: e.extendido ? "extendida" : "rapida" });
   const top = (data ?? []) as FilaTop[];
   const i = top.findIndex((f) => f.user_id === user.id && f.legado === r.legado);
   revalidatePath("/juegos/modo-carrera");
-  return { ok: true, legado: r.legado, puesto: i >= 0 ? i + 1 : null, top };
+  return { ok: true, legado: r.legado, puesto: i >= 0 ? i + 1 : null, top, modo: e.extendido ? "extendida" : "rapida" };
 }

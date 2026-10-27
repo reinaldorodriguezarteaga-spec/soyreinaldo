@@ -24,6 +24,10 @@ import {
 } from "@/lib/juegos/carrera/motor";
 import { aplicar, type Accion, type Inicio as InicioCarrera } from "@/lib/juegos/carrera/replay";
 import { guardarCarrera, type FilaTop } from "./acciones";
+import { fotoTrofeo, tipoTrofeo } from "@/lib/juegos/carrera/trofeos";
+
+type Modo = "rapida" | "extendida";
+export type Tops = Record<Modo, FilaTop[]>;
 
 /**
  * Modo carrera (27-oct, pedido del dueño). Juego rápido: la partida no se
@@ -41,9 +45,9 @@ function Escudo({ id, size = 28 }: { id: number; size?: number }) {
   return <img src={escudoClub(id)} alt="" width={size} height={size} style={{ objectFit: "contain" }} />;
 }
 
-export default function ModoCarrera({ conSesion, topInicial }: { conSesion: boolean; topInicial: FilaTop[] }) {
+export default function ModoCarrera({ conSesion, topsIniciales }: { conSesion: boolean; topsIniciales: Tops }) {
   const [partida, setPartida] = useState<Partida | null>(null);
-  const [top, setTop] = useState<FilaTop[]>(topInicial);
+  const [tops, setTops] = useState<Tops>(topsIniciales);
 
   // A media carrera, avisar antes de salir: no se guarda.
   const enJuego = !!partida && partida.e.fase !== "fin" && partida.e.historial.length > 0;
@@ -64,11 +68,17 @@ export default function ModoCarrera({ conSesion, topInicial }: { conSesion: bool
   return (
     <>
       {partida ? (
-        <PartidaVista p={partida} hacer={hacer} conSesion={conSesion} onNueva={() => setPartida(null)} onTop={setTop} />
+        <PartidaVista
+          p={partida}
+          hacer={hacer}
+          conSesion={conSesion}
+          onNueva={() => setPartida(null)}
+          onTop={(modo, t) => setTops((x) => ({ ...x, [modo]: t }))}
+        />
       ) : (
         <Inicio conSesion={conSesion} onEmpezar={(inicio) => setPartida({ inicio, acciones: [], e: crearCarrera(inicio) })} />
       )}
-      <Ranking top={top} />
+      <Ranking tops={tops} inicial={partida?.inicio.extendido ? "extendida" : "rapida"} />
     </>
   );
 }
@@ -79,6 +89,7 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
   const [nacion, setNacion] = useState("es");
   const [posicion, setPosicion] = useState<Posicion>("DEL");
   const [liga, setLiga] = useState(LIGAS_INICIO[0]);
+  const [extendido, setExtendido] = useState(false);
   const [club, setClub] = useState<number | null>(null);
   const clubes = clubesDeInicio(liga);
 
@@ -100,6 +111,20 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
               <span>{n.nombre}</span>
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="mc__campo">
+        <span>¿Cómo quieres jugar?</span>
+        <div className="mc__version">
+          <button type="button" className={!extendido ? "is-on" : ""} onClick={() => setExtendido(false)}>
+            <b>⚡ Rápida</b>
+            <small>Una decisión por temporada. Unos 5 minutos.</small>
+          </button>
+          <button type="button" className={extendido ? "is-on" : ""} onClick={() => setExtendido(true)}>
+            <b>🧠 Extendida</b>
+            <small>También decides a mitad de temporada. Unos 10 minutos.</small>
+          </button>
         </div>
       </div>
 
@@ -152,7 +177,7 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
         type="button"
         className="btn btn--accent"
         disabled={club == null}
-        onClick={() => club != null && onEmpezar({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9) })}
+        onClick={() => club != null && onEmpezar({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9), extendido })}
       >
         {club == null ? "Elige tu equipo" : "Empezar mi carrera con 17 años →"}
       </button>
@@ -172,7 +197,7 @@ function PartidaVista({
   hacer: (a: Accion) => void;
   conSesion: boolean;
   onNueva: () => void;
-  onTop: (t: FilaTop[]) => void;
+  onTop: (modo: Modo, t: FilaTop[]) => void;
 }) {
   const e = p.e;
   const club = clubPorId(e.clubId)!;
@@ -202,7 +227,13 @@ function PartidaVista({
         <div className="mc panel">
           <p className="mc__temp">
             Temporada {temporadaTexto(e.anio)} · {e.edad} años
+            {e.extendido ? (e.escenario.mitad ? " · Mitad de temporada" : " · Pretemporada") : ""}
           </p>
+          {e.escenario.mitad && e.pendiente && (
+            <p className="mc__nota">
+              En pretemporada: <b>{e.pendiente.eleccion}.</b> {e.pendiente.resultado}
+            </p>
+          )}
           <h2 className="mc__h">{e.escenario.titulo}</h2>
           <p>{e.escenario.texto}</p>
           <div className="mc__opciones">
@@ -224,6 +255,11 @@ function PartidaVista({
             <b>{ultima.eleccion}.</b> {ultima.resultadoEleccion}
             {ultima.lesionado ? " Además, una lesión te tuvo un tiempo fuera." : ""}
           </p>
+          {ultima.invierno && (
+            <p className="mc__eleccion">
+              A mitad de temporada: <b>{ultima.invierno.eleccion}.</b> {ultima.invierno.resultado}
+            </p>
+          )}
           {ultima.cedidoEn && (
             <p className="mc__eleccion">
               Jugaste cedido en <b>{clubPorId(ultima.cedidoEn)?.nombre}</b>.
@@ -418,7 +454,7 @@ function Historial({ e }: { e: Estado }) {
   );
 }
 
-function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (t: FilaTop[]) => void }) {
+function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[]) => void }) {
   const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
@@ -435,7 +471,7 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           setRanking(res.error === "limite" ? "Hoy ya has metido muchas carreras: vuelve mañana." : "No se pudo apuntar en el ranking.");
           return;
         }
-        onTop(res.top);
+        onTop(res.modo, res.top);
         const decimo = res.top[9]?.legado;
         setRanking(
           res.puesto
@@ -506,22 +542,7 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           </span>
         ))}
       </div>
-      {(r.trofeos.length > 0 || r.premios.length > 0) && (
-        <div className="mc-chips">
-          {r.trofeos.map(([x, n]) => (
-            <span key={x}>
-              🏆 {x}
-              {n > 1 ? ` ×${n}` : ""}
-            </span>
-          ))}
-          {r.premios.map(([x, n]) => (
-            <span key={x} className="is-premio">
-              🥇 {x}
-              {n > 1 ? ` ×${n}` : ""}
-            </span>
-          ))}
-        </div>
-      )}
+      <Palmares trofeos={r.trofeos} premios={r.premios} />
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
           type="button"
@@ -548,10 +569,21 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
   );
 }
 
-function Ranking({ top }: { top: FilaTop[] }) {
+function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
+  const [elegido, setElegido] = useState<Modo | null>(null);
+  const modo = elegido ?? inicial;
+  const top = tops[modo];
   return (
     <div className="panel mc-hist mc-top">
       <h3>🏆 Top 10 de carreras</h3>
+      <div className="jg-modos" role="tablist">
+        <button type="button" className={modo === "rapida" ? "is-on" : ""} onClick={() => setElegido("rapida")}>
+          ⚡ Rápida
+        </button>
+        <button type="button" className={modo === "extendida" ? "is-on" : ""} onClick={() => setElegido("extendida")}>
+          🧠 Extendida
+        </button>
+      </div>
       {top.length === 0 ? (
         <p className="mc__nota">Aún no hay carreras en el ranking. ¡Estrénalo!</p>
       ) : (
@@ -576,6 +608,72 @@ function Ranking({ top }: { top: FilaTop[] }) {
             </li>
           ))}
         </ol>
+      )}
+    </div>
+  );
+}
+
+/** Palmarés con fotos reales de los trofeos (Wikimedia Commons, 28-oct). */
+function Palmares({ trofeos, premios }: { trofeos: [string, number][]; premios: [string, number][] }) {
+  const items = [
+    ...trofeos.map(([nombre, n]) => ({ nombre, n, tipo: tipoTrofeo(nombre, false) })),
+    ...premios.map(([nombre, n]) => ({ nombre, n, tipo: tipoTrofeo(nombre, true) })),
+  ];
+  if (items.length === 0) return <p className="mc__nota">Ni un título. El fútbol a veces es injusto.</p>;
+  const grupos: { tipo: "club" | "seleccion" | "individual"; titulo: string }[] = [
+    { tipo: "club", titulo: "Con tus clubes" },
+    { tipo: "seleccion", titulo: "Con la selección" },
+    { tipo: "individual", titulo: "Premios individuales" },
+  ];
+  const usadas = new Map<string, NonNullable<ReturnType<typeof fotoTrofeo>>>();
+  return (
+    <div className="mc-palmares">
+      <h3>Palmarés</h3>
+      {grupos.map((g) => {
+        const lista = items.filter((x) => x.tipo === g.tipo);
+        if (lista.length === 0) return null;
+        return (
+          <div key={g.tipo}>
+            <p className="mc__temp">{g.titulo}</p>
+            <div className="mc-palmares__grid">
+              {lista.map((x) => {
+                const foto = fotoTrofeo(x.nombre);
+                if (foto) usadas.set(foto.pagina, foto);
+                return (
+                  <figure key={x.nombre} className="mc-trofeo">
+                    {foto ? (
+                      <a href={foto.pagina} target="_blank" rel="noopener noreferrer" title={`Foto: ${foto.autor} · ${foto.licencia}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- foto de Wikimedia Commons */}
+                        <img src={foto.foto} alt={x.nombre} loading="lazy" />
+                      </a>
+                    ) : (
+                      <span className="mc-trofeo__icono" aria-hidden>
+                        {g.tipo === "individual" ? "🥇" : "🏆"}
+                      </span>
+                    )}
+                    {x.n > 1 && <span className="mc-trofeo__n">×{x.n}</span>}
+                    <figcaption>{x.nombre}</figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {usadas.size > 0 && (
+        <details className="mc-palmares__creditos">
+          <summary>Fotos: Wikimedia Commons</summary>
+          <ul>
+            {[...usadas.values()].map((f) => (
+              <li key={f.pagina}>
+                <a href={f.pagina} target="_blank" rel="noopener noreferrer">
+                  {f.autor || "Autor desconocido"}
+                </a>{" "}
+                · {f.licencia}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </div>
   );

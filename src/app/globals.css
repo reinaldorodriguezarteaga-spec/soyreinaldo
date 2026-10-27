@@ -2952,3 +2952,17 @@ select.field { appearance: none; }
 .mc-top__legado b { font-family: var(--font-display-stack); font-size: 1.4rem; line-height: 1; color: var(--accent-2); }
 .mc-top__legado small { font-size: 0.66rem; color: var(--text-dim); }
 .mc-chips span.is-balon { border-color: #facc15; }
+.mc__version { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.mc__version button { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.mc__version button small { color: var(--text-dim); font-size: 0.8rem; }
+.mc__version button.is-on { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 22%, var(--surface)); }
+.mc-palmares { display: flex; flex-direction: column; gap: 10px; }
+.mc-palmares h3 { margin: 0; font-size: 1.1rem; }
+.mc-palmares__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; margin-top: 6px; }
+.mc-trofeo { position: relative; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); text-align: center; }
+.mc-trofeo img { width: 100%; height: 110px; object-fit: contain; border-radius: 8px; background: #fff; }
+.mc-trofeo__icono { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+.mc-trofeo__n { position: absolute; top: 6px; right: 8px; font-family: var(--font-display-stack); font-size: 1.1rem; color: var(--accent-2); background: var(--bg); border-radius: 999px; padding: 0 8px; }
+.mc-trofeo figcaption { font-size: 0.76rem; line-height: 1.25; }
+.mc-palmares__creditos { font-size: 0.72rem; color: var(--text-dim); }
+.mc-palmares__creditos ul { margin: 6px 0 0; padding-left: 18px; }
