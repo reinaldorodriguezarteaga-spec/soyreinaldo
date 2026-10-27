@@ -22,10 +22,12 @@ export default async function ModoCarreraPage() {
     },
     { data: rapida },
     { data: extendida },
+    { data: mundiales },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase.rpc("carrera_top", { p_limite: 10, p_modo: "rapida" }),
     supabase.rpc("carrera_top", { p_limite: 10, p_modo: "extendida" }),
+    supabase.rpc("carrera_top_mundiales", { p_limite: 10 }),
   ]);
   return (
     <main className="page">
@@ -44,7 +46,11 @@ export default async function ModoCarreraPage() {
           </p>
           <ModoCarrera
             conSesion={!!user}
-            topsIniciales={{ rapida: (rapida ?? []) as FilaTop[], extendida: (extendida ?? []) as FilaTop[] }}
+            topsIniciales={{
+              rapida: (rapida ?? []) as FilaTop[],
+              extendida: (extendida ?? []) as FilaTop[],
+              mundiales: (mundiales ?? []) as FilaTop[],
+            }}
           />
         </div>
       </section>

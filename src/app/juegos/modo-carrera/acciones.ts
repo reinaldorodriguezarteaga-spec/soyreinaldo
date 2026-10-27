@@ -24,6 +24,8 @@ export type FilaTop = {
   balones: number;
   media_max: number;
   clubes: number[];
+  mundiales: number;
+  modo: "rapida" | "extendida";
 };
 
 /**
@@ -35,7 +37,8 @@ export async function guardarCarrera(
   inicio: Inicio,
   acciones: Accion[],
 ): Promise<
-  { ok: true; legado: number; puesto: number | null; top: FilaTop[]; modo: "rapida" | "extendida" } | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }
+  | { ok: true; legado: number; puesto: number | null; top: FilaTop[]; modo: "rapida" | "extendida"; mundiales: number; puestoMundiales: number | null; topMundiales: FilaTop[] }
+   | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }
 > {
   const supabase = await createClient();
   const {
@@ -46,6 +49,7 @@ export async function guardarCarrera(
   const e = reproducir(inicio, acciones);
   if (!e) return { ok: false, error: "invalida" };
   const r = resumen(e);
+  const mundiales = r.trofeos.filter(([t]) => /^Mundial \d/.test(t)).reduce((s, t) => s + t[1], 0);
 
   const db = clienteServicio();
   if (!db) return { ok: false, error: "error" };
@@ -68,12 +72,27 @@ export async function guardarCarrera(
     media_max: r.mediaMax,
     clubes: r.clubes,
     modo: e.extendido ? "extendida" : "rapida",
+    mundiales,
   });
   if (error) return { ok: false, error: "error" };
 
-  const { data } = await supabase.rpc("carrera_top", { p_limite: 10, p_modo: e.extendido ? "extendida" : "rapida" });
+  const [{ data }, { data: dataMundiales }] = await Promise.all([
+    supabase.rpc("carrera_top", { p_limite: 10, p_modo: e.extendido ? "extendida" : "rapida" }),
+    supabase.rpc("carrera_top_mundiales", { p_limite: 10 }),
+  ]);
   const top = (data ?? []) as FilaTop[];
+  const topMundiales = (dataMundiales ?? []) as FilaTop[];
   const i = top.findIndex((f) => f.user_id === user.id && f.legado === r.legado);
+  const j = mundiales > 0 ? topMundiales.findIndex((f) => f.user_id === user.id && f.mundiales === mundiales && f.legado === r.legado) : -1;
   revalidatePath("/juegos/modo-carrera");
-  return { ok: true, legado: r.legado, puesto: i >= 0 ? i + 1 : null, top, modo: e.extendido ? "extendida" : "rapida" };
+  return {
+    ok: true,
+    legado: r.legado,
+    puesto: i >= 0 ? i + 1 : null,
+    top,
+    modo: e.extendido ? "extendida" : "rapida",
+    mundiales,
+    puestoMundiales: j >= 0 ? j + 1 : null,
+    topMundiales,
+  };
 }
