@@ -214,6 +214,7 @@ function PartidaVista({
           <span>
             {/* eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API */}
             <img src={bandera(e.nacion)} alt={nacion.nombre} width={18} height={12} /> {NOMBRE_POSICION[e.posicion]} · {e.fase === "fin" ? "Retirado" : `${e.edad} años`} · {club.nombre}
+            {e.cesion && e.fase !== "fin" && e.fase !== "ofertas" ? ` (cedido en ${clubPorId(e.cesion)?.nombre})` : ""}
           </span>
           <span className="mc-ficha__esc">{NOMBRE_ESCALON[e.escalonClub as Escalon]}</span>
         </div>
@@ -316,8 +317,14 @@ function PartidaVista({
       {e.fase === "ofertas" && (
         <div className="mc panel">
           <p className="mc__temp">Verano {e.anio + 1} · vas a cumplir {e.edad + 1}</p>
-          <h2 className="mc__h">{e.sinRenovar ? "El club no te renueva" : "¿Qué haces la próxima temporada?"}</h2>
-          {e.sinRenovar && <p>Tu nivel ya no da para este club. Te llegan estas ofertas:</p>}
+          <h2 className="mc__h">
+            {e.finFilial ? "Se acabó el filial" : e.sinRenovar ? "El club no te renueva" : "¿Qué haces la próxima temporada?"}
+          </h2>
+          {e.finFilial ? (
+            <p>Con {e.edad + 1} años ya no tienes sitio en el filial: toca dar el salto. Te llegan estas ofertas:</p>
+          ) : (
+            e.sinRenovar && <p>Tu nivel ya no da para este club. Te llegan estas ofertas:</p>
+          )}
           <div className="mc__opciones">
             {!e.sinRenovar && (
               <button type="button" onClick={() => hacer({ t: "seguir" })}>
@@ -343,7 +350,20 @@ function PartidaVista({
                 </button>
               );
             })}
-            {e.ofertas.length === 0 && !e.sinRenovar && <p className="mc__nota">Este verano no ha llamado nadie: toca demostrar más.</p>}
+            {(e.cesiones ?? []).map((id) => {
+              const c = clubPorId(id)!;
+              return (
+                <button key={`cesion-${id}`} type="button" onClick={() => hacer({ t: "ceder", id })}>
+                  <Escudo id={id} /> Cedido una temporada: {c.nombre}
+                  <small>
+                    🔁 Juegas allí un año y vuelves a {club.nombre} · {c.liga} · {NOMBRE_ESCALON[c.escalon]}
+                  </small>
+                </button>
+              );
+            })}
+            {e.ofertas.length === 0 && !e.sinRenovar && !(e.cesiones ?? []).length && (
+              <p className="mc__nota">Este verano no ha llamado nadie: toca demostrar más.</p>
+            )}
             {puedeRetirarse(e) && (
               <button type="button" className="mc__retiro" onClick={() => hacer({ t: "retiro" })}>
                 👋 Retirarme ahora{e.edad + 1 >= EDAD_RETIRO - 1 ? " (el año que viene será obligatorio)" : ""}
