@@ -10,6 +10,7 @@ import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 const TABS: { href: string; label: string; vista?: string }[] = [
   { href: "/quiniela-liga/partidos", label: "Pronósticos" },
   { href: "/quiniela-liga/ranking", label: "Clasificación" },
+  { href: "/quiniela-liga/chat", label: "💬 Chat" },
   { href: "/quiniela-liga/selecciones", label: "Selecciones" },
   { href: "/quiniela-liga/ranking", label: "⚔️ Duelos", vista: "duelos" },
   { href: "/quiniela-liga/picks", label: "Especiales" },

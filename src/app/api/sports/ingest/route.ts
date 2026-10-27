@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notificarEquipo } from "@/lib/push/server";
+import { anunciarExactos } from "@/lib/quiniela-liga/chat-sistema";
 import { eventoPartido } from "@/lib/push/eventos-partido";
 
 export const runtime = "nodejs";
@@ -165,6 +166,8 @@ export async function GET(request: Request) {
 
             // ¿Empieza o termina? Mismo público que los goles.
             const evento = prev ? eventoPartido(prev.status, st) : null;
+            // Al acabar, el chat de cada quiniela celebra los exactos (27-oct).
+            if (evento === "final") await anunciarExactos(fx.fixture.id);
             if (prev && evento) {
               const nLocal = prev.home?.name ?? "Local";
               const nVisitante = prev.away?.name ?? "Visitante";
