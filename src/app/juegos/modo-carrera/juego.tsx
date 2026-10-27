@@ -24,11 +24,11 @@ import {
   type Posicion,
 } from "@/lib/juegos/carrera/motor";
 import { aplicar, type Accion, type Inicio as InicioCarrera } from "@/lib/juegos/carrera/replay";
-import { guardarCarrera, type FilaTop } from "./acciones";
+import { guardarCarrera, type Especial, type FilaTop } from "./acciones";
 import { fotoTrofeo, tipoTrofeo } from "@/lib/juegos/carrera/trofeos";
 
 type Modo = "rapida" | "extendida";
-type Tabla = Modo | "mundiales" | "balones";
+type Tabla = Modo | Especial;
 export type Tops = Record<Tabla, FilaTop[]>;
 
 /**
@@ -199,7 +199,7 @@ function PartidaVista({
   hacer: (a: Accion) => void;
   conSesion: boolean;
   onNueva: () => void;
-  onTop: (modo: Modo, t: FilaTop[], otros: { mundiales: FilaTop[]; balones: FilaTop[] }) => void;
+  onTop: (modo: Modo, t: FilaTop[], otros: Record<Especial, FilaTop[]>) => void;
 }) {
   const e = p.e;
   const club = clubPorId(e.clubId)!;
@@ -526,7 +526,7 @@ function Historial({ e }: { e: Estado }) {
   );
 }
 
-function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[], otros: { mundiales: FilaTop[]; balones: FilaTop[] }) => void }) {
+function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (modo: Modo, t: FilaTop[], otros: Record<Especial, FilaTop[]>) => void }) {
   const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
@@ -543,26 +543,24 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           setRanking(res.error === "limite" ? "Hoy ya has metido muchas carreras: vuelve mañana." : "No se pudo apuntar en el ranking.");
           return;
         }
-        onTop(res.modo, res.top, { mundiales: res.topMundiales, balones: res.topBalones });
+        const tipos = Object.keys(res.especiales) as Especial[];
+        onTop(res.modo, res.top, Object.fromEntries(tipos.map((t) => [t, res.especiales[t].top])) as Record<Especial, FilaTop[]>);
         const decimo = res.top[9]?.legado;
-        const mundiales =
-          res.mundiales > 0
-            ? res.puestoMundiales
-              ? ` 🌍 Y con ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""}, puesto ${res.puestoMundiales} en el ranking de Mundiales.`
-              : ` 🌍 Tus ${res.mundiales} Mundial${res.mundiales > 1 ? "es" : ""} no llegan al top de Mundiales.`
-            : "";
-        const balones =
-          res.balones > 0
-            ? res.puestoBalones
-              ? ` 🥇 Con ${res.balones} Balón${res.balones > 1 ? "es" : ""} de Oro, puesto ${res.puestoBalones} en el ranking de Balones de Oro.`
-              : ` 🥇 Tus ${res.balones} Balón${res.balones > 1 ? "es" : ""} de Oro no llegan al top de Balones.`
-            : "";
+        // Y en los rankings de Mundiales, Balones de Oro y Champions, si ganaste alguno.
+        const otros = tipos
+          .filter((t) => res.especiales[t].valor > 0)
+          .map((t) => {
+            const { valor, puesto } = res.especiales[t];
+            const x = ESPECIALES[t];
+            return ` ${x.icono} ${valor} ${x.unidad(valor)}: ${puesto ? `puesto ${puesto} en su ranking` : "fuera de su top 10"}.`;
+          })
+          .join("");
         setRanking(
           (res.puesto
             ? `🏆 ¡Entras en el top 10! Puesto ${res.puesto} con ${res.legado} puntos de legado.`
             : decimo != null
               ? `Te quedas fuera del top 10: el 10.º tiene ${decimo} puntos de legado y tú ${res.legado}.`
-              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + mundiales + balones,
+              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + otros,
         );
       })
       .catch(() => setRanking("No se pudo apuntar en el ranking."));
@@ -653,21 +651,28 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
   );
 }
 
-/** Rankings por un solo número (Mundiales, Balones de Oro): las dos versiones juntas. */
-const ESPECIALES: Record<"mundiales" | "balones", { titulo: string; nota: string; vacio: string; valor: (f: FilaTop) => number; unidad: (n: number) => string }> = {
+/** Rankings por un solo número (Mundiales, Balones de Oro, Champions): las dos versiones juntas. */
+const ESPECIALES: Record<Especial, { icono: string; titulo: string; nota: string; vacio: string; unidad: (n: number) => string }> = {
   mundiales: {
-    titulo: "🌍 Top 10 de Mundiales ganados",
+    icono: "🌍",
+    titulo: "Top 10 de Mundiales ganados",
     nota: "Las carreras con más Mundiales, de las dos versiones. A igualdad, manda el legado.",
     vacio: "Nadie ha ganado aún un Mundial. ¿Serás el primero?",
-    valor: (f) => f.mundiales,
     unidad: (n) => (n > 1 ? "Mundiales" : "Mundial"),
   },
   balones: {
-    titulo: "🥇 Top 10 de Balones de Oro",
+    icono: "🥇",
+    titulo: "Top 10 de Balones de Oro",
     nota: "Las carreras con más Balones de Oro, de las dos versiones. A igualdad, manda el legado.",
     vacio: "Nadie ha ganado aún un Balón de Oro. ¿Serás el primero?",
-    valor: (f) => f.balones,
     unidad: (n) => (n > 1 ? "Balones de Oro" : "Balón de Oro"),
+  },
+  champions: {
+    icono: "⭐",
+    titulo: "Top 10 de Champions ganadas",
+    nota: "Las carreras con más Champions, de las dos versiones. A igualdad, manda el legado.",
+    vacio: "Nadie ha ganado aún una Champions. ¿Serás el primero?",
+    unidad: () => "Champions",
   },
 };
 
@@ -676,16 +681,17 @@ const PESTANAS: [Tabla, string][] = [
   ["extendida", "🧠 Extendida"],
   ["mundiales", "🌍 Mundiales"],
   ["balones", "🥇 Balones de Oro"],
+  ["champions", "⭐ Champions"],
 ];
 
 function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
   const [elegido, setElegido] = useState<Tabla | null>(null);
   const tabla = elegido ?? inicial;
   const top = tops[tabla];
-  const especial = tabla === "mundiales" || tabla === "balones" ? ESPECIALES[tabla] : null;
+  const especial = tabla === "rapida" || tabla === "extendida" ? null : ESPECIALES[tabla];
   return (
     <div className="panel mc-hist mc-top">
-      <h3>{especial ? especial.titulo : "🏆 Top 10 de carreras"}</h3>
+      <h3>{especial ? `${especial.icono} ${especial.titulo}` : "🏆 Top 10 de carreras"}</h3>
       <div className="jg-modos" role="tablist">
         {PESTANAS.map(([t, texto]) => (
           <button key={t} type="button" className={tabla === t ? "is-on" : ""} onClick={() => setElegido(t)}>
@@ -711,12 +717,13 @@ function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
                   {f.goles} goles · {f.titulos} títulos
                   {tabla !== "balones" && f.balones ? ` · ${f.balones} Balón${f.balones > 1 ? "es" : ""} de Oro` : ""}
                   {tabla !== "mundiales" && f.mundiales ? ` · ${f.mundiales} Mundial${f.mundiales > 1 ? "es" : ""}` : ""}
+                  {tabla !== "champions" && f.champions ? ` · ${f.champions} Champions` : ""}
                   {especial ? ` · ${f.legado} de legado · ${f.modo === "extendida" ? "extendida" : "rápida"}` : ""}
                 </small>
               </span>
               <span className="mc-top__legado">
-                <b>{especial ? especial.valor(f) : f.legado}</b>
-                <small>{especial ? especial.unidad(especial.valor(f)) : "legado"}</small>
+                <b>{especial ? f[tabla as Especial] : f.legado}</b>
+                <small>{especial ? especial.unidad(f[tabla as Especial]) : "legado"}</small>
               </span>
             </li>
           ))}
