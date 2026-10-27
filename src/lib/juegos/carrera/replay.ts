@@ -14,6 +14,7 @@ export type Accion =
   | { t: "ver" }
   | { t: "seguir" }
   | { t: "fichar"; id: number }
+  | { t: "ceder"; id: number }
   | { t: "retiro" };
 
 const MAX_ACCIONES = 150;
@@ -28,6 +29,8 @@ export function aplicar(e: Estado, a: Accion): Estado {
       return decidir(e, { tipo: "seguir" });
     case "fichar":
       return decidir(e, { tipo: "fichar", clubId: a.id });
+    case "ceder":
+      return decidir(e, { tipo: "ceder", clubId: a.id });
     case "retiro":
       return decidir(e, { tipo: "retirarse" });
   }

@@ -114,6 +114,12 @@ export type Estado = {
   ofertas: number[];
   /** El club no te renueva: no hay «seguir». */
   sinRenovar?: boolean;
+  /** Con 24 años ya no se puede seguir en un filial. */
+  finFilial?: boolean;
+  /** Ofertas de cesión de una temporada (28-oct). */
+  cesiones?: number[];
+  /** Esta temporada juegas cedido en este club y luego vuelves. */
+  cesion: number | null;
   historial: Temporada[];
 };
 
@@ -156,7 +162,7 @@ const ESCENARIOS: Generador[] = [
   {
     id: "suplente",
     peso: 5,
-    vale: (e) => e.media < nivel(e) - 2 && e.escalonClub < 5,
+    vale: (e) => e.media < nivel(e) - 2 && e.escalonClub < 5 && !e.cesion,
     crea: () => ({
       id: "suplente",
       titulo: "Al banquillo",
@@ -684,6 +690,24 @@ const ESCENARIOS: Generador[] = [
       ],
     }),
   },
+  {
+    id: "primer-equipo",
+    peso: 6,
+    vale: (e) => !!clubPorId(e.clubId)?.matriz && !e.cesion,
+    crea: (e) => {
+      const matriz = clubPorId(clubPorId(e.clubId)!.matriz!)!;
+      return {
+        id: "primer-equipo",
+        titulo: "Te llama el primer equipo",
+        texto: `El míster del ${matriz.nombre} te sube a entrenar con los mayores toda la pretemporada.`,
+        opciones: [
+          { texto: "Dejarte la piel en cada entrenamiento", efecto: { media: [1, 3], nota: 0.2, texto: "El míster apunta tu nombre en la libreta." } },
+          { texto: "Ir con calma y aprender", efecto: { media: [0, 2], texto: "Aprendes de las estrellas sin agobiarte." } },
+          { texto: "Pedir volver al filial para jugar", efecto: { media: [0, 1], minutos: 1.1, texto: "Juegas todo con el filial y te haces fuerte." } },
+        ],
+      };
+    },
+  },
 ];
 
 export function umbralSeleccion(e: Estado): number {
@@ -771,7 +795,7 @@ const INVIERNO: Generador[] = [
   {
     id: "inv-cesion",
     peso: 4,
-    vale: (e) => e.media < nivel(e) - 3 && e.escalonClub < 5 && !e.pendiente?.efecto.cedido,
+    vale: (e) => e.media < nivel(e) - 3 && e.escalonClub < 5 && !e.pendiente?.efecto.cedido && !e.cesion,
     crea: () => ({
       id: "inv-cesion",
       titulo: "Cesión en enero",
@@ -966,6 +990,7 @@ export function crearCarrera(o: {
     usados: [],
     extendido: !!o.extendido,
     pendiente: null,
+    cesion: null,
     ofertas: [],
     historial: [],
   };
@@ -1057,7 +1082,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   // Versión extendida: la de pretemporada espera a la de mitad de temporada.
   // Se juega la primera vuelta y se ve antes de decidir.
   if (e.extendido && !e.escenario.mitad) {
-    const cedidoPre = efOpcion.cedido ? cesionPara(e, r) : undefined;
+    const cedidoPre = e.cesion ?? (efOpcion.cedido ? cesionPara(e, r) : undefined);
     const escalonPre = cedidoPre ? clubPorId(cedidoPre)!.escalon : e.escalonClub;
     const media1 = limitar(e.media + deltaOpcion, 40, 97);
     const tramo1 = jugarTramo(e, media1, escalonPre, efOpcion, 0.5, r);
@@ -1087,7 +1112,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   // Club donde se juega (cedido: uno de un escalón menos).
   const clubPropio = clubPorId(e.clubId)!;
   // Cedido: desde pretemporada (toda la temporada) o en enero (la segunda vuelta).
-  const cedidoEn = previa?.cedidoEn ?? (efOpcion.cedido || (!previa && ef.cedido) ? cesionPara(e, r) : undefined);
+  const cedidoEn = e.cesion ?? previa?.cedidoEn ?? (efOpcion.cedido || (!previa && ef.cedido) ? cesionPara(e, r) : undefined);
   const escalonJuego = cedidoEn ? clubPorId(cedidoEn)!.escalon : e.escalonClub;
   const clubJuego = cedidoEn ? clubPorId(cedidoEn)! : clubPropio;
   const liga = cedidoEn ? clubJuego.liga : ligaActual(clubPropio, e.escalonClub);
@@ -1251,17 +1276,20 @@ export function pasarAOfertas(e: Estado): Estado {
 
   // Muy por debajo del nivel del club: no te renueva y solo llaman los de un
   // escalón menos (si no, acababas a los 38 en el Madrid jugando 3 partidos).
-  if (e.media < nivel(e) - 6 && rendimiento < 6.5 && e.escalonClub < 5) {
+  if (e.media < nivel(e) - 6 && rendimiento < 6.5 && e.escalonClub < 5 && e.edad >= 22) {
     const abajo = otros((e.escalonClub + 1) as Escalon);
     const a = elegirDe(r, abajo);
     const b = elegirDe(r, abajo.filter((c) => c.id !== a.id));
-    return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: true, ofertas: [a.id, b.id] };
+    return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: true, finFilial: false, ofertas: [a.id, b.id], cesiones: [] };
   }
 
   // Cantera: si destacas, sube al primer equipo (28-oct).
   const club = clubPorId(e.clubId);
   const matriz = club?.matriz ? clubPorId(club.matriz) : null;
-  if (matriz && e.media >= NIVEL_ESCALON[matriz.escalon] - 5 && rendimiento >= 6.8) ofertas.push(matriz.id);
+  // A un grande se sube como promesa (8 por debajo de su nivel); a uno
+  // más modesto hay que llegar casi hecho.
+  const margenSubida = matriz && matriz.escalon <= 2 ? 8 : 4;
+  if (matriz && e.media >= NIVEL_ESCALON[matriz.escalon] - margenSubida && rendimiento >= 6.6) ofertas.push(matriz.id);
 
   // Uno de igual tamaño si la temporada fue aceptable.
   if (rendimiento >= 6.3 || e.media >= nivel(e)) ofertas.push(elegirDe(r, otros(e.escalonClub)).id);
@@ -1284,14 +1312,38 @@ export function pasarAOfertas(e: Estado): Estado {
       break;
     }
   }
-  return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: false, ofertas: [...new Set(ofertas)] };
+  // Filial: con 24 años hay que salir (al primer equipo o a otro club).
+  const finFilial = !!matriz && e.edad + 1 >= 24;
+  if (finFilial) {
+    while (ofertas.length < 2) {
+      const extra = elegirDe(r, otros(e.escalonClub).filter((c) => !ofertas.includes(c.id)));
+      ofertas.push(extra.id);
+    }
+    return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: true, finFilial: true, ofertas: [...new Set(ofertas)], cesiones: [] };
+  }
+
+  // Cesión de una temporada: para los jóvenes que no juegan o no rinden.
+  const cesiones: number[] = [];
+  const pocoJuego = t.partidos < MAX_PARTIDOS[e.escalonClub] * 0.55 || e.media < nivel(e);
+  if (e.edad + 1 <= 24 && pocoJuego) {
+    const destino = Math.min(5, e.escalonClub + 1) as Escalon;
+    const lista = otros(destino).filter((c) => !ofertas.includes(c.id));
+    const a = elegirDe(r, lista);
+    cesiones.push(a.id);
+    const b = elegirDe(r, lista.filter((c) => c.id !== a.id));
+    if (b && r() < 0.5) cesiones.push(b.id);
+  }
+  return { ...e, paso: e.paso + 1, fase: "ofertas", sinRenovar: false, finFilial: false, ofertas: [...new Set(ofertas)], cesiones };
 }
 
 /** ¿Toca preguntar por la retirada? (cumple 34 o más) */
 export const puedeRetirarse = (e: Estado) => e.edad + 1 >= EDAD_PREGUNTA_RETIRO;
 
 /** Decidir: seguir (null), fichar por un club ofrecido, o retirarse. */
-export function decidir(e: Estado, decision: { tipo: "seguir" } | { tipo: "fichar"; clubId: number } | { tipo: "retirarse" }): Estado {
+export function decidir(
+  e: Estado,
+  decision: { tipo: "seguir" } | { tipo: "fichar"; clubId: number } | { tipo: "ceder"; clubId: number } | { tipo: "retirarse" },
+): Estado {
   if (e.fase !== "ofertas") return e;
   if (decision.tipo === "retirarse") {
     if (!puedeRetirarse(e)) return e;
@@ -1299,13 +1351,24 @@ export function decidir(e: Estado, decision: { tipo: "seguir" } | { tipo: "ficha
   }
   if (decision.tipo === "seguir" && e.sinRenovar) return e;
   if (decision.tipo === "fichar" && !e.ofertas.includes(decision.clubId)) return e;
+  if (decision.tipo === "ceder" && !(e.cesiones ?? []).includes(decision.clubId)) return e;
   let clubId = e.clubId;
   let escalonClub = e.escalonClub;
   if (decision.tipo === "fichar" && e.ofertas.includes(decision.clubId)) {
     clubId = decision.clubId;
     escalonClub = clubPorId(clubId)!.escalon;
   }
-  const siguiente: Estado = { ...e, clubId, escalonClub, edad: e.edad + 1, anio: e.anio + 1, fase: "escenario", ofertas: [] };
+  const siguiente: Estado = {
+    ...e,
+    clubId,
+    escalonClub,
+    edad: e.edad + 1,
+    anio: e.anio + 1,
+    fase: "escenario",
+    ofertas: [],
+    cesiones: [],
+    cesion: decision.tipo === "ceder" ? decision.clubId : null,
+  };
   return { ...siguiente, paso: e.paso + 1, escenario: generarEscenario({ ...siguiente, paso: e.paso + 1 }) };
 }
 

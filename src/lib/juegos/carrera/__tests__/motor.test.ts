@@ -129,3 +129,37 @@ describe("primera vuelta (versión extendida)", () => {
   });
 });
 
+
+describe("cesiones", () => {
+  it("un joven que no juega recibe cesiones y juega la temporada en ese club", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "DEL", clubId: 546, semilla: 3 });
+    e = elegirOpcion(e, 0);
+    e = { ...e, historial: [...e.historial.slice(0, -1), { ...e.historial.at(-1)!, partidos: 3, nota: null }] };
+    e = pasarAOfertas(e);
+    expect(e.cesiones?.length).toBeGreaterThan(0);
+    const destino = e.cesiones![0];
+    e = decidir(e, { tipo: "ceder", clubId: destino });
+    expect(e.clubId).toBe(546);
+    expect(e.cesion).toBe(destino);
+    e = elegirOpcion(e, 0);
+    expect(e.historial.at(-1)!.cedidoEn).toBe(destino);
+    expect(e.historial.at(-1)!.clubId).toBe(546);
+  });
+
+  it("no se puede ceder a un club que no lo pidió", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "DEL", clubId: 546, semilla: 3 });
+    e = pasarAOfertas(elegirOpcion(e, 0));
+    expect(decidir(e, { tipo: "ceder", clubId: 541 })).toBe(e);
+  });
+});
+
+describe("fin del filial", () => {
+  it("con 24 años no se puede seguir en una cantera", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 712, semilla: 8 });
+    e = elegirOpcion({ ...e, edad: 23 }, 0);
+    e = pasarAOfertas(e);
+    expect(e.finFilial).toBe(true);
+    expect(e.ofertas.length).toBeGreaterThanOrEqual(2);
+    expect(decidir(e, { tipo: "seguir" })).toBe(e);
+  });
+});
