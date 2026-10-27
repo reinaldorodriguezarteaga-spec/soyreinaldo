@@ -99,7 +99,18 @@ export type Estado = {
   /** Versión extendida: también una pregunta a mitad de temporada. */
   extendido: boolean;
   /** Lo elegido en pretemporada, a la espera de la de mitad de temporada. */
-  pendiente: { id: string; efecto: Efecto; delta: number; eleccion: string; resultado: string; trofeo: string | null } | null;
+  pendiente: {
+    id: string;
+    efecto: Efecto;
+    delta: number;
+    eleccion: string;
+    resultado: string;
+    trofeo: string | null;
+    /** Cedido desde pretemporada: el club de toda la temporada. */
+    cedidoEn?: number;
+    /** La primera vuelta ya jugada, para decidir viéndola (28-oct). */
+    primeraMitad: Tramo & { nota: number | null; media: number };
+  } | null;
   ofertas: number[];
   /** El club no te renueva: no hay «seguir». */
   sinRenovar?: boolean;
@@ -991,6 +1002,43 @@ function ligaActual(club: ClubCarrera, escalon: Escalon): string {
   return club.escalon === 5 && escalon < 5 ? PRIMERA_DE[club.liga] ?? club.liga : club.liga;
 }
 
+export type Tramo = { partidos: number; goles: number; asistencias: number; porteriasCero: number; lesionado: boolean };
+
+/** Una parte de la temporada (toda, o media en la versión extendida). */
+function jugarTramo(e: Estado, media: number, escalonJuego: Escalon, ef: Efecto, fraccion: number, r: () => number): Tramo {
+  const diff = media - NIVEL_ESCALON[escalonJuego];
+  const lesionado = r() < ((ef.lesion ?? 0) + 0.06) * fraccion;
+  const titular = limitar(0.5 + diff * 0.08, 0.05, 0.97) * (ef.minutos ?? 1);
+  const max = MAX_PARTIDOS[escalonJuego] * fraccion;
+  const partidos = Math.round(limitar(max * titular * (lesionado ? 0.55 : 1) * (0.9 + r() * 0.2), 0, max));
+  const m = media - 60;
+  const ritmo = limitar(1 + diff * 0.02, 0.5, 1.6);
+  const porGol = { POR: 0, DEF: 0.02 + m * 0.002, MED: 0.08 + m * 0.007, DEL: 0.22 + m * 0.014 }[e.posicion];
+  const porAsist = { POR: 0, DEF: 0.04 + m * 0.003, MED: 0.12 + m * 0.009, DEL: 0.1 + m * 0.006 }[e.posicion];
+  const goles = Math.max(0, Math.round(partidos * Math.max(0, porGol) * ritmo * (ef.goles ?? 1) * (0.75 + r() * 0.5)));
+  const asistencias = Math.max(0, Math.round(partidos * Math.max(0, porAsist) * ritmo * (0.75 + r() * 0.5)));
+  const porteriasCero =
+    e.posicion === "POR" || e.posicion === "DEF"
+      ? Math.round(partidos * limitar(0.2 + (6 - escalonJuego) * 0.05 + diff * 0.01, 0.1, 0.6) * (0.8 + r() * 0.4))
+      : 0;
+  return { partidos, goles, asistencias, porteriasCero, lesionado };
+}
+
+/** Nota de lo jugado (null con menos de `minimo` partidos). */
+function notaDe(e: Estado, t: Tramo, media: number, escalonJuego: Escalon, extra: number, r: () => number, minimo = 8): number | null {
+  const diff = media - NIVEL_ESCALON[escalonJuego];
+  const aporte =
+    e.posicion === "DEL"
+      ? (t.goles / Math.max(t.partidos, 1)) * 1.6
+      : e.posicion === "MED"
+        ? ((t.goles + t.asistencias) / Math.max(t.partidos, 1)) * 1.3
+        : (t.porteriasCero / Math.max(t.partidos, 1)) * 1.2;
+  return t.partidos < minimo ? null : Math.round(limitar(6 + diff * 0.07 + aporte + (r() * 0.8 - 0.4) + extra, 5, 9.6) * 10) / 10;
+}
+
+const cesionPara = (e: Estado, r: () => number) =>
+  elegirDe(r, CLUBES_FICHAN.filter((c) => c.escalon === Math.min(5, e.escalonClub + 1) && c.id !== e.clubId)).id;
+
 /** Elegir una opción del escenario: aplica su efecto y juega la temporada. */
 export function elegirOpcion(e: Estado, i: number): Estado {
   if (e.fase !== "escenario" || !e.escenario) return e;
@@ -1007,11 +1055,25 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   const trofeoOpcion = efOpcion.trofeo && r() < efOpcion.trofeo.p ? efOpcion.trofeo.nombre : null;
 
   // Versión extendida: la de pretemporada espera a la de mitad de temporada.
+  // Se juega la primera vuelta y se ve antes de decidir.
   if (e.extendido && !e.escenario.mitad) {
+    const cedidoPre = efOpcion.cedido ? cesionPara(e, r) : undefined;
+    const escalonPre = cedidoPre ? clubPorId(cedidoPre)!.escalon : e.escalonClub;
+    const media1 = limitar(e.media + deltaOpcion, 40, 97);
+    const tramo1 = jugarTramo(e, media1, escalonPre, efOpcion, 0.5, r);
     const siguiente: Estado = {
       ...e,
       paso: e.paso + 1,
-      pendiente: { id: e.escenario.id, efecto: efOpcion, delta: deltaOpcion, eleccion: opcion.texto, resultado: resultadoOpcion, trofeo: trofeoOpcion },
+      pendiente: {
+        id: e.escenario.id,
+        efecto: efOpcion,
+        delta: deltaOpcion,
+        eleccion: opcion.texto,
+        resultado: resultadoOpcion,
+        trofeo: trofeoOpcion,
+        cedidoEn: cedidoPre,
+        primeraMitad: { ...tramo1, media: media1, nota: notaDe(e, tramo1, media1, escalonPre, efOpcion.nota ?? 0, r, 4) },
+      },
     };
     return { ...siguiente, escenario: generarInvierno(siguiente) };
   }
@@ -1024,45 +1086,21 @@ export function elegirOpcion(e: Estado, i: number): Estado {
 
   // Club donde se juega (cedido: uno de un escalón menos).
   const clubPropio = clubPorId(e.clubId)!;
-  let escalonJuego = e.escalonClub;
-  let cedidoEn: number | undefined;
-  if (ef.cedido) {
-    escalonJuego = Math.min(5, e.escalonClub + 1) as Escalon;
-    const destino = elegirDe(r, CLUBES_FICHAN.filter((c) => c.escalon === escalonJuego && c.id !== e.clubId));
-    cedidoEn = destino.id;
-  }
+  // Cedido: desde pretemporada (toda la temporada) o en enero (la segunda vuelta).
+  const cedidoEn = previa?.cedidoEn ?? (efOpcion.cedido || (!previa && ef.cedido) ? cesionPara(e, r) : undefined);
+  const escalonJuego = cedidoEn ? clubPorId(cedidoEn)!.escalon : e.escalonClub;
   const clubJuego = cedidoEn ? clubPorId(cedidoEn)! : clubPropio;
   const liga = cedidoEn ? clubJuego.liga : ligaActual(clubPropio, e.escalonClub);
 
-  // Minutos.
-  const diff = media - NIVEL_ESCALON[escalonJuego];
-  const lesionado = r() < (ef.lesion ?? 0) + 0.06;
-  const titular = limitar(0.5 + diff * 0.08, 0.05, 0.97) * (ef.minutos ?? 1);
-  const partidos = Math.round(
-    limitar(MAX_PARTIDOS[escalonJuego] * titular * (lesionado ? 0.55 : 1) * (0.9 + r() * 0.2), 0, MAX_PARTIDOS[escalonJuego]),
-  );
-
-  // Goles y asistencias por partido según la posición.
-  const m = media - 60;
-  const ritmo = limitar(1 + diff * 0.02, 0.5, 1.6);
-  const porGol = { POR: 0, DEF: 0.02 + m * 0.002, MED: 0.08 + m * 0.007, DEL: 0.22 + m * 0.014 }[e.posicion];
-  const porAsist = { POR: 0, DEF: 0.04 + m * 0.003, MED: 0.12 + m * 0.009, DEL: 0.1 + m * 0.006 }[e.posicion];
-  const goles = Math.max(0, Math.round(partidos * Math.max(0, porGol) * ritmo * (ef.goles ?? 1) * (0.75 + r() * 0.5)));
-  const asistencias = Math.max(0, Math.round(partidos * Math.max(0, porAsist) * ritmo * (0.75 + r() * 0.5)));
-  const porteriasCero =
-    e.posicion === "POR" || e.posicion === "DEF"
-      ? Math.round(partidos * limitar(0.2 + (6 - escalonJuego) * 0.05 + diff * 0.01, 0.1, 0.6) * (0.8 + r() * 0.4))
-      : 0;
-
-  // Nota de la temporada.
-  const aporte =
-    e.posicion === "DEL"
-      ? (goles / Math.max(partidos, 1)) * 1.6
-      : e.posicion === "MED"
-        ? ((goles + asistencias) / Math.max(partidos, 1)) * 1.3
-        : (porteriasCero / Math.max(partidos, 1)) * 1.2;
-  const nota =
-    partidos < 8 ? null : Math.round(limitar(6 + diff * 0.07 + aporte + (r() * 0.8 - 0.4) + (ef.nota ?? 0), 5, 9.6) * 10) / 10;
+  // La temporada entera, o la segunda vuelta sumada a la primera.
+  const tramo = jugarTramo(e, media, escalonJuego, ef, previa ? 0.5 : 1, r);
+  const ida = previa?.primeraMitad;
+  const partidos = tramo.partidos + (ida?.partidos ?? 0);
+  const goles = tramo.goles + (ida?.goles ?? 0);
+  const asistencias = tramo.asistencias + (ida?.asistencias ?? 0);
+  const porteriasCero = tramo.porteriasCero + (ida?.porteriasCero ?? 0);
+  const lesionado = tramo.lesionado || !!ida?.lesionado;
+  const nota = notaDe(e, { partidos, goles, asistencias, porteriasCero, lesionado }, media, escalonJuego, ef.nota ?? 0, r);
 
   // Trofeos del equipo: el escalón manda y tu temporada ayuda.
   const impacto = nota != null ? (nota - 6.5) * 0.25 * (partidos / MAX_PARTIDOS[escalonJuego]) : 0;
@@ -1091,6 +1129,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   const nacion = nacionPorCodigo(e.nacion);
   if (media >= umbralSeleccion({ ...e, media }) && e.edad >= 18) {
     const pj = 4 + Math.round(r() * 6);
+    const porGol = { POR: 0, DEF: 0.02 + (media - 60) * 0.002, MED: 0.08 + (media - 60) * 0.007, DEL: 0.22 + (media - 60) * 0.014 }[e.posicion];
     const g = Math.round(pj * Math.max(0, porGol) * (0.6 + r() * 0.6));
     seleccion = { partidos: pj, goles: g };
     const verano = e.anio + 1;

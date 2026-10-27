@@ -113,3 +113,19 @@ describe("versión extendida", () => {
   });
 });
 
+describe("primera vuelta (versión extendida)", () => {
+  it("se juega antes de la pregunta de invierno y suma en la temporada", () => {
+    for (let semilla = 1; semilla <= 20; semilla++) {
+      let e = crearCarrera({ nombre: "", nacion: "es", posicion: "DEL", clubId: 534, semilla, extendido: true });
+      e = elegirOpcion(e, 0);
+      const ida = e.pendiente!.primeraMitad;
+      expect(ida.partidos).toBeGreaterThanOrEqual(0);
+      expect(ida.partidos).toBeLessThanOrEqual(22);
+      e = elegirOpcion(e, 0);
+      const t = e.historial[0];
+      expect(t.partidos).toBeGreaterThanOrEqual(ida.partidos);
+      expect(t.goles).toBeGreaterThanOrEqual(ida.goles);
+    }
+  });
+});
+
