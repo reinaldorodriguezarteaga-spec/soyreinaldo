@@ -47,6 +47,13 @@ const JUEGOS = [
     listo: true,
   },
   {
+    href: "/juegos/modo-carrera",
+    emoji: "🧑‍🦱",
+    titulo: "Modo carrera",
+    texto: "De segunda división con 17 años al Balón de Oro: eliges cada temporada y te fichan según tu rendimiento.",
+    listo: true,
+  },
+  {
     href: "/juegos/adivina-el-once",
     emoji: "📋",
     titulo: "Adivina el once",
