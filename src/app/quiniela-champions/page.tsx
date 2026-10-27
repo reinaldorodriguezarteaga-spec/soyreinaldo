@@ -85,7 +85,7 @@ export default async function QuinielaChampionsPage({
               Clasificación
             </Link>
             <Link href="/quiniela-liga" className="chip-pill">
-              Quiniela de LaLiga →
+              Todas las quinielas
             </Link>
           </nav>
         </div>
