@@ -40,6 +40,12 @@ export type Efecto = {
   riesgo?: { p: number; media: Rango; texto: string };
   /** Un título que solo da este escenario (oro olímpico, Mundial Sub-20…). */
   trofeo?: { p: number; nombre: string };
+  /** Multiplica lo lejos que llega tu selección en el torneo del verano. */
+  torneo?: number;
+  /** Suma a la media para entrar en la convocatoria (o resta). */
+  convocatoria?: number;
+  /** Dejas la selección para siempre. */
+  adiosSeleccion?: boolean;
   /** Cómo sale si va bien. */
   texto: string;
 };
@@ -68,7 +74,12 @@ export type Temporada = {
   nota: number | null;
   trofeos: string[];
   premios: string[];
-  seleccion?: { partidos: number; goles: number };
+  seleccion?: {
+    partidos: number;
+    goles: number;
+    /** El Mundial o el torneo continental del verano: hasta dónde llegasteis. */
+    torneo?: { nombre: string; ronda: Ronda; partidos: number; goles: number };
+  };
   /** Puesto en la votación del Balón de Oro (si entró entre los 30). */
   balonPuesto?: number;
   eleccion: string;
@@ -120,7 +131,20 @@ export type Estado = {
   cesiones?: number[];
   /** Esta temporada juegas cedido en este club y luego vuelves. */
   cesion: number | null;
+  /** Renunció a la selección: ya no le convocan. */
+  adiosSeleccion?: boolean;
   historial: Temporada[];
+};
+
+export type Ronda = "sin clasificar" | "grupos" | "octavos" | "cuartos" | "semifinales" | "final" | "campeon";
+export const TEXTO_RONDA: Record<Ronda, string> = {
+  "sin clasificar": "no os clasificasteis",
+  grupos: "fuera en la fase de grupos",
+  octavos: "fuera en octavos",
+  cuartos: "fuera en cuartos",
+  semifinales: "fuera en semifinales",
+  final: "subcampeones",
+  campeon: "¡campeones!",
 };
 
 // ── Azar con semilla ──
@@ -208,7 +232,7 @@ const ESCENARIOS: Generador[] = [
   {
     id: "seleccion",
     peso: 3,
-    vale: (e) => e.media >= umbralSeleccion(e) - 2 && e.edad >= 18,
+    vale: (e) => convocable(e, -2),
     crea: (e) => ({
       id: "seleccion",
       titulo: "La selección",
@@ -216,6 +240,141 @@ const ESCENARIOS: Generador[] = [
       opciones: [
         { texto: "Ir encantado, es un sueño", efecto: { media: [0, 2], lesion: 0.06, texto: "Debutas con la absoluta y vuelves con la moral por las nubes." } },
         { texto: "Pedir no ir para centrarte en el club", efecto: { media: [0, 1], nota: 0.2, texto: "Te centras en el club y se nota." } },
+      ],
+    }),
+  },
+  // ── Selección y Mundiales (28-oct, pedido del dueño) ──
+  {
+    id: "mundial-previa",
+    peso: 7,
+    vale: (e) => convocable(e, -1) && torneoDelVerano(e) === "Mundial",
+    crea: (e) => ({
+      id: "mundial-previa",
+      titulo: "Año de Mundial",
+      texto: `Este verano se juega el Mundial ${e.anio + 1} y ${nacionPorCodigo(e.nacion).nombre} cuenta contigo. ¿Cómo encaras la temporada?`,
+      opciones: [
+        { texto: "Dosificarte para llegar fresco al Mundial", efecto: { minutos: 0.85, torneo: 1.35, convocatoria: 1, texto: "Llegas al Mundial como un tiro." } },
+        {
+          texto: "Darlo todo con tu club, sin pensar en el verano",
+          efecto: { media: [0, 1], nota: 0.2, torneo: 0.9, texto: "Temporadón con tu club y al Mundial con confianza.", riesgo: { p: 0.25, media: [-1, 0], texto: "Llegas fundido al Mundial: el cuerpo dice basta." } },
+        },
+        { texto: "Pedir al club un plan físico especial", efecto: { media: [0, 1], declive: 0.9, torneo: 1.15, texto: "El plan funciona: llegas al verano en tu pico de forma." } },
+      ],
+    }),
+  },
+  {
+    id: "continental-previa",
+    peso: 6,
+    vale: (e) => convocable(e, -1) && !!torneoDelVerano(e) && torneoDelVerano(e) !== "Mundial",
+    crea: (e) => {
+      const torneo = torneoDelVerano(e)!;
+      return {
+        id: "continental-previa",
+        titulo: `${torneo} a la vista`,
+        texto: `En verano hay ${torneo}. El seleccionador te avisa: quiere verte en forma y con minutos.`,
+        opciones: [
+          { texto: "Buscar minutos donde sea", efecto: { minutos: 1.15, convocatoria: 2, torneo: 1.1, texto: "Juegas todo y llegas rodado." } },
+          { texto: "Cuidarte para llegar a tope", efecto: { minutos: 0.9, torneo: 1.25, texto: "Llegas fresco y con hambre." } },
+          { texto: "Olvidarte del verano y centrarte en el club", efecto: { media: [0, 1], nota: 0.15, torneo: 0.9, texto: "El club agradece tu compromiso." } },
+        ],
+      };
+    },
+  },
+  {
+    id: "capitan-seleccion",
+    peso: 3,
+    vale: (e) => convocable(e, 2) && e.edad >= 26,
+    crea: (e) => ({
+      id: "capitan-seleccion",
+      titulo: "El brazalete",
+      texto: `Se retira el capitán de ${nacionPorCodigo(e.nacion).nombre} y el vestuario te elige a ti para llevar el brazalete.`,
+      opciones: [
+        { texto: "Aceptarlo con orgullo", efecto: { nota: 0.15, torneo: 1.1, convocatoria: 4, texto: "Capitán de tu país: el grupo te sigue a muerte." } },
+        { texto: "Que lo lleve otro, tú a jugar", efecto: { media: [0, 1], texto: "Prefieres liderar con el balón." } },
+      ],
+    }),
+  },
+  {
+    id: "fuera-lista",
+    peso: 4,
+    vale: (e) => !e.adiosSeleccion && e.edad >= 20 && e.media >= umbralSeleccion(e) - 5 && e.media < umbralSeleccion(e),
+    crea: (e) => ({
+      id: "fuera-lista",
+      titulo: "Fuera de la lista",
+      texto: `Sale la convocatoria de ${nacionPorCodigo(e.nacion).nombre} y tu nombre no está. La prensa pregunta por ti.`,
+      opciones: [
+        { texto: "Responder en el campo", efecto: { media: [0, 1], nota: 0.2, convocatoria: 2, texto: "Golpeas la puerta cada fin de semana hasta que te abren." } },
+        {
+          texto: "Pedir explicaciones en rueda de prensa",
+          efecto: { convocatoria: -3, nota: 0.1, texto: "Se monta un lío y el seleccionador no te lo perdona.", riesgo: { p: 0.3, media: [0, 1], texto: "La afición te da la razón y el lío te motiva." } },
+        },
+        { texto: "Asumirlo y no pensar en ello", efecto: { media: [0, 1], declive: 0.95, texto: "Sin la presión de la selección juegas más suelto." } },
+      ],
+    }),
+  },
+  {
+    id: "nations-league",
+    peso: 4,
+    vale: (e) => convocable(e) && nacionPorCodigo(e.nacion).continental === "Eurocopa" && (e.anio + 1) % 2 === 1,
+    crea: (e) => {
+      const n = nacionPorCodigo(e.nacion);
+      return {
+        id: "nations-league",
+        titulo: "Final Four de la Nations League",
+        texto: `${n.nombre} se ha metido en la fase final de la Nations League. Se juega en junio, con la temporada ya terminada.`,
+        opciones: [
+          { texto: "Ir a por el título", efecto: { lesion: 0.05, trofeo: { p: limitar(n.fuerza * 2.2, 0.06, 0.45), nombre: `Nations League con ${n.nombre}` }, texto: "Te quedas sin vacaciones, pero vives otra final." } },
+          { texto: "Pedir descanso: llevas 60 partidos", efecto: { declive: 0.9, texto: "Descansas de verdad y arrancas la temporada fresco." } },
+        ],
+      };
+    },
+  },
+  {
+    id: "finalissima",
+    peso: 6,
+    vale: (e) => {
+      const n = nacionPorCodigo(e.nacion);
+      return convocable(e) && ["Eurocopa", "Copa América"].includes(n.continental) && !!e.historial.at(-1)?.trofeos.some((t) => t.startsWith(n.continental));
+    },
+    crea: (e) => {
+      const n = nacionPorCodigo(e.nacion);
+      const rival = n.continental === "Eurocopa" ? "el campeón de América" : "el campeón de Europa";
+      return {
+        id: "finalissima",
+        titulo: "La Finalissima",
+        texto: `Como campeones de la ${n.continental}, ${n.nombre} se mide a ${rival} en Wembley.`,
+        opciones: [
+          { texto: "Jugarla: es otro título", efecto: { lesion: 0.03, trofeo: { p: 0.5, nombre: `Finalissima con ${n.nombre}` }, texto: "Noche grande en Wembley." } },
+          { texto: "Pedir que jueguen los menos habituales", efecto: { declive: 0.95, media: [0, 1], texto: "Ves la final desde el palco, descansado." } },
+        ],
+      };
+    },
+  },
+  {
+    id: "mundial-clubes",
+    peso: 6,
+    vale: (e) => e.escalonClub <= 2 && !e.cesion && [2029, 2033, 2037, 2041].includes(e.anio),
+    crea: (e) => ({
+      id: "mundial-clubes",
+      titulo: `Mundial de Clubes ${e.anio}`,
+      texto: `El ${clubPorId(e.clubId)!.nombre} juega el Mundial de Clubes en pleno verano. Se acaban las vacaciones.`,
+      opciones: [
+        { texto: "Jugarlo a tope", efecto: { lesion: 0.07, trofeo: { p: e.escalonClub === 1 ? 0.3 : 0.14, nombre: "Mundial de Clubes" }, texto: "Un mes de torneo con calor de verdad." } },
+        { texto: "Pedir minutos dosificados", efecto: { declive: 0.92, trofeo: { p: e.escalonClub === 1 ? 0.2 : 0.09, nombre: "Mundial de Clubes" }, texto: "Juegas lo justo y llegas entero a la liga." } },
+      ],
+    }),
+  },
+  {
+    id: "adios-seleccion",
+    peso: 4,
+    vale: (e) => convocable(e) && e.edad >= 31,
+    crea: (e) => ({
+      id: "adios-seleccion",
+      titulo: "¿Adiós a la selección?",
+      texto: `Con ${e.edad} años, el cuerpo empieza a notar los viajes con ${nacionPorCodigo(e.nacion).nombre}. Hay quien te pide que te retires de la selección.`,
+      opciones: [
+        { texto: "Seguir mientras te llamen", efecto: { media: [0, 0], texto: "Tu país es lo primero." } },
+        { texto: "Anunciar tu retirada internacional", efecto: { adiosSeleccion: true, declive: 0.75, minutos: 1.05, texto: "Te despides entre aplausos y te centras en el club." } },
       ],
     }),
   },
@@ -714,6 +873,17 @@ export function umbralSeleccion(e: Estado): number {
   return 74 + Math.round(nacionPorCodigo(e.nacion).fuerza * 40);
 }
 
+/** El torneo de selecciones del verano que cierra la temporada, si lo hay. */
+export function torneoDelVerano(e: Estado): string | null {
+  const verano = e.anio + 1;
+  return verano % 4 === 2 ? "Mundial" : verano % 4 === 0 ? nacionPorCodigo(e.nacion).continental : null;
+}
+
+/** Le pueden llamar (margen: cuánto por encima o por debajo del corte). */
+function convocable(e: Estado, margen = 0): boolean {
+  return !e.adiosSeleccion && !e.pendiente?.efecto.adiosSeleccion && e.edad >= 18 && e.media >= umbralSeleccion(e) + margen;
+}
+
 function generarEscenario(e: Estado): Escenario {
   const r = rng(e);
   // Primero los que no han salido nunca; si ya salieron todos los que
@@ -907,7 +1077,7 @@ const INVIERNO: Generador[] = [
   {
     id: "inv-amistoso",
     peso: 2,
-    vale: (e) => e.media >= umbralSeleccion(e) - 2 && e.edad >= 18,
+    vale: (e) => convocable(e, -2) && !torneoDelVerano(e),
     crea: () => ({
       id: "inv-amistoso",
       titulo: "Parón de marzo",
@@ -915,6 +1085,56 @@ const INVIERNO: Generador[] = [
       opciones: [
         { texto: "Ir: la selección es lo primero", efecto: { nota: 0.1, lesion: 0.05, texto: "Vuelves con dos partidos más en las piernas." } },
         { texto: "Pedir no ir por fatiga", efecto: { declive: 0.9, texto: "Descansas y llegas mejor al tramo final." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-lista-mundial",
+    peso: 6,
+    vale: (e) => torneoDelVerano(e) === "Mundial" && !e.adiosSeleccion && !e.pendiente?.efecto.adiosSeleccion && e.edad >= 18 && Math.abs(e.media - umbralSeleccion(e)) <= 3,
+    crea: (e) => ({
+      id: "inv-lista-mundial",
+      titulo: "La lista del Mundial",
+      texto: `Faltan cuatro meses para el Mundial y el seleccionador de ${nacionPorCodigo(e.nacion).nombre} duda entre tú y otro. Se decide en la segunda vuelta.`,
+      opciones: [
+        { texto: "Partirte la cara cada fin de semana", efecto: { convocatoria: 3, nota: 0.15, lesion: 0.05, texto: "No le dejas otra opción: estás en la lista." } },
+        {
+          texto: "Llamarle por teléfono",
+          efecto: { convocatoria: 2, texto: "Le gusta tu actitud y te lo tiene en cuenta.", riesgo: { p: 0.4, media: [-1, 0], texto: "No le hace gracia la llamada." } },
+        },
+        { texto: "Asumir que no vas y descansar", efecto: { convocatoria: -10, declive: 0.9, texto: "Verás el Mundial desde la playa." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-repesca",
+    peso: 5,
+    vale: (e) => convocable(e) && torneoDelVerano(e) === "Mundial" && nacionPorCodigo(e.nacion).fuerza <= 0.06,
+    crea: (e) => ({
+      id: "inv-repesca",
+      titulo: "Repesca para el Mundial",
+      texto: `${nacionPorCodigo(e.nacion).nombre} se juega en marzo, en una eliminatoria a partido único, ir o no al Mundial. Tú llegas tocado.`,
+      opciones: [
+        { texto: "Jugarla aunque sea infiltrado", efecto: { torneo: 1.3, lesion: 0.12, texto: "Te dejas la piel en el partido más importante de tu país." } },
+        { texto: "Ir al banquillo por si acaso", efecto: { torneo: 1.05, texto: "Sales en la segunda parte con el partido abierto." } },
+        { texto: "Quedarte en el club recuperándote", efecto: { torneo: 0.75, declive: 0.95, texto: "Lo ves por la tele con el corazón en un puño." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-lesion-torneo",
+    peso: 3,
+    vale: (e) => convocable(e) && !!torneoDelVerano(e),
+    crea: (e) => ({
+      id: "inv-lesion-torneo",
+      titulo: "Una lesión a destiempo",
+      texto: `Notas un pinchazo en el muslo. Si te paras ahora, llegas justo a${torneoDelVerano(e) === "Mundial" ? "l Mundial" : ` la ${torneoDelVerano(e)}`}.`,
+      opciones: [
+        { texto: "Parar ya y llegar perfecto al verano", efecto: { minutos: 0.75, torneo: 1.1, texto: "Te pierdes un mes con el club, pero llegas como una moto." } },
+        {
+          texto: "Seguir jugando con el club",
+          efecto: { minutos: 1.05, nota: 0.1, texto: "Aguantas el dolor y no se rompe nada.", riesgo: { p: 0.35, media: [-2, -1], texto: "Se rompe del todo: llegas al verano a medio gas." } },
+        },
       ],
     }),
   },
@@ -959,6 +1179,9 @@ function combinar(a: Efecto, b: Efecto): Efecto {
     cedido: a.cedido || b.cedido,
     declive: (a.declive ?? 1) * (b.declive ?? 1),
     nota: (a.nota ?? 0) + (b.nota ?? 0),
+    torneo: (a.torneo ?? 1) * (b.torneo ?? 1),
+    convocatoria: (a.convocatoria ?? 0) + (b.convocatoria ?? 0),
+    adiosSeleccion: a.adiosSeleccion || b.adiosSeleccion,
   };
 }
 
@@ -1050,6 +1273,21 @@ function jugarTramo(e: Estado, media: number, escalonJuego: Escalon, ef: Efecto,
 }
 
 /** Nota de lo jugado (null con menos de `minimo` partidos). */
+const PARTIDOS_RONDA: Record<Ronda, number> = { "sin clasificar": 0, grupos: 3, octavos: 4, cuartos: 5, semifinales: 6, final: 7, campeon: 7 };
+
+/** El Mundial o el torneo continental: clasificarse, pasar rondas y, quizá, ganarlo. */
+function jugarTorneo(e: Estado, media: number, factor: number, r: () => number): Ronda {
+  const n = nacionPorCodigo(e.nacion);
+  if (r() > limitar((0.72 + n.fuerza * 3) * Math.sqrt(factor), 0.4, 0.98)) return "sin clasificar";
+  // Cada eliminatoria es un partido: una favorita gana el torneo ~1 de cada 4 veces.
+  const grupos = limitar((0.55 + n.fuerza * 2 + (media - 82) * 0.01) * factor, 0.4, 0.97);
+  const ronda = limitar((0.4 + n.fuerza * 1.4 + (media - 82) * 0.008) * Math.sqrt(factor), 0.3, 0.8);
+  const orden: Ronda[] = ["grupos", "octavos", "cuartos", "semifinales", "final", "campeon"];
+  let i = 0;
+  while (i < orden.length - 1 && r() < (i === 0 ? grupos : ronda)) i++;
+  return orden[i];
+}
+
 function notaDe(e: Estado, t: Tramo, media: number, escalonJuego: Escalon, extra: number, r: () => number, minimo = 8): number | null {
   const diff = media - NIVEL_ESCALON[escalonJuego];
   const aporte =
@@ -1152,15 +1390,19 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   // Selección: convocado si da el nivel; en verano, Mundial o torneo continental.
   let seleccion: Temporada["seleccion"];
   const nacion = nacionPorCodigo(e.nacion);
-  if (media >= umbralSeleccion({ ...e, media }) && e.edad >= 18) {
+  if (!e.adiosSeleccion && !ef.adiosSeleccion && media + (ef.convocatoria ?? 0) >= umbralSeleccion({ ...e, media }) && e.edad >= 18) {
     const pj = 4 + Math.round(r() * 6);
-    const porGol = { POR: 0, DEF: 0.02 + (media - 60) * 0.002, MED: 0.08 + (media - 60) * 0.007, DEL: 0.22 + (media - 60) * 0.014 }[e.posicion];
-    const g = Math.round(pj * Math.max(0, porGol) * (0.6 + r() * 0.6));
+    const porGol = Math.max(0, { POR: 0, DEF: 0.02 + (media - 60) * 0.002, MED: 0.08 + (media - 60) * 0.007, DEL: 0.22 + (media - 60) * 0.014 }[e.posicion]);
+    const g = Math.round(pj * porGol * (0.6 + r() * 0.6));
     seleccion = { partidos: pj, goles: g };
-    const verano = e.anio + 1;
-    const torneo = verano % 4 === 2 ? "Mundial" : verano % 4 === 0 ? nacion.continental : null;
-    if (torneo && r() < limitar(nacion.fuerza * (1 + (media - 82) * 0.04) * (torneo === "Mundial" ? 1 : 1.3), 0.01, 0.4)) {
-      trofeos.push(`${torneo} ${verano} con ${nacion.nombre}`);
+    // El torneo del verano: hasta dónde llegáis y tus goles en él.
+    const torneo = torneoDelVerano(e);
+    if (torneo) {
+      const ronda = jugarTorneo(e, media, ef.torneo ?? 1, r);
+      const tpj = PARTIDOS_RONDA[ronda];
+      const tg = Math.round(tpj * porGol * (0.5 + r() * 0.9));
+      seleccion = { partidos: pj + tpj, goles: g + tg, torneo: { nombre: `${torneo} ${e.anio + 1}`, ronda, partidos: tpj, goles: tg } };
+      if (ronda === "campeon") trofeos.push(`${torneo} ${e.anio + 1} con ${nacion.nombre}`);
     }
   }
 
@@ -1179,9 +1421,12 @@ export function elegirOpcion(e: Estado, i: number): Estado {
       if (r() < 0.3) premios.push("MVP de la final de la Champions");
       if (nota >= 7.6 && r() < 0.45) premios.push("Mejor jugador de la Champions");
     }
-    const mundial = trofeos.find((t) => /^Mundial \d/.test(t));
-    if (seleccion && (e.anio + 1) % 4 === 2 && nota >= 7.4 && r() < (mundial ? 0.35 : 0.08)) premios.push("Balón de Oro del Mundial");
-    if (seleccion && (e.anio + 1) % 4 === 2 && e.posicion === "DEL" && r() < (mundial ? 0.2 : 0.05)) premios.push("Bota de Oro del Mundial");
+    const torneo = seleccion?.torneo;
+    const esMundial = !!torneo?.nombre.startsWith("Mundial");
+    if (esMundial && ["semifinales", "final", "campeon"].includes(torneo!.ronda) && nota >= 7.4 && r() < (torneo!.ronda === "campeon" ? 0.35 : 0.12))
+      premios.push("Balón de Oro del Mundial");
+    if (torneo && torneo.goles >= (esMundial ? 5 : 4) && r() < 0.5)
+      premios.push(esMundial ? "Bota de Oro del Mundial" : `Máximo goleador de la ${torneo.nombre.replace(/ \d+$/, "")}`);
     const golesLiga = goles * 0.72;
     if (e.posicion === "DEL" && golesLiga >= 30 && r() < 0.7) premios.push("Bota de Oro");
     else if (e.posicion === "DEL" && golesLiga >= 21 && escalonJuego <= 4 && r() < 0.6) premios.push(`Máximo goleador de ${liga}`);
@@ -1244,6 +1489,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
     escalonClub,
     fase: "resultado",
     usados: [...e.usados, ...(previa ? [previa.id] : []), e.escenario.id],
+    adiosSeleccion: e.adiosSeleccion || ef.adiosSeleccion || undefined,
     pendiente: null,
     historial: [...e.historial, temporada],
   };

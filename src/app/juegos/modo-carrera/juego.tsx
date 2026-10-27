@@ -15,6 +15,7 @@ import {
 import {
   EDAD_RETIRO,
   NOMBRE_POSICION,
+  TEXTO_RONDA,
   crearCarrera,
   puedeRetirarse,
   resumen,
@@ -442,6 +443,15 @@ function Estadisticas({ t, posicion }: { t: Estado["historial"][number]; posicio
       {t.seleccion && (
         <p className="mc__nota">
           Con la selección: {t.seleccion.partidos} partidos{posicion !== "POR" ? ` y ${t.seleccion.goles} goles` : ""}.
+          {t.seleccion.torneo && (
+            <>
+              {" "}
+              <b>
+                {t.seleccion.torneo.nombre}: {TEXTO_RONDA[t.seleccion.torneo.ronda]}
+              </b>
+              {t.seleccion.torneo.partidos > 0 && posicion !== "POR" ? ` (${t.seleccion.torneo.goles} ${t.seleccion.torneo.goles === 1 ? "gol" : "goles"})` : ""}.
+            </>
+          )}
         </p>
       )}
       {(t.trofeos.length > 0 || t.premios.length > 0 || t.balonPuesto) && (
