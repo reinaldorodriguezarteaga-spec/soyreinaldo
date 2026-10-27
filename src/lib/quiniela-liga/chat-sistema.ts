@@ -92,3 +92,22 @@ export async function anunciarReto(dueloId: string, aceptado = false): Promise<v
     // Igual que arriba.
   }
 }
+
+/**
+ * Miembros de una liga con su nombre (el de la web o, si no, el de usuario),
+ * para las menciones del chat. `league_members` apunta a auth.users, no a
+ * profiles: por eso van dos consultas y no un join.
+ */
+export async function miembrosConNombre(leagueId: string, soloIds?: string[]): Promise<{ id: string; nombre: string }[]> {
+  const db = clienteServicio();
+  if (!db) return [];
+  let q = db.from("league_members").select("user_id").eq("league_id", leagueId);
+  if (soloIds) q = q.in("user_id", soloIds);
+  const { data: miembros } = await q;
+  const ids = ((miembros ?? []) as { user_id: string }[]).map((m) => m.user_id);
+  if (ids.length === 0) return [];
+  const { data: perfiles } = await db.from("profiles").select("id, display_name, username").in("id", ids);
+  return ((perfiles ?? []) as { id: string; display_name: string | null; username: string | null }[])
+    .map((p) => ({ id: p.id, nombre: p.display_name || p.username || "" }))
+    .filter((p) => p.nombre);
+}

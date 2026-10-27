@@ -13,7 +13,32 @@ export type Mensaje = {
   texto: string;
   oculto: boolean;
   created_at: string;
+  /** Ids de los mencionados con «@» (27-oct). */
+  menciones?: string[];
 };
+export type Miembro = { id: string; nombre: string };
+
+const normal = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const escapar = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Texto con las menciones resaltadas («@Ana» en negrita de color). */
+function Pintar({ texto, nombres }: { texto: string; nombres: string[] }) {
+  if (nombres.length === 0) return <>{texto}</>;
+  const re = new RegExp(`(@(?:${[...nombres].sort((a, b) => b.length - a.length).map(escapar).join("|")}))`, "gi");
+  return (
+    <>
+      {texto.split(re).map((trozo, i) =>
+        i % 2 === 1 ? (
+          <b key={i} className="chat__mencion">
+            {trozo}
+          </b>
+        ) : (
+          trozo
+        ),
+      )}
+    </>
+  );
+}
 export type Reaccion = { mensaje_id: number; user_id: string; emoji: Emoji };
 
 const hora = (iso: string) => {
@@ -34,6 +59,8 @@ export default function ChatQuiniela({
   iniciales,
   reaccionesIniciales,
   silenciadosIniciales,
+  miembros,
+  miNombre,
 }: {
   leagueId: string;
   yo: string;
@@ -41,6 +68,9 @@ export default function ChatQuiniela({
   iniciales: Mensaje[];
   reaccionesIniciales: Reaccion[];
   silenciadosIniciales: string[];
+  /** Los demás miembros de la liga, para mencionarlos con «@». */
+  miembros: Miembro[];
+  miNombre: string | null;
 }) {
   const [mensajes, setMensajes] = useState<Mensaje[]>(iniciales);
   const [reacciones, setReacciones] = useState<Reaccion[]>(reaccionesIniciales);
@@ -52,6 +82,40 @@ export default function ChatQuiniela({
   const [selector, setSelector] = useState<number | null>(null);
   const [conectado, setConectado] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
+  const entrada = useRef<HTMLTextAreaElement>(null);
+  // Menciones elegidas en el borrador y lo que se está escribiendo tras «@».
+  const [elegidas, setElegidas] = useState<Map<string, string>>(new Map());
+  const [consulta, setConsulta] = useState<string | null>(null);
+  const nombrePorId = new Map(miembros.map((m) => [m.id, m.nombre]));
+  if (miNombre) nombrePorId.set(yo, miNombre);
+  const sugerencias =
+    consulta == null
+      ? []
+      : miembros
+          .filter((m) => normal(m.nombre).includes(normal(consulta)))
+          .sort((a, b) => Number(!normal(a.nombre).startsWith(normal(consulta))) - Number(!normal(b.nombre).startsWith(normal(consulta))))
+          .slice(0, 6);
+
+  /** ¿Se está escribiendo una mención? Lo que hay entre «@» y el cursor. */
+  const mirarMencion = (valor: string, cursor: number) => {
+    const m = valor.slice(0, cursor).match(/(?:^|\s)@([^\s@]{0,20})$/u);
+    setConsulta(m ? m[1] : null);
+  };
+
+  const elegir = (m: Miembro) => {
+    const el = entrada.current;
+    const cursor = el?.selectionStart ?? texto.length;
+    const inicio = cursor - (consulta?.length ?? 0) - 1;
+    const nuevo = `${texto.slice(0, inicio)}@${m.nombre} ${texto.slice(cursor)}`;
+    setTexto(nuevo.slice(0, MAX_TEXTO));
+    setElegidas((prev) => new Map(prev).set(m.id, m.nombre));
+    setConsulta(null);
+    requestAnimationFrame(() => {
+      const pos = inicio + m.nombre.length + 2;
+      el?.focus();
+      el?.setSelectionRange(pos, pos);
+    });
+  };
   const pegadoAbajo = useRef(true);
 
   const meter = useCallback((nuevos: Mensaje[]) => {
@@ -88,7 +152,7 @@ export default function ChatQuiniela({
     const ultimo = mensajes.at(-1)?.id ?? 0;
     const { data } = await createClient()
       .from("lq_chat")
-      .select("id, user_id, autor, tipo, texto, oculto, created_at")
+      .select("id, user_id, autor, tipo, texto, oculto, created_at, menciones")
       .eq("league_id", leagueId)
       .gt("id", ultimo)
       .order("id")
@@ -115,10 +179,13 @@ export default function ChatQuiniela({
     if (!texto.trim() || enviando) return;
     setEnviando(true);
     setError(null);
-    const r = await enviarMensaje(leagueId, texto).catch(() => ({ ok: false as const, error: "No se pudo enviar." }));
+    const menciones = [...elegidas].filter(([, n]) => texto.toLowerCase().includes(`@${n.toLowerCase()}`)).map(([id]) => id);
+    const r = await enviarMensaje(leagueId, texto, menciones).catch(() => ({ ok: false as const, error: "No se pudo enviar." }));
     setEnviando(false);
     if (!r.ok) return setError(r.error);
     setTexto("");
+    setElegidas(new Map());
+    setConsulta(null);
     pegadoAbajo.current = true;
     if (!conectado) void traerNuevos();
   };
@@ -155,13 +222,21 @@ export default function ChatQuiniela({
             );
           }
           const mio = m.user_id === yo;
+          const mencionados = (m.menciones ?? []).map((id) => nombrePorId.get(id)).filter((n): n is string => !!n);
+          const meMencionan = (m.menciones ?? []).includes(yo);
           const suyas = reacciones.filter((r) => r.mensaje_id === m.id);
           const cuenta = EMOJIS.map((e) => ({ e, n: suyas.filter((r) => r.emoji === e).length, mia: suyas.some((r) => r.emoji === e && r.user_id === yo) })).filter((x) => x.n > 0);
           return (
-            <div key={m.id} className={`chat__msg${mio ? " is-mio" : ""}`}>
+            <div key={m.id} className={`chat__msg${mio ? " is-mio" : ""}${meMencionan ? " is-mencion" : ""}`}>
               <div className="chat__burbuja">
                 {!mio && <b className="chat__autor">{m.autor ?? "Alguien"}</b>}
-                {m.oculto ? <i className="chat__borrado">Mensaje eliminado</i> : <span className="chat__texto">{m.texto}</span>}
+                {m.oculto ? (
+                  <i className="chat__borrado">Mensaje eliminado</i>
+                ) : (
+                  <span className="chat__texto">
+                    <Pintar texto={m.texto} nombres={mencionados} />
+                  </span>
+                )}
                 <span className="chat__hora">{hora(m.created_at)}</span>
               </div>
               {!m.oculto && (
@@ -221,6 +296,21 @@ export default function ChatQuiniela({
         })}
       </div>
 
+      {sugerencias.length > 0 && (
+        <ul className="chat__sugerencias" role="listbox" aria-label="Mencionar a">
+          {sugerencias.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => elegir(m)}
+              >
+                @{m.nombre}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <form
         className="chat__form"
         onSubmit={(e) => {
@@ -229,16 +319,27 @@ export default function ChatQuiniela({
         }}
       >
         <textarea
+          ref={entrada}
           value={texto}
-          onChange={(e) => setTexto(e.target.value.slice(0, MAX_TEXTO))}
+          onChange={(e) => {
+            setTexto(e.target.value.slice(0, MAX_TEXTO));
+            mirarMencion(e.target.value, e.target.selectionStart ?? e.target.value.length);
+          }}
           onKeyDown={(e) => {
+            // Con la lista de «@» abierta, Enter o Tab eligen al primero.
+            if (sugerencias.length > 0 && (e.key === "Enter" || e.key === "Tab")) {
+              e.preventDefault();
+              elegir(sugerencias[0]);
+              return;
+            }
+            if (e.key === "Escape") setConsulta(null);
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               void enviar();
             }
           }}
           rows={1}
-          placeholder="Escribe a tu liga…"
+          placeholder="Escribe a tu liga… (@ para mencionar)"
           aria-label="Mensaje"
         />
         <button type="submit" className="btn btn--accent" disabled={enviando || !texto.trim()}>

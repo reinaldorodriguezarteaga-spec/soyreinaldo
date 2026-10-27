@@ -1,6 +1,9 @@
 "use server";
 
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notificarUsuario } from "@/lib/push/server";
+import { miembrosConNombre } from "@/lib/quiniela-liga/chat-sistema";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { EMOJIS, REPORTES_PARA_OCULTAR, RITMO, filtrarTexto, type Emoji } from "@/lib/quiniela-liga/chat";
 
@@ -30,7 +33,14 @@ async function miembro(db: NonNullable<ReturnType<typeof clienteServicio>>, leag
   return data;
 }
 
-export async function enviarMensaje(leagueId: string, textoBruto: string): Promise<Resultado> {
+const MAX_MENCIONES = 10;
+
+/**
+ * Envía un mensaje. `menciones`: ids de los miembros elegidos con «@» en el
+ * buscador; solo valen los de la liga cuyo «@nombre» sigue en el texto. A
+ * cada mencionado le llega un aviso al móvil (27-oct).
+ */
+export async function enviarMensaje(leagueId: string, textoBruto: string, menciones: string[] = []): Promise<Resultado> {
   const user = await quienSoy();
   if (!user) return { ok: false, error: "Entra con tu cuenta para escribir." };
   const db = clienteServicio();
@@ -52,13 +62,45 @@ export async function enviarMensaje(leagueId: string, textoBruto: string): Promi
     .select("display_name, username")
     .eq("id", user.id)
     .maybeSingle<{ display_name: string | null; username: string | null }>();
+  const autor = perfil?.display_name || perfil?.username || "Anónimo";
+
+  // Menciones: miembros de la liga, nunca uno mismo, y con su «@nombre» en el texto.
+  const pedidas = [...new Set(menciones)].filter((id) => id !== user.id).slice(0, MAX_MENCIONES);
+  let mencionados: string[] = [];
+  if (pedidas.length) {
+    const minus = texto.toLowerCase();
+    mencionados = (await miembrosConNombre(leagueId, pedidas))
+      .filter((m) => minus.includes(`@${m.nombre.toLowerCase()}`))
+      .map((m) => m.id);
+  }
+
   const { error } = await db.from("lq_chat").insert({
     league_id: leagueId,
     user_id: user.id,
-    autor: perfil?.display_name || perfil?.username || "Anónimo",
+    autor,
     texto,
+    menciones: mencionados,
   });
-  return error ? { ok: false, error: "No se pudo enviar." } : { ok: true };
+  if (error) return { ok: false, error: "No se pudo enviar." };
+
+  if (mencionados.length) {
+    // La pública es la liga por defecto: su enlace no lleva ?liga=.
+    const { data: liga } = await db.from("leagues").select("is_public").eq("id", leagueId).maybeSingle<{ is_public: boolean }>();
+    const url = liga?.is_public ? "/quiniela-liga/chat" : `/quiniela-liga/chat?liga=${encodeURIComponent(leagueId)}`;
+    after(() =>
+      Promise.all(
+        mencionados.map((id) =>
+          notificarUsuario(id, {
+            title: `💬 ${autor} te ha mencionado`,
+            body: texto.length > 120 ? `${texto.slice(0, 117)}…` : texto,
+            url,
+            tag: `chat-${leagueId}`,
+          }).catch(() => 0),
+        ),
+      ),
+    );
+  }
+  return { ok: true };
 }
 
 /** Pone o quita una reacción. */
