@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import {
-  CLUBES_CARRERA,
   LIGAS_INICIO,
+  clubesDeInicio,
   NACIONES,
   NOMBRE_ESCALON,
   clubPorId,
@@ -15,75 +16,71 @@ import {
   EDAD_RETIRO,
   NOMBRE_POSICION,
   crearCarrera,
-  decidir,
-  elegirOpcion,
-  pasarAOfertas,
   puedeRetirarse,
   resumen,
   temporadaTexto,
   type Estado,
   type Posicion,
 } from "@/lib/juegos/carrera/motor";
+import { aplicar, type Accion, type Inicio as InicioCarrera } from "@/lib/juegos/carrera/replay";
+import { guardarCarrera, type FilaTop } from "./acciones";
 
 /**
- * Modo carrera (27-oct, pedido del dueño). La partida vive en el navegador:
- * se puede cerrar y seguir otro día.
+ * Modo carrera (27-oct, pedido del dueño). Juego rápido: la partida no se
+ * guarda (si recargas, empiezas otra). Cada decisión se apunta y, al
+ * retirarte, el servidor rejuega la carrera para el ranking (top 10).
  */
 
-const CLAVE = "jg-carrera-v1";
 const bandera = (c: string) => `https://media.api-sports.io/flags/${c}.svg`;
 const POSICIONES: Posicion[] = ["POR", "DEF", "MED", "DEL"];
 
-function leer(): Estado | null {
-  try {
-    const e = JSON.parse(localStorage.getItem(CLAVE) ?? "null") as Estado | null;
-    return e && e.v === 1 ? e : null;
-  } catch {
-    return null;
-  }
-}
-function guardar(e: Estado | null) {
-  try {
-    if (e) localStorage.setItem(CLAVE, JSON.stringify(e));
-    else localStorage.removeItem(CLAVE);
-  } catch {
-    // Sin almacenamiento: se juega igual, sin guardar.
-  }
-}
+type Partida = { inicio: InicioCarrera; acciones: Accion[]; e: Estado };
 
 function Escudo({ id, size = 28 }: { id: number; size?: number }) {
   // eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API
   return <img src={escudoClub(id)} alt="" width={size} height={size} style={{ objectFit: "contain" }} />;
 }
 
-export default function ModoCarrera() {
-  const [estado, setEstado] = useState<Estado | null>(null);
-  const [cargado, setCargado] = useState(false);
+export default function ModoCarrera({ conSesion, topInicial }: { conSesion: boolean; topInicial: FilaTop[] }) {
+  const [partida, setPartida] = useState<Partida | null>(null);
+  const [top, setTop] = useState<FilaTop[]>(topInicial);
 
+  // A media carrera, avisar antes de salir: no se guarda.
+  const enJuego = !!partida && partida.e.fase !== "fin" && partida.e.historial.length > 0;
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hidratación única al montar, no cascada
-    setEstado(leer());
-    setCargado(true);
-  }, []);
+    if (!enJuego) return;
+    const aviso = (ev: BeforeUnloadEvent) => ev.preventDefault();
+    window.addEventListener("beforeunload", aviso);
+    return () => window.removeEventListener("beforeunload", aviso);
+  }, [enJuego]);
 
-  const actualizar = (e: Estado | null) => {
-    setEstado(e);
-    guardar(e);
-  };
+  const hacer = (a: Accion) =>
+    setPartida((p) => {
+      if (!p) return p;
+      const e = aplicar(p.e, a);
+      return e === p.e ? p : { ...p, e, acciones: [...p.acciones, a] };
+    });
 
-  if (!cargado) return null;
-  if (!estado) return <Inicio onEmpezar={actualizar} />;
-  return <Partida e={estado} actualizar={actualizar} />;
+  return (
+    <>
+      {partida ? (
+        <PartidaVista p={partida} hacer={hacer} conSesion={conSesion} onNueva={() => setPartida(null)} onTop={setTop} />
+      ) : (
+        <Inicio conSesion={conSesion} onEmpezar={(inicio) => setPartida({ inicio, acciones: [], e: crearCarrera(inicio) })} />
+      )}
+      <Ranking top={top} />
+    </>
+  );
 }
 
 // ── Pantalla de inicio ──
-function Inicio({ onEmpezar }: { onEmpezar: (e: Estado) => void }) {
+function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: InicioCarrera) => void }) {
   const [nombre, setNombre] = useState("");
   const [nacion, setNacion] = useState("es");
   const [posicion, setPosicion] = useState<Posicion>("DEL");
   const [liga, setLiga] = useState(LIGAS_INICIO[0]);
   const [club, setClub] = useState<number | null>(null);
-  const clubes = CLUBES_CARRERA.filter((c) => c.escalon === 5 && c.liga === liga);
+  const clubes = clubesDeInicio(liga);
 
   return (
     <div className="mc panel">
@@ -118,7 +115,7 @@ function Inicio({ onEmpezar }: { onEmpezar: (e: Estado) => void }) {
       </div>
 
       <div className="mc__campo">
-        <span>Tu primer equipo (segunda división)</span>
+        <span>Tu primer equipo</span>
         <div className="jg-modos">
           {LIGAS_INICIO.map((l) => (
             <button
@@ -134,9 +131,11 @@ function Inicio({ onEmpezar }: { onEmpezar: (e: Estado) => void }) {
             </button>
           ))}
         </div>
+        {liga === "Canteras" && <p className="mc__nota">Nivel de segunda; si destacas, puedes subir al primer equipo.</p>}
+        {liga === "Primera (modestos)" && <p className="mc__nota">Más nivel, pero con 17 años te costará jugar: quizá toque salir cedido.</p>}
         <div className="mc__clubes">
           {clubes.map((c) => (
-            <button key={c.id} type="button" className={club === c.id ? "is-on" : ""} onClick={() => setClub(c.id)}>
+            <button key={c.id} type="button" title={c.nombre} className={club === c.id ? "is-on" : ""} onClick={() => setClub(c.id)}>
               <Escudo id={c.id} size={34} />
               <span>{c.nombre}</span>
             </button>
@@ -144,11 +143,16 @@ function Inicio({ onEmpezar }: { onEmpezar: (e: Estado) => void }) {
         </div>
       </div>
 
+      {!conSesion && (
+        <p className="mc__nota">
+          <Link href="/login?redirect=/juegos/modo-carrera">Entra</Link> antes de empezar si quieres que tu carrera cuente para el ranking.
+        </p>
+      )}
       <button
         type="button"
         className="btn btn--accent"
         disabled={club == null}
-        onClick={() => club != null && onEmpezar(crearCarrera({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9) }))}
+        onClick={() => club != null && onEmpezar({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9) })}
       >
         {club == null ? "Elige tu equipo" : "Empezar mi carrera con 17 años →"}
       </button>
@@ -157,7 +161,20 @@ function Inicio({ onEmpezar }: { onEmpezar: (e: Estado) => void }) {
 }
 
 // ── La partida ──
-function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) => void }) {
+function PartidaVista({
+  p,
+  hacer,
+  conSesion,
+  onNueva,
+  onTop,
+}: {
+  p: Partida;
+  hacer: (a: Accion) => void;
+  conSesion: boolean;
+  onNueva: () => void;
+  onTop: (t: FilaTop[]) => void;
+}) {
+  const e = p.e;
   const club = clubPorId(e.clubId)!;
   const nacion = nacionPorCodigo(e.nacion);
   const ultima = e.historial.at(-1);
@@ -190,7 +207,7 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
           <p>{e.escenario.texto}</p>
           <div className="mc__opciones">
             {e.escenario.opciones.map((o, i) => (
-              <button key={i} type="button" onClick={() => actualizar(elegirOpcion(e, i))}>
+              <button key={i} type="button" onClick={() => hacer({ t: "opcion", i })}>
                 {o.texto}
               </button>
             ))}
@@ -213,7 +230,7 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
             </p>
           )}
           <Estadisticas t={ultima} posicion={e.posicion} />
-          <button type="button" className="btn btn--accent" onClick={() => actualizar(pasarAOfertas(e))}>
+          <button type="button" className="btn btn--accent" onClick={() => hacer({ t: "ver" })}>
             {ultima.edad + 1 >= EDAD_RETIRO ? "Colgar las botas →" : "Ver el verano →"}
           </button>
         </div>
@@ -226,15 +243,22 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
           {e.sinRenovar && <p>Tu nivel ya no da para este club. Te llegan estas ofertas:</p>}
           <div className="mc__opciones">
             {!e.sinRenovar && (
-              <button type="button" onClick={() => actualizar(decidir(e, { tipo: "seguir" }))}>
+              <button type="button" onClick={() => hacer({ t: "seguir" })}>
                 <Escudo id={e.clubId} /> Seguir en {club.nombre}
               </button>
             )}
             {e.ofertas.map((id) => {
               const c = clubPorId(id)!;
-              const flecha = c.escalon < e.escalonClub ? "⬆️ Un paso adelante" : c.escalon === e.escalonClub ? "↔️ Mismo nivel" : "⬇️ Un paso atrás";
+              const primerEquipo = clubPorId(e.clubId)?.matriz === id;
+              const flecha = primerEquipo
+                ? "⬆️ Subir al primer equipo"
+                : c.escalon < e.escalonClub
+                  ? "⬆️ Un paso adelante"
+                  : c.escalon === e.escalonClub
+                    ? "↔️ Mismo nivel"
+                    : "⬇️ Un paso atrás";
               return (
-                <button key={id} type="button" onClick={() => actualizar(decidir(e, { tipo: "fichar", clubId: id }))}>
+                <button key={id} type="button" onClick={() => hacer({ t: "fichar", id })}>
                   <Escudo id={id} /> Fichar: {c.nombre}
                   <small>
                     {flecha} · {c.liga} · {NOMBRE_ESCALON[c.escalon]}
@@ -244,7 +268,7 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
             })}
             {e.ofertas.length === 0 && !e.sinRenovar && <p className="mc__nota">Este verano no ha llamado nadie: toca demostrar más.</p>}
             {puedeRetirarse(e) && (
-              <button type="button" className="mc__retiro" onClick={() => actualizar(decidir(e, { tipo: "retirarse" }))}>
+              <button type="button" className="mc__retiro" onClick={() => hacer({ t: "retiro" })}>
                 👋 Retirarme ahora{e.edad + 1 >= EDAD_RETIRO - 1 ? " (el año que viene será obligatorio)" : ""}
               </button>
             )}
@@ -252,7 +276,7 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
         </div>
       )}
 
-      {e.fase === "fin" && <Final e={e} onNueva={() => actualizar(null)} />}
+      {e.fase === "fin" && <Final p={p} conSesion={conSesion} onNueva={onNueva} onTop={onTop} />}
 
       {e.historial.length > 0 && <Historial e={e} />}
 
@@ -261,7 +285,7 @@ function Partida({ e, actualizar }: { e: Estado; actualizar: (e: Estado | null) 
           {abandonar ? (
             <>
               ¿Seguro? Se pierde esta carrera.{" "}
-              <button type="button" className="mc__enlace" onClick={() => actualizar(null)}>
+              <button type="button" className="mc__enlace" onClick={onNueva}>
                 Sí, empezar otra
               </button>{" "}
               ·{" "}
@@ -387,9 +411,35 @@ function Historial({ e }: { e: Estado }) {
   );
 }
 
-function Final({ e, onNueva }: { e: Estado; onNueva: () => void }) {
+function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolean; onNueva: () => void; onTop: (t: FilaTop[]) => void }) {
+  const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
+  const [ranking, setRanking] = useState<string | null>(conSesion ? "Apuntando tu carrera en el ranking…" : null);
+  const enviada = useRef(false);
+
+  // Al retirarte, al ranking (el servidor la rejuega y calcula el legado).
+  useEffect(() => {
+    if (!conSesion || enviada.current) return;
+    enviada.current = true;
+    guardarCarrera(p.inicio, p.acciones)
+      .then((res) => {
+        if (!res.ok) {
+          setRanking(res.error === "limite" ? "Hoy ya has metido muchas carreras: vuelve mañana." : "No se pudo apuntar en el ranking.");
+          return;
+        }
+        onTop(res.top);
+        const decimo = res.top[9]?.legado;
+        setRanking(
+          res.puesto
+            ? `🏆 ¡Entras en el top 10! Puesto ${res.puesto} con ${res.legado} puntos de legado.`
+            : decimo != null
+              ? `Te quedas fuera del top 10: el 10.º tiene ${decimo} puntos de legado y tú ${res.legado}.`
+              : `Apuntada en el ranking con ${res.legado} puntos de legado.`,
+        );
+      })
+      .catch(() => setRanking("No se pudo apuntar en el ranking."));
+  }, [conSesion, p, onTop]);
   const balones = r.premios.find((p) => p[0] === "Balón de Oro")?.[1] ?? 0;
   const texto =
     `${e.nombre} (${nacionPorCodigo(e.nacion).nombre}, ${NOMBRE_POSICION[e.posicion].toLowerCase()}): ${r.titulo}. ` +
@@ -403,6 +453,11 @@ function Final({ e, onNueva }: { e: Estado; onNueva: () => void }) {
       <p className="mc-final__legado">
         Legado: <b>{r.legado}</b> puntos · media máxima <b>{r.mediaMax}</b>
       </p>
+      {ranking ? (
+        <p className="mc-final__ranking">{ranking}</p>
+      ) : (
+        <p className="mc__nota">Sin sesión, las carreras no cuentan para el ranking.</p>
+      )}
       <div className="mc-stats">
         <div>
           <b>{r.partidos}</b>
@@ -476,6 +531,39 @@ function Final({ e, onNueva }: { e: Estado; onNueva: () => void }) {
           Nueva carrera
         </button>
       </div>
+    </div>
+  );
+}
+
+function Ranking({ top }: { top: FilaTop[] }) {
+  return (
+    <div className="panel mc-hist mc-top">
+      <h3>🏆 Top 10 de carreras</h3>
+      {top.length === 0 ? (
+        <p className="mc__nota">Aún no hay carreras en el ranking. ¡Estrénalo!</p>
+      ) : (
+        <ol>
+          {top.map((f, i) => (
+            <li key={`${f.user_id}-${i}`}>
+              <span className="mc-top__pos">{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+              <span className="mc-top__quien">
+                <b>{f.usuario}</b>
+                <small>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API */}
+                  <img src={bandera(f.nacion)} alt="" width={16} height={11} /> {f.jugador} · {NOMBRE_POSICION[f.posicion as Posicion]} · {f.titulo}
+                </small>
+                <small>
+                  {f.goles} goles · {f.titulos} títulos{f.balones ? ` · ${f.balones} Balón${f.balones > 1 ? "es" : ""} de Oro` : ""}
+                </small>
+              </span>
+              <span className="mc-top__legado">
+                <b>{f.legado}</b>
+                <small>legado</small>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

@@ -7,10 +7,19 @@
  */
 
 export type Escalon = 1 | 2 | 3 | 4 | 5;
-export type ClubCarrera = { id: number; nombre: string; liga: string; escalon: Escalon };
+export type ClubCarrera = {
+  id: number;
+  nombre: string;
+  liga: string;
+  escalon: Escalon;
+  /** Cantera (28-oct): id de su primer equipo, al que se puede subir. */
+  matriz?: number;
+};
 
 const c = (escalon: Escalon, liga: string, lista: [number, string][]): ClubCarrera[] =>
   lista.map(([id, nombre]) => ({ id, nombre, liga, escalon }));
+const cantera = (liga: string, lista: [number, string, number][]): ClubCarrera[] =>
+  lista.map(([id, nombre, matriz]) => ({ id, nombre, liga, escalon: 5, matriz }));
 
 export const NOMBRE_ESCALON: Record<Escalon, string> = {
   1: "Élite mundial",
@@ -64,6 +73,19 @@ export const CLUBES_CARRERA: ClubCarrera[] = [
   ]),
   ...c(5, "Serie B", [[498, "Sampdoria"], [504, "Hellas Verona"], [511, "Empoli"], [522, "Palermo"], [520, "Cremonese"], [801, "Pisa"], [899, "Módena"]]),
   ...c(5, "Ligue 2", [[82, "Montpellier"], [83, "Nantes"], [1063, "Saint-Étienne"], [93, "Reims"], [112, "Metz"], [90, "Guingamp"]]),
+  // Canteras de los grandes (pedido del dueño, 28-oct): nivel de segunda,
+  // no ascienden ni fichan a nadie; si destacas, sube al primer equipo.
+  ...cantera("Primera Federación", [
+    [712, "Barça Atlètic", 529], [9575, "Real Madrid Castilla", 541], [9570, "Atlético de Madrid B", 530],
+    [9579, "Bilbao Athletic", 531], [9585, "Real Sociedad B", 548], [730, "Sevilla Atlético", 536],
+    [9595, "Villarreal B", 533], [9765, "Betis Deportivo", 543], [9594, "Valencia Mestalla", 532],
+  ]),
+  ...cantera("Premier League 2", [[7197, "Manchester City Sub-21", 50], [7192, "Chelsea Sub-21", 49], [7196, "Liverpool Sub-21", 40], [7189, "Arsenal Sub-21", 42]]),
+  ...cantera("Regionalliga", [[4674, "Bayern de Múnich II", 157], [9367, "Borussia Dortmund II", 165]]),
+  ...cantera("Serie C", [[1715, "Juventus Next Gen", 496]]),
+  ...cantera("Eerste Divisie", [[425, "Jong Ajax", 194], [411, "Jong PSV", 197]]),
+  ...cantera("Liga Portugal 2", [[229, "Benfica B", 211], [243, "Oporto B", 212]]),
+
   ...c(5, "2. Bundesliga", [
     [159, "Hertha Berlín"], [161, "Wolfsburgo"], [166, "Hannover 96"], [171, "Núremberg"], [176, "Bochum"], [186, "St. Pauli"],
     [745, "Kaiserslautern"], [180, "Heidenheim"],
@@ -71,10 +93,19 @@ export const CLUBES_CARRERA: ClubCarrera[] = [
 ];
 
 export const clubPorId = (id: number) => CLUBES_CARRERA.find((x) => x.id === id) ?? null;
+/** Los que pueden ofrecerte ficha o recibirte cedido (las canteras no). */
+export const CLUBES_FICHAN = CLUBES_CARRERA.filter((x) => !x.matriz);
 export const escudoClub = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 
-/** Ligas de segunda para elegir el club inicial, en este orden. */
-export const LIGAS_INICIO = ["Segunda División", "Championship", "Serie B", "Ligue 2", "2. Bundesliga"];
+/** Grupos para elegir el club inicial, en este orden: segundas, primera
+ * modesta y canteras (28-oct). */
+export const LIGAS_INICIO = ["Segunda División", "Championship", "Serie B", "Ligue 2", "2. Bundesliga", "Primera (modestos)", "Canteras"];
+export function clubesDeInicio(grupo: string): ClubCarrera[] {
+  if (grupo === "Canteras") return CLUBES_CARRERA.filter((x) => x.matriz);
+  if (grupo === "Primera (modestos)") return CLUBES_CARRERA.filter((x) => x.escalon === 4);
+  return CLUBES_CARRERA.filter((x) => x.escalon === 5 && !x.matriz && x.liga === grupo);
+}
+export const esClubDeInicio = (id: number) => LIGAS_INICIO.some((g) => clubesDeInicio(g).some((x) => x.id === id));
 
 /** Nacionalidades para elegir: bandera, fuerza de la selección (probabilidad
  * aproximada de ganar su gran torneo) y su torneo continental. */
