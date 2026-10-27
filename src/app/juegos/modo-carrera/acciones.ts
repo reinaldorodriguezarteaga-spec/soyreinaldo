@@ -25,8 +25,13 @@ export type FilaTop = {
   media_max: number;
   clubes: number[];
   mundiales: number;
+  champions: number;
   modo: "rapida" | "extendida";
 };
+
+/** Rankings por un solo número, de las dos versiones juntas (migraciones 096-098). */
+export type Especial = "mundiales" | "balones" | "champions";
+export type ResultadoEspecial = { valor: number; puesto: number | null; top: FilaTop[] };
 
 /**
  * Guarda una carrera terminada en el ranking (migración 094). El servidor
@@ -37,8 +42,8 @@ export async function guardarCarrera(
   inicio: Inicio,
   acciones: Accion[],
 ): Promise<
-  | { ok: true; legado: number; puesto: number | null; top: FilaTop[]; modo: "rapida" | "extendida"; mundiales: number; puestoMundiales: number | null; topMundiales: FilaTop[]; balones: number; puestoBalones: number | null; topBalones: FilaTop[] }
-   | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }
+  | { ok: true; legado: number; puesto: number | null; top: FilaTop[]; modo: "rapida" | "extendida"; especiales: Record<Especial, ResultadoEspecial> }
+  | { ok: false; error: "sesion" | "invalida" | "limite" | "error" }
 > {
   const supabase = await createClient();
   const {
@@ -49,8 +54,11 @@ export async function guardarCarrera(
   const e = reproducir(inicio, acciones);
   if (!e) return { ok: false, error: "invalida" };
   const r = resumen(e);
-  const balones = r.premios.find((p) => p[0] === "Balón de Oro")?.[1] ?? 0;
-  const mundiales = r.trofeos.filter(([t]) => /^Mundial \d/.test(t)).reduce((s, t) => s + t[1], 0);
+  const valores: Record<Especial, number> = {
+    mundiales: r.trofeos.filter(([t]) => /^Mundial \d/.test(t)).reduce((s, t) => s + t[1], 0),
+    balones: r.premios.find((p) => p[0] === "Balón de Oro")?.[1] ?? 0,
+    champions: r.trofeos.find((t) => t[0] === "Champions League")?.[1] ?? 0,
+  };
 
   const db = clienteServicio();
   if (!db) return { ok: false, error: "error" };
@@ -69,37 +77,30 @@ export async function guardarCarrera(
     partidos: r.partidos,
     goles: r.goles,
     titulos: r.trofeos.reduce((s, t) => s + t[1], 0),
-    balones,
+    balones: valores.balones,
     media_max: r.mediaMax,
     clubes: r.clubes,
     modo: e.extendido ? "extendida" : "rapida",
-    mundiales,
+    mundiales: valores.mundiales,
+    champions: valores.champions,
   });
   if (error) return { ok: false, error: "error" };
 
-  const [{ data }, { data: dataMundiales }, { data: dataBalones }] = await Promise.all([
+  const tipos: Especial[] = ["mundiales", "balones", "champions"];
+  const [{ data }, ...otros] = await Promise.all([
     supabase.rpc("carrera_top", { p_limite: 10, p_modo: e.extendido ? "extendida" : "rapida" }),
-    supabase.rpc("carrera_top_mundiales", { p_limite: 10 }),
-    supabase.rpc("carrera_top_balones", { p_limite: 10 }),
+    ...tipos.map((t) => supabase.rpc(`carrera_top_${t}`, { p_limite: 10 })),
   ]);
   const top = (data ?? []) as FilaTop[];
-  const topMundiales = (dataMundiales ?? []) as FilaTop[];
-  const topBalones = (dataBalones ?? []) as FilaTop[];
-  const i = top.findIndex((f) => f.user_id === user.id && f.legado === r.legado);
-  const j = mundiales > 0 ? topMundiales.findIndex((f) => f.user_id === user.id && f.mundiales === mundiales && f.legado === r.legado) : -1;
-  const k = balones > 0 ? topBalones.findIndex((f) => f.user_id === user.id && f.balones === balones && f.legado === r.legado) : -1;
+  const esLaMia = (f: FilaTop) => f.user_id === user.id && f.legado === r.legado;
+  const i = top.findIndex(esLaMia);
+  const especiales = Object.fromEntries(
+    tipos.map((t, n) => {
+      const lista = (otros[n].data ?? []) as FilaTop[];
+      const j = valores[t] > 0 ? lista.findIndex((f) => esLaMia(f) && f[t] === valores[t]) : -1;
+      return [t, { valor: valores[t], puesto: j >= 0 ? j + 1 : null, top: lista }];
+    }),
+  ) as Record<Especial, ResultadoEspecial>;
   revalidatePath("/juegos/modo-carrera");
-  return {
-    ok: true,
-    legado: r.legado,
-    puesto: i >= 0 ? i + 1 : null,
-    top,
-    modo: e.extendido ? "extendida" : "rapida",
-    mundiales,
-    puestoMundiales: j >= 0 ? j + 1 : null,
-    topMundiales,
-    balones,
-    puestoBalones: k >= 0 ? k + 1 : null,
-    topBalones,
-  };
+  return { ok: true, legado: r.legado, puesto: i >= 0 ? i + 1 : null, top, modo: e.extendido ? "extendida" : "rapida", especiales };
 }
