@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { avisarRetoAceptado, avisarRetoNuevo } from "@/lib/quiniela-liga/aviso-reto";
+import { anunciarReto } from "@/lib/quiniela-liga/chat-sistema";
 
 /**
  * Duelos de la quiniela: las reglas (próxima jornada sin empezar, miembros
@@ -33,7 +34,7 @@ export async function retar(leagueId: string, rivalId: string): Promise<Resultad
   const supabase = await createClient();
   const { data: id, error } = await supabase.rpc("lq_retar", { p_league_id: leagueId, p_rival: rivalId });
   // Aviso al retado (push + email) después de responder: no hace esperar.
-  if (!error && typeof id === "string") after(() => avisarRetoNuevo(id));
+  if (!error && typeof id === "string") after(() => Promise.all([avisarRetoNuevo(id), anunciarReto(id)]));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }
@@ -41,7 +42,7 @@ export async function retar(leagueId: string, rivalId: string): Promise<Resultad
 export async function responderDuelo(id: string, aceptar: boolean): Promise<ResultadoDuelo> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("lq_responder_duelo", { p_id: id, p_aceptar: aceptar });
-  if (!error && aceptar) after(() => avisarRetoAceptado(id));
+  if (!error && aceptar) after(() => Promise.all([avisarRetoAceptado(id), anunciarReto(id, true)]));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }
@@ -60,7 +61,7 @@ export async function aceptarInvitacion(leagueId: string, retadorId: string): Pr
     p_league_id: leagueId,
     p_retador: retadorId,
   });
-  if (!error && typeof id === "string") after(() => avisarRetoAceptado(id));
+  if (!error && typeof id === "string") after(() => Promise.all([avisarRetoAceptado(id), anunciarReto(id, true)]));
   revalidatePath("/quiniela-liga", "layout");
   return traducir(error);
 }
