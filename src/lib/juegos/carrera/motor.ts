@@ -44,7 +44,14 @@ export type Efecto = {
   texto: string;
 };
 export type Opcion = { texto: string; efecto: Efecto };
-export type Escenario = { id: string; titulo: string; texto: string; opciones: Opcion[] };
+export type Escenario = {
+  id: string;
+  titulo: string;
+  texto: string;
+  opciones: Opcion[];
+  /** Pregunta de mitad de temporada (versión extendida, 28-oct). */
+  mitad?: boolean;
+};
 
 export type Temporada = {
   anio: number;
@@ -66,6 +73,8 @@ export type Temporada = {
   balonPuesto?: number;
   eleccion: string;
   resultadoEleccion: string;
+  /** Versión extendida: lo que elegiste a mitad de temporada. */
+  invierno?: { eleccion: string; resultado: string };
   lesionado: boolean;
 };
 
@@ -87,6 +96,10 @@ export type Estado = {
   escenario: Escenario | null;
   /** Escenarios ya vistos, para no repetirlos (28-oct). */
   usados: string[];
+  /** Versión extendida: también una pregunta a mitad de temporada. */
+  extendido: boolean;
+  /** Lo elegido en pretemporada, a la espera de la de mitad de temporada. */
+  pendiente: { id: string; efecto: Efecto; delta: number; eleccion: string; resultado: string; trofeo: string | null } | null;
   ofertas: number[];
   /** El club no te renueva: no hay «seguir». */
   sinRenovar?: boolean;
@@ -683,8 +696,246 @@ function generarEscenario(e: Estado): Escenario {
   return validos[0].crea(e);
 }
 
+
+// ── Mitad de temporada (versión extendida) ──
+const INVIERNO: Generador[] = [
+  {
+    id: "inv-mercado",
+    peso: 3,
+    vale: (e) => e.escalonClub < 5 || e.media >= 66,
+    crea: () => ({
+      id: "inv-mercado",
+      titulo: "Mercado de invierno",
+      texto: "La prensa dice que el club escucharía ofertas por ti en enero.",
+      opciones: [
+        { texto: "Hablar con el míster cara a cara", efecto: { nota: 0.1, texto: "Te dice que cuenta contigo y te quedas tranquilo." } },
+        { texto: "Ignorar el ruido y entrenar", efecto: { media: [0, 1], texto: "Ni lo lees." } },
+        { texto: "Filtrar que te quieres quedar", efecto: { nota: 0.1, texto: "La afición te lo agradece.", riesgo: { p: 0.35, media: [-1, 0], texto: "La directiva no lo lleva bien y juegas menos." } } },
+      ],
+    }),
+  },
+  {
+    id: "inv-sequia",
+    peso: 3,
+    vale: (e) => e.posicion === "DEL" || e.posicion === "MED",
+    crea: () => ({
+      id: "inv-sequia",
+      titulo: "Sequía en diciembre",
+      texto: "Llevas un mes sin marcar ni dar una asistencia.",
+      opciones: [
+        { texto: "Quedarte cada día tirando a puerta", efecto: { goles: 1.15, texto: "En enero vuelves a ver puerta como nunca." } },
+        { texto: "Cambiar de botas", efecto: { goles: 1.05, texto: "Botas nuevas, suerte nueva.", riesgo: { p: 0.4, media: [-1, 0], texto: "Te salen ampollas y no te encuentras." } } },
+        { texto: "Hablarlo con el psicólogo", efecto: { nota: 0.2, texto: "Te quitas la presión de encima." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-racha",
+    peso: 3,
+    vale: (e) => e.media >= nivel(e),
+    crea: () => ({
+      id: "inv-racha",
+      titulo: "Estás on fire",
+      texto: "Llegas a enero siendo el mejor del equipo. El cuerpo empieza a avisar.",
+      opciones: [
+        { texto: "No levantar el pie: a por todas", efecto: { goles: 1.1, nota: 0.2, lesion: 0.08, texto: "Sigues enchufado toda la temporada." } },
+        { texto: "Pedir alguna rotación", efecto: { minutos: 0.93, declive: 0.9, texto: "Llegas fresco a los partidos grandes." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-sobrecarga",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "inv-sobrecarga",
+      titulo: "Sobrecarga muscular",
+      texto: "Notas un pinchazo en el isquio en el entrenamiento.",
+      opciones: [
+        { texto: "Parar dos semanas", efecto: { minutos: 0.92, texto: "Vuelves sin molestias." } },
+        { texto: "Jugar con molestias", efecto: { texto: "Aguantas como un jabato.", riesgo: { p: 0.4, media: [-2, -1], texto: "Se convierte en rotura y te pierdes dos meses." } } },
+      ],
+    }),
+  },
+  {
+    id: "inv-cesion",
+    peso: 4,
+    vale: (e) => e.media < nivel(e) - 3 && e.escalonClub < 5 && !e.pendiente?.efecto.cedido,
+    crea: () => ({
+      id: "inv-cesion",
+      titulo: "Cesión en enero",
+      texto: "Apenas juegas. Un club de menos nivel te quiere cedido hasta final de temporada.",
+      opciones: [
+        { texto: "Irte cedido a jugar", efecto: { cedido: true, minutos: 1.1, media: [0, 1], texto: "Te vas a jugar todos los domingos." } },
+        { texto: "Quedarte a pelear el puesto", efecto: { media: [0, 1], texto: "Te quedas y aprietas en cada entrenamiento." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-copa",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "inv-copa",
+      titulo: "Eliminatoria de copa",
+      texto: "El míster quiere darte descanso en la copa, en un campo de tierra contra un modesto.",
+      opciones: [
+        { texto: "Pedir jugar: todos los partidos cuentan", efecto: { nota: 0.1, lesion: 0.04, texto: "Juegas y marcas la diferencia." } },
+        { texto: "Aceptar el descanso", efecto: { declive: 0.95, texto: "Descansas para lo importante." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-champions",
+    peso: 3,
+    vale: (e) => e.escalonClub <= 2,
+    crea: () => ({
+      id: "inv-champions",
+      titulo: "Octavos de Champions",
+      texto: "Llegas tocado del tobillo a la ida de los octavos.",
+      opciones: [
+        { texto: "Infiltrarte y jugar", efecto: { nota: 0.3, texto: "Partidazo y el equipo encarrila la eliminatoria.", riesgo: { p: 0.3, media: [-2, -1], texto: "El tobillo dice basta y te pierdes la vuelta." } } },
+        { texto: "Avisar al cuerpo médico", efecto: { minutos: 0.96, texto: "Te reservas para la vuelta." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-navidad",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "inv-navidad",
+      titulo: "Parón de Navidad",
+      texto: "Diez días libres en Navidad. Turrón, familia y… ¿báscula?",
+      opciones: [
+        { texto: "Disfrutar a tope de las fiestas", efecto: { media: [-1, 0], texto: "Vuelves feliz y con un kilo de más." } },
+        { texto: "Entrenar cada mañana igualmente", efecto: { media: [0, 1], texto: "Vuelves como te fuiste." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-brazalete",
+    peso: 2,
+    vale: (e) => e.edad >= 23,
+    crea: () => ({
+      id: "inv-brazalete",
+      titulo: "Capitán por un mes",
+      texto: "Se lesiona el capitán y el míster te da el brazalete.",
+      opciones: [
+        { texto: "Liderar y dar la cara", efecto: { nota: 0.3, texto: "El vestuario te sigue a muerte." } },
+        { texto: "Dejárselo al veterano", efecto: { media: [0, 1], texto: "Te centras en tu juego." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-destitucion",
+    peso: 2,
+    vale: () => true,
+    crea: () => ({
+      id: "inv-destitucion",
+      titulo: "Cese del entrenador",
+      texto: "Tras una mala racha, el club destituye al entrenador en enero.",
+      opciones: [
+        { texto: "Ganarte al nuevo desde el primer día", efecto: { media: [0, 2], minutos: 1.05, texto: "Eres de los primeros en su once." } },
+        { texto: "Defender al míster en rueda de prensa", efecto: { nota: 0.1, texto: "Te ganas el respeto de todos.", riesgo: { p: 0.35, media: [-1, 0], texto: "Al nuevo no le hace gracia." } } },
+      ],
+    }),
+  },
+  {
+    id: "inv-meme",
+    peso: 2,
+    vale: (e) => e.posicion !== "POR",
+    crea: () => ({
+      id: "inv-meme",
+      titulo: "Eres meme",
+      texto: "Fallas un gol cantado a puerta vacía y eres tendencia mundial.",
+      opciones: [
+        { texto: "Reírte de ti mismo en redes", efecto: { nota: 0.1, texto: "Te ganas a todo el mundo con tu humor." } },
+        { texto: "Desconectar y trabajar", efecto: { media: [0, 1], texto: "El siguiente lo metes por la escuadra." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-portero",
+    peso: 3,
+    vale: (e) => e.posicion === "POR",
+    crea: () => ({
+      id: "inv-portero",
+      titulo: "Cantada",
+      texto: "Se te escapa un balón fácil entre las piernas y cuesta un punto.",
+      opciones: [
+        { texto: "Pedir perdón y pasar página", efecto: { nota: 0.1, texto: "La semana siguiente paras un penalti." } },
+        { texto: "Analizar el vídeo una y otra vez", efecto: { media: [0, 1], texto: "Corriges el gesto y no vuelve a pasar.", riesgo: { p: 0.3, media: [-1, 0], texto: "Te obsesionas y pierdes confianza." } } },
+      ],
+    }),
+  },
+  {
+    id: "inv-amistoso",
+    peso: 2,
+    vale: (e) => e.media >= umbralSeleccion(e) - 2 && e.edad >= 18,
+    crea: () => ({
+      id: "inv-amistoso",
+      titulo: "Parón de marzo",
+      texto: "La selección te llama para dos amistosos en la otra punta del mundo.",
+      opciones: [
+        { texto: "Ir: la selección es lo primero", efecto: { nota: 0.1, lesion: 0.05, texto: "Vuelves con dos partidos más en las piernas." } },
+        { texto: "Pedir no ir por fatiga", efecto: { declive: 0.9, texto: "Descansas y llegas mejor al tramo final." } },
+      ],
+    }),
+  },
+  {
+    id: "inv-tarjeta",
+    peso: 2,
+    vale: (e) => e.posicion === "DEF" || e.posicion === "MED",
+    crea: () => ({
+      id: "inv-tarjeta",
+      titulo: "Apercibido",
+      texto: "Estás a una amarilla de perderte el partido más importante del año.",
+      opciones: [
+        { texto: "Forzar la amarilla en el partido de antes", efecto: { nota: 0.1, texto: "Cumples ciclo y llegas limpio al partidazo.", riesgo: { p: 0.3, media: [-1, 0], texto: "Te pillan y Competición te sanciona el doble." } } },
+        { texto: "Jugar sin pensar en ello", efecto: { media: [0, 1], texto: "Juegas con la cabeza y no ves la amarilla." } },
+      ],
+    }),
+  },
+];
+
+function generarInvierno(e: Estado): Escenario {
+  const r = rng(e);
+  const encajan = INVIERNO.filter((g) => g.vale(e));
+  const nuevos = encajan.filter((g) => !e.usados.includes(g.id));
+  const recientes = e.usados.slice(-8);
+  const validos = nuevos.length ? nuevos : encajan.filter((g) => !recientes.includes(g.id)).length ? encajan.filter((g) => !recientes.includes(g.id)) : encajan;
+  const total = validos.reduce((s, g) => s + g.peso, 0);
+  let x = r() * total;
+  for (const g of validos) {
+    x -= g.peso;
+    if (x <= 0) return { ...g.crea(e), mitad: true };
+  }
+  return { ...validos[0].crea(e), mitad: true };
+}
+
+/** Dos decisiones de la misma temporada en una. */
+function combinar(a: Efecto, b: Efecto): Efecto {
+  return {
+    texto: b.texto,
+    minutos: (a.minutos ?? 1) * (b.minutos ?? 1),
+    goles: (a.goles ?? 1) * (b.goles ?? 1),
+    lesion: (a.lesion ?? 0) + (b.lesion ?? 0),
+    cedido: a.cedido || b.cedido,
+    declive: (a.declive ?? 1) * (b.declive ?? 1),
+    nota: (a.nota ?? 0) + (b.nota ?? 0),
+  };
+}
+
 // ── Crear ──
-export function crearCarrera(o: { nombre: string; nacion: string; posicion: Posicion; clubId: number; semilla: number }): Estado {
+export function crearCarrera(o: {
+  nombre: string;
+  nacion: string;
+  posicion: Posicion;
+  clubId: number;
+  semilla: number;
+  extendido?: boolean;
+}): Estado {
   const club = clubPorId(o.clubId);
   const base: Estado = {
     v: 1,
@@ -702,6 +953,8 @@ export function crearCarrera(o: { nombre: string; nacion: string; posicion: Posi
     fase: "escenario",
     escenario: null,
     usados: [],
+    extendido: !!o.extendido,
+    pendiente: null,
     ofertas: [],
     historial: [],
   };
@@ -744,16 +997,30 @@ export function elegirOpcion(e: Estado, i: number): Estado {
   const opcion = e.escenario.opciones[i];
   if (!opcion) return e;
   const r = rng(e);
-  const ef = opcion.efecto;
-  let delta = ef.media ? entre(r, ef.media) : 0;
-  let resultadoEleccion = ef.texto;
-  if (ef.riesgo && r() < ef.riesgo.p) {
-    delta = entre(r, ef.riesgo.media);
-    resultadoEleccion = ef.riesgo.texto;
+  const efOpcion = opcion.efecto;
+  let deltaOpcion = efOpcion.media ? entre(r, efOpcion.media) : 0;
+  let resultadoOpcion = efOpcion.texto;
+  if (efOpcion.riesgo && r() < efOpcion.riesgo.p) {
+    deltaOpcion = entre(r, efOpcion.riesgo.media);
+    resultadoOpcion = efOpcion.riesgo.texto;
   }
+  const trofeoOpcion = efOpcion.trofeo && r() < efOpcion.trofeo.p ? efOpcion.trofeo.nombre : null;
+
+  // Versión extendida: la de pretemporada espera a la de mitad de temporada.
+  if (e.extendido && !e.escenario.mitad) {
+    const siguiente: Estado = {
+      ...e,
+      paso: e.paso + 1,
+      pendiente: { id: e.escenario.id, efecto: efOpcion, delta: deltaOpcion, eleccion: opcion.texto, resultado: resultadoOpcion, trofeo: trofeoOpcion },
+    };
+    return { ...siguiente, escenario: generarInvierno(siguiente) };
+  }
+  const previa = e.escenario.mitad ? e.pendiente : null;
+  const ef = previa ? combinar(previa.efecto, efOpcion) : efOpcion;
+  const delta = (previa?.delta ?? 0) + deltaOpcion;
   const mediaInicio = e.media;
   const media = limitar(e.media + delta, 40, 97);
-  const trofeoEscenario = ef.trofeo && r() < ef.trofeo.p ? ef.trofeo.nombre : null;
+  const trofeosEscenario = [previa?.trofeo, trofeoOpcion].filter((t): t is string => !!t);
 
   // Club donde se juega (cedido: uno de un escalón menos).
   const clubPropio = clubPorId(e.clubId)!;
@@ -799,7 +1066,7 @@ export function elegirOpcion(e: Estado, i: number): Estado {
 
   // Trofeos del equipo: el escalón manda y tu temporada ayuda.
   const impacto = nota != null ? (nota - 6.5) * 0.25 * (partidos / MAX_PARTIDOS[escalonJuego]) : 0;
-  const trofeos: string[] = trofeoEscenario ? [trofeoEscenario] : [];
+  const trofeos: string[] = [...trofeosEscenario];
   let escalonClub = e.escalonClub;
   const dominante = liga === "Liga Portugal" || liga === "Eredivisie";
   const pLiga = { 1: 0.32, 2: 0.1, 3: dominante ? 0.33 : 0.03, 4: 0.005, 5: 0.12 }[escalonJuego] + impacto * 0.3;
@@ -896,8 +1163,9 @@ export function elegirOpcion(e: Estado, i: number): Estado {
     premios,
     seleccion,
     balonPuesto,
-    eleccion: opcion.texto,
-    resultadoEleccion,
+    eleccion: previa ? previa.eleccion : opcion.texto,
+    resultadoEleccion: previa ? previa.resultado : resultadoOpcion,
+    invierno: previa ? { eleccion: opcion.texto, resultado: resultadoOpcion } : undefined,
     lesionado,
   };
 
@@ -911,7 +1179,8 @@ export function elegirOpcion(e: Estado, i: number): Estado {
     media: media2,
     escalonClub,
     fase: "resultado",
-    usados: [...e.usados, e.escenario.id],
+    usados: [...e.usados, ...(previa ? [previa.id] : []), e.escenario.id],
+    pendiente: null,
     historial: [...e.historial, temporada],
   };
 }

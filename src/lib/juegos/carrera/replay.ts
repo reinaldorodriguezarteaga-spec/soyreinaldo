@@ -8,7 +8,7 @@ import { crearCarrera, decidir, elegirOpcion, pasarAOfertas, type Estado, type P
  * puntuación.
  */
 
-export type Inicio = { nombre: string; nacion: string; posicion: Posicion; clubId: number; semilla: number };
+export type Inicio = { nombre: string; nacion: string; posicion: Posicion; clubId: number; semilla: number; extendido: boolean };
 export type Accion =
   | { t: "opcion"; i: number }
   | { t: "ver" }
@@ -40,6 +40,7 @@ export function reproducir(inicio: Inicio, acciones: Accion[]): Estado | null {
     NACIONES.some((n) => n.codigo === inicio.nacion) &&
     ["POR", "DEF", "MED", "DEL"].includes(inicio.posicion) &&
     esClubDeInicio(inicio.clubId) &&
+    typeof inicio.extendido === "boolean" &&
     Number.isInteger(inicio.semilla) &&
     inicio.semilla >= 0 &&
     inicio.semilla < 1e9 &&

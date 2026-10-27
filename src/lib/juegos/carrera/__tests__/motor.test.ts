@@ -60,7 +60,7 @@ describe("modo carrera", () => {
 describe("rejugar una carrera (ranking)", () => {
   it("las mismas decisiones dan la misma carrera y el mismo legado", async () => {
     const { aplicar, reproducir } = await import("../replay");
-    const inicio = { nombre: "Repe", nacion: "br", posicion: "MED" as const, clubId: 534, semilla: 4242 };
+    const inicio = { nombre: "Repe", nacion: "br", posicion: "MED" as const, clubId: 534, semilla: 4242, extendido: true };
     let e = crearCarrera(inicio);
     const acciones: import("../replay").Accion[] = [];
     for (let i = 0; i < 200 && e.fase !== "fin"; i++) {
@@ -79,9 +79,9 @@ describe("rejugar una carrera (ranking)", () => {
 
   it("rechaza trampas: club inicial de primera, ofertas inventadas o carreras a medias", async () => {
     const { reproducir } = await import("../replay");
-    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 541, semilla: 1 }, [])).toBeNull();
-    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1 }, [{ t: "opcion", i: 0 }, { t: "ver" }, { t: "fichar", id: 541 }])).toBeNull();
-    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1 }, [{ t: "opcion", i: 0 }])).toBeNull();
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 541, semilla: 1, extendido: false }, [])).toBeNull();
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1, extendido: false }, [{ t: "opcion", i: 0 }, { t: "ver" }, { t: "fichar", id: 541 }])).toBeNull();
+    expect(reproducir({ nombre: "X", nacion: "es", posicion: "DEL", clubId: 534, semilla: 1, extendido: false }, [{ t: "opcion", i: 0 }])).toBeNull();
   });
 });
 
@@ -98,3 +98,18 @@ describe("canteras", () => {
     expect(CLUBES_FICHAN.some((c) => c.matriz)).toBe(false);
   });
 });
+
+describe("versión extendida", () => {
+  it("cada temporada tiene dos decisiones: pretemporada y mitad de temporada", () => {
+    let e = crearCarrera({ nombre: "", nacion: "es", posicion: "DEL", clubId: 534, semilla: 21, extendido: true });
+    expect(e.escenario?.mitad).toBeFalsy();
+    e = elegirOpcion(e, 0);
+    expect(e.fase).toBe("escenario");
+    expect(e.escenario?.mitad).toBe(true);
+    e = elegirOpcion(e, 0);
+    expect(e.fase).toBe("resultado");
+    expect(e.historial[0].invierno).toBeDefined();
+    expect(e.usados.length).toBe(2);
+  });
+});
+
