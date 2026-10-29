@@ -769,6 +769,9 @@ img {
   transition: all 0.18s ease;
 }
 .foot__social a:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+.foot__store { display: inline-block; margin-top: 28px; transition: transform 0.18s ease; }
+.foot__store:hover { transform: translateY(-2px); }
+.foot__store img { display: block; height: 40px; width: auto; }
 .foot__copy { color: var(--text-dim); font-size: 0.8rem; margin-top: 28px; }
 
 /* ===== Páginas internas ===== */
