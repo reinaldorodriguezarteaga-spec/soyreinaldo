@@ -36,8 +36,7 @@ const suscribirNada = () => () => {};
  * registra al activar avisos, así que aquí se registra de antemano — sin
  * pedir permiso de notificación, eso sigue siendo decisión aparte.
  *
- * iOS no tiene ese evento (limitación de Safari): se explica el paso manual,
- * igual que ya hacía `GoalAlerts` para quien llega sin la app instalada.
+ * iOS no la ve: allí se ofrece la app nativa de la App Store.
  */
 export default function InstallBanner() {
   // El servidor no conoce el UA ni lo que hay en localStorage: snapshot
@@ -112,11 +111,12 @@ export default function InstallBanner() {
 
   if (cerrado || !movil || estaInstalada()) return null;
   if (!debeReofrecerInstalacion(dismissedAt, ahora)) return null;
+  // iPhone: desde el 28-oct-2026 hay app de verdad en la App Store, y Safari
+  // ya la anuncia con su franja nativa (meta `apple-itunes-app` del layout).
+  if (esIOS(ua)) return null;
   // Android sin el prompt todavía disponible: mejor nada que un botón
   // "Instalar" que no reacciona.
   if (esAndroid(ua) && !prompt) return null;
-
-  const ios = esIOS(ua);
 
   return (
     <div
@@ -145,30 +145,18 @@ export default function InstallBanner() {
             color: "var(--text-dim)",
           }}
         >
-          {ios ? (
-            <>
-              Añade <b style={{ color: "var(--text)" }}>Soy Reinaldo</b> a tu
-              pantalla de inicio: toca <b>Compartir</b> y luego{" "}
-              <b>Añadir a pantalla de inicio</b>.
-            </>
-          ) : (
-            <>
-              Instala <b style={{ color: "var(--text)" }}>Soy Reinaldo</b> como
-              app y recibe avisos de gol al instante.
-            </>
-          )}
+          Instala <b style={{ color: "var(--text)" }}>Soy Reinaldo</b> como
+          app y recibe avisos de gol al instante.
         </p>
-        {!ios && (
-          <button
-            type="button"
-            className="btn btn--accent"
-            onClick={instalar}
-            disabled={instalando}
-            style={{ flex: "none" }}
-          >
-            {instalando ? "…" : "Instalar"}
-          </button>
-        )}
+        <button
+          type="button"
+          className="btn btn--accent"
+          onClick={instalar}
+          disabled={instalando}
+          style={{ flex: "none" }}
+        >
+          {instalando ? "…" : "Instalar"}
+        </button>
         <button
           type="button"
           aria-label="Cerrar"

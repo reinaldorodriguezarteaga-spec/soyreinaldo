@@ -65,6 +65,9 @@ export const metadata: Metadata = {
     title: "SoyReinaldo",
     statusBarStyle: "black-translucent",
   },
+  // Franja nativa de Safari en iPhone para abrir o descargar la app de iOS.
+  // Safari la esconde solo donde la app no se vende.
+  itunes: { appId: "6822903408" },
   formatDetection: {
     telephone: false,
   },
@@ -207,7 +210,7 @@ export default async function RootLayout({
         <Gestures />
         <BackButton />
         {children}
-        <Footer />
+        <Footer enApp={inApp} />
         </EnAppProvider>
         {anuncios && <CookieConsent />}
         {/* Vercel Web Analytics: visitas y páginas vistas sin cookies ni

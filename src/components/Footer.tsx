@@ -15,7 +15,10 @@ const SOCIALS = [
   { href: "https://chat.whatsapp.com/Hgw7vhK85i13E8aLxGTlIQ?mode=gi_t", Logo: WhatsAppLogo, label: "WhatsApp" },
 ];
 
-export default function Footer() {
+/** La app de iOS (aprobada el 28-oct-2026). */
+export const APP_STORE_URL = "https://apps.apple.com/es/app/id6822903408";
+
+export default function Footer({ enApp = false }: { enApp?: boolean }) {
   return (
     <footer className="foot">
       <div className="wrap">
@@ -45,6 +48,19 @@ export default function Footer() {
             ))}
           </div>
         </div>
+        {/* Dentro de la app no tiene sentido invitar a descargarla. */}
+        {!enApp && (
+          <a
+            className="foot__store"
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* Insignia oficial de Apple (no se puede redibujar ni recolorear). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/app-store-es.svg" alt="Descárgalo en el App Store" width={120} height={40} />
+          </a>
+        )}
         <p className="foot__copy">
           © {new Date().getFullYear()} Reinaldo Rodríguez · Fútbol con Reinaldo
         </p>
