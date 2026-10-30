@@ -28,10 +28,14 @@ const comodin = (w: string) => w.replace(/[bv]/g, "_");
 /** La misma palabra con la b y la v cambiadas, para el API («vommel» → «bommel»). */
 const cambiarBV = (w: string) => w.replace(/[bv]/g, (c) => (c === "b" ? "v" : "b"));
 
+const GRANDES = ["standings:champions", "standings:laliga", "standings:premier", "standings:serie-a", "standings:ligue-1"];
+const SELECCIONES = ["standings:eliminatorias-uefa", "standings:eliminatorias-conmebol", "standings:nations-league"];
+
 /**
  * Clubes cuyos jugadores suelen ser conocidos: +1 por jugar la Champions y +1
- * por estar en una de las grandes ligas que guardamos. Sale de las
- * clasificaciones ya cacheadas por el cron (cero cuota), una vez al día.
+ * por estar en una de las grandes ligas que guardamos. Las selecciones de
+ * Europa y Sudamérica valen -1: así se distinguen y se puntúan aparte. Sale de
+ * las clasificaciones ya cacheadas por el cron (cero cuota), una vez al día.
  */
 const pesoClubes = unstable_cache(
   async (): Promise<Record<number, number>> => {
@@ -41,7 +45,7 @@ const pesoClubes = unstable_cache(
       const { data } = await db
         .from("sports_cache")
         .select("cache_key, data")
-        .in("cache_key", ["standings:champions", "standings:laliga", "standings:premier", "standings:serie-a", "standings:ligue-1"]);
+        .in("cache_key", [...GRANDES, ...SELECCIONES]);
       const peso: Record<number, number> = {};
       for (const fila of (data ?? []) as { cache_key: string; data: unknown }[]) {
         const ids = new Set<number>();
@@ -55,14 +59,15 @@ const pesoClubes = unstable_cache(
           }
         };
         recorrer(fila.data);
-        for (const id of ids) peso[id] = (peso[id] ?? 0) + 1;
+        const seleccion = SELECCIONES.includes(fila.cache_key);
+        for (const id of ids) peso[id] = seleccion ? -1 : (peso[id] ?? 0) + 1;
       }
       return peso;
     } catch {
       return {};
     }
   },
-  ["buscador-peso-clubes"],
+  ["buscador-peso-clubes-v2"],
   { revalidate: 86400 },
 );
 
@@ -164,14 +169,21 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
     const partes = plano(x.nombre).split(/[\s.'-]+/).filter(Boolean);
     let p = 0;
     // Palabra entera (Van Bommel) antes que trozo de otra (Bommeleijn).
-    for (const w of planas) p += partes.includes(w) ? 3 : partes.some((y) => y.startsWith(w)) ? 1 : 0;
+    // La inicial de una plantilla («E. Fernández») vale como el nombre entero:
+    // si no, con «enzo fernandez» ganaban sus tocayos del archivo.
+    for (const w of planas)
+      p += partes.includes(w) || (w.length > 1 && partes.includes(w[0])) ? 3 : partes.some((y) => y.startsWith(w)) ? 1 : 0;
     // Los de la lista curada son los conocidos; los que más se aciertan en el
     // tiki-taka-toe, también.
     if (deLista.has(x.id)) p += 6;
-    if (buscadosAntes.has(x.id)) p += 1;
+    if (buscadosAntes.has(x.id)) p += 2;
     p += 2 * Math.log2(1 + (usos.get(x.id) ?? 0));
-    // Los que juegan en un grande (Champions, grandes ligas).
-    p += Math.max(0, ...(equiposDe.get(x.id) ?? []).map((e) => clubes[e] ?? 0));
+    // Los que juegan en un grande (Champions, grandes ligas) y los que van
+    // convocados con una selección fuerte: Enzo antes que un Fernández de la
+    // misma liga (30-oct).
+    const equipos = equiposDe.get(x.id) ?? [];
+    p += Math.max(0, ...equipos.map((e) => clubes[e] ?? 0));
+    if (equipos.some((e) => clubes[e] === -1)) p += 1;
     // A igualdad, el nombre completo («Mark van Bommel») antes que el abreviado
     // de una plantilla actual («R. van Bommel»).
     if (!/^[A-Z]\. /.test(x.nombre)) p += 0.5;
