@@ -4,6 +4,7 @@ import { permitido } from "@/lib/comparador/cargar";
 import { getEquiposJugador } from "@/lib/sports/api-football";
 import { CLUBES, JUGADORES, type ClubClave } from "@/lib/juegos/carreras";
 import { caraDe } from "@/lib/juegos/caras";
+import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 
 /**
  * Tiki-taka-toe con cualquier jugador (23-oct, pedido del dueño: «Enzo
@@ -34,5 +35,7 @@ export async function validarCasilla(
   if (!ok && deApi.length === 0) {
     return { ok: false, error: "No he podido comprobar sus clubes ahora mismo. Prueba en un momento." };
   }
+  // Cada acierto sube al jugador en el buscador (migración 100).
+  if (ok) await clienteServicio()?.rpc("sumar_uso_jugador", { p_id: apiId });
   return { ok };
 }
