@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EDAD_RETIRO, crearCarrera, decidir, elegirOpcion, pasarAOfertas, puedeRetirarse, resumen, type Estado } from "../motor";
 import { clubPorId } from "../clubes";
+import { reproducir } from "../replay";
 
 /** Juega una carrera entera: siempre la primera opción y la mejor oferta. */
 function jugar(semilla: number, retirarseA?: number): Estado {
@@ -218,5 +219,21 @@ describe("cantera", () => {
       }
     }
     expect(subidas).toBeGreaterThanOrEqual(32);
+  });
+});
+
+describe("edad de inicio (30-oct)", () => {
+  it("con 15 años, menos media; las de antes (sin edad) siguen a los 17", () => {
+    const e = crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 534, semilla: 7, edad: 15 });
+    expect(e.edad).toBe(15);
+    expect(e.media).toBeGreaterThanOrEqual(52);
+    expect(e.media).toBeLessThanOrEqual(57);
+    expect(crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 534, semilla: 7 }).edad).toBe(17);
+    expect(crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 534, semilla: 7, edad: 12 }).edad).toBe(17);
+  });
+
+  it("el servidor rechaza una edad que no se puede elegir", () => {
+    const inicio = { nombre: "", nacion: "es", posicion: "MED" as const, clubId: 534, semilla: 7, extendido: false };
+    expect(reproducir({ ...inicio, edad: 14 }, [])).toBeNull();
   });
 });

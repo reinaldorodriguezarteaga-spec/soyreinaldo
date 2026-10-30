@@ -1,5 +1,5 @@
 import { NACIONES, esClubDeInicio } from "./clubes";
-import { crearCarrera, decidir, elegirOpcion, pasarAOfertas, type Estado, type Posicion } from "./motor";
+import { EDADES_INICIO, crearCarrera, decidir, elegirOpcion, pasarAOfertas, type Estado, type Posicion } from "./motor";
 
 /**
  * Rejugar una carrera a partir de sus decisiones (27-oct, ranking): el motor
@@ -8,7 +8,8 @@ import { crearCarrera, decidir, elegirOpcion, pasarAOfertas, type Estado, type P
  * puntuación.
  */
 
-export type Inicio = { nombre: string; nacion: string; posicion: Posicion; clubId: number; semilla: number; extendido: boolean };
+/** `edad` (30-oct) falta en las carreras de antes: eran a los 17. */
+export type Inicio = { nombre: string; nacion: string; posicion: Posicion; clubId: number; semilla: number; extendido: boolean; edad?: number };
 export type Accion =
   | { t: "opcion"; i: number }
   | { t: "ver" }
@@ -44,6 +45,7 @@ export function reproducir(inicio: Inicio, acciones: Accion[]): Estado | null {
     ["POR", "DEF", "MED", "DEL"].includes(inicio.posicion) &&
     esClubDeInicio(inicio.clubId) &&
     typeof inicio.extendido === "boolean" &&
+    (inicio.edad === undefined || (EDADES_INICIO as readonly number[]).includes(inicio.edad)) &&
     Number.isInteger(inicio.semilla) &&
     inicio.semilla >= 0 &&
     inicio.semilla < 1e9 &&
