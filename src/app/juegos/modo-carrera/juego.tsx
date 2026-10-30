@@ -17,6 +17,7 @@ import {
   NOMBRE_POSICION,
   TEXTO_RONDA,
   crearCarrera,
+  mediaParaSubir,
   puedeRetirarse,
   resumen,
   temporadaTexto,
@@ -363,6 +364,12 @@ function PartidaVista({
                 </button>
               );
             })}
+            {club.matriz && !e.ofertas.includes(club.matriz) && !e.sinRenovar && (
+              <p className="mc__nota">
+                ⬆️ El {clubPorId(club.matriz)?.nombre} aún no te llama: te sube con media{" "}
+                {mediaParaSubir(clubPorId(club.matriz)!.escalon)} (tienes {e.media}) y una temporada de 6,5 o más.
+              </p>
+            )}
             {e.ofertas.length === 0 && !e.sinRenovar && !(e.cesiones ?? []).length && (
               <p className="mc__nota">Este verano no ha llamado nadie: toca demostrar más.</p>
             )}

@@ -1510,6 +1510,14 @@ function evolucionar(e: Estado, t: Temporada, declive: number, r: () => number):
 }
 
 // ── Ofertas ──
+/**
+ * Media con la que el primer equipo sube a un canterano (con una temporada de
+ * 6,5). A un grande se sube como promesa (10 por debajo de su nivel); a uno
+ * más modesto hay que llegar casi hecho. 30-oct: con 8, en la cantera del
+ * Barça o del Madrid media carrera se iba sin que llamase nunca.
+ */
+export const mediaParaSubir = (escalonMatriz: Escalon) => NIVEL_ESCALON[escalonMatriz] - (escalonMatriz <= 2 ? 10 : 4);
+
 /** Tras ver la temporada: ofertas según el rendimiento (o el final). */
 export function pasarAOfertas(e: Estado): Estado {
   if (e.fase !== "resultado") return e;
@@ -1532,10 +1540,14 @@ export function pasarAOfertas(e: Estado): Estado {
   // Cantera: si destacas, sube al primer equipo (28-oct).
   const club = clubPorId(e.clubId);
   const matriz = club?.matriz ? clubPorId(club.matriz) : null;
-  // A un grande se sube como promesa (8 por debajo de su nivel); a uno
-  // más modesto hay que llegar casi hecho.
-  const margenSubida = matriz && matriz.escalon <= 2 ? 8 : 4;
-  if (matriz && e.media >= NIVEL_ESCALON[matriz.escalon] - margenSubida && rendimiento >= 6.6) ofertas.push(matriz.id);
+  // El último verano en el filial el club decide: o te sube o te deja ir.
+  const ultimoVerano = !!matriz && e.edad + 1 >= 24;
+  if (
+    matriz &&
+    ((e.media >= mediaParaSubir(matriz.escalon) && rendimiento >= 6.5) ||
+      (ultimoVerano && e.media >= NIVEL_ESCALON[matriz.escalon] - 12))
+  )
+    ofertas.push(matriz.id);
 
   // Uno de igual tamaño si la temporada fue aceptable.
   if (rendimiento >= 6.3 || e.media >= nivel(e)) ofertas.push(elegirDe(r, otros(e.escalonClub)).id);
@@ -1559,8 +1571,7 @@ export function pasarAOfertas(e: Estado): Estado {
     }
   }
   // Filial: con 24 años hay que salir (al primer equipo o a otro club).
-  const finFilial = !!matriz && e.edad + 1 >= 24;
-  if (finFilial) {
+  if (ultimoVerano) {
     while (ofertas.length < 2) {
       const extra = elegirDe(r, otros(e.escalonClub).filter((c) => !ofertas.includes(c.id)));
       ofertas.push(extra.id);

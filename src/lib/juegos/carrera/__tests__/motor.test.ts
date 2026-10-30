@@ -202,3 +202,21 @@ describe("selección y Mundiales", () => {
     expect(e.historial.at(-1)!.seleccion).toBeUndefined();
   });
 });
+
+describe("cantera", () => {
+  it("el Barça Atlètic sube al primer equipo en casi todas las carreras (30-oct)", () => {
+    let subidas = 0;
+    for (let s = 1; s <= 40; s++) {
+      let e = crearCarrera({ nombre: "", nacion: "es", posicion: "MED", clubId: 712, semilla: s });
+      for (let i = 0; i < 40 && e.fase !== "fin" && e.clubId === 712; i++) {
+        if (e.fase === "escenario") e = elegirOpcion(e, 0);
+        else if (e.fase === "resultado") e = pasarAOfertas(e);
+        else if (e.ofertas.includes(529)) {
+          subidas++;
+          break;
+        } else e = e.sinRenovar ? decidir(e, { tipo: "fichar", clubId: e.ofertas[0] }) : decidir(e, { tipo: "seguir" });
+      }
+    }
+    expect(subidas).toBeGreaterThanOrEqual(32);
+  });
+});
