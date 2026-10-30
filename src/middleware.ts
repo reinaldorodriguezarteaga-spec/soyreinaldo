@@ -203,7 +203,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluimos webhooks (server-to-server, sin cookies) y assets estáticos.
-    "/((?!api/stripe/webhook|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Excluimos webhooks (server-to-server, sin cookies), el buscador de
+    // jugadores de los juegos (público y cacheado en el CDN: pedir la sesión
+    // en cada letra lo hacía lento) y assets estáticos.
+    "/((?!api/stripe/webhook|api/juegos/jugadores|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

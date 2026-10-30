@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
-import { buscarJugadores, type Sugerencia } from "./acciones";
+import { useState, useTransition } from "react";
+import { useBuscarJugadores } from "@/lib/juegos/use-buscar";
 import { edadQueCumple, nombreTemporada, temporadaEnQueCumple, type CompeticionJugador } from "@/lib/comparador/datos";
 
 /** Selector de un lado: buscar jugador, temporada (o carrera) y competición.
@@ -26,18 +26,8 @@ export default function Controles({
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState("");
-  const [sug, setSug] = useState<Sugerencia[]>([]);
+  const { sugerencias: sug } = useBuscarJugadores(q);
   const [cargando, empezar] = useTransition();
-
-  useEffect(() => {
-    if (q.trim().length < 3) return;
-    const id = setTimeout(() => {
-      buscarJugadores(q)
-        .then(setSug)
-        .catch(() => setSug([]));
-    }, 250);
-    return () => clearTimeout(id);
-  }, [q]);
 
   const ir = (cambios: Record<string, string | null>) => {
     const p = new URLSearchParams(params.toString());
@@ -57,7 +47,6 @@ export default function Controles({
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
-            if (e.target.value.trim().length < 3) setSug([]);
           }}
           aria-label="Buscar jugador"
         />
@@ -69,7 +58,6 @@ export default function Controles({
                   type="button"
                   onClick={() => {
                     setQ("");
-                    setSug([]);
                     ir({ [lado]: String(s.id), [`t${lado}`]: null, [`c${lado}`]: null });
                   }}
                 >

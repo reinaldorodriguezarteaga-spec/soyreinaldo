@@ -4,7 +4,8 @@ import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { JUGADORES, clubId, clubNombre } from "@/lib/juegos/carreras";
 import { MAX_INTENTOS_TT, jugaronEnAmbos, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
-import { buscarTikitaka, validarCasilla } from "./acciones";
+import { validarCasilla } from "./acciones";
+import { useBuscarJugadores } from "@/lib/juegos/use-buscar";
 import type { Sugerencia } from "@/lib/juegos/buscar";
 import { NIVELES, puntosTikitaka, reloj, type Nivel } from "@/lib/juegos/niveles";
 import ElegirNivel from "@/components/juegos/ElegirNivel";
@@ -92,23 +93,9 @@ export default function Juego({ numero }: { numero: number }) {
   const columnaDe = (i: number) => tablero.columnas[i % 3];
 
   // Cualquier jugador (23-oct): buscador del servidor (plantillas + lista).
-  const [filtrados, setFiltrados] = useState<Sugerencia[]>([]);
+  const { sugerencias, buscando } = useBuscarJugadores(busca);
+  const filtrados = sugerencias.slice(0, 10);
   const [validando, setValidando] = useState(false);
-  useEffect(() => {
-    const q = busca.trim();
-    if (q.length < 3) return;
-    // Una respuesta vieja (más lenta) no pisa a la de lo último escrito.
-    let vigente = true;
-    const t = setTimeout(() => {
-      buscarTikitaka(q)
-        .then((r) => vigente && setFiltrados(r))
-        .catch(() => vigente && setFiltrados([]));
-    }, 300);
-    return () => {
-      vigente = false;
-      clearTimeout(t);
-    };
-  }, [busca]);
   const ficha = (v: string): Ficha => {
     const f = partida.fichas?.[v];
     if (f) return f;
@@ -172,7 +159,6 @@ export default function Juego({ numero }: { numero: number }) {
     apuntar(p);
     setAviso(ok ? null : `${sug.nombre} no jugó en los dos.`);
     setBusca("");
-    setFiltrados([]);
     if (ok) setCasilla(null);
   }
 
@@ -313,7 +299,6 @@ export default function Juego({ numero }: { numero: number }) {
                   value={busca}
                   onChange={(e) => {
                     setBusca(e.target.value);
-                    setFiltrados([]);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && filtrados.length === 1) void intentar(filtrados[0]);
@@ -337,7 +322,9 @@ export default function Juego({ numero }: { numero: number }) {
                         </button>
                       </li>
                     ))}
-                    {filtrados.length === 0 && <li className="jg-opciones__vacio">Sin resultados (prueba con el apellido)</li>}
+                    {filtrados.length === 0 && (
+                      <li className="jg-opciones__vacio">{buscando ? "Buscando…" : "Sin resultados (prueba con el apellido)"}</li>
+                    )}
                   </ul>
                 )}
               </div>
