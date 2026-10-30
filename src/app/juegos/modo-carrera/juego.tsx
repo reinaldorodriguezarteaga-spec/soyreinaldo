@@ -13,6 +13,8 @@ import {
   type Escalon,
 } from "@/lib/juegos/carrera/clubes";
 import {
+  EDADES_INICIO,
+  EDAD_INICIO,
   EDAD_RETIRO,
   NOMBRE_POSICION,
   TEXTO_RONDA,
@@ -93,6 +95,7 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
   const [posicion, setPosicion] = useState<Posicion>("DEL");
   const [liga, setLiga] = useState(LIGAS_INICIO[0]);
   const [extendido, setExtendido] = useState(false);
+  const [edad, setEdad] = useState<number>(EDAD_INICIO);
   const [club, setClub] = useState<number | null>(null);
   const clubes = clubesDeInicio(liga);
 
@@ -143,6 +146,18 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
       </div>
 
       <div className="mc__campo">
+        <span>Edad con la que empiezas</span>
+        <div className="jg-modos">
+          {EDADES_INICIO.map((a) => (
+            <button key={a} type="button" className={edad === a ? "is-on" : ""} onClick={() => setEdad(a)}>
+              {a} años
+            </button>
+          ))}
+        </div>
+        {edad < EDAD_INICIO && <p className="mc__nota">Más temporadas por delante, pero empiezas con menos media y te costará jugar.</p>}
+      </div>
+
+      <div className="mc__campo">
         <span>Tu primer equipo</span>
         <div className="jg-modos">
           {LIGAS_INICIO.map((l) => (
@@ -160,7 +175,7 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
           ))}
         </div>
         {liga === "Canteras" && <p className="mc__nota">Nivel de segunda; si destacas, puedes subir al primer equipo.</p>}
-        {liga === "Primera (modestos)" && <p className="mc__nota">Más nivel, pero con 17 años te costará jugar: quizá toque salir cedido.</p>}
+        {liga === "Primera (modestos)" && <p className="mc__nota">Más nivel, pero con {edad} años te costará jugar: quizá toque salir cedido.</p>}
         <div className="mc__clubes">
           {clubes.map((c) => (
             <button key={c.id} type="button" title={c.nombre} className={club === c.id ? "is-on" : ""} onClick={() => setClub(c.id)}>
@@ -180,9 +195,9 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
         type="button"
         className="btn btn--accent"
         disabled={club == null}
-        onClick={() => club != null && onEmpezar({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9), extendido })}
+        onClick={() => club != null && onEmpezar({ nombre, nacion, posicion, clubId: club, semilla: Math.floor(Math.random() * 1e9), extendido, edad })}
       >
-        {club == null ? "Elige tu equipo" : "Empezar mi carrera con 17 años →"}
+        {club == null ? "Elige tu equipo" : `Empezar mi carrera con ${edad} años →`}
       </button>
     </div>
   );

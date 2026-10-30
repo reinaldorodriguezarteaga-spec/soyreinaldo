@@ -2,7 +2,7 @@ import { aleatorio } from "../diario";
 import { CLUBES_FICHAN, NIVEL_ESCALON, clubPorId, nacionPorCodigo, type ClubCarrera, type Escalon } from "./clubes";
 
 /**
- * Modo carrera (27-oct, pedido del dueño): de los 17 años en un equipo de
+ * Modo carrera (27-oct, pedido del dueño): de los 15-17 años en un equipo de
  * segunda hasta la retirada. Cada año, un escenario con opciones que suben,
  * bajan o mantienen la media; luego la temporada (partidos, goles,
  * asistencias, trofeos, premios) y las ofertas, que dependen SOLO del
@@ -16,6 +16,8 @@ export type Posicion = "POR" | "DEF" | "MED" | "DEL";
 export const NOMBRE_POSICION: Record<Posicion, string> = { POR: "Portero", DEF: "Defensa", MED: "Centrocampista", DEL: "Delantero" };
 
 export const EDAD_INICIO = 17;
+/** Se puede empezar con 15, 16 o 17 (30-oct): más joven, menos media y más temporadas. */
+export const EDADES_INICIO = [15, 16, 17] as const;
 export const EDAD_PREGUNTA_RETIRO = 34;
 export const EDAD_RETIRO = 41;
 export const ANIO_INICIO = 2026;
@@ -1193,8 +1195,10 @@ export function crearCarrera(o: {
   clubId: number;
   semilla: number;
   extendido?: boolean;
+  edad?: number;
 }): Estado {
   const club = clubPorId(o.clubId);
+  const edad = (EDADES_INICIO as readonly number[]).includes(o.edad ?? EDAD_INICIO) ? (o.edad ?? EDAD_INICIO) : EDAD_INICIO;
   const base: Estado = {
     v: 1,
     semilla: o.semilla,
@@ -1202,7 +1206,7 @@ export function crearCarrera(o: {
     nombre: o.nombre.trim().slice(0, 30) || "El Crack",
     nacion: o.nacion,
     posicion: o.posicion,
-    edad: EDAD_INICIO,
+    edad,
     anio: ANIO_INICIO,
     clubId: o.clubId,
     escalonClub: club?.escalon ?? 5,
@@ -1218,7 +1222,9 @@ export function crearCarrera(o: {
     historial: [],
   };
   const r = rng(base);
-  base.media = entre(r, [58, 63]);
+  // Cada año menos, 3 puntos menos de media (a los 17, entre 58 y 63).
+  const menos = 3 * (EDAD_INICIO - edad);
+  base.media = entre(r, [58 - menos, 63 - menos]);
   // Potencial oculto: la mayoría entre 78 y 88; unos pocos, cracks.
   base.potencial = limitar(Math.round(73 + r() * 13 + (r() < 0.2 ? r() * 9 : 0)), 70, 96);
   base.paso = 1;

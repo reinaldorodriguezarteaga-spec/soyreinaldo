@@ -8,7 +8,7 @@ import type { FilaTop } from "./acciones";
 export const metadata: Metadata = {
   title: "Modo carrera: de segunda división al Balón de Oro | Juegos · Soy Reinaldo",
   description:
-    "Crea tu jugador con 17 años en un equipo de segunda y decide cada temporada. Goles, títulos, fichajes por el Madrid, el Barça o el City… ¿hasta dónde llegas?",
+    "Crea tu jugador con 15, 16 o 17 años en un equipo de segunda y decide cada temporada. Goles, títulos, fichajes por el Madrid, el Barça o el City… ¿hasta dónde llegas?",
   alternates: { canonical: "/juegos/modo-carrera" },
 };
 
@@ -44,7 +44,7 @@ export default async function ModoCarreraPage() {
             Modo carrera
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 640 }}>
-            Empiezas con 17 años en un equipo de segunda. Cada temporada eliges qué hacer, juegas y te llegan ofertas
+            Empiezas con 15, 16 o 17 años en un equipo de segunda. Cada temporada eliges qué hacer, juegas y te llegan ofertas
             según tu rendimiento. ¿Llegarás al Madrid, al Barça o al City? ¿Cuándo colgarás las botas? Las mejores
             carreras entran en el top 10.
           </p>
