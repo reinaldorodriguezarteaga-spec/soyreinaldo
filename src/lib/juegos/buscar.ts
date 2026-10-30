@@ -35,7 +35,17 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
     })
     .filter((x): x is Sugerencia => !!x);
 
-  const { data } = await clientePublico().rpc("comparador_buscar", { p_q: apellido, p_limite: 40 });
+  // Al API, con la última palabra (lo normal es «nombre apellido»).
+  const palabraApi = palabras[palabras.length - 1].length >= 4 ? palabras[palabras.length - 1] : apellido;
+  // Plantillas y jugadores_api a la vez (30-oct): en serie sumaban sus esperas
+  // justo en las búsquedas raras, que son las que llegan al API.
+  const db = clientePublico();
+  const [{ data }, { data: guardados }] = await Promise.all([
+    db.rpc("comparador_buscar", { p_q: apellido, p_limite: 40 }),
+    palabraApi.length >= 4
+      ? db.from("jugadores_api").select("id, nombre, foto").ilike("nombre", `%${palabraApi}%`).limit(20)
+      : Promise.resolve({ data: null }),
+  ]);
   const filas = (data ?? []) as { id: number; nombre: string; foto: string | null; equipo: number | null }[];
   // Cada palabra de la búsqueda tiene que estar en el nombre o ser la
   // inicial de alguna parte abreviada («E.»).
@@ -47,16 +57,9 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
   const deSquads = filas.filter((f) => encaja(f.nombre)).map((f) => ({ id: f.id, nombre: f.nombre, foto: f.foto, equipo: f.equipo }));
   const vistos = new Set<number>();
   const locales = [...curados, ...deSquads].filter((x) => (vistos.has(x.id) ? false : (vistos.add(x.id), true)));
-  // Al API, con la última palabra (lo normal es «nombre apellido»).
-  const palabraApi = palabras[palabras.length - 1].length >= 4 ? palabras[palabras.length - 1] : apellido;
   if (locales.length >= 6 || palabraApi.length < 4) return locales.slice(0, limite);
 
   // Pocos: al API, con los ya buscados apuntados en jugadores_api.
-  const { data: guardados } = await clientePublico()
-    .from("jugadores_api")
-    .select("id, nombre, foto")
-    .ilike("nombre", `%${palabraApi}%`)
-    .limit(20);
   const deTabla = ((guardados ?? []) as { id: number; nombre: string; foto: string | null }[])
     .filter((g) => encaja(g.nombre))
     .map((g) => ({ id: g.id, nombre: g.nombre, foto: g.foto, equipo: null }));
@@ -78,8 +81,8 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
     }
   }
   if (nuevos.length) {
-    const db = clienteServicio();
-    if (db) await db.from("jugadores_api").upsert(nuevos, { onConflict: "id", ignoreDuplicates: true });
+    const servicio = clienteServicio();
+    if (servicio) await servicio.from("jugadores_api").upsert(nuevos, { onConflict: "id", ignoreDuplicates: true });
   }
   // Conjunto nuevo: `vistos` ya tiene a todos los locales y los tiraría
   // (27-oct: Cucurella salía en las plantillas y en el API, y no salía nada).

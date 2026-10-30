@@ -503,10 +503,14 @@ export default function Pizarra({
     setTimeout(() => setAviso(null), 2500);
   };
 
-  const compartirEnlace = async () => {
-    const url = `${window.location.origin}/pizarra?local=${local.id}&visitante=${visitante.id}${
+  /** La pizarra tal como está, como ruta de la web. */
+  const rutaPizarra = () =>
+    `/pizarra?local=${local.id}${solo ? "" : `&visitante=${visitante.id}`}${
       partido ? `&partido=${partido}` : ""
     }&p=${codificar(estado)}`;
+
+  const compartirEnlace = async () => {
+    const url = `${window.location.origin}${rutaPizarra()}`;
     const texto = `${titulo}: mira mi pizarra`;
     if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
       try {
@@ -930,6 +934,14 @@ export default function Pizarra({
   return (
     <div className="pz">
       <div className="pz-botones">
+        {/* Lo primero de la fila: guardarla en la galería es lo que más se usa (30-oct). */}
+        <button
+          type="button"
+          className="btn btn--accent"
+          onClick={() => setPublicar({ titulo: `${titulo}`, enviando: false, error: null, id: null })}
+        >
+          🌍 Añadir a la comunidad
+        </button>
         <button type="button" className="btn" onClick={() => router.push("/pizarra")}>
           Empezar de cero
         </button>
@@ -945,17 +957,7 @@ export default function Pizarra({
         <button type="button" className="btn" onClick={compartirEnlace}>
           🔗 Compartir enlace
         </button>
-        {/* La comunidad es de partidos (dos equipos): con uno solo no se publica. */}
-        {!solo && (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => setPublicar({ titulo: `${titulo}`, enviando: false, error: null, id: null })}
-          >
-            🌍 Publicar
-          </button>
-        )}
-        <button type="button" className="btn btn--accent" onClick={compartirImagen} disabled={compartiendo}>
+        <button type="button" className="btn" onClick={compartirImagen} disabled={compartiendo}>
           📸 {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
       </div>
@@ -1266,7 +1268,7 @@ export default function Pizarra({
               const r = await publicarPizarra({
                 titulo: publicar.titulo,
                 local: local.id,
-                visitante: visitante.id,
+                visitante: solo ? null : visitante.id,
                 partido,
                 p: codificar(estado),
               });
@@ -1277,7 +1279,8 @@ export default function Pizarra({
             {!conectado ? (
               <p style={{ margin: "0 0 12px", color: "var(--text-dim)" }}>
                 Para publicar tu pizarra necesitas una cuenta.{" "}
-                <a href={`/login?redirect=${encodeURIComponent("/pizarra")}`}>Inicia sesión o regístrate</a>.
+                {/* Vuelve con la pizarra montada, no con una vacía. */}
+                <a href={`/login?redirect=${encodeURIComponent(rutaPizarra())}`}>Inicia sesión o regístrate</a>.
               </p>
             ) : publicar.id != null ? (
               <p style={{ margin: "0 0 12px" }}>

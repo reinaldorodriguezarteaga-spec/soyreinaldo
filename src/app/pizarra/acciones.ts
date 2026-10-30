@@ -19,7 +19,8 @@ type Resultado = { ok: true; id?: string } | { ok: false; error: string };
 export async function publicarPizarra(datos: {
   titulo: string;
   local: number;
-  visitante: number;
+  /** Sin rival (pizarra de un solo equipo): ni visitante ni partido. */
+  visitante: number | null;
   partido?: number;
   p: string;
 }): Promise<Resultado> {
@@ -41,7 +42,7 @@ export async function publicarPizarra(datos: {
   let local: { id: number; name: string; logo: string } | null = null;
   let visitante: { id: number; name: string; logo: string } | null = null;
   let partido: number | null = null;
-  if (datos.partido) {
+  if (datos.partido && datos.visitante != null) {
     const fx = await getFixtureById(datos.partido).catch(() => null);
     if (fx && COMPETITIONS.some((c) => c.leagueId === fx.league.id)) {
       const es = equiposEnEspanol(fx);
@@ -55,9 +56,9 @@ export async function publicarPizarra(datos: {
   if (!local || !visitante) {
     const porId = new Map((await equiposPizarra()).flatMap((g) => g.equipos.map((e) => [e.id, e] as const)));
     local = porId.get(datos.local) ?? null;
-    visitante = porId.get(datos.visitante) ?? null;
+    visitante = datos.visitante == null ? null : (porId.get(datos.visitante) ?? null);
   }
-  if (!local || !visitante) return { ok: false, error: "Equipos no válidos." };
+  if (!local || (datos.visitante != null && !visitante)) return { ok: false, error: "Equipos no válidos." };
 
   const { data, error } = await supabase
     .from("pizarras")
@@ -67,9 +68,9 @@ export async function publicarPizarra(datos: {
       local_id: local.id,
       local_nombre: local.name,
       local_logo: local.logo,
-      visitante_id: visitante.id,
-      visitante_nombre: visitante.name,
-      visitante_logo: visitante.logo,
+      visitante_id: visitante?.id ?? null,
+      visitante_nombre: visitante?.name ?? null,
+      visitante_logo: visitante?.logo ?? null,
       partido_id: partido,
       estado: datos.p,
     })

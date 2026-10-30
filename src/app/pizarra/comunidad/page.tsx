@@ -18,9 +18,10 @@ type Fila = {
   local_id: number;
   local_nombre: string;
   local_logo: string;
-  visitante_id: number;
-  visitante_nombre: string;
-  visitante_logo: string;
+  /** Null en las pizarras de un solo equipo (migración 099). */
+  visitante_id: number | null;
+  visitante_nombre: string | null;
+  visitante_logo: string | null;
   partido_id: number | null;
   estado: string;
   created_at: string;
@@ -86,7 +87,7 @@ export default async function ComunidadPage({ searchParams }: { searchParams: Pr
             <div className="pzc-rejilla">
               {filas.map((f) => {
                 const estado = decodificar(f.estado, null);
-                const href = `/pizarra?local=${f.local_id}&visitante=${f.visitante_id}${
+                const href = `/pizarra?local=${f.local_id}${f.visitante_id ? `&visitante=${f.visitante_id}` : ""}${
                   f.partido_id ? `&partido=${f.partido_id}` : ""
                 }&p=${f.estado}`;
                 return (
@@ -97,9 +98,13 @@ export default async function ComunidadPage({ searchParams }: { searchParams: Pr
                       <p className="pzc-equipos">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={f.local_logo} alt="" width={16} height={16} /> {f.local_nombre}
-                        <span className="mono"> vs </span>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={f.visitante_logo} alt="" width={16} height={16} /> {f.visitante_nombre}
+                        {f.visitante_id != null && (
+                          <>
+                            <span className="mono"> vs </span>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={f.visitante_logo ?? ""} alt="" width={16} height={16} /> {f.visitante_nombre}
+                          </>
+                        )}
                       </p>
                     </Link>
                     <footer className="pzc-pie">
