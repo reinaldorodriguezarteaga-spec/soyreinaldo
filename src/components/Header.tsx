@@ -312,7 +312,7 @@ export default function Header({
               {initialUser ? (
                 <UserMenu initialUser={initialUser} isAdmin={isAdmin} permisos={permisos} />
               ) : (
-                <Link href="/login" className="btn btn--ghost hidden sm:inline-flex">
+                <Link href="/login" className="btn btn--ghost nav__entrar">
                   Iniciar sesión
                 </Link>
               )}
