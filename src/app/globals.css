@@ -2513,16 +2513,6 @@ select.field { appearance: none; }
 .rpos--mejor td:first-child { font-weight: 700; }
 
 /* Juegos (21-oct): portada de juegos y «Adivina el equipo». */
-.jg-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.jg-tarjeta { display: flex; flex-direction: column; gap: 6px; padding: 20px; text-decoration: none; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
-.jg-tarjeta:hover { border-color: var(--accent); transform: translateY(-2px); }
-.jg-tarjeta b { font-family: var(--font-display-stack); font-size: 1.35rem; text-transform: uppercase; letter-spacing: 0.02em; }
-.jg-tarjeta span { color: var(--text-dim); font-size: 0.9rem; }
-.jg-tarjeta .ico { margin-bottom: 6px; color: var(--t); }
-.jg-tarjeta .jg-tarjeta__ir { margin-top: auto; padding-top: 8px; color: var(--accent); font-weight: 700; }
-.jg-tarjeta.is-pronto { opacity: 0.6; }
-.jg-tarjeta.is-pronto:hover { transform: none; border-color: var(--line); }
-.jg-tarjeta.is-pronto .jg-tarjeta__ir { color: var(--text-dim); }
 
 .jg-modos, .jg-dif { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
 .jg-modos button, .jg-dif button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-weight: 700; font-size: 0.88rem; cursor: pointer; }
