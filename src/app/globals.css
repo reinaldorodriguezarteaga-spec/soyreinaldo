@@ -2972,28 +2972,51 @@ select.field { appearance: none; }
 .mc-ida { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid var(--line); }
 
 /* ── Barra de pestañas de abajo (31-oct, móvil y app, «como FotMob») ──
-   --tabbar-alto lo usan las pastillas fijas de abajo (EN VIVO, directo,
-   cookies, avisos de la pizarra) para quedar por encima de la barra. */
+   Cápsula flotante de cristal (estilo iOS) con las cuatro secciones y la
+   lupa aparte en un círculo. Flota separada del borde: pegada abajo, en el
+   iPhone chocaba con la barra de gestos de salir de la app.
+   --tabbar-alto es todo lo que ocupa (cápsula + hueco de abajo); lo usan
+   las pastillas fijas (EN VIVO, directo, cookies, avisos de la pizarra)
+   para quedar por encima. */
 .tabbar { display: none; }
 @media (max-width: 767px) {
-  :root { --tabbar-alto: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  :root {
+    --tabbar-cap: 62px;
+    /* Hueco bajo la cápsula: la zona segura del iPhone si la hay y, como
+       mínimo, 22 px (dentro de la app la zona segura puede venir a 0). */
+    --tabbar-hueco: max(calc(env(safe-area-inset-bottom, 0px) + 8px), 22px);
+    --tabbar-alto: calc(var(--tabbar-cap) + var(--tabbar-hueco) + 8px);
+  }
   body { padding-bottom: var(--tabbar-alto); }
   .tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
-    display: grid; grid-template-columns: repeat(5, 1fr);
-    height: var(--tabbar-alto); padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: var(--bg);
-    border-top: 1px solid var(--line);
+    position: fixed; left: 12px; right: 12px; bottom: var(--tabbar-hueco); z-index: 70;
+    display: flex; gap: 10px; align-items: stretch; height: var(--tabbar-cap);
+    pointer-events: none;
   }
+  .tabbar__grupo, .tabbar__buscar {
+    pointer-events: auto;
+    background: color-mix(in oklch, var(--surface) 74%, transparent);
+    backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .tabbar__grupo { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 999px; }
+  .tabbar__buscar { flex: none; width: var(--tabbar-cap); border-radius: 50%; }
   .tabbar a {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    color: var(--text-dim); text-decoration: none; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.01em;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: var(--text); text-decoration: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.01em;
+    border-radius: 999px; transition: background 0.2s, color 0.2s;
     -webkit-tap-highlight-color: transparent;
   }
-  .tabbar a.is-on { color: var(--accent); }
+  .tabbar__grupo a.is-on { color: var(--accent); background: rgba(0, 0, 0, 0.35); }
   .tabbar a.is-on svg { stroke-width: 2.2; }
-  .tabbar a:active svg { transform: scale(0.9); }
+  .tabbar a:active svg { transform: scale(0.88); }
   .tabbar svg { transition: transform 0.12s; }
+  .tabbar__buscar svg { width: 26px; height: 26px; }
+  .tabbar__buscar.is-on { color: var(--accent); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar__grupo, .tabbar__buscar { background: var(--surface); }
 }
 
 /* Página de favoritos (31-oct) */

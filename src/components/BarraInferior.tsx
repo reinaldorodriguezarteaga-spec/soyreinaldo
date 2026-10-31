@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 /**
  * Barra de pestañas de abajo en el móvil y la app (31-oct, pedido del dueño,
- * «como FotMob»): cuatro secciones y la lupa. En el ordenador no se ve
+ * «como FotMob»): cuatro secciones en una cápsula de cristal y la lupa
+ * aparte. En el ordenador no se ve
  * (globals.css, .tabbar).
  */
 const PESTANAS = [
@@ -66,19 +67,29 @@ const PESTANAS = [
 
 export default function BarraInferior() {
   const pathname = usePathname() ?? "/";
+  const enlace = (t: (typeof PESTANAS)[number], clase?: string) => {
+    const activa = t.activa(pathname);
+    return (
+      <Link
+        key={t.href}
+        href={t.href}
+        className={[clase, activa ? "is-on" : ""].filter(Boolean).join(" ")}
+        aria-current={activa ? "page" : undefined}
+        aria-label={clase ? t.label : undefined}
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          {t.icono}
+        </svg>
+        {!clase && <span>{t.label}</span>}
+      </Link>
+    );
+  };
+  // La lupa va aparte, en su círculo (como FotMob).
+  const buscar = PESTANAS[PESTANAS.length - 1];
   return (
     <nav className="tabbar" aria-label="Secciones">
-      {PESTANAS.map((t) => {
-        const activa = t.activa(pathname);
-        return (
-          <Link key={t.href} href={t.href} className={activa ? "is-on" : ""} aria-current={activa ? "page" : undefined}>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              {t.icono}
-            </svg>
-            <span>{t.label}</span>
-          </Link>
-        );
-      })}
+      <div className="tabbar__grupo">{PESTANAS.slice(0, -1).map((t) => enlace(t))}</div>
+      {enlace(buscar, "tabbar__buscar")}
     </nav>
   );
 }
