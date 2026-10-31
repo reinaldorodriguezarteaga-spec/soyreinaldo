@@ -504,14 +504,15 @@ img {
 .compmenu__fila { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 10px; border-radius: 12px; color: var(--text); text-decoration: none; }
 .compmenu__fila:hover, .compmenu__fila:active { background: var(--surface-2); }
 .compmenu__fila img { flex: none; width: 28px; height: 28px; padding: 3px; box-sizing: border-box; border-radius: 8px; background: #fff; object-fit: contain; }
-.compmenu__fila span { display: flex; flex-direction: column; min-width: 0; }
-.compmenu__fila b { font-size: 0.92rem; font-weight: 600; line-height: 1.2; }
-.compmenu__fila small { font-size: 0.74rem; color: var(--text-dim); }
+.compmenu__fila b { min-width: 0; font-size: 0.92rem; font-weight: 600; line-height: 1.2; }
 .navacc__sub--comps { padding-left: 0; }
 .navacc__sub.navacc__sub--comps a { padding: 6px 10px; color: var(--text); font-size: inherit; }
-.navdrop__menu--comps { left: 0; right: auto; width: min(620px, 92vw); padding: 10px; }
-.navdrop__menu--comps .compmenu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; align-items: start; }
-.navdrop__menu--comps .compmenu__grupo:first-child { grid-row: span 3; }
+.navdrop__menu--comps { left: 0; right: auto; width: min(840px, 94vw); padding: 10px; }
+/* En escritorio, tres columnas que se rellenan de arriba abajo; un país nunca
+ * se parte entre dos columnas. */
+.navdrop__menu--comps .compmenu { display: block; columns: 3; column-gap: 14px; }
+.navdrop__menu--comps .compmenu__grupo { break-inside: avoid; padding-bottom: 6px; }
+.navdrop__menu--comps .compmenu__fila { min-height: 40px; }
 
 .hero { position: relative; padding-top: clamp(40px, 6vw, 80px); overflow: hidden; }
 .hero__content { position: relative; z-index: 2; }

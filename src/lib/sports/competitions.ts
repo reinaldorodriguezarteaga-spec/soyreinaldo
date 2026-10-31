@@ -199,6 +199,24 @@ export const FA_CUP: Competition = {
   officialUrl: "https://www.thefa.com/competitions/thefacup",
 };
 
+/**
+ * Carabao Cup (EFL Cup, "League Cup" id 48 en API-Football): puro KO como la
+ * FA Cup. Verificado contra la API real el 31-oct-2026: season 2026 activa,
+ * rondas "Preliminary Round" → "Round of 128/64/32/16" → "Quarter-finals"
+ * (semis y final aún sin publicar). El cuadro empieza en dieciseisavos.
+ */
+export const CARABAO_CUP: Competition = {
+  slug: "carabao-cup",
+  leagueId: 48,
+  season: 2026,
+  name: "Carabao Cup",
+  standingsMode: "none",
+  koStructure: CUP_KO_STRUCTURE,
+  archivedSeasons: [2025, 2024],
+  region: "Inglaterra",
+  officialUrl: "https://www.efl.com/carabao-cup",
+};
+
 export const COPA_DEL_REY: Competition = {
   slug: "copa-del-rey",
   leagueId: 143,
@@ -306,6 +324,74 @@ export const LIGUE_1: Competition = {
   region: "Francia",
   officialUrl: "https://www.ligue1.com",
   calendarOnlyTeamIds: [85, 80],
+};
+
+/*
+ * Copas de Italia y Francia (31-oct-2026, pedido del dueño). Ids, temporadas
+ * y nombres de ronda verificados contra la API ese día:
+ * - Coppa Italia (137): la 2026 usa "Round of 128/64/32/16"; la 2025 llamaba
+ *   "3rd Round" a los octavos. El cuadro empieza en octavos (8 cruces).
+ * - Supercopa de Italia (547): 4 equipos (semis + final) desde 2023; la 2026
+ *   solo tiene publicada aún la final (22-dic).
+ * - Copa de Francia (66): rondas "1/128-finals" (cientos de clubes
+ *   amateurs) y luego "Round of 64/32/16"… Como la Ligue 1, en el calendario
+ *   de portada solo PSG y Lyon.
+ * - Supercopa de Francia ("Trophée des Champions", 526): partido único.
+ */
+const COPPA_KO_STRUCTURE: KoStructureEntry[] = [
+  { label: "Octavos", re: /Round of 16|3rd Round/i, slots: 8 },
+  { label: "Cuartos", re: /Quarter/i, slots: 4 },
+  { label: "Semifinales", re: /Semi/i, slots: 2 },
+  { label: "Final", re: /^Final$/i, slots: 1 },
+];
+
+export const COPPA_ITALIA: Competition = {
+  slug: "coppa-italia",
+  leagueId: 137,
+  season: 2026,
+  name: "Coppa Italia",
+  standingsMode: "none",
+  koStructure: COPPA_KO_STRUCTURE,
+  archivedSeasons: [2025],
+  region: "Italia",
+  officialUrl: "https://www.legaseriea.it",
+};
+
+export const SUPERCOPA_ITALIA: Competition = {
+  slug: "supercopa-italia",
+  leagueId: 547,
+  season: 2026,
+  name: "Supercopa de Italia",
+  standingsMode: "none",
+  koStructure: SUPERCOPA_KO_STRUCTURE,
+  archivedSeasons: [2025],
+  region: "Italia",
+  officialUrl: "https://www.legaseriea.it",
+};
+
+export const COPA_FRANCIA: Competition = {
+  slug: "copa-francia",
+  leagueId: 66,
+  season: 2026,
+  name: "Copa de Francia",
+  standingsMode: "none",
+  koStructure: CUP_KO_STRUCTURE,
+  archivedSeasons: [2025],
+  region: "Francia",
+  officialUrl: "https://www.fff.fr",
+  calendarOnlyTeamIds: [85, 80],
+};
+
+export const SUPERCOPA_FRANCIA: Competition = {
+  slug: "supercopa-francia",
+  leagueId: 526,
+  season: 2026,
+  name: "Supercopa de Francia",
+  standingsMode: "none",
+  koStructure: [{ label: "Final", re: /^Final$/i, slots: 1 }],
+  archivedSeasons: [2025],
+  region: "Francia",
+  officialUrl: "https://www.ligue1.com",
 };
 
 /*
@@ -606,12 +692,17 @@ export const COMPETITIONS: Competition[] = [
   CHAMPIONS_LEAGUE,
   PREMIER_LEAGUE,
   FA_CUP,
+  CARABAO_CUP,
   COPA_DEL_REY,
   SUPERCOPA,
   EUROPA_LEAGUE,
   CONFERENCE_LEAGUE,
   SERIE_A,
+  COPPA_ITALIA,
+  SUPERCOPA_ITALIA,
   LIGUE_1,
+  COPA_FRANCIA,
+  SUPERCOPA_FRANCIA,
   LIGA_MX,
   LIGA_ARGENTINA,
   LIBERTADORES,
@@ -666,17 +757,22 @@ export const COMPETITION_GROUPS: { region: CompetitionRegion; competitions: Comp
  * desordenado»). Por regiones salían 12 grupos, medio de ellos con una sola
  * competición; aquí son 4 bloques, lo importante primero.
  */
+// 31-oct: por países, con la liga arriba y sus copas debajo (el dueño veía
+// la liga en un bloque y su copa en otro). Las copas europeas y las de
+// selecciones van en su propio bloque porque no son de un país.
 const MENU_SLUGS: { titulo: string; slugs: string[] }[] = [
-  {
-    titulo: "Europa",
-    slugs: ["laliga", "premier", "serie-a", "ligue-1", "champions", "europa", "conference", "copa-del-rey", "supercopa", "fa-cup"],
-  },
+  { titulo: "España", slugs: ["laliga", "copa-del-rey", "supercopa"] },
+  { titulo: "Inglaterra", slugs: ["premier", "fa-cup", "carabao-cup"] },
+  { titulo: "Italia", slugs: ["serie-a", "coppa-italia", "supercopa-italia"] },
+  { titulo: "Francia", slugs: ["ligue-1", "copa-francia", "supercopa-francia"] },
+  { titulo: "Copas de Europa", slugs: ["champions", "europa", "conference"] },
   { titulo: "Selecciones", slugs: ["nations-league", "eliminatorias-uefa", "eliminatorias-conmebol"] },
-  {
-    titulo: "América",
-    slugs: ["libertadores", "liga-mx", "liga-argentina", "mls", "concacaf-champions-cup", "leagues-cup", "us-open-cup", "campeones-cup"],
-  },
-  { titulo: "Arabia Saudí", slugs: ["liga-saudi", "afc-champions-league", "kings-cup", "supercopa-saudi"] },
+  { titulo: "Arabia Saudí", slugs: ["liga-saudi", "kings-cup", "supercopa-saudi", "afc-champions-league"] },
+  { titulo: "México", slugs: ["liga-mx"] },
+  { titulo: "Argentina", slugs: ["liga-argentina"] },
+  { titulo: "Estados Unidos", slugs: ["mls", "us-open-cup"] },
+  { titulo: "Sudamérica", slugs: ["libertadores"] },
+  { titulo: "Concacaf", slugs: ["concacaf-champions-cup", "leagues-cup", "campeones-cup"] },
 ];
 
 export const MENU_COMPETICIONES: { titulo: string; competitions: Competition[] }[] = (() => {
@@ -690,17 +786,6 @@ export const MENU_COMPETICIONES: { titulo: string; competitions: Competition[] }
   if (resto.length) grupos.push({ titulo: "Más", competitions: resto });
   return grupos.filter((g) => g.competitions.length > 0);
 })();
-
-/** Debajo del nombre en el menú: el país, o la confederación para las copas
- * europeas y las de selecciones. */
-export const origenCompeticion = (c: Competition) =>
-  c.region === "Internacional"
-    ? "UEFA"
-    : c.region === "Selecciones"
-      ? c.slug.includes("conmebol")
-        ? "Conmebol"
-        : "UEFA"
-      : c.region;
 
 /**
  * Equipos destacados para la sección de amistosos de pretemporada: en

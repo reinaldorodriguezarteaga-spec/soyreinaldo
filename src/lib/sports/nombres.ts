@@ -102,9 +102,6 @@ const ALIAS: Record<string, string> = {
   "gabriel jesus": "Gabriel Jesus",
   "lamine yamal": "Lamine Yamal",
   "endrick felipe moreira de sousa": "Endrick",
-  // El API trae los dos apellidos y la regla se quedaba con el segundo
-  // ("Paredes", 18-oct).
-  "pau cubarsi paredes": "Cubarsí",
   // Los eventos traen el nombre completo y la regla se quedaba con el último
   // apellido («Belloli», 26-oct).
   "raphael dias belloli": "Raphinha",
@@ -132,7 +129,8 @@ export function nombreVisible(nombre: string): string {
 
 /** Nombre corto como en los marcadores de los móviles: primero el alias; si
  * no, el apellido ("Dani Olmo" → "Olmo", "K. Mbappé" → "Mbappé", "Marten de
- * Roon" → "de Roon"); los de una palabra ("Endrick", "Pedri"), tal cual. */
+ * Roon" → "de Roon"); con dos apellidos, el primero ("Pablo Barrios Rivas" →
+ * "Barrios"); los de una palabra ("Endrick", "Pedri"), tal cual. */
 export function nombreCorto(nombre: string): string {
   const alias = ALIAS[sinTildes(nombre.trim())];
   if (alias) return alias;
@@ -140,6 +138,12 @@ export function nombreCorto(nombre: string): string {
   if (partes.length <= 1) return nombre;
   const ult = partes[partes.length - 1];
   if (SUFIJOS.has(ult.toLowerCase())) return partes.slice(-2).join(" ");
+  // Nombre completo con los dos apellidos, como manda ahora el API en LaLiga
+  // («Giuliano Simeone Baldini», «Pablo Barrios Rivas»): el conocido es el
+  // primero, el penúltimo. El dueño, 31-oct: «le ponen el segundo apellido».
+  // Con partículas («Ferreira de Castro») sigue la regla de siempre.
+  if (partes.length >= 3 && !partes.some((p) => PARTICULAS.has(p.toLowerCase())))
+    return partes[partes.length - 2];
   let i = partes.length - 1;
   while (i > 0 && PARTICULAS.has(partes[i - 1].toLowerCase())) i--;
   return partes.slice(i).join(" ");
