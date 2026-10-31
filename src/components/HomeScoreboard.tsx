@@ -25,7 +25,10 @@ async function getFavoriteTeams(): Promise<FavoriteTeamRef[]> {
       .eq("user_id", user.id)
       .eq("kind", "team")
       .order("created_at", { ascending: true })
-      .limit(8);
+      // Antes 8: con más equipos ⭐, los últimos no contaban como favoritos
+      // en la portada (el City del dueño, el 22.º, no salía en directo, 31-oct).
+      // Las llamadas a la API siguen limitadas en `getUpcomingCalendar`.
+      .limit(60);
     return (data ?? [])
       .map((row) => {
         const id = Number(row.ref_id);

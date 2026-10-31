@@ -15,7 +15,7 @@ import { COMPETITIONS_BY_SLUG } from "../competitions";
 import { getHomeWidgetData, getUpcomingCalendar } from "../widget-data";
 
 const fixture = (id: number, name = "LaLiga"): Fixture => ({
-  fixture: { id, date: "2026-10-18T18:00:00Z", status: { short: "NS", long: "", elapsed: null }, venue: { name: null, city: null } },
+  fixture: { id, date: new Date(Date.now() + 2 * 86_400_000).toISOString(), status: { short: "NS", long: "", elapsed: null }, venue: { name: null, city: null } },
   league: { id: 140, name, logo: "", round: "Regular Season" },
   teams: { home: { id: 1, name: "A", logo: "", winner: null }, away: { id: 2, name: "B", logo: "", winner: null } },
   goals: { home: null, away: null },
@@ -50,6 +50,26 @@ describe("carga del calendario", () => {
     const normales = days.slice(1).flatMap((d) => d.fixtures);
     expect(normales.map((f) => f.fixture.id)).toEqual([1, 2]);
     expect(normales[0].competitionLabel).toBe(COMPETITIONS_BY_SLUG.laliga.name);
+  });
+
+  it("no enseña días ya pasados", async () => {
+    const viejo = fixture(3);
+    viejo.fixture.date = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    vi.mocked(getCompetitionUpcomingFixtures).mockResolvedValue([viejo, fixture(4)]);
+    const days = await getUpcomingCalendar([COMPETITIONS_BY_SLUG.laliga], [], []);
+    expect(days.flatMap((d) => d.fixtures).map((f) => f.fixture.id)).toEqual([4]);
+  });
+
+  it("los favoritos sin llamada propia salen del calendario de las competiciones", async () => {
+    const delCity = fixture(5);
+    delCity.teams.home.id = 50;
+    vi.mocked(getCompetitionUpcomingFixtures).mockResolvedValue([delCity]);
+    const favs = Array.from({ length: 9 }, (_, i) => ({ id: 900 + i, linkSlug: "laliga" }));
+    favs.push({ id: 50, linkSlug: "premier" });
+    const days = await getUpcomingCalendar([COMPETITIONS_BY_SLUG.laliga], [], favs);
+    expect(getTeamFixtures).not.toHaveBeenCalledWith(50, expect.anything());
+    expect(days[0].dateKey).toBe("favoritos");
+    expect(days[0].fixtures.map((f) => f.fixture.id)).toEqual([5]);
   });
 });
 

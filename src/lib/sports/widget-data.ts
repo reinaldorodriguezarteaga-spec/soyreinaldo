@@ -427,6 +427,10 @@ export type CalendarFixture = WcFixture & {
   dayLabel?: string;
 };
 
+/** Favoritos con llamada propia a la API para su calendario («Tus
+ * favoritos»). Del resto, sus partidos salen del calendario ya cargado. */
+const FAV_CON_LLAMADA = 8;
+
 /** Equipo favorito del usuario, para la sección "⭐ Tus favoritos". */
 export type FavoriteTeamRef = {
   id: number;
@@ -579,8 +583,10 @@ export async function getUpcomingCalendar(
   );
   // Las fuentes son independientes. El cliente de API-Football mantiene su
   // límite de seis llamadas simultáneas, también con la caché fría.
+  // Una llamada por equipo: solo los primeros. Los partidos del resto de
+  // favoritos salen igual del calendario de las competiciones (abajo).
   const favoritePromise = Promise.all(
-    favoriteTeams.map(async (fav): Promise<CalendarFixture[]> => {
+    favoriteTeams.slice(0, FAV_CON_LLAMADA).map(async (fav): Promise<CalendarFixture[]> => {
       try {
         const { upcoming } = await getTeamFixtures(fav.id, { last: 0, next: 4 });
         return upcoming.slice(0, 3).map((f) => ({
@@ -604,16 +610,25 @@ export async function getUpcomingCalendar(
   for (const list of [...perExtra, ...perTeam]) {
     for (const fx of list) if (!merged.has(fx.fixture.id)) merged.set(fx.fixture.id, fx);
   }
+  const now = new Date();
+  const todayKey = madridDateKey(now);
+  const tomorrowKey = madridDateKey(new Date(now.getTime() + 24 * 3600_000));
+  // Una caché de «próximos» con días puede traer partidos ya jugados: salía
+  // un «Mié 28 oct» encima de «Hoy» (31-oct).
+  const noPasado = (fx: CalendarFixture) => madridDateKey(new Date(fx.fixture.date)) >= todayKey;
   const all = [...merged.values()]
+    .filter(noPasado)
     .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())
     .slice(0, CALENDAR_MAX_FIXTURES);
   const favFixtures = new Map<number, CalendarFixture>();
   for (const list of perFav) {
-    for (const fx of list) if (!favFixtures.has(fx.fixture.id)) favFixtures.set(fx.fixture.id, fx);
+    for (const fx of list) if (noPasado(fx) && !favFixtures.has(fx.fixture.id)) favFixtures.set(fx.fixture.id, fx);
   }
-  const now = new Date();
-  const todayKey = madridDateKey(now);
-  const tomorrowKey = madridDateKey(new Date(now.getTime() + 24 * 3600_000));
+  const favIds = new Set(favoriteTeams.map((f) => f.id));
+  for (const fx of all) {
+    if ((favIds.has(fx.teams.home.id) || favIds.has(fx.teams.away.id)) && !favFixtures.has(fx.fixture.id))
+      favFixtures.set(fx.fixture.id, fx);
+  }
 
   const favDay: CalendarDay | null =
     favFixtures.size > 0
