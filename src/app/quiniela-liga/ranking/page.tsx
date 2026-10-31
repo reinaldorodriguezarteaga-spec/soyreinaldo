@@ -282,17 +282,15 @@ export default async function QuinielaLigaRankingPage({
             basePath="/quiniela-liga/ranking"
           />
           {ultimaConPartidos != null && rows.length > 0 && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", margin: "0 0 14px" }}>
+            <nav className="segmentos segmentos--scroll" aria-label="Vista de la clasificación" style={{ margin: "0 0 14px" }}>
               <Link
                 href={baseRanking}
-                className={enVistaJornada || enVistaDuelos ? "btn" : "btn btn--accent"}
                 aria-current={enVistaJornada || enVistaDuelos ? undefined : "page"}
               >
                 General
               </Link>
               <Link
                 href={hrefRanking(baseRanking, { vista: "duelos" })}
-                className={enVistaDuelos ? "btn btn--accent" : "btn"}
                 aria-current={enVistaDuelos ? "page" : undefined}
               >
                 <Swords className="ico-txt" aria-hidden /> Duelos
@@ -301,13 +299,12 @@ export default async function QuinielaLigaRankingPage({
                 <Link
                   key={n}
                   href={hrefRanking(baseRanking, { vista: "jornada", j: String(n) })}
-                  className={enVistaJornada && jornadaVista === n ? "btn btn--accent" : "btn"}
                   aria-current={enVistaJornada && jornadaVista === n ? "page" : undefined}
                 >
                   J{n}
                 </Link>
               ))}
-            </div>
+            </nav>
           )}
           {enVistaDuelos ? (
             <DuelosVista

@@ -15,7 +15,8 @@
   --color-accent-2: #ff9d00;
   --font-sans: var(--font-archivo);
   --font-display: var(--font-saira);
-  --font-mono: var(--font-space-mono);
+  /* Space Mono fuera (31-oct): solo la usaban los códigos de liga. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 :root {
@@ -817,6 +818,17 @@ img {
 .foot__store:hover { transform: translateY(-2px); }
 .foot__store img { display: block; height: 40px; width: auto; }
 .foot__copy { color: var(--text-dim); font-size: 0.8rem; margin-top: 28px; }
+/* Móvil (31-oct, estilo iOS): sin la palabra gigante, que en páginas cortas
+   llenaba la pantalla y quedaba bajo la barra de abajo. Enlaces en dos
+   columnas y todo más compacto. */
+@media (max-width: 767px) {
+  .foot { padding: 28px 0 24px; }
+  .foot__word { display: none; }
+  .foot__cols { margin-top: 0; padding-top: 0; border-top: 0; gap: 18px; }
+  .foot__links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
+  .foot__store { margin-top: 18px; }
+  .foot__copy { margin-top: 16px; font-size: 0.74rem; }
+}
 
 /* ===== Páginas internas ===== */
 .phero { padding: clamp(48px, 7vw, 96px) 0 clamp(28px, 4vw, 52px); border-bottom: 1px solid var(--line); position: relative; }
@@ -1623,29 +1635,17 @@ select.field { appearance: none; }
   to { transform: rotate(360deg); }
 }
 
-/* Botón físico "Atrás" (global, bajo el header) */
-.backbar__row { display: flex; align-items: center; gap: 8px; }
-.backbtn--accent {
-  color: var(--accent);
-  border-color: color-mix(in oklch, var(--accent) 35%, transparent);
-  background: color-mix(in oklch, var(--accent) 10%, transparent);
-  text-decoration: none;
+/* Flecha de "Atrás": dentro de la cabecera, a la izquierda del logo (31-oct). */
+.nav__in > .backbtn { flex: none; margin-right: -12px; }
+.nav__dup { display: contents; }
+@media (max-width: 767px) { .nav__dup { display: none; } }
+.nav__in > .brand--con-atras { margin-right: auto; }
+@media (max-width: 429px) {
+  /* Con la flecha no cabe todo en un móvil estrecho: queda la «R». */
+  .brand--con-atras > span:not(.brand__mark) { display: none; }
 }
-.backbtn--accent:hover {
-  background: color-mix(in oklch, var(--accent) 16%, transparent);
-  color: var(--accent);
-}
-.backbar {
-  position: sticky;
-  top: var(--nav-h, 64px);
-  z-index: 39;
-  padding: 10px 0;
-  background: color-mix(in oklch, var(--bg) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(1.2);
-  border-bottom: 1px solid var(--line);
-}
-.backbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-dim); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-.backbtn:hover { border-color: var(--accent); color: var(--text); }
+.backbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 11px; border-radius: 999px; border: 0; background: color-mix(in oklch, var(--text-dim) 14%, transparent); color: var(--text); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+.backbtn:hover { color: var(--accent); }
 .backbtn:active { transform: translateY(1px); }
 /* Solo la flecha (31-oct, pedido del dueño: «se sobreentiende»). */
 .backbtn--solo { justify-content: center; width: 40px; height: 40px; padding: 0; }
@@ -3070,6 +3070,10 @@ select.field { appearance: none; }
 .segmentos a { display: grid; place-items: center; min-height: 36px; border-radius: 10px; color: var(--text-dim); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .segmentos a:hover { color: var(--text); }
 .segmentos a[aria-current="page"] { background: var(--surface-2); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+/* Con muchas opciones (General · Duelos · J11 · J10…): desliza en horizontal. */
+.segmentos--scroll { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.segmentos--scroll::-webkit-scrollbar { display: none; }
+.segmentos--scroll a { flex: none; gap: 6px; display: inline-flex; align-items: center; padding: 0 14px; }
 
 .destacada { display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 22px; background: var(--accent-fill); color: var(--on-accent); text-decoration: none; box-shadow: var(--glow); transition: transform 0.15s; }
 .destacada:hover { transform: translateY(-2px); }
@@ -3100,4 +3104,10 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .lista__ir { flex: none; width: 16px; height: 16px; color: color-mix(in oklch, var(--text-dim) 70%, transparent); }
 .lista__vacia { padding: 20px; display: grid; gap: 14px; justify-items: start; }
 .lista__vacia p { margin: 0; color: var(--text-dim); }
+/* Esqueletos de carga (31-oct): bloques que laten con la forma del contenido. */
+.skel { display: block; border-radius: 6px; background: color-mix(in oklch, var(--text-dim) 18%, transparent); animation: skel-latido 1.4s ease-in-out infinite; }
+.skel--icono { flex: none; width: 36px; height: 36px; border-radius: 10px; }
+.skel-lista .lista__fila + .lista__fila { border-top: 1px solid var(--line); }
+@keyframes skel-latido { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
 .lista__cta { justify-self: stretch; min-height: 52px; font-size: 1.05rem; }

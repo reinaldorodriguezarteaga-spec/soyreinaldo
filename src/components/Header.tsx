@@ -1,5 +1,6 @@
 "use client";
 
+import BackButton from "@/components/BackButton";
 import Link from "next/link";
 import HeaderSearch from "@/components/HeaderSearch";
 import { usePathname } from "next/navigation";
@@ -141,7 +142,8 @@ export default function Header({
       <nav className="nav">
         <div className="wrap">
           <div className="nav__in">
-            <Link href="/" className="brand" onClick={() => setMobileOpen(false)}>
+            <BackButton />
+            <Link href="/" className={`brand${pathname === "/" ? "" : " brand--con-atras"}`} onClick={() => setMobileOpen(false)}>
               <span className="brand__mark">R</span>
               <span>Soy Reinaldo</span>
             </Link>
@@ -343,9 +345,11 @@ export default function Header({
           {mobileOpen && (
             <div className="nav__movil min-[1280px]:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
-                {/* Favoritos acordeón — primero */}
+                {/* Favoritos acordeón — primero. Lo que ya está en la barra de
+                    abajo (favoritos, pizarra, juegos, quiniela) va en .nav__dup:
+                    se oculta mientras esa barra se ve (móvil). */}
                 {favorites.length > 0 && (
-                  <>
+                  <div className="nav__dup">
                     <button
                       type="button"
                       className="navacc__btn"
@@ -365,7 +369,7 @@ export default function Header({
                         ))}
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
 
                 {/* Competiciones acordeón */}
@@ -399,6 +403,7 @@ export default function Header({
                     <T>{n.label}</T>
                   </MobileLink>
                 ))}
+                <div className="nav__dup">
                 <button
                   type="button"
                   className="navacc__btn"
@@ -421,6 +426,7 @@ export default function Header({
                     <T>{n.label}</T>
                   </MobileLink>
                 ))}
+                </div>
 
                 {/* Contacto y redes acordeón */}
                 <button

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Saira_Condensed, Archivo, Space_Mono } from "next/font/google";
+import { Saira_Condensed, Archivo } from "next/font/google";
 import Header, { type FavoriteNavItem } from "@/components/Header";
 import BarraInferior from "@/components/BarraInferior";
 import Footer from "@/components/Footer";
-import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
 import InstallBanner from "@/components/InstallBanner";
@@ -42,13 +41,6 @@ const saira = Saira_Condensed({
 const archivo = Archivo({
   variable: "--font-archivo",
   weight: ["400", "500", "600", "700", "900"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
-  weight: ["400", "700"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -148,7 +140,7 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${saira.variable} ${archivo.variable} ${spaceMono.variable} h-full antialiased`}
+      className={`${saira.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {anuncios && (
@@ -209,7 +201,6 @@ export default async function RootLayout({
           />
         )}
         <Gestures />
-        <BackButton />
         {children}
         <Footer enApp={inApp} />
         <BarraInferior />
