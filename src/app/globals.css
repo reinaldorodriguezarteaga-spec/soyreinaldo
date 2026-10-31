@@ -122,6 +122,11 @@ img {
   transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease,
     box-shadow 0.18s ease, border-color 0.18s ease;
 }
+/* «Iniciar sesión» de la cabecera: en el móvil ya está dentro del ☰ y, si se
+   ve, empuja el ☰ fuera de pantalla. Va aquí y no con `hidden` de Tailwind
+   porque `.btn` (sin capa) le gana a las utilidades. */
+.nav__entrar { display: none; }
+@media (min-width: 640px) { .nav__entrar { display: inline-flex; } }
 .btn--accent {
   background: var(--accent);
   color: var(--on-accent);
