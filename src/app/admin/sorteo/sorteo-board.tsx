@@ -1,4 +1,5 @@
 "use client";
+import { House, Plane } from "lucide-react";
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -223,7 +224,7 @@ function TeamCard({
         {(["home", "away"] as const).map((side) => (
           <div key={side}>
             <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-[0.15em] text-zinc-500">
-              {side === "home" ? "🏠 En casa" : "✈️ Fuera"}
+              {side === "home" ? <><House className="ico-txt" aria-hidden /> En casa</> : <><Plane className="ico-txt" aria-hidden /> Fuera</>}
             </p>
             <div className="flex flex-col gap-1.5">
               {card[side].map((rival, i) =>

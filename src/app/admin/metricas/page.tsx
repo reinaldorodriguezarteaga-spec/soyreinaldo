@@ -1,3 +1,5 @@
+import Icono from "@/components/Icono";
+import { Swords, Vote, Star, Bell } from "lucide-react";
 import Link from "next/link";
 import { exigirSeccion } from "@/lib/permisos";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
@@ -88,23 +90,23 @@ export default async function AdminMetricasPage() {
         />
 
         <div className="met-grupos">
-          <Grupo titulo="⚔️ Duelos" filas={[
+          <Grupo titulo={<><Icono icono={Swords} tono="azul" tam="sm" /> Duelos</>} filas={[
             ["Lanzados", m.duelos.total],
             ["Aceptados", m.duelos.aceptados],
             ["Pendientes", m.duelos.pendientes],
             ["Rechazados", m.duelos.rechazados],
           ]} />
-          <Grupo titulo="🗳️ Encuestas" filas={[
+          <Grupo titulo={<><Icono icono={Vote} tono="azul" tam="sm" /> Encuestas</>} filas={[
             ["Encuestas", m.encuestas.total],
             ["Votos", m.encuestas.votos],
             ["Personas que votan", m.encuestas.votantes],
           ]} />
-          <Grupo titulo="⭐ Favoritos" filas={[
+          <Grupo titulo={<><Icono icono={Star} tono="azul" tam="sm" /> Favoritos</>} filas={[
             ["Pasaron por el selector", m.favoritos.eligieron],
             ["Con algún favorito", m.favoritos.con_favoritos],
             ["Con «Mi equipo»", m.favoritos.con_mi_equipo],
           ]} />
-          <Grupo titulo="🔔 Avisos" filas={[
+          <Grupo titulo={<><Icono icono={Bell} tono="azul" tam="sm" /> Avisos</>} filas={[
             ["Aceptan correos", m.avisos.aceptan_correos],
             ["Push en navegador", m.avisos.web_push],
             ["Push en iPhone", m.avisos.iphone],
@@ -165,7 +167,7 @@ function Barras({ titulo, puntos, unidad }: { titulo: string; puntos: Punto[]; u
   );
 }
 
-function Grupo({ titulo, filas }: { titulo: string; filas: [string, number][] }) {
+function Grupo({ titulo, filas }: { titulo: React.ReactNode; filas: [string, number][] }) {
   return (
     <section className="panel met-grupo">
       <h2>{titulo}</h2>

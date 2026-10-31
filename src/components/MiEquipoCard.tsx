@@ -1,3 +1,4 @@
+import { Star, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -60,7 +61,7 @@ export default async function MiEquipoCard() {
   if (datos.tipo === "elegir") {
     return (
       <section className="panel miequipo">
-        <p className="mono miequipo__eyebrow">⭐ Mi equipo</p>
+        <p className="mono miequipo__eyebrow"><Star className="ico-txt" aria-hidden /> Mi equipo</p>
         <h2 className="miequipo__pregunta">¿Cuál es tu equipo?</h2>
         <p className="miequipo__sub">
           Lo tendrás aquí arriba: su próximo partido, el último resultado y cómo va en la tabla.
@@ -91,7 +92,7 @@ export function MiEquipoVista({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={equipo.logo} alt="" width={40} height={40} />
           <span>
-            <span className="mono miequipo__eyebrow">⭐ Mi equipo</span>
+            <span className="mono miequipo__eyebrow"><Star className="ico-txt" aria-hidden /> Mi equipo</span>
             <strong>{equipo.name}</strong>
           </span>
         </Link>
@@ -151,7 +152,7 @@ export function MiEquipoVista({
       <div className="miequipo__pie">
         {ics && (
           <details className="miequipo__cambiar">
-            <summary className="mono">📅 Partidos en mi calendario</summary>
+            <summary className="mono"><CalendarDays className="ico-txt" aria-hidden /> Partidos en mi calendario</summary>
             <p className="miequipo__sub">
               Todos los partidos de tus equipos favoritos, con hora y resultado. Se actualiza solo.
             </p>

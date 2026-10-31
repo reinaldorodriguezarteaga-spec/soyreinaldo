@@ -1,3 +1,5 @@
+import { Zap } from "lucide-react";
+import Icono from "@/components/Icono";
 import { createClient } from "@/lib/supabase/server";
 import { MINUTO_CIERRE, minutoDePronostico, resolver, type Eleccion, type GolDirecto } from "@/lib/partido/siguiente-gol";
 import SiguienteGol, { type Pronostico } from "./siguiente-gol";
@@ -53,7 +55,7 @@ export default async function MatchSiguienteGol({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>⚡ ¿Quién marca el siguiente gol?</h2>
+        <h2><Icono icono={Zap} tono="naranja" tam="sm" /> ¿Quién marca el siguiente gol?</h2>
         <span className="sh-note">{enJuego ? "en directo" : "terminado"}</span>
       </div>
       <SiguienteGol

@@ -1,4 +1,5 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
 
 import { useState, useSyncExternalStore } from "react";
 import { WhatsAppLogo, XLogo } from "@/components/social-logos";
@@ -48,7 +49,7 @@ export default function BotonCompartir({
   return (
     <span className="compartir">
       <button type="button" className="compartir__btn" onClick={compartir} aria-expanded={nativo ? undefined : abierto}>
-        <span aria-hidden>↗</span> {etiqueta}
+        <span aria-hidden><ArrowUpRight className="ico-txt" aria-hidden /></span> {etiqueta}
       </button>
       {abierto && !nativo && (
         <span className="compartir__menu" role="menu">

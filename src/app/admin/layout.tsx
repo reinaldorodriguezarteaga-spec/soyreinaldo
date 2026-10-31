@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -73,7 +74,7 @@ export default async function AdminLayout({
                 {/* Marcador completo del Multichat (fuente de navegador en OBS):
                     enlace externo, por eso <a> y no <Link>. */}
                 <a href="https://chat.soyreinaldo.com/marcador/completo" target="_blank" rel="noreferrer" className="hover:text-white">
-                  Marcador completo ↗
+                  Marcador completo <ArrowUpRight className="ico-txt" aria-hidden />
                 </a>
               </>
             )}

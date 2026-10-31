@@ -1,4 +1,6 @@
 "use client";
+import Icono from "@/components/Icono";
+import { Camera, Image as IconImage } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 import { PALETA, type Punto } from "@/lib/pizarra/estado";
@@ -301,7 +303,7 @@ export default function Analizador() {
           <video ref={videoRef} src={video.url} controls playsInline preload="metadata" />
           <div className="af-acciones">
             <button type="button" className="btn btn--accent" onClick={() => void capturarFotograma()}>
-              📸 Capturar fotograma
+              <Camera className="ico-txt" aria-hidden /> Capturar fotograma
             </button>
             <button type="button" className="pz-tool" onClick={() => pasoVideo(-0.1)}>
               −0,1 s
@@ -319,7 +321,7 @@ export default function Analizador() {
 
       {fotos.length === 0 ? (
         <button type="button" className="af-vacio" onClick={() => entrada.current?.click()}>
-          <span aria-hidden>🖼️</span>
+          <Icono icono={IconImage} tono="naranja" tam="lg" />
           <b>Sube fotos o un vídeo de la jugada</b>
           <span>Capturas de la tele, clips o fotos del campo. Del vídeo sacas los fotogramas que quieras. Todo se queda en tu móvil: no se sube a ningún sitio.</span>
         </button>
@@ -330,7 +332,7 @@ export default function Analizador() {
               + Añadir fotos o vídeo
             </button>
             <button type="button" className="btn btn--accent" onClick={() => exportar(false)} disabled={exportando}>
-              📸 {exportando ? "Preparando…" : "Guardar esta"}
+              <Camera className="ico-txt" aria-hidden /> {exportando ? "Preparando…" : "Guardar esta"}
             </button>
             {fotos.length > 1 && (
               <button type="button" className="btn" onClick={() => exportar(true)} disabled={exportando}>

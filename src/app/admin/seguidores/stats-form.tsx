@@ -1,4 +1,5 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 
 import { useActionState, useState } from "react";
 import {
@@ -102,7 +103,7 @@ export default function StatsForm({ initial: data }: { initial: SocialStats }) {
           {pending ? "Guardando..." : "Guardar cambios"}
         </button>
         {state.status === "error" && state.message && (
-          <span className="text-sm text-red-300">⚠ {state.message}</span>
+          <span className="text-sm text-red-300"><TriangleAlert className="ico-txt" aria-hidden /> {state.message}</span>
         )}
         {state.status === "success" && state.message && (
           <span className="text-sm text-emerald-300">✓ {state.message}</span>

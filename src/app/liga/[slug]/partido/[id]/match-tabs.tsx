@@ -1,4 +1,5 @@
 "use client";
+import { Goal, RefreshCw, TriangleAlert, Ban } from "lucide-react";
 
 /**
  * Pestañas del detalle de partido: "Estadísticas" (server, como children),
@@ -317,12 +318,13 @@ function EventIcon({ kind }: { kind: TimelineEvent["kind"] }) {
   if (kind === "missed_penalty") {
     return <span style={{ flexShrink: 0, display: "inline-flex" }}><IconoPenaltiFallado size={18} /></span>;
   }
-  const map: Record<string, string> = {
-    own_goal: "🥅",
-    var_disallowed: "🚫",
-    sub: "🔄",
+  const map: Record<string, import("lucide-react").LucideIcon> = {
+    own_goal: Goal,
+    var_disallowed: Ban,
+    sub: RefreshCw,
   };
-  return <span style={{ fontSize: "0.95rem", flexShrink: 0 }}>{map[kind] ?? "•"}</span>;
+  const I = map[kind];
+  return I ? <I className="ico-txt" aria-hidden /> : null;
 }
 
 function eventLabel(ev: TimelineEvent): { title: string; sub: string | null } {
@@ -1090,7 +1092,7 @@ function TeamInjuries({ team, list }: { team: Team; list: Injury[] }) {
               }}
               title={i.type === "Questionable" ? "Duda" : "Baja"}
             >
-              <span>{i.type === "Questionable" ? "⚠️" : "🚫"}</span>
+              <span>{i.type === "Questionable" ? <><TriangleAlert className="ico-txt" aria-hidden /></> : <><Ban className="ico-txt" aria-hidden /></>}</span>
               <span className="truncate">{i.player}</span>
               <span
                 className="mono"

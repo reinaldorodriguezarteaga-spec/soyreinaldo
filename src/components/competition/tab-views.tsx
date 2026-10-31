@@ -1,4 +1,5 @@
 "use client";
+import { Timer, Hand, RectangleVertical } from "lucide-react";
 
 import { roundChip, roundMeta } from "@/lib/sports/rounds";
 
@@ -364,7 +365,7 @@ export function LiveMatchCard({
           className="match__when"
           style={{ color: "var(--accent)", textDecoration: "none" }}
         >
-          ⏱ Cuenta atrás →
+          <Timer className="ico-txt" aria-hidden /> Cuenta atrás →
         </Link>
       </div>
     </div>
@@ -740,7 +741,7 @@ export function PartidosView({
                 className="match__when"
                 style={{ color: "var(--accent)", textDecoration: "none" }}
               >
-                {showScore ? "Ver estadísticas →" : "⏱ Cuenta atrás →"}
+                {showScore ? "Ver estadísticas →" : <><Timer className="ico-txt" aria-hidden /> Cuenta atrás →</>}
               </Link>
             </div>
           </div>
@@ -1033,13 +1034,13 @@ export function StandingsTableView({
                 <th className="text-right" title="Goles a favor">GF</th>
                 <th className="text-right" title="Goles en contra">GC</th>
                 <th className="text-right" title="Partidos sin encajar (toda la temporada)">
-                  🧤
+                  <Hand className="ico-txt" aria-hidden />
                 </th>
                 <th className="text-right" title="Tarjetas amarillas (toda la temporada)">
-                  🟨
+                  <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ffd23c" }} aria-hidden />
                 </th>
                 <th className="text-right" title="Tarjetas rojas (toda la temporada)">
-                  🟥
+                  <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden />
                 </th>
               </>
             )}
@@ -1809,7 +1810,7 @@ export function PlayerTable({
                 : metric === "assists"
                   ? (st?.goals.assists ?? 0)
                   : metric === "cards"
-                    ? `${yellow}🟨${red > 0 ? ` ${red}🟥` : ""}`
+                    ? <>{yellow}<RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ffd23c" }} aria-hidden />{red > 0 && <> {red}<RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden /></>}</>
                     : st?.games.rating
                       ? parseFloat(st.games.rating).toFixed(2)
                       : "—";

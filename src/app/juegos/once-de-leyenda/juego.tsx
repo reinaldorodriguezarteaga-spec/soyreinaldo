@@ -1,4 +1,5 @@
 "use client";
+import { Timer } from "lucide-react";
 
 import { caraPorNombre } from "@/lib/juegos/caras";
 import { caraOnce } from "@/lib/juegos/caras-onces";
@@ -169,7 +170,7 @@ export default function Juego({ numero }: { numero: number }) {
           <div className="jg-panel">
             {nivel && !terminado && (
               <span className={`jreloj${restante <= 10 ? " is-poco" : ""}`} aria-label="Tiempo que queda">
-                ⏱ {reloj(restante)} · {NIVELES[nivel].nombre}
+                <Timer className="ico-txt" aria-hidden /> {reloj(restante)} · {NIVELES[nivel].nombre}
               </span>
             )}
 
@@ -196,7 +197,7 @@ export default function Juego({ numero }: { numero: number }) {
                 <>
                   <div className="jg-final is-ok">
                     <div>
-                      {!completo && <p className="jg-final__ctx">⏱ Se acabó el tiempo. Elegiste {ronda} de 11 puestos.</p>}
+                      {!completo && <p className="jg-final__ctx"><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo. Elegiste {ronda} de 11 puestos.</p>}
                       <p className="jg-final__tit">Tu once tiene de media</p>
                       <p className="jg-final__eq">{res.media}</p>
                       <p className="jg-final__ctx">

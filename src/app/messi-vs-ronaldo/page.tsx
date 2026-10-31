@@ -1,3 +1,5 @@
+import { Scale, ChartColumn, CalendarDays, CircleDot, Footprints } from "lucide-react";
+import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -74,7 +76,7 @@ export default async function MessiVsRonaldoPage() {
             </Suspense>
             <p style={{ margin: 0 }}>
               <Link href="/comparador" className="btn">
-                ⚖️ Compara a cualquier jugador, por temporada o competición →
+                <Scale className="ico-txt" aria-hidden /> Compara a cualquier jugador, por temporada o competición →
               </Link>
             </p>
             <CompartirImagen
@@ -131,7 +133,7 @@ async function Detalle() {
     <>
       <div>
         <div className="shead">
-          <h2>📊 Esta temporada</h2>
+          <h2><Icono icono={ChartColumn} tono="azul" tam="sm" /> Esta temporada</h2>
           <span className="sh-note">por competición</span>
         </div>
         <div className="grid2" style={{ alignItems: "start" }}>
@@ -184,7 +186,7 @@ async function Detalle() {
       {proximos.length > 0 && (
         <div>
           <div className="shead">
-            <h2>📅 Próximos partidos</h2>
+            <h2><Icono icono={CalendarDays} tono="azul" tam="sm" /> Próximos partidos</h2>
           </div>
           <div className="panel" style={{ padding: "6px 18px" }}>
             {proximos.map(({ f, quien }) => {
@@ -226,7 +228,7 @@ async function Detalle() {
       {ultimos.length > 0 && (
         <div>
           <div className="shead">
-            <h2>⚽ Sus últimos partidos</h2>
+            <h2><Icono icono={CircleDot} tono="azul" tam="sm" /> Sus últimos partidos</h2>
           </div>
           <div className="panel" style={{ padding: "6px 18px" }}>
             {ultimos.map(({ f, quien, p, conDatos }) => {
@@ -255,8 +257,8 @@ async function Detalle() {
                     {jugo ? (
                       <>
                         {p!.minutes}&apos;
-                        {p!.goals > 0 && <> · ⚽{p!.goals}</>}
-                        {p!.assists > 0 && <> · 🅰️{p!.assists}</>}
+                        {p!.goals > 0 && <> · <CircleDot className="ico-txt" aria-hidden />{p!.goals}</>}
+                        {p!.assists > 0 && <> · <Footprints className="ico-txt" aria-hidden />{p!.assists}</>}
                         {p!.rating != null && (
                           <>
                             {" · "}

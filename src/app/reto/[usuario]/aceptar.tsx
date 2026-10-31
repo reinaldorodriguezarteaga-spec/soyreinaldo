@@ -1,4 +1,5 @@
 "use client";
+import { CircleCheck, Swords } from "lucide-react";
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -19,7 +20,7 @@ export default function AceptarInvitacion({
   if (estado?.ok) {
     return (
       <div className="logro__acciones">
-        <p className="logro__detalle">✅ Reto aceptado. ¡Haz tus pronósticos de la jornada {jornada}!</p>
+        <p className="logro__detalle"><CircleCheck className="ico-txt" aria-hidden /> Reto aceptado. ¡Haz tus pronósticos de la jornada {jornada}!</p>
         <Link href="/quiniela-liga/partidos" className="btn btn--accent">
           Pronosticar <span className="arr">→</span>
         </Link>
@@ -39,7 +40,7 @@ export default function AceptarInvitacion({
           })
         }
       >
-        {pending ? "Aceptando…" : "Aceptar el reto ⚔️"}
+        {pending ? "Aceptando…" : <>Aceptar el reto <Swords className="ico-txt" aria-hidden /></>}
       </button>
       {estado && !estado.ok && <p className="duelo__error">{estado.mensaje}</p>}
     </div>

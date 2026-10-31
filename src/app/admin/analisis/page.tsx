@@ -1,3 +1,4 @@
+import { Eye, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { exigirSeccion } from "@/lib/permisos";
 import { createClient } from "@/lib/supabase/server";
@@ -102,7 +103,7 @@ export default async function AdminAnalisis({
                       className="text-xs tabular-nums text-zinc-500"
                       title={`${a.view_count} lecturas · ${a.share_count} veces compartido`}
                     >
-                      👁 {a.view_count} · ↗ {a.share_count}
+                      <Eye className="ico-txt" aria-hidden /> {a.view_count} · <ArrowUpRight className="ico-txt" aria-hidden /> {a.share_count}
                     </span>
                   )}
                   {a.published_at && (

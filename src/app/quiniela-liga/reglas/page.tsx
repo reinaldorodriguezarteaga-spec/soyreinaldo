@@ -1,3 +1,19 @@
+import {
+  Trophy,
+  CircleDot,
+  TrendingDown,
+  Hand,
+  Star,
+  Shield,
+  Swords,
+  Flame,
+  Target,
+  Medal,
+  ListChecks,
+  Mic,
+} from "lucide-react";
+
+import Icono from "@/components/Icono";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_RETOS_POR_JORNADA, PREMIO_DUELOS } from "@/lib/quiniela-liga/duelos";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
@@ -10,7 +26,7 @@ export const metadata = {
     "Cómo se puntúa la Quiniela de LaLiga: pronósticos, picks especiales y fechas límite.",
 };
 
-type Row = { label: string; points: string; note?: string };
+type Row = { label: string; icono?: import("lucide-react").LucideIcon; points: string; note?: string };
 
 /** Baremo de la quiniela general; cada liga privada puede tener el suyo. */
 const DEFAULT_RULES = {
@@ -37,17 +53,17 @@ const predictionRows = (r: Rules): Row[] => [
 ];
 
 const seasonRows = (r: Rules): Row[] => [
-  { label: "🏆 Campeón de LaLiga", points: pts(r.champion) },
-  { label: "⚽ Pichichi (máximo goleador)", points: pts(r.pichichi), note: "por nombre" },
-  { label: "🔻 Cada equipo descendido acertado (hasta 3)", points: `${pts(r.relegated)} c/u` },
+  { icono: Trophy, label: "Campeón de LaLiga", points: pts(r.champion) },
+  { icono: CircleDot, label: "Pichichi (máximo goleador)", points: pts(r.pichichi), note: "por nombre" },
+  { icono: TrendingDown, label: "Cada equipo descendido acertado (hasta 3)", points: `${pts(r.relegated)} c/u` },
 ];
 
 const midseasonRows = (r: Rules): Row[] => [
-  { label: "🧤 Zamora (portero menos goleado)", points: pts(r.gk), note: "por nombre" },
-  { label: "🎯 Máximo asistidor", points: pts(r.assist), note: "por nombre" },
-  { label: "⭐ MVP de la liga", points: pts(r.mvp), note: "por nombre" },
-  { label: "🛡️ Equipo menos goleado", points: pts(r.defense) },
-  { label: "🔥 Equipo más goleador", points: pts(r.attack) },
+  { icono: Hand, label: "Zamora (portero menos goleado)", points: pts(r.gk), note: "por nombre" },
+  { icono: Target, label: "Máximo asistidor", points: pts(r.assist), note: "por nombre" },
+  { icono: Star, label: "MVP de la liga", points: pts(r.mvp), note: "por nombre" },
+  { icono: Shield, label: "Equipo menos goleado", points: pts(r.defense) },
+  { icono: Flame, label: "Equipo más goleador", points: pts(r.attack) },
 ];
 
 function PointsTable({ rows }: { rows: Row[] }) {
@@ -66,7 +82,7 @@ function PointsTable({ rows }: { rows: Row[] }) {
           }}
         >
           <div>
-            <div style={{ fontWeight: 700 }}>{r.label}</div>
+            <div style={{ fontWeight: 700 }}>{r.icono && <r.icono className="ico-txt" aria-hidden />} {r.label}</div>
             {r.note && (
               <div className="hint" style={{ marginTop: 2 }}>
                 {r.note}
@@ -220,7 +236,7 @@ export default async function QuinielaLigaReglasPage({
             <div>
               <p className="eyebrow">Uno contra uno</p>
               <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
-                ⚔️ Duelos
+                <Icono icono={Swords} tono="azul" tam="sm" /> Duelos
               </h2>
             </div>
           </div>
@@ -232,10 +248,10 @@ export default async function QuinielaLigaReglasPage({
             a la clasificación general (se suman solos al acabar la última jornada).
           </p>
           <p className="hint" style={{ marginTop: 8 }}>
-            🔥 Junto a tu nombre sale tu racha de jornadas seguidas jugando (desde 3) y 🎯 la de
-            aciertos seguidos (desde 4). Y en la clasificación ves tus medallas: 🏅 mejor de la
-            jornada, 🎯 francotirador (3 exactos en una jornada), 💯 pleno (todos los ganadores de una
-            jornada), 🔥 constancia (5 jornadas seguidas) y 🎙️ le ganaste a Reinaldo.
+            <Flame className="ico-txt" aria-hidden /> Junto a tu nombre sale tu racha de jornadas seguidas jugando (desde 3) y <Target className="ico-txt" aria-hidden /> la de
+            aciertos seguidos (desde 4). Y en la clasificación ves tus medallas: <Medal className="ico-txt" aria-hidden /> mejor de la
+            jornada, <Target className="ico-txt" aria-hidden /> francotirador (3 exactos en una jornada), <ListChecks className="ico-txt" aria-hidden /> pleno (todos los ganadores de una
+            jornada), <Flame className="ico-txt" aria-hidden /> constancia (5 jornadas seguidas) y <Mic className="ico-txt" aria-hidden /> le ganaste a Reinaldo.
           </p>
         </div>
       </section>

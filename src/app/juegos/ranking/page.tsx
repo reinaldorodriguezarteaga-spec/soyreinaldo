@@ -1,3 +1,5 @@
+import { Medal, Users } from "lucide-react";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -49,7 +51,7 @@ export default async function RankingJuegosPage({ searchParams }: { searchParams
               De siempre
             </Link>
             <Link href="/juegos/ligas" className="chip-pill">
-              👥 Mis ligas
+              <Users className="ico-txt" aria-hidden /> Mis ligas
             </Link>
           </nav>
           <div className="panel" style={{ padding: 8, maxWidth: 720 }}>
@@ -61,7 +63,7 @@ export default async function RankingJuegosPage({ searchParams }: { searchParams
               <ol className="ao-clasif">
                 {filas.map((f, i) => (
                   <li key={f.user_id} className={f.user_id === yo ? "is-yo" : ""}>
-                    <span className="ao-clasif__pos">{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+                    <span className="ao-clasif__pos">{i < 3 ? <Medal className="ico-txt" style={{ color: ["#ffc93c", "#c9d1e0", "#d08a4a"][i] }} aria-hidden /> : i + 1}</span>
                     <span className="ao-clasif__n">{f.nombre}</span>
                     <span className="ao-clasif__p">
                       {f.partidas} {f.partidas === 1 ? "reto" : "retos"} · <b>{f.puntos}</b>

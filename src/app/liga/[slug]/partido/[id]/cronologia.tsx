@@ -1,3 +1,4 @@
+import { RectangleVertical } from "lucide-react";
 import type React from "react";
 import { nombreCorto } from "@/lib/sports/nombres";
 import { IconoBalon, IconoPenaltiFallado } from "@/components/IconosPartido";
@@ -59,7 +60,7 @@ function agruparPorJugador(
 function seccionesCrono(lines: Ev[], nombres: Map<number, string>) {
   return {
     goles: agruparPorJugador(
-      lines.filter((e) => e.icon === "⚽"),
+      lines.filter((e) => e.icon === "goal"),
       (e) => (e.tag === "(pen.)" ? "(pen)" : e.tag === "(p.p.)" ? "(p.p.)" : ""),
       nombres,
     ),
@@ -69,7 +70,7 @@ function seccionesCrono(lines: Ev[], nombres: Map<number, string>) {
       nombres,
     ),
     rojas: agruparPorJugador(
-      lines.filter((e) => e.icon === "🟥"),
+      lines.filter((e) => e.icon === "red"),
       (e) => (e.tag ? "(2ª am.)" : ""),
       nombres,
     ),
@@ -95,7 +96,7 @@ export default function Cronologia({
   const filas: { key: string; icono: React.ReactNode; h: LineaCrono[]; a: LineaCrono[] }[] = [
     { key: "goles", icono: <IconoBalon size={16} title="Goles" />, h: h.goles, a: a.goles },
     { key: "fallados", icono: <IconoPenaltiFallado size={18} />, h: h.fallados, a: a.fallados },
-    { key: "rojas", icono: <span aria-label="Expulsiones">🟥</span>, h: h.rojas, a: a.rojas },
+    { key: "rojas", icono: <span aria-label="Expulsiones"><RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden /></span>, h: h.rojas, a: a.rojas },
   ].filter((f) => f.h.length > 0 || f.a.length > 0);
   if (filas.length === 0) return null;
   const linea = (l: LineaCrono, i: number) => (

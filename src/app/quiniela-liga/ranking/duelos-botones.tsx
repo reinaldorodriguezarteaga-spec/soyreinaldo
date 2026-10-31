@@ -1,4 +1,5 @@
 "use client";
+import { Swords } from "lucide-react";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -23,7 +24,7 @@ export function ResponderReto({ id }: { id: string }) {
   return (
     <span className="duelo__acciones">
       <button type="button" className="btn btn--accent" disabled={pending} onClick={() => correr(() => responderDuelo(id, true))}>
-        Aceptar ⚔️
+        Aceptar <Swords className="ico-txt" aria-hidden />
       </button>
       <button type="button" className="btn" disabled={pending} onClick={() => correr(() => responderDuelo(id, false))}>
         Rechazar
@@ -75,7 +76,7 @@ export function FormRetar({
         ))}
       </select>
       <button type="submit" className="btn btn--accent" disabled={pending || !rival}>
-        Retar en la J{jornada} ⚔️
+        Retar en la J{jornada} <Swords className="ico-txt" aria-hidden />
       </button>
       {error && <span className="duelo__error">{error}</span>}
     </form>

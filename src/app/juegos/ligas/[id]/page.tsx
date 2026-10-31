@@ -1,3 +1,4 @@
+import { Medal } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,7 +67,7 @@ export default async function LigaJuegosPage({
             <ol className="ao-clasif">
               {filas.map((f, i) => (
                 <li key={f.user_id} className={f.user_id === user.id ? "is-yo" : ""}>
-                  <span className="ao-clasif__pos">{f.puntos > 0 && i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+                  <span className="ao-clasif__pos">{f.puntos > 0 && i < 3 ? <Medal className="ico-txt" style={{ color: ["#ffc93c", "#c9d1e0", "#d08a4a"][i] }} aria-hidden /> : i + 1}</span>
                   <span className="ao-clasif__n">{f.nombre}</span>
                   <span className="ao-clasif__p">
                     {f.partidas} {f.partidas === 1 ? "reto" : "retos"} · <b>{f.puntos}</b>

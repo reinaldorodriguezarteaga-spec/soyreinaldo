@@ -30,7 +30,7 @@ export default function CompactMatchRow({
   /** `null` = fila informativa sin enlace (ligas del calendario sin hub
    * propio, p. ej. Bundesliga o selecciones). */
   href: string | null;
-  badge?: string;
+  badge?: React.ReactNode;
   /** Día del partido ("Hoy", "Dom 23 ago"), junto al badge. Solo para filas
    * fuera de una agrupación por día (el grupo "⭐ Tus favoritos" mezcla
    * fechas y la hora sola no dice cuándo se juega). */

@@ -1,3 +1,5 @@
+import { Trophy, Lock } from "lucide-react";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, type ClubLeague } from "@/lib/quiniela-liga/leagues";
@@ -125,7 +127,7 @@ export default async function QuinielaLigaIndex() {
 
           <div className="panel qcard-champions" style={{ padding: 24 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>🏆 Quiniela de la Champions</h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}><Icono icono={Trophy} tono="oro" tam="sm" /> Quiniela de la Champions</h2>
               <span className="mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--text-dim)" }}>
                 2026-27 · OTRA COMPETICIÓN
               </span>
@@ -182,7 +184,7 @@ export default async function QuinielaLigaIndex() {
                     padding: "3px 10px",
                   }}
                 >
-                  🔒 PRIVADO
+                  <Lock className="ico-txt" aria-hidden /> PRIVADO
                 </span>
               </div>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>

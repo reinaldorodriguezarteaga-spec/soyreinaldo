@@ -1,4 +1,5 @@
 "use client";
+import { Play } from "lucide-react";
 
 import { useState } from "react";
 
@@ -22,7 +23,7 @@ export default function VideoLite({ id, titulo }: { id: string; titulo: string }
           <button type="button" onClick={() => setActivo(true)} aria-label={`Ver: ${titulo}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" />
-            <span className="videolite__play" aria-hidden>▶</span>
+            <span className="videolite__play" aria-hidden><Play className="ico-txt" aria-hidden /></span>
           </button>
         )}
       </div>

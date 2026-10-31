@@ -1,4 +1,20 @@
 "use client";
+import {
+  ArrowDown,
+  ArrowLeftRight,
+  Globe,
+  Star,
+  type LucideIcon,
+  Zap,
+  Brain,
+  Repeat,
+  ArrowUp,
+  Hand,
+  Vote,
+  Trophy,
+  Medal,
+} from "lucide-react";
+import Icono from "@/components/Icono";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -124,11 +140,11 @@ function Inicio({ conSesion, onEmpezar }: { conSesion: boolean; onEmpezar: (i: I
         <span>¿Cómo quieres jugar?</span>
         <div className="mc__version">
           <button type="button" className={!extendido ? "is-on" : ""} onClick={() => setExtendido(false)}>
-            <b>⚡ Rápida</b>
+            <b><Zap className="ico-txt" aria-hidden /> Rápida</b>
             <small>Una decisión por temporada. Unos 5 minutos.</small>
           </button>
           <button type="button" className={extendido ? "is-on" : ""} onClick={() => setExtendido(true)}>
-            <b>🧠 Extendida</b>
+            <b><Brain className="ico-txt" aria-hidden /> Extendida</b>
             <small>También decides a mitad de temporada. Unos 10 minutos.</small>
           </button>
         </div>
@@ -353,12 +369,12 @@ function PartidaVista({
               const c = clubPorId(id)!;
               const primerEquipo = clubPorId(e.clubId)?.matriz === id;
               const flecha = primerEquipo
-                ? "⬆️ Subir al primer equipo"
+                ? <> <ArrowUp className="ico-txt" aria-hidden /> Subir al primer equipo</>
                 : c.escalon < e.escalonClub
-                  ? "⬆️ Un paso adelante"
+                  ? <> <ArrowUp className="ico-txt" aria-hidden /> Un paso adelante</>
                   : c.escalon === e.escalonClub
-                    ? "↔️ Mismo nivel"
-                    : "⬇️ Un paso atrás";
+                    ? <> <ArrowLeftRight className="ico-txt" aria-hidden /> Mismo nivel</>
+                    : <> <ArrowDown className="ico-txt" aria-hidden /> Un paso atrás</>;
               return (
                 <button key={id} type="button" onClick={() => hacer({ t: "fichar", id })}>
                   <Escudo id={id} /> Fichar: {c.nombre}
@@ -374,14 +390,14 @@ function PartidaVista({
                 <button key={`cesion-${id}`} type="button" onClick={() => hacer({ t: "ceder", id })}>
                   <Escudo id={id} /> Cedido una temporada: {c.nombre}
                   <small>
-                    🔁 Juegas allí un año y vuelves a {club.nombre} · {c.liga} · {NOMBRE_ESCALON[c.escalon]}
+                    <Repeat className="ico-txt" aria-hidden /> Juegas allí un año y vuelves a {club.nombre} · {c.liga} · {NOMBRE_ESCALON[c.escalon]}
                   </small>
                 </button>
               );
             })}
             {club.matriz && !e.ofertas.includes(club.matriz) && !e.sinRenovar && (
               <p className="mc__nota">
-                ⬆️ El {clubPorId(club.matriz)?.nombre} aún no te llama: te sube con media{" "}
+                <ArrowUp className="ico-txt" aria-hidden /> El {clubPorId(club.matriz)?.nombre} aún no te llama: te sube con media{" "}
                 {mediaParaSubir(clubPorId(club.matriz)!.escalon)} (tienes {e.media}) y una temporada de 6,5 o más.
               </p>
             )}
@@ -390,7 +406,7 @@ function PartidaVista({
             )}
             {puedeRetirarse(e) && (
               <button type="button" className="mc__retiro" onClick={() => hacer({ t: "retiro" })}>
-                👋 Retirarme ahora{e.edad + 1 >= EDAD_RETIRO - 1 ? " (el año que viene será obligatorio)" : ""}
+                <Hand className="ico-txt" aria-hidden /> Retirarme ahora{e.edad + 1 >= EDAD_RETIRO - 1 ? " (el año que viene será obligatorio)" : ""}
               </button>
             )}
           </div>
@@ -479,13 +495,13 @@ function Estadisticas({ t, posicion }: { t: Estado["historial"][number]; posicio
       )}
       {(t.trofeos.length > 0 || t.premios.length > 0 || t.balonPuesto) && (
         <div className="mc-chips">
-          {t.balonPuesto && t.balonPuesto > 1 && <span className="is-balon">🗳️ Balón de Oro: {t.balonPuesto}.º</span>}
+          {t.balonPuesto && t.balonPuesto > 1 && <span className="is-balon"><Vote className="ico-txt" aria-hidden /> Balón de Oro: {t.balonPuesto}.º</span>}
           {t.trofeos.map((x) => (
-            <span key={x}>🏆 {x}</span>
+            <span key={x}><Trophy className="ico-txt" aria-hidden /> {x}</span>
           ))}
           {t.premios.map((x) => (
             <span key={x} className="is-premio">
-              🥇 {x}
+              <Medal className="ico-txt" style={{ color: "#ffc93c" }} aria-hidden /> {x}
             </span>
           ))}
         </div>
@@ -534,10 +550,10 @@ function Historial({ e }: { e: Estado }) {
                 <td>{t.nota ?? "—"}</td>
                 <td className="mc-hist__tit">
                   {[
-                    ...t.trofeos.map((x) => `🏆 ${x}`),
-                    ...t.premios.map((x) => `🥇 ${x}`),
-                    ...(t.balonPuesto && t.balonPuesto > 1 ? [`🗳️ ${t.balonPuesto}.º Balón de Oro`] : []),
-                  ].join(" · ")}
+                    ...t.trofeos.map((x) => <span key={`trofeo-${x}`}><Trophy className="ico-txt" aria-hidden /> {x}</span>),
+                    ...t.premios.map((x) => <span key={`premio-${x}`}><Medal className="ico-txt" style={{ color: "#ffc93c" }} aria-hidden /> {x}</span>),
+                    ...(t.balonPuesto && t.balonPuesto > 1 ? [<span key="balon"><Vote className="ico-txt" aria-hidden /> {t.balonPuesto}.º Balón de Oro</span>] : []),
+                  ].map((x, i) => <span key={i}>{i > 0 && " · "}{x}</span>)}
                 </td>
               </tr>
             ))}
@@ -552,7 +568,7 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
   const e = p.e;
   const r = resumen(e);
   const [hecho, setHecho] = useState(false);
-  const [ranking, setRanking] = useState<string | null>(conSesion ? "Apuntando tu carrera en el ranking…" : null);
+  const [ranking, setRanking] = useState<React.ReactNode>(conSesion ? "Apuntando tu carrera en el ranking…" : null);
   const enviada = useRef(false);
 
   // Al retirarte, al ranking (el servidor la rejuega y calcula el legado).
@@ -574,15 +590,14 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
           .map((t) => {
             const { valor, puesto } = res.especiales[t];
             const x = ESPECIALES[t];
-            return ` ${x.icono} ${valor} ${x.unidad(valor)}: ${puesto ? `puesto ${puesto} en su ranking` : "fuera de su top 10"}.`;
-          })
-          .join("");
+            return <span key={t}> <x.icono className="ico-txt" aria-hidden /> {valor} {x.unidad(valor)}: {puesto ? `puesto ${puesto} en su ranking` : "fuera de su top 10"}.</span>;
+          });
         setRanking(
-          (res.puesto
-            ? `🏆 ¡Entras en el top 10! Puesto ${res.puesto} con ${res.legado} puntos de legado.`
+          <>{res.puesto
+            ? <><Trophy className="ico-txt" aria-hidden /> ¡Entras en el top 10! Puesto {res.puesto} con {res.legado} puntos de legado.</>
             : decimo != null
               ? `Te quedas fuera del top 10: el 10.º tiene ${decimo} puntos de legado y tú ${res.legado}.`
-              : `Apuntada en el ranking con ${res.legado} puntos de legado.`) + otros,
+              : `Apuntada en el ranking con ${res.legado} puntos de legado.`}{otros}</>,
         );
       })
       .catch(() => setRanking("No se pudo apuntar en el ranking."));
@@ -674,23 +689,23 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
 }
 
 /** Rankings por un solo número (Mundiales, Balones de Oro, Champions): las dos versiones juntas. */
-const ESPECIALES: Record<Especial, { icono: string; titulo: string; nota: string; vacio: string; unidad: (n: number) => string }> = {
+const ESPECIALES: Record<Especial, { icono: LucideIcon; titulo: string; nota: string; vacio: string; unidad: (n: number) => string }> = {
   mundiales: {
-    icono: "🌍",
+    icono: Globe,
     titulo: "Top 10 de Mundiales ganados",
     nota: "Las carreras con más Mundiales, de las dos versiones. A igualdad, manda el legado.",
     vacio: "Nadie ha ganado aún un Mundial. ¿Serás el primero?",
     unidad: (n) => (n > 1 ? "Mundiales" : "Mundial"),
   },
   balones: {
-    icono: "🥇",
+    icono: Medal,
     titulo: "Top 10 de Balones de Oro",
     nota: "Las carreras con más Balones de Oro, de las dos versiones. A igualdad, manda el legado.",
     vacio: "Nadie ha ganado aún un Balón de Oro. ¿Serás el primero?",
     unidad: (n) => (n > 1 ? "Balones de Oro" : "Balón de Oro"),
   },
   champions: {
-    icono: "⭐",
+    icono: Star,
     titulo: "Top 10 de Champions ganadas",
     nota: "Las carreras con más Champions, de las dos versiones. A igualdad, manda el legado.",
     vacio: "Nadie ha ganado aún una Champions. ¿Serás el primero?",
@@ -698,12 +713,12 @@ const ESPECIALES: Record<Especial, { icono: string; titulo: string; nota: string
   },
 };
 
-const PESTANAS: [Tabla, string][] = [
-  ["rapida", "⚡ Rápida"],
-  ["extendida", "🧠 Extendida"],
-  ["mundiales", "🌍 Mundiales"],
-  ["balones", "🥇 Balones de Oro"],
-  ["champions", "⭐ Champions"],
+const PESTANAS: [Tabla, LucideIcon, string][] = [
+  ["rapida", Zap, "Rápida"],
+  ["extendida", Brain, "Extendida"],
+  ["mundiales", Globe, "Mundiales"],
+  ["balones", Medal, "Balones de Oro"],
+  ["champions", Star, "Champions"],
 ];
 
 function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
@@ -713,11 +728,11 @@ function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
   const especial = tabla === "rapida" || tabla === "extendida" ? null : ESPECIALES[tabla];
   return (
     <div className="panel mc-hist mc-top">
-      <h3>{especial ? `${especial.icono} ${especial.titulo}` : "🏆 Top 10 de carreras"}</h3>
+      <h3><Icono icono={especial?.icono ?? Trophy} tono="oro" tam="sm" /> {especial?.titulo ?? "Top 10 de carreras"}</h3>
       <div className="jg-modos" role="tablist">
-        {PESTANAS.map(([t, texto]) => (
+        {PESTANAS.map(([t, I, texto]) => (
           <button key={t} type="button" className={tabla === t ? "is-on" : ""} onClick={() => setElegido(t)}>
-            {texto}
+            <I className="ico-txt" aria-hidden /> {texto}
           </button>
         ))}
       </div>
@@ -728,7 +743,7 @@ function Ranking({ tops, inicial }: { tops: Tops; inicial: Modo }) {
         <ol>
           {top.map((f, i) => (
             <li key={`${f.user_id}-${i}`}>
-              <span className="mc-top__pos">{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+              <span className="mc-top__pos">{i < 3 ? <Medal className="ico-txt" style={{ color: ["#ffc93c", "#c9d1e0", "#d08a4a"][i] }} aria-hidden /> : i + 1}</span>
               <span className="mc-top__quien">
                 <b>{f.usuario}</b>
                 <small>
@@ -790,7 +805,7 @@ function Palmares({ trofeos, premios }: { trofeos: [string, number][]; premios: 
                       </a>
                     ) : (
                       <span className="mc-trofeo__icono" aria-hidden>
-                        {g.tipo === "individual" ? "🥇" : "🏆"}
+                        {g.tipo === "individual" ? <><Medal className="ico-txt" style={{ color: "#ffc93c" }} aria-hidden /></> : <><Trophy className="ico-txt" aria-hidden /></>}
                       </span>
                     )}
                     {x.n > 1 && <span className="mc-trofeo__n">×{x.n}</span>}

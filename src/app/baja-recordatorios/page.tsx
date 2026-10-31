@@ -1,3 +1,5 @@
+import { MailOpen, CircleHelp, TriangleAlert } from "lucide-react";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
@@ -49,7 +51,7 @@ export default async function UnsubscribePage({
           <div className="statecard">
             {outcome === "success" ? (
               <>
-                <div className="stateicon">📭</div>
+                <div className="stateicon-wrap"><Icono icono={MailOpen} tono="azul" tam="lg" /></div>
                 <h1>Listo{displayName ? `, ${displayName}` : ""}.</h1>
                 <p>
                   No te enviaré más recordatorios por email. Si cambias de idea,
@@ -65,7 +67,7 @@ export default async function UnsubscribePage({
               </>
             ) : outcome === "invalid" ? (
               <>
-                <div className="stateicon">🤔</div>
+                <div className="stateicon-wrap"><Icono icono={CircleHelp} tono="azul" tam="lg" /></div>
                 <h1>Link no válido</h1>
                 <p>
                   Este enlace no corresponde a ninguna cuenta. Si quieres
@@ -81,7 +83,7 @@ export default async function UnsubscribePage({
               </>
             ) : (
               <>
-                <div className="stateicon">⚠️</div>
+                <div className="stateicon-wrap"><Icono icono={TriangleAlert} tono="naranja" tam="lg" /></div>
                 <h1>Algo no fue bien</h1>
                 <p>
                   No pude darte de baja en este momento. Inténtalo otra vez en

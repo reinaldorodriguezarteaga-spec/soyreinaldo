@@ -1,3 +1,4 @@
+import { Presentation } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Image from "next/image";
@@ -354,7 +355,7 @@ export default async function LigaPartidoPage({
     const gs: Ev[] = goals
       .filter((g) => benefTeam(g) === teamId)
       .map((g) => ({
-        icon: "⚽",
+        icon: "goal",
         minute: g.minute,
         player: g.player,
         tag:
@@ -369,7 +370,7 @@ export default async function LigaPartidoPage({
     const rs: Ev[] = cards
       .filter((c) => c.expulsion && c.teamId === teamId)
       .map((c) => ({
-        icon: "🟥",
+        icon: "red",
         minute: c.minute,
         player: c.player,
         tag: /second/i.test(c.detail) ? "(2ª am.)" : "",
@@ -380,7 +381,7 @@ export default async function LigaPartidoPage({
     const ns: Ev[] = notes
       .filter((n) => n.teamId === teamId)
       .map((n) => ({
-        icon: n.kind === "missed_penalty" ? "❌" : "🚫",
+        icon: n.kind === "missed_penalty" ? "missed_penalty" : "var_disallowed",
         minute: n.minute,
         player: n.player,
         tag: n.kind === "missed_penalty" ? "(pen. fallado)" : "(gol anulado)",
@@ -601,7 +602,7 @@ export default async function LigaPartidoPage({
                 pizarra con sus alineaciones (20-oct). */}
             <p style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 8, margin: "12px 0 0" }}>
               <Link href={`/pizarra?partido=${fixtureId}`} className="compartir__btn" prefetch={false}>
-                <span aria-hidden>🧩</span> Abrir en la pizarra
+                <span aria-hidden><Presentation className="ico-txt" aria-hidden /></span> Abrir en la pizarra
               </Link>
               {played && (
                 <CompartirImagen

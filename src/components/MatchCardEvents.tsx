@@ -1,3 +1,4 @@
+import { RectangleVertical, CircleDot } from "lucide-react";
 import type { FixtureEvents } from "@/lib/sports/widget-data";
 import { nombreCorto } from "@/lib/sports/nombres";
 
@@ -39,7 +40,7 @@ export default function MatchCardEvents({
 
   const linesFor = (teamId: number): Linea[] => {
     const goles = agrupar(
-      "⚽",
+      "goal",
       ev.goals
         .filter((g) => g.teamId === teamId)
         .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
@@ -50,7 +51,7 @@ export default function MatchCardEvents({
         })),
     );
     const rojas = agrupar(
-      "🟥",
+      "red",
       ev.reds
         .filter((c) => c.teamId === teamId)
         .map((c) => ({ player: c.player, minute: c.minute, tag: "" })),
@@ -68,14 +69,14 @@ export default function MatchCardEvents({
       <div>
         {home.map((l, i) => (
           <span key={i}>
-            {l.icon} {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span>
+            {l.icon === "red" ? <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden /> : <CircleDot className="ico-txt" aria-hidden />} {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span>
           </span>
         ))}
       </div>
       <div className="right">
         {away.map((l, i) => (
           <span key={i}>
-            {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span> {l.icon}
+            {l.who} <span style={{ color: "var(--text-dim)" }}>{l.minutos}</span> {l.icon === "red" ? <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden /> : <CircleDot className="ico-txt" aria-hidden />}
           </span>
         ))}
       </div>

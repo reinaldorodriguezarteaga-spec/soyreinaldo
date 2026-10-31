@@ -1,4 +1,5 @@
 "use client";
+import { Trophy } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -83,7 +84,7 @@ export default function BackButton() {
 
         {showQuiniela && (
           <Link href="/quiniela-liga" className="backbtn backbtn--accent">
-            🏆 <T>Quiniela</T>
+            <Trophy className="ico-txt" aria-hidden /> <T>Quiniela</T>
           </Link>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { User } from "lucide-react";
 import Image from "next/image";
 import { puntosPronostico, type Baremo } from "@/lib/quiniela-liga/scoring";
 import { T } from "@/components/EnApp";
@@ -156,7 +157,7 @@ function MatchBlock({
             <span className="badge">Final</span>
           ) : null}
           <span className="hint tabular-nums" style={{ fontSize: "0.72rem" }}>
-            {predictedCount}👤
+            {predictedCount}<User className="ico-txt" aria-hidden />
           </span>
         </div>
       </summary>

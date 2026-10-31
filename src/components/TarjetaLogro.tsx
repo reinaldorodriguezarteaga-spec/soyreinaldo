@@ -4,14 +4,14 @@ import { T } from "@/components/EnApp";
 
 /** Página de un logro para compartir: la tarjeta, compartir y "juega tú". */
 export default function TarjetaLogro({
-  emoji,
+  icono,
   titulo,
   nombre,
   detalle,
   url,
   textoCompartir,
 }: {
-  emoji: string;
+  icono: React.ReactNode;
   titulo: string;
   nombre: string;
   detalle: string;
@@ -23,7 +23,7 @@ export default function TarjetaLogro({
       <section className="section">
         <div className="wrap logro">
           <div className="panel logro__tarjeta">
-            <span className="logro__emoji" aria-hidden>{emoji}</span>
+            {icono}
             <p className="mono logro__titulo">{titulo}</p>
             <h1 className="logro__nombre">{nombre}</h1>
             <p className="logro__detalle">{detalle}</p>

@@ -1,4 +1,5 @@
 "use client";
+import { MessageCircle, Play, ArrowUpRight } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import type { DirectoYoutube } from "@/lib/youtube/directo";
@@ -45,7 +46,7 @@ export default function DirectoReinaldo() {
     return (
       <button type="button" className="ytpill" onClick={() => setAbierto(true)} title={directo.titulo}>
         <span className="livepulse" />
-        ▶ REINALDO EN DIRECTO
+        <Play className="ico-txt" aria-hidden /> REINALDO EN DIRECTO
       </button>
     );
   }
@@ -62,7 +63,7 @@ export default function DirectoReinaldo() {
           aria-pressed={chat}
           title="Ver y escribir en el chat del directo"
         >
-          💬 Chat
+          <MessageCircle className="ico-txt" aria-hidden /> Chat
         </button>
         <a
           href={`https://www.youtube.com/watch?v=${directo.videoId}`}
@@ -71,7 +72,7 @@ export default function DirectoReinaldo() {
           className="ytplayer__btn"
           title="Abrir en YouTube"
         >
-          YouTube ↗
+          YouTube <ArrowUpRight className="ico-txt" aria-hidden />
         </a>
         <button type="button" className="ytplayer__btn" onClick={() => setAbierto(false)} aria-label="Cerrar">
           ✕

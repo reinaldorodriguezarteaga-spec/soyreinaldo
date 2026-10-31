@@ -1,3 +1,5 @@
+import Icono from "@/components/Icono";
+import { Swords } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
@@ -55,7 +57,7 @@ export default async function RetosPendientes() {
         borderColor: "var(--accent)",
       }}
     >
-      <span aria-hidden style={{ fontSize: "1.4rem" }}>⚔️</span>
+      <Icono icono={Swords} tono="naranja" />
       <span style={{ flex: 1 }}>
         <strong>{texto}</strong> en la jornada {jornada}. Acepta antes de que empiece.
       </span>

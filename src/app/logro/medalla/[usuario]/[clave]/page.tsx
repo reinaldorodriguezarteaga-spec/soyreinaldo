@@ -1,3 +1,4 @@
+import IconoMedalla from "@/components/IconoMedalla";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import TarjetaLogro from "@/components/TarjetaLogro";
@@ -21,7 +22,7 @@ export default async function LogroMedallaPage({ params }: P) {
   const { medalla: m, nombre } = l;
   return (
     <TarjetaLogro
-      emoji={m.emoji}
+      icono={<IconoMedalla clave={m.clave} ficha />}
       titulo={m.nombre}
       nombre={nombre}
       detalle={`${m.descripcion}${m.veces > 1 ? ` · ×${m.veces}` : ""}`}

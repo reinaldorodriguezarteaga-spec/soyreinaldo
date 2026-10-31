@@ -1,4 +1,5 @@
 "use client";
+import { Flame } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -64,10 +65,10 @@ export default function CierreJuego({
       {racha > 0 && (
         <p className="jc__racha">
           {racha === 1 ? (
-            <>🔥 Primer día de racha: vuelve mañana y súmale otro.</>
+            <><Flame className="ico-txt" aria-hidden /> Primer día de racha: vuelve mañana y súmale otro.</>
           ) : (
             <>
-              🔥 <b>{racha}</b> días seguidos jugando el reto del día
+              <Flame className="ico-txt" aria-hidden /> <b>{racha}</b> días seguidos jugando el reto del día
             </>
           )}
         </p>

@@ -1,3 +1,5 @@
+import { PenLine } from "lucide-react";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { porPartido } from "@/lib/analisis/queries";
 import { minutosDeLectura } from "@/lib/analisis/markdown";
@@ -17,7 +19,7 @@ export default async function MatchAnalisis({ fixtureId }: { fixtureId: number }
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>✍️ El análisis</h2>
+        <h2><Icono icono={PenLine} tono="azul" tam="sm" /> El análisis</h2>
         <span className="sh-note">de Reinaldo</span>
       </div>
       <div style={{ display: "grid", gap: 12 }}>

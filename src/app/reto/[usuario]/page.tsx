@@ -1,3 +1,5 @@
+import { Swords } from "lucide-react";
+import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,7 +38,7 @@ export default async function RetoPage({ params, searchParams }: P) {
       <section className="section">
         <div className="wrap logro">
           <div className="panel logro__tarjeta">
-            <span className="logro__emoji" aria-hidden>⚔️</span>
+            <Icono icono={Swords} tono="naranja" tam="lg" />
             <p className="mono logro__titulo">{inv.jornada ? `Duelo · jornada ${inv.jornada}` : "Duelo"}</p>
             <h1 className="logro__nombre">{inv.retador} te reta</h1>
             <p className="logro__detalle">

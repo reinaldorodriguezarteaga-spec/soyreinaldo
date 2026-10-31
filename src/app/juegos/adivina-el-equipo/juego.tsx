@@ -1,4 +1,5 @@
 "use client";
+import { Timer } from "lucide-react";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -275,7 +276,7 @@ export default function Juego({ numero }: { numero: number }) {
           </div>
           {nivel && !terminado && (
             <span className={`jreloj${restante <= 10 ? " is-poco" : ""}`} aria-label="Tiempo que queda">
-              ⏱ {reloj(restante)} · {NIVELES[nivel].nombre}
+              <Timer className="ico-txt" aria-hidden /> {reloj(restante)} · {NIVELES[nivel].nombre}
             </span>
           )}
 
@@ -289,7 +290,7 @@ export default function Juego({ numero }: { numero: number }) {
                   {reto.equipo} {reto.temporada}
                 </p>
                 <p className="jg-final__ctx">{reto.contexto}</p>
-                {!acertado && agotado && <p className="jg-final__ctx">⏱ Se acabó el tiempo.</p>}
+                {!acertado && agotado && <p className="jg-final__ctx"><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</p>}
               </div>
             </div>
           ) : (

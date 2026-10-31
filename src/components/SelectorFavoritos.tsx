@@ -1,4 +1,5 @@
 "use client";
+import { Star } from "lucide-react";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -92,7 +93,7 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
             {paso === 1
               ? "Las tendrás a mano en Favoritos y podrás ver solo sus partidos en la portada."
               : paso === 2
-                ? "Elige tantos como quieras. Siempre puedes cambiarlos con la estrella ⭐."
+                ? <>Elige tantos como quieras. Siempre puedes cambiarlos con la estrella <Star className="ico-txt" aria-hidden />.</>
                 : "Saldrá arriba en la portada: su próximo partido, el último resultado y su puesto."}
           </p>
         </header>

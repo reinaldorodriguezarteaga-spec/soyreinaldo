@@ -1,3 +1,5 @@
+import { Mic, Trophy } from "lucide-react";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
@@ -60,7 +62,7 @@ export default async function MatchQuiniela({
   const anf = ((anfData ?? []) as { hecho: boolean; score_home: number | null; score_away: number | null }[])[0];
   const lineaAnfitrion = anf ? (
     <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-      🎙️{" "}
+      <Mic className="ico-txt" aria-hidden />{" "}
       {anf.score_home != null && anf.score_away != null ? (
         <>
           {ANFITRION_NOMBRE} dijo{" "}
@@ -337,7 +339,7 @@ function Caja({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>🏆 <T>Quiniela</T></h2>
+        <h2><Icono icono={Trophy} tono="oro" tam="sm" /> <T>Quiniela</T></h2>
         {titulo && <span className="sh-note"><T>{titulo}</T></span>}
       </div>
       <div className="panel" style={{ padding: "18px 20px" }}>{children}</div>

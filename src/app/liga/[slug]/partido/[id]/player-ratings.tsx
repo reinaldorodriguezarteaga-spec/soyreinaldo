@@ -1,4 +1,5 @@
 "use client";
+import { RectangleVertical } from "lucide-react";
 
 /**
  * Valoraciones de jugadores (vista de campo + vista de lista) del detalle de
@@ -94,10 +95,10 @@ function highlights(e: Entry, maxRating: number, maxShots: number): string[] {
 
 /** Tarjeta (abajo a la izquierda). Goles, asistencias y penaltis van en las
  * insignias de MarcasJugador (abajo a la derecha). */
-function playerMark(p: PlayerRating | undefined): string | null {
+function playerMark(p: PlayerRating | undefined): React.ReactNode {
   if (!p) return null;
-  if (p.stats.red > 0) return "🟥";
-  if (p.stats.yellow > 0) return "🟨";
+  if (p.stats.red > 0) return <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ff4d4f" }} aria-hidden />;
+  if (p.stats.yellow > 0) return <RectangleVertical className="ico-txt" fill="currentColor" style={{ color: "#ffd23c" }} aria-hidden />;
   return null;
 }
 

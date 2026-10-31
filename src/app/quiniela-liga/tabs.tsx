@@ -1,4 +1,5 @@
 "use client";
+import { MessageCircle, Swords } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -7,12 +8,12 @@ import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 
 // "Duelos" (18-oct, pedido del dueño): acceso directo a la vista de duelos
 // de la clasificación (`?vista=duelos`), con su propia pestaña.
-const TABS: { href: string; label: string; vista?: string }[] = [
+const TABS: { href: string; label: string; icono?: import("lucide-react").LucideIcon; vista?: string }[] = [
   { href: "/quiniela-liga/partidos", label: "Pronósticos" },
   { href: "/quiniela-liga/ranking", label: "Clasificación" },
-  { href: "/quiniela-liga/chat", label: "💬 Chat" },
+  { href: "/quiniela-liga/chat", label: "Chat", icono: MessageCircle },
   { href: "/quiniela-liga/selecciones", label: "Selecciones" },
-  { href: "/quiniela-liga/ranking", label: "⚔️ Duelos", vista: "duelos" },
+  { href: "/quiniela-liga/ranking", label: "Duelos", icono: Swords, vista: "duelos" },
   { href: "/quiniela-liga/picks", label: "Especiales" },
   { href: "/quiniela-liga/reglas", label: "Reglas" },
 ];
@@ -61,7 +62,7 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
             const on = enRuta && (t.vista ? vistaActual === t.vista : vistaActual !== "duelos");
             return (
               <Link key={t.label} href={hrefDe(t)} className={on ? "on" : ""}>
-                {t.label}
+                {t.icono && <t.icono className="ico-txt" aria-hidden />} {t.label}
               </Link>
             );
           })}

@@ -1,3 +1,5 @@
+import { Star } from "lucide-react";
+import Icono from "@/components/Icono";
 import { createClient } from "@/lib/supabase/server";
 import NotasAficion, { type EquipoNotas } from "./notas-aficion";
 
@@ -32,7 +34,7 @@ export default async function MatchNotasAficion({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>⭐ Nota de la afición</h2>
+        <h2><Icono icono={Star} tono="oro" tam="sm" /> Nota de la afición</h2>
         <span className="sh-note">{abierto ? "puntúa del 1 al 10" : "votación cerrada"}</span>
       </div>
       <NotasAficion

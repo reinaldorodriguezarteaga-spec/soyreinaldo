@@ -1,3 +1,4 @@
+import { ChartColumn, Trophy, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import { exigirSeccion } from "@/lib/permisos";
 import { createClient } from "@/lib/supabase/server";
@@ -111,7 +112,7 @@ export default async function AdminLeaguesPage() {
           >
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-                📊 Cifras de redes
+                <ChartColumn className="ico-txt" aria-hidden /> Cifras de redes
               </p>
               <p className="mt-1 text-sm font-medium text-zinc-200">
                 Actualiza los seguidores/views
@@ -127,7 +128,7 @@ export default async function AdminLeaguesPage() {
           >
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-indigo-300">
-                🏆 Resultado final
+                <Trophy className="ico-txt" aria-hidden /> Resultado final
               </p>
               <p className="mt-1 text-sm font-medium text-zinc-200">
                 Campeón, pichichi, goleador final...
@@ -140,7 +141,7 @@ export default async function AdminLeaguesPage() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-indigo-400/20 bg-indigo-500/5 p-5 text-sm text-zinc-300">
-          <p className="font-medium text-indigo-300">💡 Cómo usar los códigos</p>
+          <p className="font-medium text-indigo-300"><Lightbulb className="ico-txt" aria-hidden /> Cómo usar los códigos</p>
           <ul className="mt-2 space-y-1.5 text-zinc-400">
             <li>
               · Comparte el código por WhatsApp, IG o donde sea (no se publica

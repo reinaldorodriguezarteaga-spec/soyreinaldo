@@ -1,4 +1,5 @@
 "use client";
+import { Camera } from "lucide-react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { guardarEnGaleria } from "@/lib/app-galeria";
@@ -226,7 +227,7 @@ export default function FichaFullscreen({
     <div>
       <div className="ficha__tools">
         <button type="button" className="btn btn--accent" onClick={crearFoto} disabled={foto !== "off"}>
-          📸 {foto === "off" ? "Crear foto" : "Creando foto…"}
+          <Camera className="ico-txt" aria-hidden /> {foto === "off" ? "Crear foto" : "Creando foto…"}
         </button>
         <button type="button" className="btn" onClick={toggle}>
           {capturing ? "✕ Salir de pantalla completa" : "⛶ Pantalla completa (para capturar)"}
