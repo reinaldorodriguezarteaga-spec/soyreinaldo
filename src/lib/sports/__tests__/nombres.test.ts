@@ -43,6 +43,13 @@ describe("nombreCorto", () => {
     expect(nombreCorto("A. Rüdiger")).toBe("Rüdiger");
   });
 
+  it("con dos apellidos, el primero", () => {
+    expect(nombreCorto("Giuliano Simeone Baldini")).toBe("Simeone");
+    expect(nombreCorto("Pablo Barrios Rivas")).toBe("Barrios");
+    expect(nombreCorto("Andrés Felipe Dávila Mosquera")).toBe("Dávila");
+    expect(nombreCorto("Luís Manuel Ferreira de Castro")).toBe("de Castro");
+  });
+
   it("respeta las partículas", () => {
     expect(nombreCorto("Marten de Roon")).toBe("de Roon");
     expect(nombreCorto("F. de Jong")).toBe("de Jong");

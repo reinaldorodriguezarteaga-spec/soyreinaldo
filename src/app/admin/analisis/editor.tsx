@@ -36,6 +36,9 @@ const COMPETICIONES = [
   ["conference", "Conference"],
   ["supercopa", "Supercopa"],
   ["fa-cup", "FA Cup"],
+  ["carabao-cup", "Carabao Cup"],
+  ["coppa-italia", "Coppa Italia"],
+  ["copa-francia", "Copa de Francia"],
 ];
 
 const campo =
