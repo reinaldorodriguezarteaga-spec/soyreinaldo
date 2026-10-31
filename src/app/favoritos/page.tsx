@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import MiEquipoCard from "@/components/MiEquipoCard";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
 
@@ -47,60 +49,60 @@ export default async function FavoritosPage() {
   return (
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
-        <div className="wrap">
-          <p className="eyebrow">Favoritos</p>
-          <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 18px" }}>
-            Mis favoritos
-          </h1>
+        <div className="wrap ios">
+          <header className="ios__cab">
+            <h1 className="ios__titulo">Favoritos</h1>
+          </header>
 
           {!user ? (
-            <div className="panel fav-vacio">
+            <div className="lista lista__vacia">
               <p>Entra para guardar tus equipos, competiciones y jugadores y tenerlos aquí a mano.</p>
               <Link href="/login?redirect=/favoritos" className="btn btn--accent">
                 Entrar
               </Link>
             </div>
           ) : filas.length === 0 ? (
-            <div className="panel fav-vacio">
-              <p>Aún no sigues nada. Toca la ★ en cualquier equipo, competición o jugador y aparecerá aquí.</p>
+            <div className="lista lista__vacia">
+              <p>Aún no sigues nada. Toca la estrella en cualquier equipo, competición o jugador y aparecerá aquí.</p>
               <Link href="/liga/laliga" className="btn btn--accent">
                 Ir a LaLiga
               </Link>
             </div>
           ) : (
-            GRUPOS.map((g) => {
-              const lista = filas.filter((f) => f.kind === g.kind);
-              if (!lista.length) return null;
-              return (
-                <div key={g.kind} className="fav-grupo">
-                  <h2 className="fav-grupo__h">{g.titulo}</h2>
-                  <ul className="fav-lista panel">
-                    {lista.map((f) => {
-                      const src = imagen(f);
-                      return (
-                        <li key={`${f.kind}-${f.ref_id}`}>
-                          <Link href={f.link_path}>
-                            {src ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API
-                              <img src={src} alt="" width={32} height={32} loading="lazy" className={f.kind === "player" ? "is-cara" : f.kind === "competition" ? "is-liga" : ""} />
-                            ) : (
-                              <span className="fav-lista__hueco" aria-hidden />
-                            )}
-                            <span>{f.label}</span>
-                            <span className="fav-lista__ir" aria-hidden>
-                              ›
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })
-          )}
-          {user && filas.length > 0 && (
-            <p className="fav-nota">Para añadir o quitar, toca la ★ en la página del equipo, la competición o el jugador.</p>
+            <>
+              <MiEquipoCard />
+              {GRUPOS.map((g) => {
+                const lista = filas.filter((f) => f.kind === g.kind);
+                if (!lista.length) return null;
+                return (
+                  <section key={g.kind} className="lista-grupo">
+                    <h2 className="lista-grupo__h">{g.titulo}</h2>
+                    <ul className="lista">
+                      {lista.map((f) => {
+                        const src = imagen(f);
+                        return (
+                          <li key={`${f.kind}-${f.ref_id}`}>
+                            <Link href={f.link_path} className="lista__fila">
+                              {src ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API
+                                <img src={src} alt="" width={36} height={36} loading="lazy" className={f.kind === "player" ? "is-cara" : f.kind === "competition" ? "is-liga" : ""} />
+                              ) : (
+                                <span className="lista__hueco" aria-hidden />
+                              )}
+                              <span className="lista__txt">
+                                <b>{f.label}</b>
+                              </span>
+                              <ChevronRight className="lista__ir" aria-hidden />
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                );
+              })}
+              <p className="ios__nota">Toca la estrella en un equipo, una competición o un jugador para añadirlo o quitarlo.</p>
+            </>
           )}
         </div>
       </section>
