@@ -54,6 +54,7 @@ export type LigaTab =
   | "finalizados"
   | "tabla"
   | "jugadores"
+  | "goleadores"
   | "stats";
 
 const MADRID_TZ = "Europe/Madrid";
@@ -1639,15 +1640,12 @@ export function RecordsPanel({
 /* ---------- Estadísticas ---------- */
 
 export type LigaStatsData = {
-  scorers: PlayerStatLeader[];
-  assists: PlayerStatLeader[];
-  ratings: PlayerStatLeader[];
-  cards: PlayerStatLeader[];
   attackDefense: { attack: StandingRow[]; defense: StandingRow[] };
   standings: StandingRow[];
   finished: Fixture[];
 };
 
+/** Estadísticas de los clubes: récords, comparador, ataque y defensa. */
 export function StatsView({
   competition,
   data,
@@ -1656,15 +1654,11 @@ export function StatsView({
   data: LigaStatsData;
 }) {
   const base = basePath(competition);
-  const { scorers, assists, ratings, cards, attackDefense, standings, finished } = data;
-  const [openId, setOpenId] = useState<number | null>(null);
+  const { attackDefense, standings, finished } = data;
   const records = useMemo(() => tournamentRecords(finished), [finished]);
 
   return (
     <div className="space-y-8">
-      {openId != null && (
-        <PlayerSeasonModal competition={competition} id={openId} onClose={() => setOpenId(null)} />
-      )}
       {records.matchesPlayed > 0 && (
         <RecordsPanel competition={competition} records={records} standings={standings} />
       )}
@@ -1716,10 +1710,42 @@ export function StatsView({
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
+export type JugadoresStatsData = {
+  scorers: PlayerStatLeader[];
+  assists: PlayerStatLeader[];
+  ratings: PlayerStatLeader[];
+  cards: PlayerStatLeader[];
+  adelantado: boolean;
+};
+
+/**
+ * Estadísticas de jugadores (1-nov): goleadores, asistidores, notas y
+ * tarjetas, en su propia pestaña para que la tabla de goleadores esté a un
+ * toque (antes vivía debajo de los récords de los clubes).
+ */
+export function JugadoresStatsView({
+  competition,
+  data,
+}: {
+  competition: Competition;
+  data: JugadoresStatsData;
+}) {
+  const { scorers, assists, ratings, cards, adelantado } = data;
+  const [openId, setOpenId] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-8">
+      {openId != null && (
+        <PlayerSeasonModal competition={competition} id={openId} onClose={() => setOpenId(null)} />
+      )}
       <div>
         <div className="shead">
           <h2>Tabla de goleadores</h2>
+          {adelantado && <span className="sh-note">con los goles del último partido</span>}
         </div>
         {scorers.length > 0 ? (
           <PlayerTable competition={competition} players={scorers} metric="goals" onPick={setOpenId} />
