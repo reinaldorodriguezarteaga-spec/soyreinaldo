@@ -498,6 +498,20 @@ img {
 .navacc__sub a { padding: 9px 12px; border-radius: var(--radius); font-size: 0.86rem; color: var(--text-dim); transition: background 0.15s ease, color 0.15s ease; }
 .navacc__sub a:hover { background: var(--surface-2); color: var(--text); }
 .navacc__sublabel { padding: 8px 12px 2px; font-family: var(--font-mono-stack); font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); }
+/* Desplegable de competiciones (31-oct): 4 bloques con logo, nombre y país. */
+.compmenu { display: flex; flex-direction: column; gap: 10px; }
+.compmenu__h { margin: 6px 0 2px; padding: 0 10px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+.compmenu__fila { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 10px; border-radius: 12px; color: var(--text); text-decoration: none; }
+.compmenu__fila:hover, .compmenu__fila:active { background: var(--surface-2); }
+.compmenu__fila img { flex: none; width: 28px; height: 28px; padding: 3px; box-sizing: border-box; border-radius: 8px; background: #fff; object-fit: contain; }
+.compmenu__fila span { display: flex; flex-direction: column; min-width: 0; }
+.compmenu__fila b { font-size: 0.92rem; font-weight: 600; line-height: 1.2; }
+.compmenu__fila small { font-size: 0.74rem; color: var(--text-dim); }
+.navacc__sub--comps { padding-left: 0; }
+.navacc__sub.navacc__sub--comps a { padding: 6px 10px; color: var(--text); font-size: inherit; }
+.navdrop__menu--comps { left: 0; right: auto; width: min(620px, 92vw); padding: 10px; }
+.navdrop__menu--comps .compmenu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; align-items: start; }
+.navdrop__menu--comps .compmenu__grupo:first-child { grid-row: span 3; }
 
 .hero { position: relative; padding-top: clamp(40px, 6vw, 80px); overflow: hidden; }
 .hero__content { position: relative; z-index: 2; }

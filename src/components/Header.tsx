@@ -1,6 +1,7 @@
 "use client";
 
 import BackButton from "@/components/BackButton";
+import CompeticionesMenu from "@/components/CompeticionesMenu";
 import Link from "next/link";
 import HeaderSearch from "@/components/HeaderSearch";
 import { usePathname } from "next/navigation";
@@ -8,7 +9,6 @@ import { Suspense, use, useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import UserMenu from "./UserMenu";
 import { T } from "@/components/EnApp";
-import { COMPETITION_GROUPS } from "@/lib/sports/competitions";
 
 const PRODUCTOS = [
   {
@@ -205,17 +205,8 @@ export default function Header({
                   Competiciones <Caret />
                 </button>
                 {openMenu === "competiciones" && (
-                  <div className="navdrop__menu">
-                    {COMPETITION_GROUPS.map((g) => (
-                      <div key={g.region}>
-                        <p className="navdrop__label">{g.region}</p>
-                        {g.competitions.map((c) => (
-                          <Link key={c.slug} href={`/liga/${c.slug}`} className="navdrop__item">
-                            {c.name}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
+                  <div className="navdrop__menu navdrop__menu--comps">
+                    <CompeticionesMenu onNavigate={() => setOpenMenu(null)} />
                   </div>
                 )}
               </div>
@@ -384,17 +375,8 @@ export default function Header({
                   Competiciones <Caret />
                 </button>
                 {mAcc === "competiciones" && (
-                  <div className="navacc__sub">
-                    {COMPETITION_GROUPS.map((g) => (
-                      <div key={g.region}>
-                        <p className="navacc__sublabel">{g.region}</p>
-                        {g.competitions.map((c) => (
-                          <Link key={c.slug} href={`/liga/${c.slug}`}>
-                            {c.name}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
+                  <div className="navacc__sub navacc__sub--comps">
+                    <CompeticionesMenu />
                   </div>
                 )}
 
