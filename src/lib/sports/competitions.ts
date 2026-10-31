@@ -662,6 +662,47 @@ export const COMPETITION_GROUPS: { region: CompetitionRegion; competitions: Comp
   })).filter((g) => g.competitions.length > 0);
 
 /**
+ * Desplegable «Competiciones» del menú (31-oct, pedido del dueño: «se ve muy
+ * desordenado»). Por regiones salían 12 grupos, medio de ellos con una sola
+ * competición; aquí son 4 bloques, lo importante primero.
+ */
+const MENU_SLUGS: { titulo: string; slugs: string[] }[] = [
+  {
+    titulo: "Europa",
+    slugs: ["laliga", "premier", "serie-a", "ligue-1", "champions", "europa", "conference", "copa-del-rey", "supercopa", "fa-cup"],
+  },
+  { titulo: "Selecciones", slugs: ["nations-league", "eliminatorias-uefa", "eliminatorias-conmebol"] },
+  {
+    titulo: "América",
+    slugs: ["libertadores", "liga-mx", "liga-argentina", "mls", "concacaf-champions-cup", "leagues-cup", "us-open-cup", "campeones-cup"],
+  },
+  { titulo: "Arabia Saudí", slugs: ["liga-saudi", "afc-champions-league", "kings-cup", "supercopa-saudi"] },
+];
+
+export const MENU_COMPETICIONES: { titulo: string; competitions: Competition[] }[] = (() => {
+  const grupos = MENU_SLUGS.map((g) => ({
+    titulo: g.titulo,
+    competitions: g.slugs.map((s) => COMPETITIONS_BY_SLUG[s]).filter((c): c is Competition => !!c),
+  }));
+  // Una competición nueva que no esté en la lista no se pierde: va al final.
+  const puestas = new Set(grupos.flatMap((g) => g.competitions.map((c) => c.slug)));
+  const resto = COMPETITIONS.filter((c) => !puestas.has(c.slug));
+  if (resto.length) grupos.push({ titulo: "Más", competitions: resto });
+  return grupos.filter((g) => g.competitions.length > 0);
+})();
+
+/** Debajo del nombre en el menú: el país, o la confederación para las copas
+ * europeas y las de selecciones. */
+export const origenCompeticion = (c: Competition) =>
+  c.region === "Internacional"
+    ? "UEFA"
+    : c.region === "Selecciones"
+      ? c.slug.includes("conmebol")
+        ? "Conmebol"
+        : "UEFA"
+      : c.region;
+
+/**
  * Equipos destacados para la sección de amistosos de pretemporada: en
  * verano, con las ligas paradas, la mayoría de sus próximos partidos son
  * amistosos (liga API-Football "Friendlies Clubs", id 667 — no es una

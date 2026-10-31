@@ -12,10 +12,19 @@ export const metadata: Metadata = {
 
 type Fila = { kind: "competition" | "team" | "player"; ref_id: string; label: string; link_path: string };
 
-const GRUPOS: { kind: Fila["kind"]; titulo: string }[] = [
-  { kind: "team", titulo: "Equipos" },
-  { kind: "competition", titulo: "Competiciones" },
-  { kind: "player", titulo: "Jugadores" },
+/** Selección o club (31-oct, pedido del dueño: separarlos). El favorito no
+ * guarda el tipo de equipo, pero sí el enlace a su ficha, que cuelga de una
+ * competición: si es de selecciones (o el Mundial), es una selección. */
+const esSeleccion = (f: Fila) => {
+  const slug = f.link_path.split("/")[2] ?? "";
+  return slug === "mundial" || COMPETITIONS_BY_SLUG[slug]?.region === "Selecciones";
+};
+
+const GRUPOS: { id: string; titulo: string; entra: (f: Fila) => boolean }[] = [
+  { id: "clubes", titulo: "Clubes", entra: (f) => f.kind === "team" && !esSeleccion(f) },
+  { id: "selecciones", titulo: "Selecciones", entra: (f) => f.kind === "team" && esSeleccion(f) },
+  { id: "competiciones", titulo: "Competiciones", entra: (f) => f.kind === "competition" },
+  { id: "jugadores", titulo: "Jugadores", entra: (f) => f.kind === "player" },
 ];
 
 function imagen(f: Fila): string | null {
@@ -72,10 +81,10 @@ export default async function FavoritosPage() {
             <>
               <MiEquipoCard />
               {GRUPOS.map((g) => {
-                const lista = filas.filter((f) => f.kind === g.kind);
+                const lista = filas.filter(g.entra);
                 if (!lista.length) return null;
                 return (
-                  <section key={g.kind} className="lista-grupo">
+                  <section key={g.id} className="lista-grupo">
                     <h2 className="lista-grupo__h">{g.titulo}</h2>
                     <ul className="lista">
                       {lista.map((f) => {
