@@ -312,9 +312,14 @@ export default function Header({
               {initialUser ? (
                 <UserMenu initialUser={initialUser} isAdmin={isAdmin} permisos={permisos} />
               ) : (
-                <Link href="/login" className="btn btn--ghost nav__entrar">
-                  Iniciar sesión
-                </Link>
+                <>
+                  <Link href="/login" className="btn btn--ghost nav__entrar">
+                    Iniciar sesión
+                  </Link>
+                  <Link href="/signup" className="btn btn--accent nav__entrar">
+                    Crear cuenta
+                  </Link>
+                </>
               )}
               {/* Botón menú móvil */}
               <button
@@ -460,9 +465,16 @@ export default function Header({
                 )}
 
                 {!initialUser && (
-                  <Link href="/login" className="btn btn--accent mt-2 justify-center">
-                    Iniciar sesión
-                  </Link>
+                  <>
+                    {/* Las dos puertas a la vista (31-oct, pedido del dueño): con
+                        solo «Iniciar sesión» no se entendía cómo crear la cuenta. */}
+                    <Link href="/signup" className="btn btn--accent mt-2 justify-center">
+                      Crear cuenta gratis
+                    </Link>
+                    <Link href="/login" className="btn btn--ghost justify-center">
+                      Ya tengo cuenta · Iniciar sesión
+                    </Link>
+                  </>
                 )}
               </div>
             </div>
