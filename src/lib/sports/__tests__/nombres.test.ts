@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { equiposEnEspanol, nombreCorto } from "../nombres";
+import { equiposEnEspanol, nombreCorto, nombreVisible } from "../nombres";
 
 describe("nombres de equipo en español", () => {
   it("traduce selecciones y pone tildes a los clubes, en cualquier nivel", () => {
@@ -70,5 +70,33 @@ describe("nombreCorto", () => {
 
   it("sufijos brasileños, con el nombre", () => {
     expect(nombreCorto("Gabriel Neto")).toBe("Gabriel Neto");
+  });
+});
+
+describe("nombreVisible", () => {
+  it("nombre y primer apellido si vienen los dos", () => {
+    expect(nombreVisible("Giuliano Simeone Baldini")).toBe("Giuliano Simeone");
+    expect(nombreVisible("Andrés Felipe Dávila Mosquera")).toBe("Andrés Dávila");
+    // Y el nombre corto que sale de ahí sigue siendo el primer apellido.
+    expect(nombreCorto(nombreVisible("Pablo Barrios Rivas"))).toBe("Barrios");
+  });
+
+  it("alias y fijados a mano", () => {
+    expect(nombreVisible("Pau Cubarsí Paredes")).toBe("Cubarsí");
+    expect(nombreVisible("Raphael Dias Belloli")).toBe("Raphinha");
+    expect(nombreCorto(nombreVisible("Raphael Dias Belloli"))).toBe("Raphinha");
+  });
+
+  it("lo demás, tal cual", () => {
+    expect(nombreVisible("Julián Álvarez")).toBe("Julián Álvarez");
+    expect(nombreVisible("K. Mbappé")).toBe("K. Mbappé");
+    expect(nombreVisible("Marten de Roon")).toBe("Marten de Roon");
+    expect(nombreVisible("Nawaf Al Aqidi")).toBe("Nawaf Al Aqidi");
+  });
+});
+
+describe("nombres saudíes", () => {
+  it("el apellido con su «Al»", () => {
+    expect(nombreCorto("Nawaf Al Aqidi")).toBe("Al Aqidi");
   });
 });

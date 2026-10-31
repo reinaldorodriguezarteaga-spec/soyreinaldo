@@ -458,6 +458,12 @@ img {
 }
 /* El menú del móvil, igual: si no cabe, se desplaza él y no la página. */
 .nav__movil { max-height: calc(100dvh - 72px); overflow-y: auto; overscroll-behavior: contain; }
+/* Con la barra de abajo (móvil), el final del menú quedaba debajo de ella
+ * («Contacto y redes», «Productos»), y la pastilla EN VIVO flotaba encima. */
+@media (max-width: 767px) {
+  .nav__movil { max-height: calc(100dvh - 72px - var(--tabbar-alto, 0px)); }
+  body:has(.nav__movil) :is(.livepill, .ytpill) { display: none; }
+}
 @keyframes dropfade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .navdrop__item {
   display: block;
