@@ -50,6 +50,8 @@ export type LigaData = {
   assists: PlayerStatLeader[];
   ratings: PlayerStatLeader[];
   cards: PlayerStatLeader[];
+  /** Goleadores/asistidores con partidos que el API aún no había sumado. */
+  adelantado: boolean;
   attackDefense: { attack: StandingRow[]; defense: StandingRow[] };
 };
 
@@ -57,7 +59,8 @@ function normalizeView(v: string | undefined): LigaTab | null {
   if (v === "envivo" || v === "live" || v === "marcador") return "envivo";
   if (v === "tabla" || v === "clasificacion") return "tabla";
   if (v === "jugadores" || v === "players") return "jugadores";
-  if (v === "stats" || v === "estadisticas") return "stats";
+  if (v === "stats" || v === "estadisticas" || v === "equipos") return "stats";
+  if (v === "goleadores" || v === "estadisticas-jugadores") return "goleadores";
   if (v === "finalizados" || v === "resultados") return "finalizados";
   return v ? "partidos" : null;
 }
@@ -88,17 +91,26 @@ export default async function LigaPage({
     assists: PlayerStatLeader[];
     ratings: PlayerStatLeader[];
     cards: PlayerStatLeader[];
-  } = { scorers: [], assists: [], ratings: [], cards: [] };
+    adelantado: boolean;
+  } = { scorers: [], assists: [], ratings: [], cards: [], adelantado: false };
 
   try {
+    const finishedP = getCompetitionFinishedFixtures(effectiveCompetition);
+    const todayP = getCompetitionFixturesWindow(effectiveCompetition).then(attachEvents);
     const [fixturesR, finishedR, standingsR, todayR, playersR] = await Promise.all([
       // Todo el calendario (sports_cache, sin cuota): "Próximos partidos" se
       // navega por jornadas hasta el final de la temporada (15-oct).
       getCompetitionAllFixtures(effectiveCompetition),
-      getCompetitionFinishedFixtures(effectiveCompetition),
+      finishedP,
       getCompetitionStandings(effectiveCompetition),
-      getCompetitionFixturesWindow(effectiveCompetition).then(attachEvents),
-      getCompetitionPlayerStats(effectiveCompetition, 10),
+      todayP,
+      // Goleadores al día: suma lo que el ranking del API aún no cuenta, con
+      // los partidos de hoy (en vivo, con eventos) pisando a los terminados.
+      getCompetitionPlayerStats(
+        effectiveCompetition,
+        10,
+        Promise.all([finishedP, todayP]).then(([fin, hoy]) => [...fin, ...hoy]),
+      ),
     ]);
     // Próximos = todo lo no terminado; lo del día, en su versión fresca
     // (en vivo o recién acabado), igual que con los finalizados de abajo.
@@ -134,7 +146,7 @@ export default async function LigaPage({
     // estados vacíos en cada vista
   }
 
-  const { scorers, assists, ratings, cards } = players;
+  const { scorers, assists, ratings, cards, adelantado } = players;
   const attackDefense = teamAttackDefenseFromFixtures(finished);
 
   const carryIds = today.filter(isLive).map((f) => f.fixture.id);
@@ -150,6 +162,7 @@ export default async function LigaPage({
     assists,
     ratings,
     cards,
+    adelantado,
     attackDefense,
   };
 

@@ -10,6 +10,7 @@ import {
   FinalizadosView,
   StandingsTableView,
   JugadoresView,
+  JugadoresStatsView,
   StatsView,
   type LigaTab,
 } from "@/components/competition/tab-views";
@@ -94,19 +95,28 @@ export default function LigaTabs({
                 Tabla
               </button>
             )}
+            {/* 1-nov: las estadísticas de jugadores (goleadores…) van aparte
+                de las de los clubes, y la plantilla de jugadores, al final. */}
             <button
               type="button"
-              className={tab === "jugadores" ? "on" : ""}
-              onClick={() => setTab("jugadores")}
+              className={tab === "goleadores" ? "on" : ""}
+              onClick={() => setTab("goleadores")}
             >
-              Jugadores
+              Estad. jugadores
             </button>
             <button
               type="button"
               className={tab === "stats" ? "on" : ""}
               onClick={() => setTab("stats")}
             >
-              Estadísticas
+              Estad. equipos
+            </button>
+            <button
+              type="button"
+              className={tab === "jugadores" ? "on" : ""}
+              onClick={() => setTab("jugadores")}
+            >
+              Jugadores
             </button>
           </ScrollHintTabs>
         </div>
@@ -142,14 +152,22 @@ export default function LigaTabs({
               </div>
             ))}
           {tab === "jugadores" && <JugadoresView competition={competition} />}
-          {tab === "stats" && (
-            <StatsView
+          {tab === "goleadores" && (
+            <JugadoresStatsView
               competition={competition}
               data={{
                 scorers: data.scorers,
                 assists: data.assists,
                 ratings: data.ratings,
                 cards: data.cards,
+                adelantado: data.adelantado,
+              }}
+            />
+          )}
+          {tab === "stats" && (
+            <StatsView
+              competition={competition}
+              data={{
                 attackDefense: data.attackDefense,
                 standings: data.standings,
                 finished: data.finished,
