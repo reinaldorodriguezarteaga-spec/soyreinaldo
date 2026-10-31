@@ -933,7 +933,7 @@ img {
     transform: translateX(-50%);
     /* Hueco para el indicador de inicio del iPhone y para un posible
        anuncio de ancla de AdSense. */
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(18px + var(--tabbar-alto, env(safe-area-inset-bottom, 0px)));
     z-index: 45;
     display: inline-flex;
     align-items: center;
@@ -2086,7 +2086,7 @@ select.field { appearance: none; }
 .ytpill {
   position: fixed;
   right: 20px;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(20px + var(--tabbar-alto, env(safe-area-inset-bottom, 0px)));
   z-index: 46;
   display: inline-flex;
   align-items: center;
@@ -2109,7 +2109,7 @@ select.field { appearance: none; }
 .ytplayer {
   position: fixed;
   right: 20px;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(20px + var(--tabbar-alto, env(safe-area-inset-bottom, 0px)));
   z-index: 60;
   width: min(400px, calc(100vw - 40px));
   border-radius: 14px;
@@ -2144,8 +2144,8 @@ select.field { appearance: none; }
   .ytpill { right: auto; left: 50%; transform: translateX(-50%); }
   .ytpill:hover { transform: translateX(-50%); }
   /* Encima de la pill de partidos "EN VIVO" cuando también está. */
-  body:has(.livepill) .ytpill { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
-  .ytplayer { right: 8px; left: 8px; width: auto; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  body:has(.livepill) .ytpill { bottom: calc(72px + var(--tabbar-alto, env(safe-area-inset-bottom, 0px))); }
+  .ytplayer { right: 8px; left: 8px; width: auto; bottom: calc(8px + var(--tabbar-alto, env(safe-area-inset-bottom, 0px))); }
 }
 
 /* Medallas de los pronósticos (ranking). */
@@ -2379,7 +2379,7 @@ select.field { appearance: none; }
 .pz-campo--dibujo { cursor: crosshair; }
 .pz-campo--dibujo .pz-ficha, .pz-campo--dibujo .pz-hueco, .pz-campo--dibujo .pz-balon { pointer-events: none; }
 .pz-balon { position: absolute; transform: translate(-50%, -50%); font-size: 1.35rem; line-height: 1; cursor: grab; touch-action: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); user-select: none; }
-.pz-aviso { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent); color: var(--text); padding: 10px 16px; border-radius: 999px; z-index: 90; font-size: 0.88rem; box-shadow: var(--shadow); }
+.pz-aviso { position: fixed; left: 50%; bottom: calc(90px + var(--tabbar-alto, 0px)); transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent); color: var(--text); padding: 10px 16px; border-radius: 999px; z-index: 90; font-size: 0.88rem; box-shadow: var(--shadow); }
 .pz-sel { position: relative; }
 .pz-busca__boton { display: flex; align-items: center; gap: 8px; width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; text-align: left; cursor: pointer; min-height: 42px; }
 .pz-busca__boton span:not(.pz-busca__flecha) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2970,3 +2970,44 @@ select.field { appearance: none; }
 .mc-palmares__creditos { font-size: 0.72rem; color: var(--text-dim); }
 .mc-palmares__creditos ul { margin: 6px 0 0; padding-left: 18px; }
 .mc-ida { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in oklch, var(--accent) 8%, transparent); border: 1px solid var(--line); }
+
+/* ── Barra de pestañas de abajo (31-oct, móvil y app, «como FotMob») ──
+   --tabbar-alto lo usan las pastillas fijas de abajo (EN VIVO, directo,
+   cookies, avisos de la pizarra) para quedar por encima de la barra. */
+.tabbar { display: none; }
+@media (max-width: 767px) {
+  :root { --tabbar-alto: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: var(--tabbar-alto); }
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    height: var(--tabbar-alto); padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .tabbar a {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    color: var(--text-dim); text-decoration: none; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabbar a.is-on { color: var(--accent); }
+  .tabbar a.is-on svg { stroke-width: 2.2; }
+  .tabbar a:active svg { transform: scale(0.9); }
+  .tabbar svg { transition: transform 0.12s; }
+}
+
+/* Página de favoritos (31-oct) */
+.fav-vacio { padding: 20px; display: grid; gap: 14px; justify-items: start; }
+.fav-vacio p { margin: 0; color: var(--text-dim); }
+.fav-grupo { margin-bottom: 22px; }
+.fav-grupo__h { font-family: var(--font-display-stack); text-transform: uppercase; font-size: 1rem; letter-spacing: 0.04em; color: var(--text-dim); margin: 0 0 8px; }
+.fav-lista { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+.fav-lista li + li { border-top: 1px solid var(--line); }
+.fav-lista a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text); text-decoration: none; font-weight: 600; }
+.fav-lista a:hover { background: color-mix(in oklch, var(--accent) 8%, transparent); }
+.fav-lista img { width: 32px; height: 32px; object-fit: contain; flex: none; }
+.fav-lista img.is-cara { border-radius: 50%; object-fit: cover; background: var(--surface); }
+.fav-lista img.is-liga { background: #fff; border-radius: 8px; padding: 3px; }
+.fav-lista__hueco { width: 32px; height: 32px; flex: none; }
+.fav-lista__ir { margin-left: auto; color: var(--text-dim); font-size: 1.3rem; }
+.fav-nota { color: var(--text-dim); font-size: 0.85rem; }

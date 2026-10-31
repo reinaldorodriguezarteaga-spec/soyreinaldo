@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Saira_Condensed, Archivo, Space_Mono } from "next/font/google";
 import Header, { type FavoriteNavItem } from "@/components/Header";
+import BarraInferior from "@/components/BarraInferior";
 import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
 import Gestures from "@/components/Gestures";
@@ -211,6 +212,7 @@ export default async function RootLayout({
         <BackButton />
         {children}
         <Footer enApp={inApp} />
+        <BarraInferior />
         </EnAppProvider>
         {anuncios && <CookieConsent />}
         {/* Vercel Web Analytics: visitas y páginas vistas sin cookies ni

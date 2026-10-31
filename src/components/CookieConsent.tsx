@@ -80,7 +80,7 @@ export default function CookieConsent() {
         position: "fixed",
         left: 16,
         right: 16,
-        bottom: 16,
+        bottom: "calc(16px + var(--tabbar-alto, 0px))",
         zIndex: 80,
         maxWidth: 560,
         margin: "0 auto",
