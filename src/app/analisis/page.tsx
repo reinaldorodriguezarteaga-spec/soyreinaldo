@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ChevronRight, Presentation } from "lucide-react";
+import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import { EQUIPOS_ANALISIS, equipoDelFiltro } from "@/lib/analisis/equipo";
 import { listarPublicados, porEquipo } from "@/lib/analisis/queries";
@@ -46,6 +48,16 @@ export default async function AnalisisIndex({ searchParams }: Props) {
 
       <section className="section" style={{ paddingTop: 24 }}>
         <div className="wrap">
+          {/* La Pizarra, a mano desde Análisis (31-oct): salió de la barra
+              de abajo y aquí encaja, es la herramienta para analizar jugadas. */}
+          <Link href="/pizarras" className="lista lista__fila" style={{ marginBottom: 20, maxWidth: 760 }}>
+            <Icono icono={Presentation} tono="verde" />
+            <span className="lista__txt">
+              <b>Pizarra táctica</b>
+              <span>Analiza tú también: monta la jugada y compártela</span>
+            </span>
+            <ChevronRight className="lista__ir" aria-hidden />
+          </Link>
           <nav className="miequipo__chips analisis-filtros" aria-label="Filtrar análisis por equipo">
             <Link href="/analisis" className={`miequipo__chip${!equipo ? " on" : ""}`} aria-current={!equipo ? "page" : undefined}>Todos</Link>
             {EQUIPOS_ANALISIS.map((e) => (
