@@ -62,7 +62,7 @@ const DIRECTOS_LINKS: AdminLink[] = [
 
 function AdminLinkItem({ a, onClick }: { a: AdminLink; onClick: () => void }) {
   const className =
-    "rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white";
+    "rounded-lg px-3 py-2 text-sm text-[var(--text-dim)] transition hover:bg-[var(--surface-2)] hover:text-white";
   if (a.externo) {
     return (
       <a
@@ -131,7 +131,7 @@ export default function UserMenu({
     return (
       <Link
         href="/login"
-        className="rounded-lg bg-indigo-300 px-3.5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-indigo-200"
+        className="rounded-full bg-[var(--accent-fill)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
       >
         Iniciar sesión
       </Link>
@@ -149,16 +149,16 @@ export default function UserMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm transition hover:border-zinc-700"
+        className="flex h-10 items-center gap-2 rounded-full bg-[color-mix(in_oklch,var(--text-dim)_14%,transparent)] pl-2 pr-3 text-sm transition hover:bg-[color-mix(in_oklch,var(--text-dim)_22%,transparent)]"
       >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-300/20 text-xs font-semibold text-indigo-200">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-fill)] text-xs font-semibold text-white">
           {displayName.charAt(0).toUpperCase()}
         </span>
         <span className="hidden max-w-[140px] truncate font-medium sm:inline">
           {displayName}
         </span>
         <svg
-          className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${
+          className={`h-3.5 w-3.5 text-[var(--text-dim)] transition-transform ${
             open ? "rotate-180" : ""
           }`}
           fill="none"
@@ -175,16 +175,16 @@ export default function UserMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl">
+        <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-2 shadow-2xl">
           <div className="px-3 pb-2 pt-1">
             <div className="text-sm font-medium">{displayName}</div>
-            <div className="truncate text-xs text-zinc-500">{user.email}</div>
+            <div className="truncate text-xs text-[var(--text-dim)]">{user.email}</div>
           </div>
-          <div className="my-1 h-px bg-zinc-900" />
+          <div className="my-1 h-px bg-[var(--line)]" />
           <Link
             href="/perfil"
             onClick={closeMenu}
-            className="block rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900"
+            className="block rounded-lg px-3 py-2 text-sm transition hover:bg-[var(--surface-2)]"
           >
             Perfil
           </Link>
@@ -201,11 +201,11 @@ export default function UserMenu({
                 type="button"
                 onClick={() => setAdminOpen((o) => !o)}
                 aria-expanded={adminOpen}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-zinc-900"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-[var(--surface-2)]"
               >
                 <span>Admin</span>
                 <svg
-                  className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${
+                  className={`h-3.5 w-3.5 text-[var(--text-dim)] transition-transform ${
                     adminOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -221,7 +221,7 @@ export default function UserMenu({
                 </svg>
               </button>
               {adminOpen && (
-                <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
+                <div className="ml-2 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--line)] pl-2">
                   {ADMIN_LINKS.map((a) => (
                     <AdminLinkItem key={a.href} a={a} onClick={closeMenu} />
                   ))}
@@ -230,7 +230,7 @@ export default function UserMenu({
                     type="button"
                     onClick={() => setDirectosOpen((o) => !o)}
                     aria-expanded={directosOpen}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-[var(--text-dim)] transition hover:bg-[var(--surface-2)] hover:text-white"
                   >
                     <span>Directos</span>
                     <svg
@@ -250,7 +250,7 @@ export default function UserMenu({
                     </svg>
                   </button>
                   {directosOpen && (
-                    <div className="ml-2 flex flex-col gap-0.5 border-l border-zinc-900 pl-2">
+                    <div className="ml-2 flex flex-col gap-0.5 border-l border-[var(--line)] pl-2">
                       {DIRECTOS_LINKS.map((a) => (
                         <AdminLinkItem key={a.href} a={a} onClick={closeMenu} />
                       ))}
@@ -261,11 +261,11 @@ export default function UserMenu({
             </>
           )}
 
-          <div className="my-1 h-px bg-zinc-900" />
+          <div className="my-1 h-px bg-[var(--line)]" />
           <form action={signOut}>
             <button
               type="submit"
-              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-300 transition hover:bg-zinc-900"
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-300 transition hover:bg-[var(--surface-2)]"
             >
               Cerrar sesión
             </button>

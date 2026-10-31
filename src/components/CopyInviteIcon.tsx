@@ -33,7 +33,7 @@ export default function CopyInviteIcon({ code }: { code: string }) {
       className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-60 ${
         copied
           ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-          : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-indigo-300 hover:text-indigo-300"
+          : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
       }`}
       title={copied ? "Copiado" : "Copiar enlace para compartir"}
       aria-label={copied ? "Enlace copiado" : "Copiar enlace de invitación"}

@@ -22,7 +22,7 @@ export default function StadiumMap({ stadiums }: Props) {
       center={[40.7, -2]}
       zoom={6}
       scrollWheelZoom={false}
-      className="h-[420px] w-full overflow-hidden rounded-2xl border border-zinc-800"
+      className="h-[420px] w-full overflow-hidden rounded-2xl border border-[var(--line)]"
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"

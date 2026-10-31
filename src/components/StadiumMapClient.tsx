@@ -6,7 +6,7 @@ import type { Stadium } from "@/data/stadiums";
 const StadiumMap = dynamic(() => import("./StadiumMap"), {
   ssr: false,
   loading: () => (
-    <div className="h-[420px] w-full animate-pulse rounded-2xl border border-zinc-800 bg-zinc-900" />
+    <div className="h-[420px] w-full animate-pulse rounded-2xl border border-[var(--line)] bg-[var(--surface-2)]" />
   ),
 });
 
