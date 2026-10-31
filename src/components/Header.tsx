@@ -469,10 +469,10 @@ export default function Header({
                     {/* Las dos puertas a la vista (31-oct, pedido del dueño): con
                         solo «Iniciar sesión» no se entendía cómo crear la cuenta. */}
                     <Link href="/signup" className="btn btn--accent mt-2 justify-center">
-                      Crear cuenta gratis
+                      Crear cuenta
                     </Link>
                     <Link href="/login" className="btn btn--ghost justify-center">
-                      Ya tengo cuenta · Iniciar sesión
+                      Iniciar sesión
                     </Link>
                   </>
                 )}
