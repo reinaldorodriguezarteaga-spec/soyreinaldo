@@ -1647,6 +1647,9 @@ select.field { appearance: none; }
 .backbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px 7px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text-dim); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
 .backbtn:hover { border-color: var(--accent); color: var(--text); }
 .backbtn:active { transform: translateY(1px); }
+/* Solo la flecha (31-oct, pedido del dueño: «se sobreentiende»). */
+.backbtn--solo { justify-content: center; width: 40px; height: 40px; padding: 0; }
+.backbtn--solo svg { width: 22px; height: 22px; }
 
 /* Partido desplegable (vista "Selecciones") */
 .disclosure > summary { list-style: none; cursor: pointer; user-select: none; }
@@ -3097,3 +3100,4 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .lista__ir { flex: none; width: 16px; height: 16px; color: color-mix(in oklch, var(--text-dim) 70%, transparent); }
 .lista__vacia { padding: 20px; display: grid; gap: 14px; justify-items: start; }
 .lista__vacia p { margin: 0; color: var(--text-dim); }
+.lista__cta { justify-self: stretch; min-height: 52px; font-size: 1.05rem; }
