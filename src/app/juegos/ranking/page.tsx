@@ -2,6 +2,7 @@ import { Medal, Users } from "lucide-react";
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { lunesDeLaSemana, numeroDelDia } from "@/lib/juegos/diario";
@@ -33,9 +34,9 @@ export default async function RankingJuegosPage({ searchParams }: { searchParams
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
         <div className="wrap">
-          <p className="eyebrow">
-            <Link href="/juegos">Juegos</Link> · Ranking
-          </p>
+          <div style={{ maxWidth: 760, marginBottom: 22 }}>
+            <SegmentosJuegos actual="/juegos/ranking" />
+          </div>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 6px" }}>
             Ranking de los juegos
           </h1>

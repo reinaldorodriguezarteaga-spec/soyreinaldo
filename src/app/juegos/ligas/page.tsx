@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CrearLiga, InvitarLiga, UnirseLiga } from "./formularios";
@@ -36,9 +37,9 @@ export default async function LigasJuegosPage({ searchParams }: { searchParams: 
     <main className="page">
       <section className="section" style={{ paddingTop: 28 }}>
         <div className="wrap">
-          <p className="eyebrow">
-            <Link href="/juegos">Juegos</Link> · Ligas
-          </p>
+          <div style={{ maxWidth: 760, marginBottom: 22 }}>
+            <SegmentosJuegos actual="/juegos/ligas" />
+          </div>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 6px" }}>
             Ligas con amigos
           </h1>
