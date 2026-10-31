@@ -80,7 +80,7 @@ export default function FavoriteStar({
         aria-pressed={favorited}
         aria-label={label}
         title={label}
-        className="grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] transition"
+        className="grid h-10 w-10 place-items-center rounded-full bg-[color-mix(in_oklch,var(--text-dim)_14%,transparent)] transition"
         style={{ color: favorited ? "var(--accent)" : "var(--text-dim)" }}
       >
         <svg

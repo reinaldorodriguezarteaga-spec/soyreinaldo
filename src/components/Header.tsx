@@ -321,7 +321,7 @@ export default function Header({
                 type="button"
                 aria-label="Menú"
                 onClick={() => setMobileOpen((v) => !v)}
-                className="min-[1280px]:hidden grid h-10 w-10 place-items-center rounded-[4px] border border-[var(--line-strong)] text-[var(--text)]"
+                className="min-[1280px]:hidden grid h-10 w-10 place-items-center rounded-full bg-[color-mix(in_oklch,var(--text-dim)_14%,transparent)] text-[var(--text)]"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8">
                   {mobileOpen ? (
@@ -492,7 +492,7 @@ function MobileLink({
   return (
     <Link
       href={href}
-      className="rounded-[4px] px-3 py-3 text-sm font-semibold text-[var(--text-dim)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      className="rounded-[10px] px-3 py-3 text-sm font-semibold text-[var(--text-dim)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
     >
       {children}
     </Link>
