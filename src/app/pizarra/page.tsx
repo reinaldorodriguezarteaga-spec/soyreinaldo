@@ -1,3 +1,4 @@
+import { Image as ImageIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { equiposVistaPrevia } from "@/lib/pizarra/equipos-vista-previa";
 import {
@@ -177,7 +178,7 @@ export default async function PizarraPage({
         <div className="wrap">
           <p className="eyebrow">
             Análisis · <Link href="/pizarra/comunidad">Pizarras de la comunidad →</Link> ·{" "}
-            <Link href="/pizarra/fotos">🖼️ Analiza tu jugada (fotos) →</Link>
+            <Link href="/pizarra/fotos"><ImageIcon className="ico-txt" aria-hidden /> Analiza tu jugada (fotos) →</Link>
           </p>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", margin: "4px 0 6px" }}>
             Pizarra táctica

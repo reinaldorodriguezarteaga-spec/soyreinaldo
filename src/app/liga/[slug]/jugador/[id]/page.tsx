@@ -1,3 +1,4 @@
+import { Cross } from "lucide-react";
 import { Suspense } from "react";
 import RendimientoPosicion from "./rendimiento-posicion";
 import type { Metadata } from "next";
@@ -181,7 +182,7 @@ export default async function LigaJugadorPage({
                       fontSize: "0.78rem",
                     }}
                   >
-                    🚑 Lesionado
+                    <Cross className="ico-txt" aria-hidden /> Lesionado
                   </span>
                 )}
               </p>

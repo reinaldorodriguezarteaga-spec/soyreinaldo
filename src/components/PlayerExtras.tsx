@@ -1,4 +1,6 @@
 "use client";
+import Icono from "@/components/Icono";
+import { Trophy } from "lucide-react";
 
 import { useState } from "react";
 import type { PlayerExtras as Extras } from "@/lib/sports/api-football";
@@ -66,7 +68,7 @@ export default function PlayerExtras({ extras }: { extras: Extras }) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.86rem" }}>
-                  <span aria-hidden style={{ flexShrink: 0 }}>🏆</span>
+                  <Icono icono={Trophy} tono="oro" tam="sm" />
                   <b style={{ minWidth: 0 }}>{t.league}</b>
                   {t.seasons.length > 1 && (
                     <span style={{ color: "var(--text-dim)", flexShrink: 0 }}>

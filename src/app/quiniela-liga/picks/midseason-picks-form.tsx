@@ -1,4 +1,13 @@
 "use client";
+import {
+  Hand,
+  Target,
+  Star,
+  Shield,
+  Flame,
+  Lock,
+  TriangleAlert,
+} from "lucide-react";
 
 import { useState, useTransition } from "react";
 import { saveMidseasonPicks } from "../actions";
@@ -61,7 +70,7 @@ export default function MidseasonPicksForm({
     return (
       <div className="panel" style={{ padding: 24 }}>
         <p style={{ margin: 0, color: "var(--text-dim)" }}>
-          🔒 Estos picks están cerrados (empezó la jornada 6). Estas fueron
+          <Lock className="ico-txt" aria-hidden /> Estos picks están cerrados (empezó la jornada 6). Estas fueron
           tus selecciones:
         </p>
         <ul style={{ marginTop: 12, lineHeight: 1.9 }}>
@@ -93,7 +102,7 @@ export default function MidseasonPicksForm({
 
   return (
     <div className="panel" style={{ padding: 24, display: "grid", gap: 20 }}>
-      <Field label="🧤 Zamora (portero menos goleado)" hint="10 pts">
+      <Field label={<><Hand className="ico-txt" aria-hidden /> Zamora (portero menos goleado)</>} hint="10 pts">
         <input
           className="scorein"
           style={{ width: "100%", height: 46, textAlign: "left", paddingLeft: 12 }}
@@ -105,7 +114,7 @@ export default function MidseasonPicksForm({
         />
       </Field>
 
-      <Field label="🎯 Máximo asistidor" hint="10 pts">
+      <Field label={<><Target className="ico-txt" aria-hidden /> Máximo asistidor</>} hint="10 pts">
         <input
           className="scorein"
           style={{ width: "100%", height: 46, textAlign: "left", paddingLeft: 12 }}
@@ -117,7 +126,7 @@ export default function MidseasonPicksForm({
         />
       </Field>
 
-      <Field label="⭐ MVP de la liga" hint="10 pts">
+      <Field label={<><Star className="ico-txt" aria-hidden /> MVP de la liga</>} hint="10 pts">
         <input
           className="scorein"
           style={{ width: "100%", height: 46, textAlign: "left", paddingLeft: 12 }}
@@ -129,7 +138,7 @@ export default function MidseasonPicksForm({
         />
       </Field>
 
-      <Field label="🛡️ Equipo menos goleado" hint="10 pts">
+      <Field label={<><Shield className="ico-txt" aria-hidden /> Equipo menos goleado</>} hint="10 pts">
         <select
           className="scorein"
           style={{ width: "100%", height: 46 }}
@@ -145,7 +154,7 @@ export default function MidseasonPicksForm({
         </select>
       </Field>
 
-      <Field label="🔥 Equipo más goleador" hint="10 pts">
+      <Field label={<><Flame className="ico-txt" aria-hidden /> Equipo más goleador</>} hint="10 pts">
         <select
           className="scorein"
           style={{ width: "100%", height: 46 }}
@@ -174,7 +183,7 @@ export default function MidseasonPicksForm({
           <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
         )}
         {status === "error" && msg && (
-          <span style={{ color: "#ffb4b4" }}>⚠ {msg}</span>
+          <span style={{ color: "#ffb4b4" }}><TriangleAlert className="ico-txt" aria-hidden /> {msg}</span>
         )}
       </div>
     </div>
@@ -186,7 +195,7 @@ function Field({
   hint,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   hint: string;
   children: React.ReactNode;
 }) {

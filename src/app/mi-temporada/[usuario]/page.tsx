@@ -1,4 +1,8 @@
+import IconoMedalla from "@/components/IconoMedalla";
+import { Flame, Target, CircleCheck, CalendarDays, Mic, Swords } from "lucide-react";
+
 import type { Metadata } from "next";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BotonCompartir from "@/components/BotonCompartir";
@@ -24,13 +28,13 @@ export default async function TemporadaPage({ params }: P) {
   const t = await temporadaDe(decodeURIComponent(usuario));
   if (!t) notFound();
   const url = `https://www.soyreinaldo.com/mi-temporada/${encodeURIComponent(usuario)}`;
-  const datos: [string, string, string][] = [
-    ["🔥", "Mejor jornada", t.mejor ? `${t.mejor.puntos} pts en la J${t.mejor.jornada}` : "—"],
-    ["🎯", "Resultados exactos", String(t.exactos)],
-    ["✅", "Ganadores acertados", String(t.aciertos)],
-    ["📅", "Jornadas jugadas", String(t.jornadas)],
-    ["⚔️", "Duelos", `${t.duelos.ganados} G · ${t.duelos.empatados} E · ${t.duelos.perdidos} P`],
-    ["🎙️", "Le ganaste a Reinaldo", t.vsReinaldo.jugadas ? `${t.vsReinaldo.ganadas} de ${t.vsReinaldo.jugadas} jornadas` : "—"],
+  const datos: [import("lucide-react").LucideIcon, string, string][] = [
+    [Flame, "Mejor jornada", t.mejor ? `${t.mejor.puntos} pts en la J${t.mejor.jornada}` : "—"],
+    [Target, "Resultados exactos", String(t.exactos)],
+    [CircleCheck, "Ganadores acertados", String(t.aciertos)],
+    [CalendarDays, "Jornadas jugadas", String(t.jornadas)],
+    [Swords, "Duelos", `${t.duelos.ganados} G · ${t.duelos.empatados} E · ${t.duelos.perdidos} P`],
+    [Mic, "Le ganaste a Reinaldo", t.vsReinaldo.jugadas ? `${t.vsReinaldo.ganadas} de ${t.vsReinaldo.jugadas} jornadas` : "—"],
   ];
 
   return (
@@ -51,9 +55,9 @@ export default async function TemporadaPage({ params }: P) {
           </div>
 
           <div className="temporada__grid">
-            {datos.map(([e, k, v]) => (
+            {datos.map(([I, k, v]) => (
               <div key={k} className="panel temporada__dato">
-                <span aria-hidden>{e}</span>
+                <Icono icono={I} tono="azul" />
                 <span className="mono">{k}</span>
                 <strong>{v}</strong>
               </div>
@@ -62,7 +66,7 @@ export default async function TemporadaPage({ params }: P) {
 
           {t.victima && (
             <p className="panel temporada__frase">
-              ⚔️ Tu víctima favorita: <strong>{t.victima.nombre}</strong> ({t.victima.veces}{" "}
+              <Swords className="ico-txt" aria-hidden /> Tu víctima favorita: <strong>{t.victima.nombre}</strong> ({t.victima.veces}{" "}
               {t.victima.veces === 1 ? "duelo ganado" : "duelos ganados"}).
             </p>
           )}
@@ -71,7 +75,7 @@ export default async function TemporadaPage({ params }: P) {
             <div className="medallas" style={{ justifyContent: "center" }}>
               {t.medallas.map((m) => (
                 <span key={m.clave} className="medalla" title={m.descripcion}>
-                  <span aria-hidden>{m.emoji}</span> {m.nombre}
+                  <IconoMedalla clave={m.clave} /> {m.nombre}
                   {m.veces > 1 && <strong> ×{m.veces}</strong>}
                 </span>
               ))}

@@ -1,3 +1,5 @@
+import { Video } from "lucide-react";
+import Icono from "@/components/Icono";
 import { getVideosCanal, videosDelPartido } from "@/lib/youtube/videos";
 import VideoLite from "@/components/VideoLite";
 
@@ -36,7 +38,7 @@ export default async function MatchVideos({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <div className="shead">
-        <h2>🎥 Reinaldo habla del partido</h2>
+        <h2><Icono icono={Video} tono="azul" tam="sm" /> Reinaldo habla del partido</h2>
         <span className="sh-note">en YouTube</span>
       </div>
       <div className="videos">

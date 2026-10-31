@@ -1,3 +1,4 @@
+import { House, Plane } from "lucide-react";
 import Link from "next/link";
 import { exigirSeccion } from "@/lib/permisos";
 import SorteoBoard, { type PoolTeam } from "./sorteo-board";
@@ -52,7 +53,7 @@ export default async function AdminSorteoPage() {
             Sorteo de la Champions 26-27
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">
-            Bombo 1 con sus 8 rivales: 4 en casa 🏠 y 4 fuera ✈️. Pulsa un
+            Bombo 1 con sus 8 rivales: 4 en casa <House className="ico-txt" aria-hidden /> y 4 fuera <Plane className="ico-txt" aria-hidden />. Pulsa un
             hueco, escribe dos letras y elige al rival. Los cruces entre
             equipos del bombo 1 se rellenan solos en las dos tarjetas, y todo
             queda guardado en este navegador aunque recargues la página.

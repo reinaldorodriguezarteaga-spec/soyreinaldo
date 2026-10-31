@@ -1354,6 +1354,7 @@ select.field { appearance: none; }
 /* Página de estado centrada (auth error, baja recordatorios) */
 .statewrap { min-height: calc(100vh - 220px); display: grid; place-items: center; padding: 48px 0; }
 .statecard { width: min(480px, 92vw); text-align: center; }
+.stateicon-wrap { display: flex; justify-content: center; margin: 0 auto 18px; }
 .stateicon { width: 56px; height: 56px; border-radius: var(--radius); display: grid; place-items: center; margin: 0 auto 18px; font-size: 1.5rem; border: 1px solid var(--line); background: var(--surface-2); }
 .stateicon--err { color: #ff8a8a; border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.12); }
 .statecard h1 { font-family: var(--font-display-stack); font-weight: 900; text-transform: uppercase; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 0.95; margin: 0; }
@@ -2287,7 +2288,6 @@ select.field { appearance: none; }
   width: 100%; padding: 36px 28px; text-align: center; display: grid; gap: 6px; justify-items: center;
   background: linear-gradient(135deg, #0a1030 0%, #1b2a6b 100%); border-color: color-mix(in oklch, #f5c542 40%, transparent);
 }
-.logro__emoji { font-size: 4rem; line-height: 1; }
 .logro__titulo { margin: 8px 0 0; color: #f5c542; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; }
 .logro__nombre { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); }
 .logro__detalle { margin: 0; color: var(--text-dim); max-width: 40ch; }
@@ -2310,7 +2310,7 @@ select.field { appearance: none; }
 .temporada__cifra strong { display: block; font-family: var(--font-display-stack); font-size: 4.5rem; line-height: 1; color: var(--text); }
 .temporada__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
 .temporada__dato { padding: 14px 16px; display: grid; gap: 2px; }
-.temporada__dato > span:first-child { font-size: 1.4rem; }
+.temporada__dato > .ico { margin-bottom: 6px; }
 .temporada__dato .mono { color: var(--text-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .temporada__dato strong { font-size: 1.05rem; }
 .temporada__frase { padding: 14px 16px; margin: 0; text-align: center; }
@@ -2719,7 +2719,6 @@ select.field { appearance: none; }
 .pz-campo .pitch-box.r { border-right: 0; }
 /* Analiza tu jugada (/pizarra/fotos, 22-oct) */
 .af-vacio { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; border: 2px dashed var(--line-strong); border-radius: 16px; background: var(--surface); color: var(--text); cursor: pointer; text-align: center; font: inherit; }
-.af-vacio span:first-child { font-size: 2.6rem; }
 .af-vacio b { font-size: 1.1rem; }
 .af-vacio span:last-child { color: var(--text-dim); font-size: 0.85rem; max-width: 420px; }
 .af-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -2779,7 +2778,6 @@ select.field { appearance: none; }
 .jg-racha__linea { margin: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font-size: 0.98rem; }
 .jg-racha__linea b { font-family: var(--font-display-stack); font-size: 1.5rem; line-height: 1; color: var(--accent-2); }
 .jg-racha__linea strong { color: var(--text); }
-.jg-racha__fuego { font-size: 1.3rem; }
 .jg-racha__nota { margin: 0; color: var(--text-dim); font-size: 0.85rem; }
 .jg-ligas { display: grid; gap: 14px; max-width: 720px; }
 .jg-ligas__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

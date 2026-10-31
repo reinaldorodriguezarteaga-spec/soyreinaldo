@@ -1,4 +1,5 @@
 "use client";
+import { Timer } from "lucide-react";
 
 import { NIVELES, reloj, type Nivel } from "@/lib/juegos/niveles";
 
@@ -11,7 +12,7 @@ export default function ElegirNivel({ onElegir, titulo = "Elige nivel para empez
         {(Object.keys(NIVELES) as Nivel[]).map((n) => (
           <button key={n} type="button" className={`jn__op jn__op--${n}`} onClick={() => onElegir(n)}>
             <b>{NIVELES[n].nombre}</b>
-            <span>⏱ {reloj(NIVELES[n].segundos)}</span>
+            <span><Timer className="ico-txt" aria-hidden /> {reloj(NIVELES[n].segundos)}</span>
             <span className="jn__mult">×{String(NIVELES[n].mult).replace(".", ",")} puntos</span>
           </button>
         ))}

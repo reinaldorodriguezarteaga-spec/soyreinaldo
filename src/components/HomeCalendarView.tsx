@@ -1,4 +1,5 @@
 "use client";
+import { Star } from "lucide-react";
 
 import { useState } from "react";
 import type { CalendarDay } from "@/lib/sports/widget-data";
@@ -79,7 +80,7 @@ export default function HomeCalendarView({
               checked={soloFav}
               onChange={(e) => setSoloFav(e.target.checked)}
             />
-            <span>Solo favoritos ⭐</span>
+            <span>Solo favoritos <Star className="ico-txt" aria-hidden /></span>
           </label>
         )}
         <button
@@ -159,7 +160,7 @@ function DayCard({ day, open = true }: { day: CalendarDay; open?: boolean }) {
             textTransform: "uppercase",
           }}
         >
-          {day.label}
+          {day.dateKey === "favoritos" && <Star className="ico-txt" aria-hidden />} {day.label}
         </b>
         <span className="mono" style={{ color: "var(--text-dim)", fontSize: "0.66rem" }}>
           {day.fixtures.length} partido{day.fixtures.length === 1 ? "" : "s"}

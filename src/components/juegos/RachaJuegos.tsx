@@ -1,4 +1,6 @@
 "use client";
+import Icono from "@/components/Icono";
+import { Flame } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -31,17 +33,13 @@ export default function RachaJuegos() {
       <p className="jg-racha__linea">
         {racha > 0 ? (
           <>
-            <span className="jg-racha__fuego" aria-hidden>
-              🔥
-            </span>
+            <Icono icono={Flame} tono="naranja" tam="sm" />
             <b>{racha}</b> {racha === 1 ? "día" : "días"} de racha ·{" "}
             {hoy ? "hoy ya has jugado ✓" : <strong>hoy aún no has jugado: ¡que no se apague!</strong>}
           </>
         ) : (
           <>
-            <span className="jg-racha__fuego" aria-hidden>
-              🔥
-            </span>
+            <Icono icono={Flame} tono="naranja" tam="sm" />
             Juega un reto del día cada día y empieza una racha.
           </>
         )}

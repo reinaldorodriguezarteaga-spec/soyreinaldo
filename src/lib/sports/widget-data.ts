@@ -619,7 +619,7 @@ export async function getUpcomingCalendar(
     favFixtures.size > 0
       ? {
           dateKey: "favoritos",
-          label: "⭐ Tus favoritos",
+          label: "Tus favoritos",
           fixtures: [...favFixtures.values()]
             .sort(
               (a, b) =>

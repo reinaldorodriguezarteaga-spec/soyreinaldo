@@ -1,3 +1,5 @@
+import { Newspaper } from "lucide-react";
+import Icono from "@/components/Icono";
 import { textoCronica, type DatosCronica } from "@/lib/partido/cronica";
 
 /**
@@ -10,7 +12,7 @@ export default function MatchCronica({ datos }: { datos: DatosCronica }) {
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>📰 La crónica</h2>
+        <h2><Icono icono={Newspaper} tono="azul" tam="sm" /> La crónica</h2>
         <span className="sh-note">en datos</span>
       </div>
       <div className="panel" style={{ padding: 20 }}>

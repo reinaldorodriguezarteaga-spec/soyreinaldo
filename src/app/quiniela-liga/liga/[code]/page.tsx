@@ -1,3 +1,13 @@
+import {
+  Trophy,
+  CircleDot,
+  TrendingDown,
+  Hand,
+  Target,
+  Star,
+  Shield,
+  Flame,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -196,11 +206,11 @@ export default async function LeaguePanelPage({
               <li>Acertar el ganador (o el empate): <strong>{league.lq_points_result} pts</strong></li>
               {league.lq_specials_enabled ? (
                 <li>
-                  Especiales: 🏆 campeón {league.lq_points_champion} · ⚽ pichichi{" "}
-                  {league.lq_points_pichichi} · 🔻 cada descenso {league.lq_points_relegated} ·
-                  🧤 Zamora {league.lq_points_gk} · 🎯 asistidor {league.lq_points_assist} ·
-                  ⭐ MVP {league.lq_points_mvp} · 🛡️ menos goleado {league.lq_points_defense} ·
-                  🔥 más goleador {league.lq_points_attack}
+                  Especiales: <Trophy className="ico-txt" aria-hidden /> campeón {league.lq_points_champion} · <CircleDot className="ico-txt" aria-hidden /> pichichi{" "}
+                  {league.lq_points_pichichi} · <TrendingDown className="ico-txt" aria-hidden /> cada descenso {league.lq_points_relegated} ·
+                  <Hand className="ico-txt" aria-hidden /> Zamora {league.lq_points_gk} · <Target className="ico-txt" aria-hidden /> asistidor {league.lq_points_assist} ·
+                  <Star className="ico-txt" aria-hidden /> MVP {league.lq_points_mvp} · <Shield className="ico-txt" aria-hidden /> menos goleado {league.lq_points_defense} ·
+                  <Flame className="ico-txt" aria-hidden /> más goleador {league.lq_points_attack}
                 </li>
               ) : (
                 <li><T>Los picks especiales no puntúan en esta quiniela</T></li>

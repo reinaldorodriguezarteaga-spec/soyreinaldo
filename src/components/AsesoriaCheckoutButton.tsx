@@ -1,4 +1,5 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 
 import { useState } from "react";
 
@@ -37,7 +38,7 @@ export default function AsesoriaCheckoutButton() {
       </button>
       {err && (
         <p className="notice notice--err" style={{ marginTop: 6 }}>
-          ⚠ {err}
+          <TriangleAlert className="ico-txt" aria-hidden /> {err}
         </p>
       )}
       <p className="hint">

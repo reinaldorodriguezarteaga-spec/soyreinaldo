@@ -1,4 +1,5 @@
 "use client";
+import { CircleDot, Lock, TriangleAlert, Mic } from "lucide-react";
 
 import Image from "next/image";
 import { useState, useTransition } from "react";
@@ -221,14 +222,14 @@ export default function LqMatchCard({
       {match.anfitrion && <LineaAnfitrion p={match.anfitrion} />}
 
       <footer className="gamecard__foot">
-        {match.locked && !showScoreBlock && <span>🔒 Cerrado · falta &lt;30min</span>}
+        {match.locked && !showScoreBlock && <span><Lock className="ico-txt" aria-hidden /> Cerrado · falta &lt;30min</span>}
         {!match.locked && status === "saving" && <span>Guardando…</span>}
         {!match.locked && status === "saved" && (
           <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
         )}
-        {!match.locked && status === "locked" && <span>🔒 Justo se bloqueó</span>}
+        {!match.locked && status === "locked" && <span><Lock className="ico-txt" aria-hidden /> Justo se bloqueó</span>}
         {!match.locked && status === "error" && errMsg && (
-          <span style={{ color: "#ffb4b4" }}>⚠ {errMsg}</span>
+          <span style={{ color: "#ffb4b4" }}><TriangleAlert className="ico-txt" aria-hidden /> {errMsg}</span>
         )}
       </footer>
     </article>
@@ -249,7 +250,7 @@ function TeamRow({
           {team.logo ? (
             <Image src={team.logo} alt="" width={22} height={22} unoptimized />
           ) : (
-            "⚽"
+            <CircleDot className="ico-txt" aria-hidden />
           )}
         </span>
         <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -276,7 +277,7 @@ function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
         color: "var(--text-dim)",
       }}
     >
-      🎙️{" "}
+      <Mic className="ico-txt" aria-hidden />{" "}
       {p.home != null && p.away != null ? (
         <>
           {ANFITRION_NOMBRE} dijo{" "}

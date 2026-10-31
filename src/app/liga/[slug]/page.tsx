@@ -1,3 +1,4 @@
+import { Search, Trophy } from "lucide-react";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -184,11 +185,11 @@ export default async function LigaPage({
           )}
           <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
             <Link href={`/liga/${competition.slug}/buscar`} className="btn btn--ghost">
-              🔍 Buscar equipo o jugador
+              <Search className="ico-txt" aria-hidden /> Buscar equipo o jugador
             </Link>
             {competition.koStructure && (
               <Link href={`/liga/${competition.slug}/bracket`} className="btn btn--ghost">
-                🏆 Eliminatorias
+                <Trophy className="ico-txt" aria-hidden /> Eliminatorias
               </Link>
             )}
             {competition.archivedSeasons?.length ? (

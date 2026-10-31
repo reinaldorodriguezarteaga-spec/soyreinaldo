@@ -1,4 +1,5 @@
 "use client";
+import { Timer } from "lucide-react";
 
 import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
@@ -268,14 +269,14 @@ export default function Juego({ numero }: { numero: number }) {
           <div className="jg-panel">
             {nivel && !terminado && (
               <span className={`jreloj${restante <= 10 ? " is-poco" : ""}`} aria-label="Tiempo que queda">
-                ⏱ {reloj(restante)} · {NIVELES[nivel].nombre}
+                <Timer className="ico-txt" aria-hidden /> {reloj(restante)} · {NIVELES[nivel].nombre}
               </span>
             )}
 
             {terminado ? (
               <div className={`jg-final ${aciertos === 9 ? "is-ok" : "is-mal"}`}>
                 <div>
-                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? "⏱ Se acabó el tiempo." : "Se acabaron los intentos"}</p>
+                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : "Se acabaron los intentos"}</p>
                   <p className="jg-final__eq">{aciertos}/9</p>
                   {aciertos < 9 && <p className="jg-final__ctx">En cursiva, un jugador que valía en cada casilla vacía.</p>}
                 </div>

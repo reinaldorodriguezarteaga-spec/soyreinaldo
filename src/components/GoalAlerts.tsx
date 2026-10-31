@@ -1,4 +1,6 @@
 "use client";
+import { CircleDot } from "lucide-react";
+import Icono from "@/components/Icono";
 
 import { useAvisosWeb } from "@/lib/useAvisosWeb";
 
@@ -20,7 +22,7 @@ export default function GoalAlerts() {
 
   return (
     <div className="panel" style={{ padding: 20, marginTop: 20 }}>
-      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}>⚽ Avisos de gol</h2>
+      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}><Icono icono={CircleDot} tono="azul" tam="sm" /> Avisos de gol</h2>
       <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.92rem" }}>
         Te avisamos en cuanto marca un equipo que tengas en favoritos. Nada más:
         ni resúmenes, ni promociones.

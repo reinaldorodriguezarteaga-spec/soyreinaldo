@@ -1,3 +1,5 @@
+import { ClipboardList } from "lucide-react";
+import Icono from "@/components/Icono";
 import { createClient } from "@/lib/supabase/server";
 import { ANFITRION_ID, ANFITRION_NOMBRE } from "@/lib/quiniela-liga/anfitrion";
 import { ultimoCaraACara } from "@/lib/quiniela-liga/cara-a-cara";
@@ -73,7 +75,7 @@ export default async function MatchPrevia({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>📋 La previa</h2>
+        <h2><Icono icono={ClipboardList} tono="azul" tam="sm" /> La previa</h2>
         <span className="sh-note">en datos</span>
       </div>
       <div className="panel" style={{ padding: 20 }}>

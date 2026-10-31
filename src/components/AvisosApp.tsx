@@ -1,4 +1,6 @@
 "use client";
+import { CircleDot, Star } from "lucide-react";
+import Icono from "@/components/Icono";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -60,7 +62,7 @@ export default function AvisosApp({ tieneFavoritos }: { tieneFavoritos: boolean 
 
   return (
     <div className="panel" style={{ padding: 20, marginTop: 20 }}>
-      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}>⚽ Avisos de gol</h2>
+      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}><Icono icono={CircleDot} tono="azul" tam="sm" /> Avisos de gol</h2>
       <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.92rem" }}>
         <T>
           Te avisamos en cuanto marca un equipo que tengas en favoritos, y te
@@ -70,7 +72,7 @@ export default function AvisosApp({ tieneFavoritos }: { tieneFavoritos: boolean 
 
       {!tieneFavoritos && (
         <p style={{ margin: "0 0 14px", fontSize: "0.9rem" }}>
-          Aún no tienes equipos favoritos: márcalos con la ⭐ en la ficha de
+          Aún no tienes equipos favoritos: márcalos con la <Star className="ico-txt" aria-hidden /> en la ficha de
           cualquier equipo o en <Link href="/liga/laliga">LaLiga</Link>.
         </p>
       )}

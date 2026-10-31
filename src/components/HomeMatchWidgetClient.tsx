@@ -1,4 +1,5 @@
 "use client";
+import { Star } from "lucide-react";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -187,7 +188,7 @@ export default function HomeMatchWidgetClient({
         );
   if (groups.length === 0) return null;
   const badgeFor = (fx: CompetitionGroup["live"][number], name: string) =>
-    isFav(fx) ? `⭐ ${name}` : name;
+    isFav(fx) ? <><Star className="ico-txt" aria-hidden /> {name}</> : name;
 
   if (liveOnly) {
     const deFav = (r: { fx: CompetitionGroup["live"][number]; competition: { slug: string } }) =>
@@ -223,7 +224,7 @@ export default function HomeMatchWidgetClient({
           {/* Los favoritos que juegan ahora, con su propio título arriba
               (17-oct): son lo que más interesa y no hay que buscarlos. */}
           {liveRows.some((r) => isFav(r.fx)) && liveRows.some((r) => !isFav(r.fx)) && (
-            <GroupLabel>⭐ Tus favoritos</GroupLabel>
+            <GroupLabel><Star className="ico-txt" aria-hidden /> Tus favoritos</GroupLabel>
           )}
           {liveRows.length > 0 && (
             <div className="hmrowlist">

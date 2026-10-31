@@ -1,3 +1,4 @@
+import { Clapperboard } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -110,7 +111,7 @@ export default async function ComunidadPage({ searchParams }: { searchParams: Pr
                     <footer className="pzc-pie">
                       <span className="pzc-autor">
                         {f.autor} · {fecha(f.created_at)}
-                        {estado && estado.etapas.length > 1 && <span className="pzc-anim"> · 🎬 animada</span>}
+                        {estado && estado.etapas.length > 1 && <span className="pzc-anim"> · <Clapperboard className="ico-txt" aria-hidden /> animada</span>}
                       </span>
                       <BotonLike id={f.id} likes={f.likes} leGusta={f.le_gusta} conectado={!!user} />
                       {(f.mio || admin) && <BotonRetirar id={f.id} comoAdmin={!f.mio && admin} />}

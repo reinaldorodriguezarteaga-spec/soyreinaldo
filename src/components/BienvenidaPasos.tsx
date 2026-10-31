@@ -1,3 +1,4 @@
+import { Star } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
@@ -43,7 +44,7 @@ export default async function BienvenidaPasos() {
             <span className="bienvenida__numero" aria-hidden>{p.hecho ? "✓" : ["①", "②", "③"][i]}</span>
             <div>
               {p.hecho ? <span>{p.titulo} <span className="sr-only">: completado</span></span> : <Link href={p.href}>{p.titulo} →</Link>}
-              {i === 0 && !p.hecho && <p>Tócalo en la tarjeta «Mi equipo» o en ⭐ de cualquier equipo</p>}
+              {i === 0 && !p.hecho && <p>Tócalo en la tarjeta «Mi equipo» o en <Star className="ico-txt" aria-hidden /> de cualquier equipo</p>}
             </div>
           </li>
         ))}

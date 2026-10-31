@@ -1,3 +1,4 @@
+import { Trophy } from "lucide-react";
 import GoatsCard from "@/components/GoatsCard";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -105,7 +106,7 @@ export default async function Home() {
             {/* La quiniela, a mano desde arriba (16-oct, pedido del dueño): su
                 bloque grande queda muy abajo en la portada. */}
             <Link href="/quiniela-liga" className="hero__quiniela">
-              <span aria-hidden>🏆</span> <T>Juega la quiniela gratis</T>{" "}
+              <span aria-hidden><Trophy className="ico-txt" aria-hidden /></span> <T>Juega la quiniela gratis</T>{" "}
               <span className="arr">→</span>
             </Link>
 
@@ -346,7 +347,7 @@ async function HomePromoQuiniela() {
   const baremo = await getBaremoPublico();
   return (
     <Link href="/quiniela-liga" className="panel promopanel">
-      <p className="eyebrow">🏆 Nuevo · Gratis</p>
+      <p className="eyebrow"><Trophy className="ico-txt" aria-hidden /> Nuevo · Gratis</p>
       <h2
         className="feat__title"
         style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}

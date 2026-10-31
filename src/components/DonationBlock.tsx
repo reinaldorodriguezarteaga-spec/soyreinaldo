@@ -1,4 +1,5 @@
 "use client";
+import { Lock } from "lucide-react";
 
 import { useState } from "react";
 
@@ -106,7 +107,7 @@ export default function DonationBlock() {
       {error && (
         <p className="mt-3 text-sm text-[#ff8a8a]">{error}</p>
       )}
-      <p className="dona__note">🔒 Pago seguro vía Stripe. Tu tarjeta nunca pasa por este servidor.</p>
+      <p className="dona__note"><Lock className="ico-txt" aria-hidden /> Pago seguro vía Stripe. Tu tarjeta nunca pasa por este servidor.</p>
     </div>
   );
 }

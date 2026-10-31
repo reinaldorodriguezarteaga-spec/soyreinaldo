@@ -1,4 +1,26 @@
 "use client";
+import {
+  Hand,
+  ArrowRight,
+  MoveUpRight,
+  Pencil,
+  RectangleHorizontal,
+  Blend,
+  Pentagon,
+  Type,
+  Focus,
+  BoxSelect,
+  type LucideIcon,
+  Globe,
+  Link as LinkIcon,
+  Camera,
+  CircleDot,
+  Clapperboard,
+  Play,
+  Video,
+  Trash2,
+  CircleCheck,
+} from "lucide-react";
 
 import { guardarEnGaleria } from "@/lib/app-galeria";
 import { useEffect, useRef, useState } from "react";
@@ -71,17 +93,17 @@ const AYUDA: Record<Modo, string> = {
 };
 type Orden = "posicion" | "numero";
 /** Herramientas: icono y nombre (barra de escritorio y columna del móvil). */
-const HERRAMIENTAS: [Modo, string, string][] = [
-  ["mover", "✋", "Mover"],
-  ["pase", "➜", "Pase"],
-  ["carrera", "⤳", "Carrera"],
-  ["pincel", "✎", "Pincel"],
-  ["zona", "▭", "Zona"],
-  ["rayas", "▨", "Rayas"],
-  ["enlace", "⬠", "Unir"],
-  ["texto", "T", "Texto"],
-  ["foco", "◎", "Destacar"],
-  ["grupo", "⬚", "Mover grupo"],
+const HERRAMIENTAS: [Modo, LucideIcon, string][] = [
+  ["mover", Hand, "Mover"],
+  ["pase", ArrowRight, "Pase"],
+  ["carrera", MoveUpRight, "Carrera"],
+  ["pincel", Pencil, "Pincel"],
+  ["zona", RectangleHorizontal, "Zona"],
+  ["rayas", Blend, "Rayas"],
+  ["enlace", Pentagon, "Unir"],
+  ["texto", Type, "Texto"],
+  ["foco", Focus, "Destacar"],
+  ["grupo", BoxSelect, "Mover grupo"],
 ];
 
 const LADOS: Lado[] = ["local", "visitante"];
@@ -940,7 +962,7 @@ export default function Pizarra({
           className="btn btn--accent"
           onClick={() => setPublicar({ titulo: `${titulo}`, enviando: false, error: null, id: null })}
         >
-          🌍 Añadir a la comunidad
+          <Globe className="ico-txt" aria-hidden /> Añadir a la comunidad
         </button>
         <button type="button" className="btn" onClick={() => router.push("/pizarra")}>
           Empezar de cero
@@ -955,16 +977,16 @@ export default function Pizarra({
           Rellenar once
         </button>
         <button type="button" className="btn" onClick={compartirEnlace}>
-          🔗 Compartir enlace
+          <LinkIcon className="ico-txt" aria-hidden /> Compartir enlace
         </button>
         <button type="button" className="btn" onClick={compartirImagen} disabled={compartiendo}>
-          📸 {compartiendo ? "Preparando…" : "Compartir imagen"}
+          <Camera className="ico-txt" aria-hidden /> {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
       </div>
 
       <div className="pz-herramientas" role="toolbar" aria-label="Herramientas de la pizarra">
         <div className="pz-modos" role="radiogroup" aria-label="Qué hace el dedo en el campo">
-          {HERRAMIENTAS.map(([m, icono, etiqueta]) => (
+          {HERRAMIENTAS.map(([m, I, etiqueta]) => (
             <button
               key={m}
               type="button"
@@ -974,12 +996,12 @@ export default function Pizarra({
               className={modo === m ? "on" : ""}
               onClick={() => elegirModo(m)}
             >
-              {icono} {etiqueta}
+              <I className="ico-txt" aria-hidden /> {etiqueta}
             </button>
           ))}
         </div>
         <button type="button" className={`pz-tool${balon ? " on" : ""}`} onClick={alternarBalon} aria-pressed={!!balon}>
-          ⚽ Balón
+          <CircleDot className="ico-txt" aria-hidden /> Balón
         </button>
         {contexto}
         <button
@@ -996,7 +1018,7 @@ export default function Pizarra({
       </div>
 
       <div className="pz-anim" aria-label="Animación por etapas">
-        <span className="mono pz-anim__titulo">🎬 Animación</span>
+        <span className="mono pz-anim__titulo"><Clapperboard className="ico-txt" aria-hidden /> Animación</span>
         <button type="button" className="pz-tool" onClick={guardarEtapa} disabled={!!fot}>
           + Guardar etapa
         </button>
@@ -1016,7 +1038,7 @@ export default function Pizarra({
           </button>
         ) : (
           <button type="button" className="pz-tool" onClick={reproducir} disabled={estado.etapas.length < 2}>
-            ▶ Reproducir
+            <Play className="ico-txt" aria-hidden /> Reproducir
           </button>
         )}
         <button
@@ -1025,7 +1047,7 @@ export default function Pizarra({
           onClick={exportarVideo}
           disabled={estado.etapas.length < 2 || grabando != null || !!fot}
         >
-          {grabando != null ? `Grabando… ${Math.round(grabando * 100)}%` : "📹 Vídeo"}
+          {grabando != null ? `Grabando… ${Math.round(grabando * 100)}%` : <><Video className="ico-txt" aria-hidden /> Vídeo</>}
         </button>
         {estado.etapas.length === 0 && (
           <span className="pz-anim__ayuda">
@@ -1049,7 +1071,7 @@ export default function Pizarra({
             >
               {railAbierto ? "«" : "»"}
             </button>
-            {HERRAMIENTAS.map(([m, icono, etiqueta]) => (
+            {HERRAMIENTAS.map(([m, I, etiqueta]) => (
               <button
                 key={m}
                 type="button"
@@ -1061,13 +1083,13 @@ export default function Pizarra({
                   setRailAbierto(false);
                 }}
               >
-                <span className="pz-rail__ic">{icono}</span>
+                <span className="pz-rail__ic"><I className="ico-txt" aria-hidden /></span>
                 <span className="pz-rail__et">{etiqueta}</span>
               </button>
             ))}
             <span className="pz-rail__sep" />
             <button type="button" className={balon ? "on" : ""} onClick={alternarBalon} aria-pressed={!!balon} aria-label="Balón">
-              <span className="pz-rail__ic">⚽</span>
+              <span className="pz-rail__ic"><CircleDot className="ico-txt" aria-hidden /></span>
               <span className="pz-rail__et">Balón</span>
             </button>
             <button type="button" onClick={deshacer} disabled={historial.length === 0} aria-label="Deshacer">
@@ -1075,7 +1097,7 @@ export default function Pizarra({
               <span className="pz-rail__et">Deshacer</span>
             </button>
             <button type="button" onClick={borrarDibujos} disabled={!hayDibujos} aria-label="Borrar dibujos">
-              <span className="pz-rail__ic">🗑</span>
+              <span className="pz-rail__ic"><Trash2 className="ico-txt" aria-hidden /></span>
               <span className="pz-rail__et">Borrar dibujos</span>
             </button>
           </div>
@@ -1228,7 +1250,7 @@ export default function Pizarra({
               role="button"
               aria-label="Balón, arrástralo para moverlo"
             >
-              ⚽
+              <CircleDot className="ico-txt" aria-hidden />
             </div>
           )}
         </div>
@@ -1284,7 +1306,7 @@ export default function Pizarra({
               </p>
             ) : publicar.id != null ? (
               <p style={{ margin: "0 0 12px" }}>
-                ✅ ¡Publicada! <a href="/pizarra/comunidad">Ver la galería de la comunidad</a>
+                <CircleCheck className="ico-txt" aria-hidden /> ¡Publicada! <a href="/pizarra/comunidad">Ver la galería de la comunidad</a>
               </p>
             ) : (
               <>
@@ -1669,8 +1691,15 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
 
   if (e.balon) {
     const { x, y } = aLienzo(e.balon);
-    g.font = "44px sans-serif";
-    g.fillText("⚽", x, y + 15);
+    g.strokeStyle = "#ffffff";
+    g.lineWidth = 4;
+    g.beginPath();
+    g.arc(x, y, 20, 0, Math.PI * 2);
+    g.stroke();
+    g.fillStyle = "#ffffff";
+    g.beginPath();
+    g.arc(x, y, 2, 0, Math.PI * 2);
+    g.fill();
   }
 
   // Textos, encima de todo, con fondo para que se lean sobre el césped.

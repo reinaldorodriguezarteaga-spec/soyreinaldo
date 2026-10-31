@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -81,7 +82,7 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap" style={{ maxWidth: 760 }}>
           <h1 className="feat__title" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.2rem)", margin: "4px 0 10px" }}>
-            💬 Chat · {activa.name}
+            <MessageCircle className="ico-txt" aria-hidden /> Chat · {activa.name}
           </h1>
           <ChatQuiniela
             key={activa.id}

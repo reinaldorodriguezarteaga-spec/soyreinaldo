@@ -1,3 +1,5 @@
+import { Swords } from "lucide-react";
+import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import TarjetaLogro from "@/components/TarjetaLogro";
@@ -19,7 +21,7 @@ export default async function LogroDueloPage({ params }: P) {
   if (!l) notFound();
   return (
     <TarjetaLogro
-      emoji="⚔️"
+      icono={<Icono icono={Swords} tono="naranja" tam="lg" />}
       titulo={`Duelo ganado · jornada ${l.jornada}`}
       nombre={l.ganador}
       detalle={`${l.ptsGanador} – ${l.ptsPerdedor} contra ${l.perdedor}`}

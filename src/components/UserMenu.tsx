@@ -1,4 +1,5 @@
 "use client";
+import { ArrowUpRight } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -71,7 +72,7 @@ function AdminLinkItem({ a, onClick }: { a: AdminLink; onClick: () => void }) {
         onClick={onClick}
         className={className}
       >
-        {a.label} ↗
+        {a.label} <ArrowUpRight className="ico-txt" aria-hidden />
       </a>
     );
   }

@@ -1,4 +1,6 @@
 "use client";
+import Icono from "@/components/Icono";
+import { Bell } from "lucide-react";
 
 import { useState, useSyncExternalStore } from "react";
 import { useEnApp } from "@/components/EnApp";
@@ -49,7 +51,7 @@ export default function OfertaAvisos({ clave, texto }: { clave: string; texto: s
 
   return (
     <div className="oferta-avisos">
-      <span aria-hidden>🔔</span>
+      <Icono icono={Bell} tono="oro" tam="sm" />
       <span className="oferta-avisos__texto">{texto}</span>
       <button
         type="button"

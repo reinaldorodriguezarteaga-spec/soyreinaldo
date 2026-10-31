@@ -1,3 +1,5 @@
+import Icono from "@/components/Icono";
+import { CircleDot } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { T } from "@/components/EnApp";
@@ -68,7 +70,7 @@ export default async function QuinielaPendientes() {
         borderColor: "var(--accent)",
       }}
     >
-      <span aria-hidden style={{ fontSize: "1.4rem" }}>⚽</span>
+      <Icono icono={CircleDot} tono="azul" />
       <span style={{ flex: 1 }}>
         <strong>
           Te {faltan === 1 ? "falta 1 pronóstico" : `faltan ${faltan} pronósticos`}

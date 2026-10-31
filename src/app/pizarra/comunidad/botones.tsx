@@ -1,4 +1,5 @@
 "use client";
+import { Heart } from "lucide-react";
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
@@ -20,8 +21,8 @@ export function BotonLike({
   const [pendiente, empezar] = useTransition();
   if (!conectado) {
     return (
-      <Link href="/login?redirect=%2Fpizarra%2Fcomunidad" className="pzc-like" title="Inicia sesión para dar me gusta">
-        ♡ {likes}
+      <Link href="/login?redirect=%2Fpizarra%2Fcomunidad" className="pzc-like" aria-label="Inicia sesión para dar me gusta" title="Inicia sesión para dar me gusta">
+        <Heart className="ico-txt" aria-hidden /> {likes}
       </Link>
     );
   }
@@ -29,6 +30,7 @@ export function BotonLike({
     <button
       type="button"
       className={`pzc-like${estado.leGusta ? " on" : ""}`}
+      aria-label={estado.leGusta ? "Quitar me gusta" : "Dar me gusta"}
       aria-pressed={estado.leGusta}
       disabled={pendiente}
       onClick={() => {
@@ -41,7 +43,7 @@ export function BotonLike({
         });
       }}
     >
-      {estado.leGusta ? "♥" : "♡"} {estado.likes}
+      <Heart className="ico-txt" fill={estado.leGusta ? "currentColor" : "none"} aria-hidden /> {estado.likes}
     </button>
   );
 }

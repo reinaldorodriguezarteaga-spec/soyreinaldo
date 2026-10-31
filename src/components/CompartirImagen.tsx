@@ -1,4 +1,5 @@
 "use client";
+import { Camera } from "lucide-react";
 
 import { useState } from "react";
 import BotonCompartir from "@/components/BotonCompartir";
@@ -66,7 +67,7 @@ export default function CompartirImagen({
   if (soloBoton) {
     return (
       <button type="button" className="compartir__btn" onClick={compartir} disabled={cargando}>
-        <span aria-hidden>📸</span> {cargando ? "Preparando…" : "Imagen para redes"}
+        <span aria-hidden><Camera className="ico-txt" aria-hidden /></span> {cargando ? "Preparando…" : "Imagen para redes"}
       </button>
     );
   }
@@ -74,7 +75,7 @@ export default function CompartirImagen({
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
       <button type="button" className="btn btn--accent" onClick={compartir} disabled={cargando}>
-        📸 {cargando ? "Preparando la imagen…" : "Compartir imagen"}
+        <Camera className="ico-txt" aria-hidden /> {cargando ? "Preparando la imagen…" : "Compartir imagen"}
       </button>
       <BotonCompartir url={url} texto={texto} etiqueta="Compartir enlace" />
     </div>

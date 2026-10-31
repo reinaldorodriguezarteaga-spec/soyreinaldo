@@ -1,3 +1,5 @@
+import { Vote } from "lucide-react";
+import Icono from "@/components/Icono";
 import { asegurarMvp, cargarEncuestas, type Opcion } from "@/lib/encuestas";
 import EncuestaCard from "@/components/EncuestaCard";
 import EncuestaNueva from "@/components/EncuestaNueva";
@@ -21,7 +23,7 @@ export default async function MatchEncuestas({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>🗳️ Opina</h2>
+        <h2><Icono icono={Vote} tono="azul" tam="sm" /> Opina</h2>
         <span className="sh-note">la comunidad vota</span>
       </div>
       <div className="encuestas">

@@ -1,4 +1,5 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 
 import { useSyncExternalStore } from "react";
 
@@ -54,7 +55,7 @@ export default function ContextWarning() {
       {ctx === "inapp" ? (
         <>
           <b style={{ color: "var(--accent-2)" }}>
-            ⚠️ Estás dentro del navegador de otra app
+            <TriangleAlert className="ico-txt" aria-hidden /> Estás dentro del navegador de otra app
           </b>
           <p style={{ margin: "6px 0 0", color: "var(--text)", fontSize: "0.88rem", lineHeight: 1.5 }}>
             Iniciar sesión con Google aquí suele fallar y quedarse en bucle.
@@ -66,7 +67,7 @@ export default function ContextWarning() {
       ) : (
         <>
           <b style={{ color: "var(--accent-2)" }}>
-            ⚠️ Estás en la app de pantalla de inicio
+            <TriangleAlert className="ico-txt" aria-hidden /> Estás en la app de pantalla de inicio
           </b>
           <p style={{ margin: "6px 0 0", color: "var(--text)", fontSize: "0.88rem", lineHeight: 1.5 }}>
             En este modo el login con Google puede quedarse en bucle. Abre{" "}

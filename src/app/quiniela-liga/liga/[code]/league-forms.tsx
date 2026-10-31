@@ -1,4 +1,14 @@
 "use client";
+import {
+  Trophy,
+  CircleDot,
+  TrendingDown,
+  Hand,
+  Target,
+  Star,
+  Shield,
+  Flame,
+} from "lucide-react";
 
 import { useActionState } from "react";
 import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
@@ -132,14 +142,14 @@ export function RulesForm({
         </span>
       </label>
       <div style={rowStyle}>
-        <Num name="champion" label="🏆 Campeón" value={rules.champion} disabled={pending} />
-        <Num name="pichichi" label="⚽ Pichichi" value={rules.pichichi} disabled={pending} />
-        <Num name="relegated" label="🔻 Cada descenso" value={rules.relegated} disabled={pending} />
-        <Num name="gk" label="🧤 Zamora" value={rules.gk} disabled={pending} />
-        <Num name="assist" label="🎯 Máximo asistidor" value={rules.assist} disabled={pending} />
-        <Num name="mvp" label="⭐ MVP de la liga" value={rules.mvp} disabled={pending} />
-        <Num name="defense" label="🛡️ Equipo menos goleado" value={rules.defense} disabled={pending} />
-        <Num name="attack" label="🔥 Equipo más goleador" value={rules.attack} disabled={pending} />
+        <Num name="champion" label={<><Trophy className="ico-txt" aria-hidden /> Campeón</>} value={rules.champion} disabled={pending} />
+        <Num name="pichichi" label={<><CircleDot className="ico-txt" aria-hidden /> Pichichi</>} value={rules.pichichi} disabled={pending} />
+        <Num name="relegated" label={<><TrendingDown className="ico-txt" aria-hidden /> Cada descenso</>} value={rules.relegated} disabled={pending} />
+        <Num name="gk" label={<><Hand className="ico-txt" aria-hidden /> Zamora</>} value={rules.gk} disabled={pending} />
+        <Num name="assist" label={<><Target className="ico-txt" aria-hidden /> Máximo asistidor</>} value={rules.assist} disabled={pending} />
+        <Num name="mvp" label={<><Star className="ico-txt" aria-hidden /> MVP de la liga</>} value={rules.mvp} disabled={pending} />
+        <Num name="defense" label={<><Shield className="ico-txt" aria-hidden /> Equipo menos goleado</>} value={rules.defense} disabled={pending} />
+        <Num name="attack" label={<><Flame className="ico-txt" aria-hidden /> Equipo más goleador</>} value={rules.attack} disabled={pending} />
       </div>
       <button type="submit" className="btn btn--accent" disabled={pending} style={{ marginTop: 16 }}>
         {pending ? "Guardando…" : "Guardar normas"}
@@ -156,7 +166,7 @@ function Num({
   disabled,
 }: {
   name: string;
-  label: string;
+  label: React.ReactNode;
   value: number;
   disabled: boolean;
 }) {

@@ -1,4 +1,5 @@
 "use client";
+import { Timer } from "lucide-react";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { ESTADISTICAS, siguientePareja, type JugadorMm } from "@/lib/juegos/mas-o-menos";
@@ -108,7 +109,7 @@ export default function Juego({ jugadores, numero }: { jugadores: JugadorMm[]; n
         <>
           {!terminado && (
             <span className={`jreloj${restante <= 10 ? " is-poco" : ""}`} aria-label="Tiempo que queda">
-              ⏱ {reloj(restante)} · {NIVELES[nivel].nombre}
+              <Timer className="ico-txt" aria-hidden /> {reloj(restante)} · {NIVELES[nivel].nombre}
             </span>
           )}
           <p className="mm-pregunta">¿Quién tiene más {ESTADISTICAS[stat]} esta temporada?</p>
@@ -163,7 +164,7 @@ export default function Juego({ jugadores, numero }: { jugadores: JugadorMm[]; n
               </button>
             </div>
           )}
-          {terminado && <p className="mm-fin">{restante === 0 ? "⏱ Se acabó el tiempo." : "Fallaste."} Racha final: {racha}.</p>}
+          {terminado && <p className="mm-fin">{restante === 0 ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : "Fallaste."} Racha final: {racha}.</p>}
           {terminado && (
             <CierreJuego juego="masomenos" dia={numero} nivel={nivel} puntos={puntos} resultado={`racha ${racha} 🔥`} />
           )}

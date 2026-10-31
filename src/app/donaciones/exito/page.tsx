@@ -1,3 +1,5 @@
+import { Heart } from "lucide-react";
+import Icono from "@/components/Icono";
 import Link from "next/link";
 import { stripe } from "@/lib/stripe/server";
 import { T } from "@/components/EnApp";
@@ -42,7 +44,7 @@ export default async function DonacionExitoPage({
       <div className="wrap">
         <div className="statewrap">
           <div className="statecard">
-            <div className="stateicon">❤️</div>
+            <div className="stateicon-wrap"><Icono icono={Heart} tono="rojo" tam="lg" /></div>
             <h1>{donorName ? `Gracias, ${donorName}` : "¡Gracias!"}</h1>
             <p>
               {amountEur !== null

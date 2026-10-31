@@ -1,3 +1,13 @@
+import IconoMedalla from "@/components/IconoMedalla";
+import {
+  Mic,
+  Flame,
+  Target,
+  ChartColumn,
+  ArrowUpRight,
+  Swords,
+  Medal,
+} from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, pickLeague, leagueHref } from "@/lib/quiniela-liga/leagues";
@@ -195,7 +205,7 @@ export default async function QuinielaLigaRankingPage({
               className="panel"
               style={{ display: "inline-block", marginTop: 14, padding: "10px 14px" }}
             >
-              🎙️{" "}
+              <Mic className="ico-txt" aria-hidden />{" "}
               {difAnfitrion > 0 ? (
                 <>
                   Le sacas <strong>{difAnfitrion} {difAnfitrion === 1 ? "punto" : "puntos"}</strong> a{" "}
@@ -212,9 +222,9 @@ export default async function QuinielaLigaRankingPage({
           )}
           {miRacha && (miRacha.jornadas > 0 || miRacha.mejorAciertos > 0) && (
             <p className="panel" style={{ display: "inline-block", marginTop: 14, marginLeft: 8, padding: "10px 14px" }}>
-              🔥 <strong>{miRacha.jornadas}</strong>{" "}
+              <Flame className="ico-txt" aria-hidden /> <strong>{miRacha.jornadas}</strong>{" "}
               {miRacha.jornadas === 1 ? "jornada seguida" : "jornadas seguidas"} jugando ·
-              🎯 <strong>{miRacha.aciertos}</strong>{" "}
+              <Target className="ico-txt" aria-hidden /> <strong>{miRacha.aciertos}</strong>{" "}
               {miRacha.aciertos === 1 ? "acierto seguido" : "aciertos seguidos"}
               {miRacha.mejorAciertos > miRacha.aciertos && <> (récord {miRacha.mejorAciertos})</>}
             </p>
@@ -222,7 +232,7 @@ export default async function QuinielaLigaRankingPage({
           {meId && yo && (
             <p style={{ marginTop: 12 }}>
               <Link href={`/mi-temporada/${encodeURIComponent(miUsuarioUrl ?? meId)}`} className="btn">
-                📊 Mi temporada <span className="arr">→</span>
+                <ChartColumn className="ico-txt" aria-hidden /> Mi temporada <span className="arr">→</span>
               </Link>
             </p>
           )}
@@ -236,9 +246,9 @@ export default async function QuinielaLigaRankingPage({
                   className="medalla"
                   title={`${m.nombre}: ${m.descripcion} — tócala para compartirla`}
                 >
-                  <span aria-hidden>{m.emoji}</span> {m.nombre}
+                  <IconoMedalla clave={m.clave} /> {m.nombre}
                   {m.veces > 1 && <strong> ×{m.veces}</strong>}
-                  <span aria-hidden className="medalla__compartir">↗</span>
+                  <span aria-hidden className="medalla__compartir"><ArrowUpRight className="ico-txt" aria-hidden /></span>
                 </Link>
               ))}
             </div>
@@ -285,7 +295,7 @@ export default async function QuinielaLigaRankingPage({
                 className={enVistaDuelos ? "btn btn--accent" : "btn"}
                 aria-current={enVistaDuelos ? "page" : undefined}
               >
-                ⚔️ Duelos
+                <Swords className="ico-txt" aria-hidden /> Duelos
               </Link>
               {[...conPartidos].sort((a, b) => b - a).slice(0, 6).map((n) => (
                 <Link
@@ -331,9 +341,9 @@ export default async function QuinielaLigaRankingPage({
                       <tr key={r.user_id} className={r.user_id === meId ? "me" : undefined}>
                         <td className={`pos${i < 3 ? " top" : ""}`}>{i + 1}</td>
                         <td className="who">
-                          {ganadoresVista.has(r.user_id) && <span title="Ganador de la jornada">🥇 </span>}
+                          {ganadoresVista.has(r.user_id) && <span title="Ganador de la jornada"><Medal className="ico-txt" style={{ color: "#ffc93c" }} aria-hidden /> </span>}
                           {r.display_name}
-                          {r.user_id === ANFITRION_ID && <span title="El anfitrión"> 🎙️</span>}
+                          {r.user_id === ANFITRION_ID && <span title="El anfitrión"> <Mic className="ico-txt" aria-hidden /></span>}
                         </td>
                         <td style={{ textAlign: "right" }}>{r.exactos}</td>
                         <td className="hidem" style={{ textAlign: "right" }}>{r.aciertos}</td>
@@ -383,9 +393,9 @@ export default async function QuinielaLigaRankingPage({
                       <td className={`pos${i < 3 ? " top" : ""}`}>{i + 1}</td>
                       <td className="who">
                         {r.display_name}
-                        {r.user_id === ANFITRION_ID && <span title="El anfitrión"> 🎙️</span>}
+                        {r.user_id === ANFITRION_ID && <span title="El anfitrión"> <Mic className="ico-txt" aria-hidden /></span>}
                         {ganadoresUltima.has(r.user_id) && (
-                          <span title={`Ganador de la jornada ${ultimaTerminada}`}> 🏅</span>
+                          <span title={`Ganador de la jornada ${ultimaTerminada}`}> <Medal className="ico-txt" aria-hidden /></span>
                         )}
                         <Rachas r={rachas.get(r.user_id)} />
                       </td>
@@ -410,10 +420,10 @@ function Rachas({ r }: { r?: { jornadas: number; aciertos: number } }) {
   return (
     <>
       {r.jornadas >= RACHA_JORNADAS_MIN && (
-        <span className="racha" title={`${r.jornadas} jornadas seguidas jugando`}> 🔥{r.jornadas}</span>
+        <span className="racha" title={`${r.jornadas} jornadas seguidas jugando`}> <Flame className="ico-txt" aria-hidden />{r.jornadas}</span>
       )}
       {r.aciertos >= RACHA_ACIERTOS_MIN && (
-        <span className="racha" title={`${r.aciertos} aciertos seguidos`}> 🎯{r.aciertos}</span>
+        <span className="racha" title={`${r.aciertos} aciertos seguidos`}> <Target className="ico-txt" aria-hidden />{r.aciertos}</span>
       )}
     </>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { Star } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -173,7 +174,7 @@ export default function HomeFechas({
           {deFavoritos.length > 0 && (
             <div className="panel" style={{ overflow: "hidden" }}>
               <div className="hfechas__cab">
-                <b className="truncate">⭐ Tus favoritos</b>
+                <b className="truncate"><Star className="ico-txt" aria-hidden /> Tus favoritos</b>
               </div>
               <div style={{ borderTop: "1px solid var(--line)", padding: "4px 12px 12px" }}>
                 <div className="hmrowlist">
