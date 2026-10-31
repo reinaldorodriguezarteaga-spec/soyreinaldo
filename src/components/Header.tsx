@@ -346,7 +346,7 @@ export default function Header({
             <div className="nav__movil min-[1280px]:hidden border-t border-[var(--line)] py-3">
               <div className="flex flex-col gap-1">
                 {/* Favoritos acordeón — primero. Lo que ya está en la barra de
-                    abajo (favoritos, pizarra, juegos, quiniela) va en .nav__dup:
+                    abajo (favoritos, análisis, juegos, quiniela) va en .nav__dup:
                     se oculta mientras esa barra se ve (móvil). */}
                 {favorites.length > 0 && (
                   <div className="nav__dup">
@@ -398,12 +398,15 @@ export default function Header({
                   </div>
                 )}
 
+                <div className="nav__dup">
                 {NAV_LINKS.slice(0, 1).map((n) => (
                   <MobileLink key={n.href} href={n.href}>
                     <T>{n.label}</T>
                   </MobileLink>
                 ))}
-                <div className="nav__dup">
+                </div>
+                {/* La Pizarra salió de la barra de abajo (31-oct): aquí se ve
+                    siempre, también en el móvil. */}
                 <button
                   type="button"
                   className="navacc__btn"
@@ -421,6 +424,7 @@ export default function Header({
                     ))}
                   </div>
                 )}
+                <div className="nav__dup">
                 {NAV_LINKS.slice(1).map((n) => (
                   <MobileLink key={n.href} href={n.href}>
                     <T>{n.label}</T>
