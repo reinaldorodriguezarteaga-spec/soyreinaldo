@@ -21,6 +21,8 @@ import { getCompetitionStandings, type StandingRow } from "@/lib/sports/api-foot
 import { COMPETITIONS } from "@/lib/sports/competitions";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { T } from "@/components/EnApp";
+import { createClient } from "@/lib/supabase/server";
+import { SkeletonCard, SkeletonLista } from "@/components/Skeleton";
 
 /** La portada es la URL que más señales recibe (ápice, http, enlaces de
  * redes): sin canónica propia, Google las trataba como versiones sueltas. */
@@ -57,11 +59,30 @@ async function HomeStandings({ slug }: { slug: string }) {
 }
 
 export default async function Home() {
-  const [stats, inApp] = await Promise.all([getSocialStats(), isAppRequest()]);
+  const [stats, inApp, supabase] = await Promise.all([getSocialStats(), isAppRequest(), createClient()]);
+  // Con sesión, la portada va directa a lo suyo (31-oct, estilo FotMob): la
+  // presentación grande es para quien llega por primera vez.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const fecha = new Intl.DateTimeFormat("es-ES", {
+    timeZone: "Europe/Madrid",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+  const hoy = fecha.charAt(0).toUpperCase() + fecha.slice(1);
 
   return (
     <main className="page">
-      {/* HERO */}
+      {user ? (
+        <section className="section" style={{ paddingTop: 24, paddingBottom: 0 }}>
+          <div className="wrap ios__cab">
+            <h1 className="ios__titulo">Hoy</h1>
+            <p className="ios__sub">{hoy}</p>
+          </div>
+        </section>
+      ) : (
       <section className="hero">
         <div className="hero__bgphoto">
           <Image
@@ -131,16 +152,17 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* FEED PRINCIPAL — 3 columnas en escritorio (estilo FotMob, pedido
           18-ago: "a los lados se pierde mucho espacio"): LaLiga + Fichajes a
           la izquierda, marcador/calendario al centro, Premier + Noticias a
           la derecha. En móvil se apila: feed primero, rails después. */}
-      <section className="section" style={{ paddingTop: 44, paddingBottom: 10 }}>
+      <section className="section" style={{ paddingTop: user ? 20 : 44, paddingBottom: 10 }}>
         <div className="wrap">
           <div className="home3col">
             <aside className="home3col__side home3col__left">
-              <Suspense fallback={null}>
+              <Suspense fallback={<SkeletonLista filas={5} etiqueta="Cargando la clasificación…" />}>
                 <HomeStandings slug="laliga" />
               </Suspense>
               <Suspense fallback={null}>
@@ -152,7 +174,7 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <BienvenidaPasos />
               </Suspense>
-              <Suspense fallback={null}>
+              <Suspense fallback={user ? <SkeletonCard /> : null}>
                 <MiEquipoCard />
               </Suspense>
               <Suspense fallback={null}>
@@ -161,7 +183,7 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <QuinielaPendientes />
               </Suspense>
-              <Suspense fallback={<div className="panel" style={{ minHeight: 360, padding: 20 }} role="status">Cargando partidos…</div>}>
+              <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
                 <HomeScoreboard />
               </Suspense>
               {/* Últimos análisis publicados — debajo del calendario y FUERA
@@ -173,7 +195,7 @@ export default async function Home() {
             </div>
 
             <aside className="home3col__side home3col__right">
-              <Suspense fallback={null}>
+              <Suspense fallback={<SkeletonLista filas={5} etiqueta="Cargando la clasificación…" />}>
                 <HomeStandings slug="premier" />
               </Suspense>
               <Suspense fallback={null}>

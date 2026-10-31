@@ -49,24 +49,37 @@ export function PageSkeleton({
 }: {
   title?: string;
 }) {
+  // 31-oct: con la forma de las páginas nuevas (título grande + lista).
   return (
     <main className="page">
-      <section className="phero">
-        <div className="wrap">
-          <SkeletonBar className="h-3 w-20" />
-          <SkeletonBar className="mt-6 h-12 w-80" />
+      <section className="section" style={{ paddingTop: 28 }}>
+        <div className="wrap ios">
+          <span className="skel" style={{ width: 180, height: 40 }} aria-hidden />
+          <SkeletonLista filas={6} etiqueta={title} />
         </div>
       </section>
-      <section className="section">
-        <div className="wrap">
-          <div className="space-y-3">
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        </div>
-      </section>
-      <p className="sr-only">{title}</p>
     </main>
+  );
+}
+
+/**
+ * Lista agrupada que «late» mientras llegan los datos (31-oct, estilo iOS):
+ * misma forma que `.lista` (icono, dos líneas), para que al cargar no salte
+ * nada. Para partidos, tablas y listas de la portada.
+ */
+export function SkeletonLista({ filas = 4, etiqueta = "Cargando…" }: { filas?: number; etiqueta?: string }) {
+  return (
+    <div className="lista skel-lista" role="status">
+      {Array.from({ length: filas }, (_, i) => (
+        <div key={i} className="lista__fila" aria-hidden>
+          <span className="skel skel--icono" />
+          <span className="lista__txt" style={{ gap: 6 }}>
+            <span className="skel" style={{ width: `${55 + ((i * 17) % 30)}%`, height: 12 }} />
+            <span className="skel" style={{ width: `${30 + ((i * 11) % 25)}%`, height: 10 }} />
+          </span>
+        </div>
+      ))}
+      <span className="sr-only">{etiqueta}</span>
+    </div>
   );
 }
