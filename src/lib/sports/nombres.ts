@@ -90,7 +90,7 @@ export function equiposEnEspanol<T>(dato: T): T {
  * plantilla) y las tarjetas de resultados (con el del evento).
  * ---------------------------------------------------------------------- */
 
-const PARTICULAS = new Set(["de", "da", "do", "dos", "das", "del", "di", "van", "von", "der", "den", "la", "le", "ter", "ten"]);
+const PARTICULAS = new Set(["de", "da", "do", "dos", "das", "del", "di", "van", "von", "der", "den", "la", "le", "ter", "ten", "al"]);
 const SUFIJOS = new Set(["júnior", "junior", "jr", "jr.", "neto", "filho", "sobrinho"]);
 
 /** Jugadores que se conocen por un nombre que no sale de la regla general
@@ -122,9 +122,22 @@ const NOMBRE_VISIBLE: Record<string, string> = {
  * del filial con el dorsal de Joan García). Por id del API. */
 export const FUERA_DE_PLANTILLA = new Set<number>([543468]);
 
-/** El nombre con el que se enseña a un jugador en las plantillas. */
+/** El nombre con el que se enseña a un jugador en las plantillas: el que se
+ * le ha fijado a mano, su alias («Raphinha») o, si el API trae los dos
+ * apellidos, nombre y primer apellido («Giuliano Simeone Baldini» →
+ * «Giuliano Simeone», el dueño, 31-oct). Con partículas, tal cual. */
 export function nombreVisible(nombre: string): string {
-  return NOMBRE_VISIBLE[sinTildes(nombre.trim())] ?? nombre;
+  const clave = sinTildes(nombre.trim());
+  const fijado = NOMBRE_VISIBLE[clave] ?? ALIAS[clave];
+  if (fijado) return fijado;
+  const partes = nombre.trim().split(/\s+/);
+  if (
+    partes.length < 3 ||
+    partes.some((p) => PARTICULAS.has(p.toLowerCase()) || p.endsWith(".")) ||
+    SUFIJOS.has(partes[partes.length - 1].toLowerCase())
+  )
+    return nombre;
+  return `${partes[0]} ${partes[partes.length - 2]}`;
 }
 
 /** Nombre corto como en los marcadores de los móviles: primero el alias; si
