@@ -56,10 +56,10 @@ export default async function FavoritosPage() {
 
           {!user ? (
             <div className="lista lista__vacia">
-              <p>Entra para guardar tus equipos, competiciones y jugadores y tenerlos aquí a mano.</p>
-              <Link href="/login?redirect=/favoritos" className="btn btn--accent">
-                Entrar
+              <Link href="/login?redirect=/favoritos" className="btn btn--accent lista__cta">
+                Entrar a la Comunidad
               </Link>
+              <p>Entra para guardar tus equipos, competiciones y jugadores y tenerlos aquí a mano.</p>
             </div>
           ) : filas.length === 0 ? (
             <div className="lista lista__vacia">

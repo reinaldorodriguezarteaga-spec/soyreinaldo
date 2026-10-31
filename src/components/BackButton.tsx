@@ -1,5 +1,5 @@
 "use client";
-import { Trophy } from "lucide-react";
+import { ChevronLeft, Trophy } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -63,23 +63,10 @@ export default function BackButton() {
         <button
           type="button"
           onClick={goBack}
-          className="backbtn"
+          className="backbtn backbtn--solo"
           aria-label="Volver a la página anterior"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Atrás
+          <ChevronLeft aria-hidden />
         </button>
 
         {showQuiniela && (

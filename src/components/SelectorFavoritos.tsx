@@ -1,5 +1,5 @@
 "use client";
-import { Star } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -203,11 +203,12 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
             <>
               <button
                 type="button"
-                className="backbtn"
+                className="backbtn backbtn--solo"
                 onClick={() => setPaso(1)}
                 disabled={pending}
+                aria-label="Paso anterior"
               >
-                ← Atrás
+                <ChevronLeft aria-hidden />
               </button>
               <button
                 type="button"
@@ -225,11 +226,12 @@ export default function SelectorFavoritos({ ligas }: { ligas: LigaOpcion[] }) {
             <>
               <button
                 type="button"
-                className="backbtn"
+                className="backbtn backbtn--solo"
                 onClick={() => setPaso(paso === 3 ? 2 : 1)}
                 disabled={pending}
+                aria-label="Paso anterior"
               >
-                ← Atrás
+                <ChevronLeft aria-hidden />
               </button>
               <button
                 type="button"
