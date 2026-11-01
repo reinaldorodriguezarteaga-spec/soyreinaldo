@@ -3046,21 +3046,24 @@ select.field { appearance: none; }
   /* Al bajar, la barra encoge a solo iconos; al subir, vuelve (2-nov, «como
      Instagram»; la clase la pone BarraInferior en <html>). Las pastillas
      fijas bajan con ella porque cuelgan de --tabbar-alto. */
-  :root.tabbar-mini { --tabbar-cap: 46px; }
+  :root.tabbar-mini { --tabbar-cap: 48px; }
   body { padding-bottom: calc(62px + var(--tabbar-hueco) + 8px); }
   .tabbar {
     position: fixed; left: 12px; right: 12px; bottom: var(--tabbar-hueco); z-index: 70;
     display: flex; gap: 10px; align-items: stretch; height: var(--tabbar-cap);
     pointer-events: none;
-    transition: height 0.25s ease;
+    transition: height 0.25s ease, left 0.25s ease, right 0.25s ease;
   }
+  /* Encogida, la cápsula entera se estrecha hacia el centro (no solo pierde
+     los textos), como la de Instagram. */
+  .tabbar-mini .tabbar { left: 16%; right: 16%; gap: 8px; }
+  .tabbar-mini .tabbar svg { width: 20px; height: 20px; }
   .tabbar__buscar { transition: width 0.25s ease; }
   .tabbar span { max-height: 1.2em; overflow: hidden; transition: max-height 0.25s ease, opacity 0.2s; }
   .tabbar-mini .tabbar span { max-height: 0; opacity: 0; }
-  .tabbar-mini .tabbar__buscar svg { width: 22px; height: 22px; }
   .livepill, .ytpill, .ytplayer { transition: bottom 0.25s ease; }
   @media (prefers-reduced-motion: reduce) {
-    .tabbar, .tabbar__buscar, .tabbar span, .livepill, .ytpill, .ytplayer { transition: none; }
+    .tabbar, .tabbar__buscar, .tabbar span, .tabbar svg, .livepill, .ytpill, .ytplayer { transition: none; }
   }
   .tabbar__grupo, .tabbar__buscar {
     pointer-events: auto;
@@ -3080,7 +3083,7 @@ select.field { appearance: none; }
   .tabbar__grupo a.is-on { color: var(--accent); background: rgba(0, 0, 0, 0.35); }
   .tabbar a.is-on svg { stroke-width: 2.2; }
   .tabbar a:active svg { transform: scale(0.88); }
-  .tabbar svg { transition: transform 0.12s; }
+  .tabbar svg { transition: transform 0.12s, width 0.25s ease, height 0.25s ease; }
   .tabbar__buscar svg { width: 26px; height: 26px; }
   .tabbar__buscar.is-on { color: var(--accent); }
 }
