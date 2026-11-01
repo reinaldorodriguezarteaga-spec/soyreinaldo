@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEnApp } from "@/components/EnApp";
 
 /**
  * Barra de pestañas de abajo en el móvil y la app (31-oct, pedido del dueño,
@@ -38,6 +39,8 @@ const PESTANAS = [
   {
     href: "/quiniela-liga",
     label: "Quiniela",
+    // En la app nunca «quiniela» (termino.ts); «Liga de pronósticos» no cabe.
+    labelApp: "Pronósticos",
     activa: (p: string) => p.startsWith("/quiniela") || p.startsWith("/mi-jornada") || p.startsWith("/mi-temporada"),
     icono: (
       <>
@@ -67,20 +70,22 @@ const PESTANAS = [
 
 export default function BarraInferior() {
   const pathname = usePathname() ?? "/";
+  const enApp = useEnApp();
   const enlace = (t: (typeof PESTANAS)[number], clase?: string) => {
     const activa = t.activa(pathname);
+    const label = enApp && "labelApp" in t ? t.labelApp : t.label;
     return (
       <Link
         key={t.href}
         href={t.href}
         className={[clase, activa ? "is-on" : ""].filter(Boolean).join(" ")}
         aria-current={activa ? "page" : undefined}
-        aria-label={clase ? t.label : undefined}
+        aria-label={clase ? label : undefined}
       >
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
           {t.icono}
         </svg>
-        {!clase && <span>{t.label}</span>}
+        {!clase && <span>{label}</span>}
       </Link>
     );
   };
