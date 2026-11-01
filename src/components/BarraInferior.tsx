@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useEnApp } from "@/components/EnApp";
 
@@ -68,9 +69,46 @@ const PESTANAS = [
   },
 ];
 
+/**
+ * Encoge la barra al bajar y la recupera al subir (2-nov, «como Instagram»):
+ * pone o quita `tabbar-mini` en <html>; el resto es CSS. Ignora los saltos
+ * de menos de `UMBRAL` px para no parpadear, y arriba del todo va siempre
+ * grande.
+ */
+const UMBRAL = 8;
+function useEncogerAlBajar(pathname: string) {
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.classList.remove("tabbar-mini");
+    let ultima = window.scrollY;
+    let pendiente = false;
+    const mirar = () => {
+      pendiente = false;
+      const y = window.scrollY;
+      if (y < 40) raiz.classList.remove("tabbar-mini");
+      else if (y - ultima > UMBRAL) raiz.classList.add("tabbar-mini");
+      else if (ultima - y > UMBRAL) raiz.classList.remove("tabbar-mini");
+      else return;
+      ultima = y;
+    };
+    const alDesplazar = () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(mirar);
+      }
+    };
+    window.addEventListener("scroll", alDesplazar, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", alDesplazar);
+      raiz.classList.remove("tabbar-mini");
+    };
+  }, [pathname]);
+}
+
 export default function BarraInferior() {
   const pathname = usePathname() ?? "/";
   const enApp = useEnApp();
+  useEncogerAlBajar(pathname);
   const enlace = (t: (typeof PESTANAS)[number], clase?: string) => {
     const activa = t.activa(pathname);
     const label = enApp && "labelApp" in t ? t.labelApp : t.label;
