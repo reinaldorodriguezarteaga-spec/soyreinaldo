@@ -4,6 +4,7 @@ import { MessageCircle, Swords } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ScrollHintTabs from "@/components/ScrollHintTabs";
+import { T } from "@/components/EnApp";
 import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 
 // "Duelos" (18-oct, pedido del dueño): acceso directo a la vista de duelos
@@ -54,6 +55,15 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
 
   return (
     <div className="wrap" style={{ paddingTop: 18 }}>
+      {/* Con una sola quiniela la portada salta directo aquí (2-nov): este es
+          el camino de vuelta para ver las demás o unirse a otra. */}
+      <Link
+        href="/quiniela-liga?todas=1"
+        className="eyebrow"
+        style={{ display: "inline-block", color: "var(--accent)", marginBottom: 10 }}
+      >
+        <T>← Todas las quinielas</T>
+      </Link>
       <nav aria-label="Secciones de los pronósticos" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         <ScrollHintTabs maxWidth={720}>
           {TABS.map((t) => {

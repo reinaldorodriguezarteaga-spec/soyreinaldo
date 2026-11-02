@@ -17,7 +17,7 @@ import {
   AdjustmentForm,
   InviteLink,
 } from "./league-forms";
-import { deleteAdjustment, kickMember } from "./actions";
+import { deleteAdjustment, kickMember, setAnunciada } from "./actions";
 import { T } from "@/components/EnApp";
 
 type LeagueRow = {
@@ -38,6 +38,7 @@ type LeagueRow = {
   lq_points_defense: number;
   lq_points_attack: number;
   lq_specials_enabled: boolean;
+  anunciada: boolean;
 };
 type MemberRow = { user_id: string; joined_at: string; role: "member" | "admin" };
 type LbRow = { user_id: string; total_points: number };
@@ -93,7 +94,7 @@ export default async function LeaguePanelPage({
       `id, name, code, description, is_public, kind,
        lq_points_exact, lq_points_result, lq_points_champion, lq_points_pichichi,
        lq_points_relegated, lq_points_gk, lq_points_assist, lq_points_mvp,
-       lq_points_defense, lq_points_attack, lq_specials_enabled`,
+       lq_points_defense, lq_points_attack, lq_specials_enabled, anunciada`,
     );
   const { data: league } = await (isId
     ? query.eq("id", ref)
@@ -112,6 +113,15 @@ export default async function LeaguePanelPage({
   // Aún no eres de la liga: pasa por la invitación, no por aquí.
   if (!me) redirect(`/unirse/${encodeURIComponent(league.code)}`);
   const isLeagueAdmin = me.role === "admin";
+
+  // Anunciar la liga en el selector es cosa del admin del sitio, no del de
+  // la liga (lo vuelve a comprobar la BD).
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle<{ is_admin: boolean | null }>();
+  const esAdminSitio = perfil?.is_admin === true;
 
   const [{ data: memberRows }, { data: lb }] = await Promise.all([
     supabase
@@ -155,7 +165,7 @@ export default async function LeaguePanelPage({
       <section className="phero" style={{ paddingBottom: 16 }}>
         <div className="wrap">
           <Link
-            href="/quiniela-liga"
+            href="/quiniela-liga?todas=1"
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
@@ -312,12 +322,45 @@ export default async function LeaguePanelPage({
                     <>
                       Solo se entra con este enlace o tecleando el código{" "}
                       <strong style={{ fontFamily: "var(--font-mono-stack)" }}>{league.code}</strong>{" "}
-                      <T>en la página de quinielas. La liga no aparece listada en ningún sitio.</T>
+                      <T>
+                        {league.anunciada
+                          ? "en la página de quinielas, donde se anuncia con candado a quien no es miembro."
+                          : "en la página de quinielas. La liga no aparece listada en ningún sitio."}
+                      </T>
                     </>
                   )}
                 </p>
                 <InviteLink code={league.code} />
               </div>
+
+              {esAdminSitio && !league.is_public && (
+                <div className="panel" style={{ padding: 24 }}>
+                  <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>
+                    <T>En la página de quinielas</T>
+                  </h2>
+                  <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
+                    {league.anunciada ? (
+                      <T>
+                        Anunciada: quien no es miembro ve su tarjeta con candado y
+                        entra con el código. Los miembros (tú incluido) no la ven
+                        repetida.
+                      </T>
+                    ) : (
+                      <T>
+                        Oculta: solo la ven sus miembros. Anúnciala para que salga
+                        con candado a todo el mundo.
+                      </T>
+                    )}
+                  </p>
+                  <form action={setAnunciada}>
+                    <input type="hidden" name="league_id" value={league.id} />
+                    <input type="hidden" name="anunciada" value={league.anunciada ? "0" : "1"} />
+                    <button type="submit" className={league.anunciada ? "btn" : "btn btn--accent"}>
+                      {league.anunciada ? "Dejar de anunciar" : "Anunciar"}
+                    </button>
+                  </form>
+                </div>
+              )}
 
               <div className="panel" style={{ padding: 24 }}>
                 <h2 style={{ margin: "0 0 16px", fontSize: "1.2rem" }}>Datos de la liga</h2>

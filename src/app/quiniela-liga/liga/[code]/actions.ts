@@ -181,3 +181,18 @@ export async function updateLeagueRules(
   revalidatePath("/quiniela-liga/ranking");
   return { status: "success", message: "Normas actualizadas." };
 }
+
+/** Anunciar (o no) la liga en el selector de /quiniela-liga, con su tarjeta de
+ * candado para quien aún no es miembro. Solo el admin del sitio: lo comprueba
+ * `liga_set_anunciada` (migración 102). */
+export async function setAnunciada(formData: FormData) {
+  const leagueId = formData.get("league_id") as string | null;
+  const anunciada = formData.get("anunciada") === "1";
+  if (!leagueId) return;
+
+  const supabase = await createClient();
+  await supabase.rpc("liga_set_anunciada", { p_league_id: leagueId, p_anunciada: anunciada });
+
+  revalidatePath(`/quiniela-liga/liga/${leagueId}`);
+  revalidatePath("/quiniela-liga");
+}
