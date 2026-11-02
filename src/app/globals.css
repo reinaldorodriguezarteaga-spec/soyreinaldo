@@ -2774,6 +2774,10 @@ select.field { appearance: none; }
 /* Vídeos como fuente de fotogramas (22-oct). */
 .af-video { margin-bottom: 20px; }
 .af-video video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: 10px; margin-bottom: 12px; }
+.af-grabando { position: fixed; inset: auto 16px calc(90px + var(--tabbar-alto, 0px)); z-index: 95; max-width: 420px; margin: 0 auto; background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); display: grid; gap: 10px; }
+.af-grabando p { margin: 0; display: grid; gap: 2px; }
+.af-grabando span { color: var(--text-dim); font-size: 0.85rem; }
+.af-grabando progress { width: 100%; accent-color: var(--accent); }
 /* Cabecera (22-oct): con Pizarra y Juegos el menú ya no cabía entre 960 y
    ~1400 px y empujaba la lupa fuera. Por debajo de 1280 px, menú ☰ como en el
    móvil; por encima, enlaces más juntos y sin partirse en dos líneas. */

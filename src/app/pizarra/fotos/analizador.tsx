@@ -1,10 +1,11 @@
 "use client";
 import Icono from "@/components/Icono";
-import { Camera, Image as IconImage } from "lucide-react";
+import { Camera, Clapperboard, Image as IconImage } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 import { PALETA, type Punto } from "@/lib/pizarra/estado";
 import { guardarEnGaleria } from "@/lib/app-galeria";
+import { grabarVideoMarcado, puedeGrabarVideo, MAX_SEGUNDOS } from "@/lib/pizarra/video-marcado";
 
 /**
  * «Analiza tu jugada» (22-oct, idea del dueño): subes una o varias fotos de
@@ -12,7 +13,9 @@ import { guardarEnGaleria } from "@/lib/app-galeria";
  * flechas, zonas, rayas, círculos y texto). Cada foto guarda sus dibujos y
  * se pasa de una a otra con la tira de miniaturas. Todo ocurre en el
  * navegador: las fotos no se suben a ningún sitio.
- * Los vídeos sirven como fuente de fotogramas para marcar (22-oct).
+ * Los vídeos sirven como fuente de fotogramas para marcar (22-oct), y desde
+ * el 2-nov se exporta el clip entero congelándose en cada fotograma marcado
+ * (`lib/pizarra/video-marcado.ts`).
  *
  * Coordenadas: de 0 a 1 sobre la foto (x a lo ancho, y a lo alto); el SVG
  * de encima usa los píxeles de la foto para que los trazos no se deformen.
@@ -25,7 +28,16 @@ type Dibujo =
   | { tipo: "zona" | "rayas"; a: Punto; b: Punto; color: string }
   | { tipo: "circulo"; c: Punto; borde: Punto; color: string }
   | { tipo: "texto"; p: Punto; t: string; color: string };
-type Foto = { id: string; url: string; nombre: string; w: number; h: number; dibujos: Dibujo[] };
+type Foto = {
+  id: string;
+  url: string;
+  nombre: string;
+  w: number;
+  h: number;
+  dibujos: Dibujo[];
+  /** Si salió de un vídeo: de cuál (su url) y en qué segundo. */
+  origen?: { video: string; t: number };
+};
 
 const HERRAMIENTAS: [Herramienta, string, string][] = [
   ["pincel", "✎", "Pincel"],
@@ -47,6 +59,7 @@ const AYUDA: Record<Herramienta, string> = {
 };
 const MAX_FOTOS = 20;
 const MAX_LADO = 2000;
+const PAUSAS = [2, 3, 5];
 
 const dist = (a: Punto, b: Punto) => Math.hypot(a.x - b.x, a.y - b.y);
 const capturar = (e: React.PointerEvent) => {
@@ -67,6 +80,9 @@ export default function Analizador() {
   const [railAbierto, setRailAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [exportando, setExportando] = useState(false);
+  const [pausa, setPausa] = useState(3);
+  const [grabando, setGrabando] = useState<number | null>(null);
+  const cancelarGrabacion = useRef<AbortController | null>(null);
   const caja = useRef<HTMLDivElement>(null);
   const entrada = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -148,7 +164,10 @@ export default function Analizador() {
       urls.current.push(url);
       const indice = cantidadFotos.current;
       cantidadFotos.current++;
-      setFotos((fs) => [...fs, { id: `${Date.now()}`, url, nombre: `${video.nombre} ${t.toFixed(1)}s`, w, h, dibujos: [] }]);
+      setFotos((fs) => [
+        ...fs,
+        { id: `${Date.now()}`, url, nombre: `${video.nombre} ${t.toFixed(1)}s`, w, h, dibujos: [], origen: { video: video.url, t } },
+      ]);
       setActual(indice);
       avisar("Fotograma añadido ✓");
     } catch {
@@ -231,31 +250,65 @@ export default function Analizador() {
     return new Promise((ok) => lienzo.toBlob(ok, "image/jpeg", 0.92));
   }
 
+  /** A la galería (app 1.1), si no a la hoja de compartir, si no descarga. */
+  async function entregar(archivos: File[], enGaleriaTexto: (n: number) => string) {
+    let enGaleria = 0;
+    for (const f of archivos) if (await guardarEnGaleria(f, f.name)) enGaleria++;
+    if (enGaleria) return avisar(enGaleriaTexto(enGaleria));
+    if (navigator.canShare?.({ files: archivos })) {
+      await navigator.share({ files: archivos, text: "Analizada en soyreinaldo.com" }).catch(() => undefined);
+      return;
+    }
+    for (const f of archivos) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+    }
+  }
+
   async function exportar(todas: boolean) {
     const lista = todas ? fotos : foto ? [foto] : [];
     if (!lista.length) return;
     setExportando(true);
     try {
       const blobs = (await Promise.all(lista.map(imagenDe))).filter((b): b is Blob => !!b);
-      const nombre = (i: number) => `jugada-soyreinaldo-${i + 1}.jpg`;
-      // App 1.1: a la galería.
-      let enGaleria = 0;
-      for (const [i, b] of blobs.entries()) if (await guardarEnGaleria(b, nombre(i))) enGaleria++;
-      if (enGaleria) return avisar(enGaleria === 1 ? "Guardada en tu galería ✓" : `${enGaleria} fotos guardadas en tu galería ✓`);
-      const archivos = blobs.map((b, i) => new File([b], nombre(i), { type: "image/jpeg" }));
-      if (navigator.canShare?.({ files: archivos })) {
-        await navigator.share({ files: archivos, text: "Analizada en soyreinaldo.com" }).catch(() => undefined);
-        return;
-      }
-      for (const [i, b] of blobs.entries()) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(b);
-        a.download = nombre(i);
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
-      }
+      const archivos = blobs.map((b, i) => new File([b], `jugada-soyreinaldo-${i + 1}.jpg`, { type: "image/jpeg" }));
+      await entregar(archivos, (n) => (n === 1 ? "Guardada en tu galería ✓" : `${n} fotos guardadas en tu galería ✓`));
     } finally {
       setExportando(false);
+    }
+  }
+
+  // Fotogramas de ESTE vídeo que tienen dibujos: donde se congelará.
+  const marcados = video ? fotos.filter((f) => f.origen?.video === video.url && f.dibujos.length > 0) : [];
+
+  async function exportarVideo() {
+    if (!video || !marcados.length || grabando !== null) return;
+    if (!puedeGrabarVideo()) return avisar("Este navegador no puede grabar vídeo");
+    videoRef.current?.pause();
+    const control = new AbortController();
+    cancelarGrabacion.current = control;
+    setGrabando(0);
+    try {
+      const { blob, ext } = await grabarVideoMarcado({
+        url: video.url,
+        pausa,
+        senal: control.signal,
+        alProgresar: (p) => setGrabando(p),
+        momentos: marcados.map((f) => ({
+          t: f.origen!.t,
+          pintar: (g, W, H) => pintarEnLienzo(g, W, H, f.dibujos),
+        })),
+      });
+      const archivo = new File([blob], `jugada-soyreinaldo.${ext}`, { type: blob.type });
+      await entregar([archivo], () => "Vídeo guardado en tu galería ✓");
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === "AbortError")) avisar("No se pudo grabar el vídeo");
+    } finally {
+      cancelarGrabacion.current = null;
+      setGrabando(null);
     }
   }
 
@@ -316,6 +369,32 @@ export default function Analizador() {
             </button>
           </div>
           <p className="pz-ayuda">Pausa el vídeo en el momento clave y captura el fotograma: se añade como foto para marcarlo.</p>
+          <div className="af-acciones" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className="btn btn--accent"
+              onClick={() => void exportarVideo()}
+              disabled={!marcados.length || grabando !== null}
+            >
+              <Clapperboard className="ico-txt" aria-hidden /> Vídeo con las marcas
+              {marcados.length > 0 && ` (${marcados.length})`}
+            </button>
+            <label className="pz-tool" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Pausa
+              <select value={pausa} onChange={(e) => setPausa(Number(e.target.value))} disabled={grabando !== null}>
+                {PAUSAS.map((s) => (
+                  <option key={s} value={s}>
+                    {s} s
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="pz-ayuda">
+            {marcados.length
+              ? `El clip se congela ${pausa} s en cada fotograma marcado y salen tus dibujos. Se graba en tiempo real (hasta ${MAX_SEGUNDOS / 60} min): deja la pantalla encendida.`
+              : "Captura un fotograma y dibuja encima: el vídeo exportado se congelará ahí con tus marcas."}
+          </p>
         </div>
       )}
 
@@ -434,6 +513,19 @@ export default function Analizador() {
             </div>
           )}
         </>
+      )}
+
+      {grabando !== null && (
+        <div className="af-grabando" role="status">
+          <p>
+            <b>Grabando el vídeo… {Math.round(grabando * 100)} %</b>
+            <span>Deja esta pantalla abierta hasta que termine.</span>
+          </p>
+          <progress value={grabando} max={1} />
+          <button type="button" className="btn" onClick={() => cancelarGrabacion.current?.abort()}>
+            Cancelar
+          </button>
+        </div>
       )}
 
       {aviso && (
