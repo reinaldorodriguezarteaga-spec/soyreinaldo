@@ -1,5 +1,5 @@
 "use client";
-import { MessageCircle, Swords } from "lucide-react";
+import { ArrowLeft, MessageCircle, Swords } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -59,10 +59,10 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
           el camino de vuelta para ver las demás o unirse a otra. */}
       <Link
         href="/quiniela-liga?todas=1"
-        className="eyebrow"
-        style={{ display: "inline-block", color: "var(--accent)", marginBottom: 10 }}
+        className="chip-pill chip-pill--accent"
+        style={{ marginBottom: 12, fontWeight: 600 }}
       >
-        <T>← Todas las quinielas</T>
+        <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las quinielas</T>
       </Link>
       <nav aria-label="Secciones de los pronósticos" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         <ScrollHintTabs maxWidth={720}>
