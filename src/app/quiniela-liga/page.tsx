@@ -26,8 +26,9 @@ const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 /** Quinielas privadas que se ANUNCIAN en el selector aunque no seas miembro
  * (con candado: el botón lleva al formulario del código, nunca entra
  * directo — el código sigue siendo la llave). Pedido del dueño: que la de
- * Pacha se vea debajo de la general. */
-const FEATURED_PRIVATE_CODES = ["PACHA"];
+ * Pacha se vea debajo de la general. Vacía desde el 2-nov: Pacha no la usa
+ * y el dueño prefirió quitarla del escaparate (sus miembros la siguen viendo). */
+const FEATURED_PRIVATE_CODES: string[] = [];
 
 type LbRow = { user_id: string; total_points: number };
 
