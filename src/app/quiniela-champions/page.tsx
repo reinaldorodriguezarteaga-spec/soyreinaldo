@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { T } from "@/components/EnApp";
 import { createClient } from "@/lib/supabase/server";
 import LqMatchCard, { type LqMatchCardData } from "../quiniela-liga/match-card";
@@ -74,7 +75,15 @@ export default async function QuinielaChampionsPage({
     <main className="page">
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 24 }}>
         <div className="wrap">
-          <p className="eyebrow">Quiniela · Champions League 2026-27</p>
+          {/* Misma píldora de vuelta que en la quiniela de LaLiga (tabs.tsx). */}
+          <Link
+            href="/quiniela-liga?todas=1"
+            className="chip-pill chip-pill--accent"
+            style={{ marginBottom: 12, fontWeight: 600 }}
+          >
+            <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las quinielas</T>
+          </Link>
+          <p className="eyebrow"><T>Quiniela · Champions League 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)" }}>
             {enRanking ? "Clasificación" : etiqueta}
           </h1>
@@ -84,9 +93,6 @@ export default async function QuinielaChampionsPage({
             </Link>
             <Link href="/quiniela-champions?vista=clasificacion" className={`chip-pill${enRanking ? " on" : ""}`}>
               Clasificación
-            </Link>
-            <Link href="/quiniela-liga?todas=1" className="chip-pill">
-              <T>Todas las quinielas</T>
             </Link>
           </nav>
         </div>
