@@ -1745,7 +1745,7 @@ export function JugadoresStatsView({
       <div>
         <div className="shead">
           <h2>Tabla de goleadores</h2>
-          {adelantado && <span className="sh-note">con los goles del último partido</span>}
+          {adelantado && <span className="sh-note">al día con el último partido</span>}
         </div>
         {scorers.length > 0 ? (
           <PlayerTable competition={competition} players={scorers} metric="goals" onPick={setOpenId} />

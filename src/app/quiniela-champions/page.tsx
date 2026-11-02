@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { T } from "@/components/EnApp";
 import { createClient } from "@/lib/supabase/server";
 import LqMatchCard, { type LqMatchCardData } from "../quiniela-liga/match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
@@ -84,8 +85,8 @@ export default async function QuinielaChampionsPage({
             <Link href="/quiniela-champions?vista=clasificacion" className={`chip-pill${enRanking ? " on" : ""}`}>
               Clasificación
             </Link>
-            <Link href="/quiniela-liga" className="chip-pill">
-              Todas las quinielas
+            <Link href="/quiniela-liga?todas=1" className="chip-pill">
+              <T>Todas las quinielas</T>
             </Link>
           </nav>
         </div>

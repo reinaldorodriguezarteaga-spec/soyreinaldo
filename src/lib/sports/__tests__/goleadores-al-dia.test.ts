@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Fixture, FixtureGoal, PlayerStatLeader } from "../api-football";
+import type { Fixture, FixtureCard, FixtureGoal, PlayerStatLeader } from "../api-football";
 import { goleadoresAlDia, partidosPendientes } from "../goleadores-al-dia";
 
 const BARCA = 529;
@@ -74,6 +74,31 @@ describe("goleadores al día", () => {
 
   it("sin goles nuevos de los del ranking, todo igual", () => {
     const r = goleadoresAlDia(scorers, [], [{ fx: anoche, goals: [gol(99)] }]);
-    expect(r).toEqual({ scorers, assists: [], adelantado: false });
+    expect(r).toEqual({ scorers, assists: [], cards: [], adelantado: false });
+  });
+
+  it("suma las tarjetas del partido pendiente y reordena por amarillas", () => {
+    const tarjetero = (id: number, nombre: string, amarillas: number): PlayerStatLeader => {
+      const j = jugador(id, nombre, 0, 10);
+      j.statistics[0].cards = { yellow: amarillas, yellowred: 0, red: 0 };
+      return j;
+    };
+    const tarjeta = (playerId: number, detail: string): FixtureCard => ({
+      minute: 50,
+      teamId: BARCA,
+      player: "x",
+      detail,
+      expulsion: /red|second/i.test(detail),
+      playerId,
+    });
+    const cards = [tarjetero(3, "Gavi", 5), tarjetero(4, "Araujo", 4)];
+    const r = goleadoresAlDia([], [], [
+      { fx: anoche, goals: [], cards: [tarjeta(4, "Yellow Card"), tarjeta(4, "Second Yellow card"), tarjeta(3, "Red Card")] },
+    ], cards);
+    expect(r.adelantado).toBe(true);
+    expect(r.cards.map((p) => [p.player.name, p.statistics[0].cards, p.statistics[0].games.appearences])).toEqual([
+      ["Gavi", { yellow: 5, yellowred: 0, red: 1 }, 11],
+      ["Araujo", { yellow: 5, yellowred: 1, red: 0 }, 11],
+    ]);
   });
 });

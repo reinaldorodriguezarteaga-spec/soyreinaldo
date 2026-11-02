@@ -2717,7 +2717,7 @@ export async function getCompetitionPlayerStats(
   n = 10,
   /** Partidos de la competición (terminados y en vivo, con o sin eventos ya
    * adjuntos) para sumar lo que el ranking del API aún no cuenta. */
-  partidos?: Promise<Array<Fixture & { ev?: { goals: FixtureGoal[] } | null }>>,
+  partidos?: Promise<Array<Fixture & { ev?: { goals: FixtureGoal[]; cards?: FixtureCard[] } | null }>>,
 ): Promise<{
   scorers: PlayerStatLeader[];
   assists: PlayerStatLeader[];
@@ -2731,15 +2731,16 @@ export async function getCompetitionPlayerStats(
     getCompetitionTopYellowCards(competition, n).catch(() => [] as PlayerStatLeader[]),
   ]);
   const alDia = partidos
-    ? await alDiaConEventos(scorersApi, assistsApi, partidos).catch(() => null)
+    ? await alDiaConEventos(scorersApi, assistsApi, cardsAll, partidos).catch(() => null)
     : null;
   const scorersAll = alDia?.scorers ?? scorersApi;
   const assistsAll = alDia?.assists ?? assistsApi;
+  const cardsAlDia = alDia?.cards ?? cardsAll;
   return {
     scorers: scorersAll.slice(0, n),
     assists: assistsAll.slice(0, n),
     ratings: ratingLeaders(scorersApi, assistsApi, n),
-    cards: cardsAll.slice(0, n),
+    cards: cardsAlDia.slice(0, n),
     adelantado: alDia?.adelantado ?? false,
   };
 }
@@ -2747,24 +2748,29 @@ export async function getCompetitionPlayerStats(
 async function alDiaConEventos(
   scorers: PlayerStatLeader[],
   assists: PlayerStatLeader[],
-  partidosP: Promise<Array<Fixture & { ev?: { goals: FixtureGoal[] } | null }>>,
+  tarjetas: PlayerStatLeader[],
+  partidosP: Promise<Array<Fixture & { ev?: { goals: FixtureGoal[]; cards?: FixtureCard[] } | null }>>,
 ) {
   const partidos = await partidosP;
-  const pendientes = partidosPendientes([scorers, assists], partidos);
+  const pendientes = partidosPendientes([scorers, assists, tarjetas], partidos);
   if (pendientes.length === 0) return null;
   // Los del directo ya traen sus eventos; el resto, en lote. Terminados, 6 h
   // de caché: sus eventos ya no cambian y no hay que gastar cuota.
-  const conEv = new Map<number, FixtureGoal[]>();
-  for (const f of partidos) if (f.ev) conEv.set(f.fixture.id, f.ev.goals);
+  const conEv = new Map<number, { goals: FixtureGoal[]; cards?: FixtureCard[] }>();
+  // Solo valen los que traen tarjetas: los de la portada (`attachEvents`) se
+  // quedan con las rojas y aquí hacen falta también las amarillas.
+  for (const f of partidos) if (f.ev?.cards) conEv.set(f.fixture.id, f.ev);
   const faltan = pendientes.filter((f) => !conEv.has(f.fixture.id)).map((f) => f.fixture.id);
   const lote = faltan.length ? await getFixturesEvents(faltan, 6 * 3600) : new Map();
   return goleadoresAlDia(
     scorers,
     assists,
     pendientes.map((fx) => {
-      const crudos = conEv.get(fx.fixture.id) ?? lote.get(fx.fixture.id)?.goals ?? null;
+      const ev = conEv.get(fx.fixture.id) ?? lote.get(fx.fixture.id);
+      const crudos = ev?.goals ?? null;
       return {
         fx,
+        cards: ev?.cards ?? null,
         goals: crudos && reconcileGoals(crudos, {
           homeId: fx.teams.home.id,
           awayId: fx.teams.away.id,
@@ -2773,6 +2779,7 @@ async function alDiaConEventos(
         }),
       };
     }),
+    tarjetas,
   );
 }
 

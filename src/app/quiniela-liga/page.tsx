@@ -1,6 +1,7 @@
 import { Trophy, Lock } from "lucide-react";
 import Icono from "@/components/Icono";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClubLeagues, type ClubLeague } from "@/lib/quiniela-liga/leagues";
 import JoinCodeForm from "./join-code-form";
@@ -23,13 +24,6 @@ export const metadata = {
  * /unirse/LALIGA2627 daba "Liga no encontrada"). */
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 
-/** Quinielas privadas que se ANUNCIAN en el selector aunque no seas miembro
- * (con candado: el botón lleva al formulario del código, nunca entra
- * directo — el código sigue siendo la llave). Pedido del dueño: que la de
- * Pacha se vea debajo de la general. Vacía desde el 2-nov: Pacha no la usa
- * y el dueño prefirió quitarla del escaparate (sus miembros la siguen viendo). */
-const FEATURED_PRIVATE_CODES: string[] = [];
-
 type LbRow = { user_id: string; total_points: number };
 
 type PrivatePreview = {
@@ -44,7 +38,12 @@ type PrivatePreview = {
  * general, pero cada comunidad con liga privada (la de Pacha, la primera)
  * entra a la suya desde aquí.
  */
-export default async function QuinielaLigaIndex() {
+export default async function QuinielaLigaIndex({
+  searchParams,
+}: {
+  searchParams: Promise<{ todas?: string }>;
+}) {
+  const { todas } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -60,22 +59,14 @@ export default async function QuinielaLigaIndex() {
   ]);
   const inPublic = leagues.some((l) => l.isPublic);
 
-  // Quinielas privadas anunciadas — solo las que el usuario aún NO tiene
-  // (si ya es miembro, su tarjeta normal de arriba basta). La vista previa
-  // sale de get_league_public_preview (RPC pública pensada justo para esto:
-  // nombre/descr./miembros, nada sensible).
+  // Quinielas privadas anunciadas (con candado: el botón lleva al formulario
+  // del código, nunca entra directo — el código sigue siendo la llave). Se
+  // anuncian desde la gestión de cada liga (columna `anunciada`, migración
+  // 102); antes era una lista en este archivo. Solo las que el usuario aún
+  // NO tiene: si ya es miembro, su tarjeta normal de arriba basta.
   const memberIds = new Set(leagues.map((l) => l.id));
-  const featuredPrivate = (
-    await Promise.all(
-      FEATURED_PRIVATE_CODES.map(async (code) => {
-        const { data } = await supabase.rpc("get_league_public_preview", {
-          p_code: code,
-        });
-        const row = (data as PrivatePreview[] | null)?.[0];
-        return row && !memberIds.has(row.id) ? row : null;
-      }),
-    )
-  ).filter((p): p is PrivatePreview => p !== null);
+  const { data: anunciadas } = await supabase.rpc("ligas_anunciadas");
+  const featuredPrivate = ((anunciadas ?? []) as PrivatePreview[]).filter((p) => !memberIds.has(p.id));
 
   // La quiniela de la Champions va aparte (27-oct, pedido del dueño: dentro
   // de la de los Conos «se pierde»): su propia tarjeta, con tu puesto.
@@ -87,6 +78,14 @@ export default async function QuinielaLigaIndex() {
   });
   const filasChampions = (rankingChampions ?? []) as { user_id: string; puntos: number }[];
   const idxChampions = user ? filasChampions.findIndex((r) => r.user_id === user.id) : -1;
+
+  // Con una sola quiniela (y sin jugar la Champions) no hay nada que elegir:
+  // directo a pronosticar (2-nov, pedido del dueño). Para volver a ver todas,
+  // las pestañas de dentro llevan «Todas las quinielas» → `?todas=1`.
+  if (leagues.length === 1 && idxChampions < 0 && todas !== "1") {
+    const [l] = leagues;
+    redirect(l.isPublic ? "/quiniela-liga/partidos" : `/quiniela-liga/partidos?liga=${encodeURIComponent(l.id)}`);
+  }
 
   // Posición y puntos de cada liga (son pocas; una consulta por liga).
   const stats = new Map<string, { pos: number | null; points: number; members: number }>();
