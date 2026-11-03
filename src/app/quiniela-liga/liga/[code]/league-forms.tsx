@@ -16,6 +16,7 @@ import {
   updateLeagueMeta,
   updateLeagueRules,
   addAdjustment,
+  salirDeLiga,
   type LeagueFormState,
 } from "./actions";
 
@@ -260,5 +261,26 @@ export function InviteLink({ code }: { code: string }) {
         Copiar enlace
       </button>
     </div>
+  );
+}
+
+/** «Salir de esta liga», con confirmación: no tiene vuelta atrás sin
+ * volver a pasar por la invitación. Dice «liga» y no el nombre: en la app no
+ * puede salir la palabra «quiniela». */
+export function SalirLiga({ leagueId }: { leagueId: string }) {
+  return (
+    <form
+      action={salirDeLiga}
+      onSubmit={(e) => {
+        if (!window.confirm("¿Salir de esta liga? Dejarás de aparecer en su clasificación. Tus pronósticos siguen contando en las demás.")) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <input type="hidden" name="league_id" value={leagueId} />
+      <button type="submit" className="btn btn--ghost" style={{ color: "var(--mal)" }}>
+        Salir de esta liga
+      </button>
+    </form>
   );
 }
