@@ -85,6 +85,36 @@ export async function kickMember(formData: FormData) {
   revalidatePath("/quiniela-liga/ranking");
 }
 
+/**
+ * Salirse uno mismo de una liga (3-nov, pedido del dueño: no había forma).
+ * La RLS deja borrar tu propia fila; el trigger `guard_last_league_admin`
+ * impide que la liga se quede sin admin. La general (los Conos) no se toca
+ * desde aquí: la página ni enseña el botón.
+ */
+export async function salirDeLiga(formData: FormData) {
+  const leagueId = formData.get("league_id") as string | null;
+  if (!leagueId) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?redirect=/quiniela-liga");
+
+  const { error } = await supabase
+    .from("league_members")
+    .delete()
+    .eq("league_id", leagueId)
+    .eq("user_id", user.id);
+  if (error) {
+    redirect(`/quiniela-liga/liga/${encodeURIComponent(leagueId)}?error=${encodeURIComponent(readableError(error.message))}`);
+  }
+
+  revalidatePath("/quiniela-liga");
+  revalidatePath("/quiniela-liga/ranking");
+  redirect("/quiniela-liga?todas=1");
+}
+
 export async function addAdjustment(
   _prev: LeagueFormState,
   formData: FormData,

@@ -16,6 +16,7 @@ import {
   RulesForm,
   AdjustmentForm,
   InviteLink,
+  SalirLiga,
 } from "./league-forms";
 import { deleteAdjustment, kickMember, setAnunciada } from "./actions";
 import { T } from "@/components/EnApp";
@@ -70,10 +71,10 @@ export default async function LeaguePanelPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ guardado?: string }>;
+  searchParams: Promise<{ guardado?: string; error?: string }>;
 }) {
   const { code: rawRef } = await params;
-  const { guardado } = await searchParams;
+  const { guardado, error } = await searchParams;
   // La ruta acepta el id de la liga (lo que enlaza la app: el código es la
   // llave de entrada y no debe pasearse por la barra de direcciones) o el
   // propio código, para que los enlaces repartidos a mano sigan valiendo.
@@ -134,6 +135,9 @@ export default async function LeaguePanelPage({
   ]);
 
   const members = memberRows ?? [];
+  // El único admin no puede irse (lo impide la BD): ni se le ofrece.
+  const puedeSalir =
+    !league.is_public && !(isLeagueAdmin && members.filter((m) => m.role === "admin").length <= 1);
   const ids = members.map((m) => m.user_id);
   const { data: profs } = ids.length
     ? await supabase
@@ -195,6 +199,11 @@ export default async function LeaguePanelPage({
           {guardado === "1" && (
             <p role="status" style={{ marginTop: 12, color: "var(--accent)" }}>
               Cambios guardados.
+            </p>
+          )}
+          {error && (
+            <p role="alert" style={{ marginTop: 12, color: "var(--mal)" }}>
+              {error}
             </p>
           )}
         </div>
@@ -418,6 +427,12 @@ export default async function LeaguePanelPage({
                 )}
               </div>
             </>
+          )}
+
+          {puedeSalir && (
+            <div style={{ paddingTop: 8 }}>
+              <SalirLiga leagueId={league.id} />
+            </div>
           )}
         </div>
       </section>
