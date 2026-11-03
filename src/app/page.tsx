@@ -206,22 +206,32 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* MESSI VS RONALDO — entre el feed (con las tablas) y la quiniela,
-          del mismo tamaño que el promo de la quiniela (pedido 13-oct). */}
-      <section className="section" style={{ paddingTop: 24, paddingBottom: 0 }}>
-        <div className="wrap">
+      {/* MESSI VS RONALDO a la izquierda; quiniela y café apilados a la
+          derecha, a la misma altura (3-nov). En el móvil, una debajo de otra. */}
+      <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
+        <div className="wrap home-duo">
           <Suspense fallback={null}>
             <GoatsCard enlace />
           </Suspense>
-        </div>
-      </section>
-
-      {/* QUINIELA — promo del juego gratuito (la joya nueva). */}
-      <section className="section" style={{ paddingTop: 24, paddingBottom: 8 }}>
-        <div className="wrap">
-          <Suspense fallback={null}>
-            <HomePromoQuiniela />
-          </Suspense>
+          <div className="home-duo__col">
+            <Suspense fallback={null}>
+              <HomePromoQuiniela />
+            </Suspense>
+            {/* En la app no se dona (las tiendas no lo dejan): fuera la tarjeta. */}
+            {!inApp && (
+              <div className="panel home-cafe" id="cafe">
+                <p className="eyebrow">Apoya el proyecto</p>
+                <h2 className="feat__title" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}>
+                  Invítame a un café.
+                </h2>
+                <p className="home-cafe__p">
+                  Tu donación ayuda a mantener viva la web, las quinielas y el
+                  contenido. Sin obligaciones — lo que tú quieras.
+                </p>
+                <DonationBlock />
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -341,26 +351,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* DONACIÓN */}
-      <section className="section" id="cafe">
-        <div className="wrap">
-          <div className="dona__grid">
-            <div>
-              <p className="eyebrow">Apoya el proyecto</p>
-              <h2 className="dona__title">
-                Invítame a<br />un café<span className="dot" style={{ color: "var(--accent)" }}>.</span>
-              </h2>
-              <p className="dona__p">
-                <T>
-                  Tu donación ayuda a mantener viva la web, las quinielas y el
-                  contenido. Sin obligaciones — lo que tú quieras.
-                </T>
-              </p>
-            </div>
-            {!inApp && <DonationBlock />}
-          </div>
-        </div>
-      </section>
     </main>
   );
 }

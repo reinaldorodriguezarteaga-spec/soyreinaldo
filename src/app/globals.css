@@ -889,6 +889,17 @@ img {
 .promopanel:hover { transform: translateY(-2px); }
 .promopanel:active { transform: translateY(0); }
 
+/* Portada: Messi vs Cristiano | quiniela + café (3-nov). */
+.home-duo { display: grid; gap: 20px; }
+.home-duo__col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.home-cafe { padding: clamp(24px, 4vw, 36px); flex: 1; }
+.home-cafe__p { color: var(--text-dim); line-height: 1.5; margin-top: 10px; max-width: 560px; }
+.home-cafe .dona__card { background: none; border: 0; padding: 0; box-shadow: none; }
+@media (min-width: 900px) {
+  .home-duo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+  .home-duo > .panel { height: 100%; }
+}
+
 /* ===== Feed de 3 columnas de la portada (estilo FotMob, escritorio) =====
    LaLiga+Fichajes | marcador/calendario | Premier+Noticias. En pantallas
    estrechas se apila con el feed PRIMERO (order) — el móvil no cambia. */
