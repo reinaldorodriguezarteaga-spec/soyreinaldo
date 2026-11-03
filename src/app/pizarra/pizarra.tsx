@@ -5,6 +5,7 @@ import {
   MoveUpRight,
   Pencil,
   RectangleHorizontal,
+  RectangleVertical,
   Blend,
   Pentagon,
   Type,
@@ -77,7 +78,15 @@ type Modo = "mover" | TipoFlecha | "pincel" | "zona" | "rayas" | "enlace" | "tex
 const CLAVE_TAM = "pizarra:tam-fichas";
 const TAM_MIN = 0.6;
 const TAM_MAX = 1.4;
+const CLAVE_FORMATO = "pizarra:formato";
 const sinSuscripcion = () => () => {};
+function leerApaisado() {
+  try {
+    return localStorage.getItem(CLAVE_FORMATO) === "horizontal";
+  } catch {
+    return false;
+  }
+}
 function leerTam() {
   try {
     const t = Number(localStorage.getItem(CLAVE_TAM));
@@ -244,6 +253,11 @@ export default function Pizarra({
   const tamGuardado = useSyncExternalStore(sinSuscripcion, leerTam, () => 1);
   const [tamElegido, setTamFichas] = useState<number | null>(null);
   const tamFichas = tamElegido ?? tamGuardado;
+  /** Imagen y vídeo en horizontal (3-nov: para ponerlos de fondo cuando el
+   *  dueño sale hablando a cámara). Por defecto, vertical como siempre. */
+  const apaisadoGuardado = useSyncExternalStore(sinSuscripcion, leerApaisado, () => false);
+  const [apaisadoElegido, setApaisado] = useState<boolean | null>(null);
+  const apaisado = apaisadoElegido ?? apaisadoGuardado;
 
   // Campo horizontal en escritorio, vertical en el móvil. Arranca vertical
   // (= SSR) y se ajusta al montar.
@@ -262,6 +276,15 @@ export default function Pizarra({
       localStorage.setItem(CLAVE_TAM, String(t));
     } catch {
       // Da igual: dura hasta recargar.
+    }
+  };
+
+  const cambiarFormato = (h: boolean) => {
+    setApaisado(h);
+    try {
+      localStorage.setItem(CLAVE_FORMATO, h ? "horizontal" : "vertical");
+    } catch {
+      // Dura hasta recargar.
     }
   };
 
@@ -582,7 +605,7 @@ export default function Pizarra({
   const compartirImagen = async () => {
     setCompartiendo(true);
     try {
-      const blob = await imagenPizarra(escena(null));
+      const blob = await imagenPizarra(escena(null), apaisado);
       if (!blob) return;
       // En la app (1.1): directa a la galería.
       if (await guardarEnGaleria(blob, "pizarra-soyreinaldo.png")) return avisar("Guardada en tu galería ✓");
@@ -701,7 +724,7 @@ export default function Pizarra({
     if (etapas.length < 2) return avisar("Guarda al menos 2 etapas");
     setGrabando(0);
     try {
-      const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando);
+      const r = await videoPizarra((t) => escena(fotograma(etapas, t)), duracion(etapas.length) + 1.5, setGrabando, apaisado);
       if (!r) return avisar("Tu navegador no permite grabar vídeo");
       if (await guardarEnGaleria(r.blob, `jugada-soyreinaldo.${r.ext}`)) return avisar("Vídeo guardado en tu galería ✓");
       // Descarga directa (pedido del dueño: nada de hoja de compartir).
@@ -1011,6 +1034,14 @@ export default function Pizarra({
         <button type="button" className="btn" onClick={compartirImagen} disabled={compartiendo}>
           <Camera className="ico-txt" aria-hidden /> {compartiendo ? "Preparando…" : "Compartir imagen"}
         </button>
+        <div className="pz-formato" role="radiogroup" aria-label="Formato de la imagen y el vídeo">
+          <button type="button" role="radio" aria-checked={!apaisado} className={apaisado ? "" : "on"} onClick={() => cambiarFormato(false)}>
+            <RectangleVertical className="ico-txt" aria-hidden /> Vertical
+          </button>
+          <button type="button" role="radio" aria-checked={apaisado} className={apaisado ? "on" : ""} onClick={() => cambiarFormato(true)}>
+            <RectangleHorizontal className="ico-txt" aria-hidden /> Horizontal
+          </button>
+        </div>
       </div>
 
       <div className="pz-herramientas" role="toolbar" aria-label="Herramientas de la pizarra">
@@ -1553,12 +1584,15 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.fillStyle = fondo;
   g.fillRect(0, 0, W, H);
 
-  // Campo con proporción de campo real (como mucho 1,45 de alto por ancho),
-  // centrado en el hueco entre la cabecera y el pie.
-  const cw = W - 140;
-  const ch = Math.min(H - 150 - 110, Math.round(cw * 1.45));
-  const cx = 70;
-  const cy = 150 + Math.round((H - 150 - 110 - ch) / 2);
+  // Campo con proporción de campo real (el lado largo, como mucho 1,45 veces
+  // el corto), centrado en el hueco entre la cabecera y el pie. En un lienzo
+  // apaisado, el campo va tumbado como en el escritorio: local a la izquierda.
+  const apaisado = W > H;
+  const hueco = H - 150 - 110;
+  const cw = apaisado ? Math.min(W - 140, Math.round(hueco * 1.45)) : W - 140;
+  const ch = apaisado ? hueco : Math.min(hueco, Math.round(cw * 1.45));
+  const cx = Math.round((W - cw) / 2);
+  const cy = 150 + Math.round((hueco - ch) / 2);
 
   g.textAlign = "center";
   g.fillStyle = "#e8ecff";
@@ -1568,7 +1602,8 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.fillStyle = "#9aa4d6";
   g.fillText(e.subtitulo, W / 2, cy - 32);
 
-  const aLienzo = (p: Punto) => ({ x: cx + p.y * cw, y: cy + (1 - p.x) * ch });
+  const aLienzo = (p: Punto) =>
+    apaisado ? { x: cx + p.x * cw, y: cy + p.y * ch } : { x: cx + p.y * cw, y: cy + (1 - p.x) * ch };
   g.fillStyle = "#10271c";
   g.beginPath();
   g.roundRect(cx, cy, cw, ch, 24);
@@ -1577,14 +1612,24 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.lineWidth = 3;
   g.stroke();
   g.beginPath();
-  g.moveTo(cx, cy + ch / 2);
-  g.lineTo(cx + cw, cy + ch / 2);
+  if (apaisado) {
+    g.moveTo(cx + cw / 2, cy);
+    g.lineTo(cx + cw / 2, cy + ch);
+  } else {
+    g.moveTo(cx, cy + ch / 2);
+    g.lineTo(cx + cw, cy + ch / 2);
+  }
   g.stroke();
   g.beginPath();
   g.arc(cx + cw / 2, cy + ch / 2, 90, 0, Math.PI * 2);
   g.stroke();
-  g.strokeRect(cx + cw * 0.26, cy, cw * 0.48, ch * 0.12);
-  g.strokeRect(cx + cw * 0.26, cy + ch * 0.88, cw * 0.48, ch * 0.12);
+  if (apaisado) {
+    g.strokeRect(cx, cy + ch * 0.26, cw * 0.12, ch * 0.48);
+    g.strokeRect(cx + cw * 0.88, cy + ch * 0.26, cw * 0.12, ch * 0.48);
+  } else {
+    g.strokeRect(cx + cw * 0.26, cy, cw * 0.48, ch * 0.12);
+    g.strokeRect(cx + cw * 0.26, cy + ch * 0.88, cw * 0.48, ch * 0.12);
+  }
 
   // Zonas, debajo de todo.
   for (const z of e.zonas) {
@@ -1768,24 +1813,26 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
   g.fillText("soyreinaldo.com/pizarra", W / 2, H - 46);
 }
 
-/** PNG vertical 1080×1350 (la medida de Instagram). */
-async function imagenPizarra(e: Escena): Promise<Blob | null> {
+/** PNG vertical 1080×1350 (la medida de Instagram) u horizontal 1920×1080. */
+async function imagenPizarra(e: Escena, apaisado: boolean): Promise<Blob | null> {
   const c = document.createElement("canvas");
-  c.width = 1080;
-  c.height = 1350;
+  c.width = apaisado ? 1920 : 1080;
+  c.height = apaisado ? 1080 : 1350;
   const g = c.getContext("2d");
   if (!g) return null;
   dibujarEscena(g, c.width, c.height, e, await cargarFotos(e.fichas.map((f) => f.foto)));
   return new Promise((r) => c.toBlob(r, "image/png"));
 }
 
-/** Vídeo vertical 1080×1920 (Reels, TikTok, Shorts) de la animación,
+/** Vídeo vertical 1080×1920 (Reels, TikTok, Shorts) u horizontal 1920×1080
+ * (YouTube, fondo de un vídeo a cámara) de la animación,
  * grabado en tiempo real desde un canvas. MP4 si el navegador lo graba
  * (Safari, Chrome reciente); si no, WebM. */
 async function videoPizarra(
   escenaEn: (t: number) => Escena,
   total: number,
   progreso: (p: number) => void,
+  apaisado: boolean,
 ): Promise<{ blob: Blob; ext: string } | null> {
   if (typeof MediaRecorder === "undefined") return null;
   const tipo = ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find((t) =>
@@ -1793,8 +1840,8 @@ async function videoPizarra(
   );
   if (!tipo) return null;
   const c = document.createElement("canvas");
-  c.width = 1080;
-  c.height = 1920;
+  c.width = apaisado ? 1920 : 1080;
+  c.height = apaisado ? 1080 : 1920;
   const g = c.getContext("2d");
   if (!g || !c.captureStream) return null;
   const fotos = await cargarFotos(escenaEn(0).fichas.map((f) => f.foto));

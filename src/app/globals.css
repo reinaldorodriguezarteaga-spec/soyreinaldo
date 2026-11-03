@@ -2405,6 +2405,10 @@ select.field { appearance: none; }
 .pz { margin-top: 18px; }
 .pz-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .pz-botones .btn { padding: 10px 8px; font-size: 0.62rem; justify-content: center; }
+/* Formato de la imagen y el vídeo exportados (3-nov). */
+.pz-formato { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.pz-formato button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; border: 0; border-radius: 999px; background: none; color: var(--text-dim); font-size: 0.62rem; font-weight: 700; cursor: pointer; }
+.pz-formato button.on { background: var(--accent-fill); color: var(--on-accent); }
 .pz-cuerpo { display: grid; gap: 14px; grid-template-columns: 1fr; }
 /* Móvil: visitante arriba (ataca hacia abajo), campo, local abajo. */
 .pz-lista--visitante { order: 0; }
