@@ -31,6 +31,9 @@ type PrivatePreview = {
   name: string;
   description: string | null;
   member_count: number;
+  /** Abierta a todos (migración 104): sin candado, y trae su código. */
+  abierta: boolean;
+  code: string | null;
 };
 
 /**
@@ -173,6 +176,7 @@ export default async function QuinielaLigaIndex({
             <div key={p.id} className="panel" style={{ padding: 24 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                 <h2 style={{ margin: 0, fontSize: "1.3rem" }}><T>{p.name}</T></h2>
+                {!p.abierta && (
                 <span
                   style={{
                     fontFamily: "var(--font-mono-stack)",
@@ -186,15 +190,22 @@ export default async function QuinielaLigaIndex({
                 >
                   <Lock className="ico-txt" aria-hidden /> PRIVADO
                 </span>
+                )}
               </div>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
                 <T>{p.description ?? "Quiniela privada de su comunidad."}</T>
                 {p.member_count > 0 &&
                   ` · ${p.member_count} ${p.member_count === 1 ? "jugador" : "jugadores"}`}
               </p>
-              <Link href="#codigo" className="btn btn--accent">
-                Acceder <span className="arr">→</span>
-              </Link>
+              {p.abierta && p.code ? (
+                <Link href={`/unirse/${encodeURIComponent(p.code)}`} className="btn btn--accent">
+                  Unirme <span className="arr">→</span>
+                </Link>
+              ) : (
+                <Link href="#codigo" className="btn btn--accent">
+                  Acceder <span className="arr">→</span>
+                </Link>
+              )}
             </div>
           ))}
 
