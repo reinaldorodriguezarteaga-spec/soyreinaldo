@@ -2424,9 +2424,15 @@ select.field { appearance: none; }
 .pz-vacio { color: var(--text-dim); font-size: 0.84rem; margin: 4px; }
 .pz-campo { position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 10 / 14; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, #10271c 0%, #0c1f17 50%, #10271c 100%); border: 1px solid var(--line); touch-action: none; user-select: none; -webkit-user-select: none; }
 .pz-campo--h { aspect-ratio: 16 / 10; max-width: none; }
-.pz-hueco { position: absolute; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; border: 2px dashed; background: rgba(10,16,48,0.45); font-size: 1.2rem; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+/* Barra de tamaño de las fichas, debajo del campo (3-nov). */
+.pz-tam { display: flex; align-items: center; gap: 10px; max-width: 520px; margin: 10px auto 0; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.pz-tam input { flex: 1; min-width: 0; accent-color: var(--accent); height: 28px; }
+.pz-tam__ic { display: flex; color: var(--text-dim); }
+.pz-tam__ic svg { width: 22px; height: 22px; }
+.pz-tam__ic--s svg { width: 14px; height: 14px; }
+.pz-hueco { position: absolute; transform: translate(-50%, -50%) scale(var(--pz-esc, 1)); width: 34px; height: 34px; border-radius: 50%; border: 2px dashed; background: rgba(10,16,48,0.45); font-size: 1.2rem; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
 .pz-hueco__rol { position: absolute; top: calc(100% + 2px); font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
-.pz-ficha { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; z-index: 2; }
+.pz-ficha { position: absolute; transform: translate(-50%, -50%) scale(var(--pz-esc, 1)); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; z-index: 2; }
 .pz-ficha:active { cursor: grabbing; z-index: 3; }
 .pz-ficha__num { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; color: #fff; font-weight: 800; font-size: 0.82rem; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
 .pz-ficha__nom { font-size: 0.62rem; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
@@ -2446,7 +2452,7 @@ select.field { appearance: none; }
 .pz-flechas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 .pz-campo--dibujo { cursor: crosshair; }
 .pz-campo--dibujo .pz-ficha, .pz-campo--dibujo .pz-hueco, .pz-campo--dibujo .pz-balon { pointer-events: none; }
-.pz-balon { position: absolute; transform: translate(-50%, -50%); font-size: 1.35rem; line-height: 1; cursor: grab; touch-action: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); user-select: none; }
+.pz-balon { position: absolute; transform: translate(-50%, -50%) scale(var(--pz-esc, 1)); font-size: 1.35rem; line-height: 1; cursor: grab; touch-action: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); user-select: none; }
 .pz-aviso { position: fixed; left: 50%; bottom: calc(90px + var(--tabbar-alto, 0px)); transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent); color: var(--text); padding: 10px 16px; border-radius: 999px; z-index: 90; font-size: 0.88rem; box-shadow: var(--shadow); }
 .pz-sel { position: relative; }
 .pz-busca__boton { display: flex; align-items: center; gap: 8px; width: 100%; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font: inherit; text-align: left; cursor: pointer; min-height: 42px; }

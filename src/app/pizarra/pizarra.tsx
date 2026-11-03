@@ -20,10 +20,11 @@ import {
   Video,
   Trash2,
   CircleCheck,
+  UserRound,
 } from "lucide-react";
 
 import { guardarEnGaleria } from "@/lib/app-galeria";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FORMACIONES, huecoParaJugador, huecos, onceAutomatico, type Lado } from "@/lib/pizarra/formaciones";
 import {
@@ -73,6 +74,19 @@ export type JugadorPizarra = {
 };
 export type EquipoConPlantilla = { id: number; name: string; logo: string; plantilla: JugadorPizarra[] };
 type Modo = "mover" | TipoFlecha | "pincel" | "zona" | "rayas" | "enlace" | "texto" | "foco" | "grupo";
+const CLAVE_TAM = "pizarra:tam-fichas";
+const TAM_MIN = 0.6;
+const TAM_MAX = 1.4;
+const sinSuscripcion = () => () => {};
+function leerTam() {
+  try {
+    const t = Number(localStorage.getItem(CLAVE_TAM));
+    return t >= TAM_MIN && t <= TAM_MAX ? t : 1;
+  } catch {
+    return 1;
+  }
+}
+
 /** Modos que dibujan arrastrando o tocando el césped (las fichas no estorban). */
 const MODOS_DIBUJO: Modo[] = ["pase", "carrera", "pincel", "zona", "rayas", "texto", "grupo"];
 /** Qué hace cada herramienta (ayuda bajo el campo y al pasar el ratón). */
@@ -225,6 +239,11 @@ export default function Pizarra({
   const { formacion, once, movidos, flechas, balon, zonas, textos, focos, enlaces, trazos, colores } = estado;
   /** Jugadores que se van uniendo con la herramienta «Unir» ("l:154"). */
   const [enlaceEnCurso, setEnlaceEnCurso] = useState<string[]>([]);
+  /** Tamaño de las fichas en pantalla (3-nov: en algunos móviles se veían
+   *  enormes). Solo la vista: la imagen y el vídeo exportados no cambian. */
+  const tamGuardado = useSyncExternalStore(sinSuscripcion, leerTam, () => 1);
+  const [tamElegido, setTamFichas] = useState<number | null>(null);
+  const tamFichas = tamElegido ?? tamGuardado;
 
   // Campo horizontal en escritorio, vertical en el móvil. Arranca vertical
   // (= SSR) y se ajusta al montar.
@@ -235,6 +254,16 @@ export default function Pizarra({
     mq.addEventListener("change", aplicar);
     return () => mq.removeEventListener("change", aplicar);
   }, []);
+
+  // El tamaño de las fichas se recuerda en cada dispositivo.
+  const cambiarTam = (t: number) => {
+    setTamFichas(t);
+    try {
+      localStorage.setItem(CLAVE_TAM, String(t));
+    } catch {
+      // Da igual: dura hasta recargar.
+    }
+  };
 
   // Parar la animación si se sale de la página a mitad.
   useEffect(
@@ -1106,6 +1135,7 @@ export default function Pizarra({
         <div
           ref={campo}
           className={`pz-campo${horizontal ? " pz-campo--h" : ""}${MODOS_DIBUJO.includes(modo) ? " pz-campo--dibujo" : ""}${modo === "foco" || modo === "enlace" ? " pz-campo--foco" : ""}${fot ? " pz-campo--anim" : ""}`}
+          style={{ "--pz-esc": tamFichas } as React.CSSProperties}
           aria-label="Campo de fútbol"
           onPointerDown={dibujoDown}
           onPointerMove={dibujoMove}
@@ -1254,6 +1284,24 @@ export default function Pizarra({
             </div>
           )}
         </div>
+          <label className="pz-tam">
+            <span className="pz-tam__ic pz-tam__ic--s" aria-hidden>
+              <UserRound />
+            </span>
+            <input
+              type="range"
+              min={TAM_MIN}
+              max={TAM_MAX}
+              step={0.05}
+              value={tamFichas}
+              onChange={(e) => cambiarTam(Number(e.target.value))}
+              onDoubleClick={() => cambiarTam(1)}
+              aria-label="Tamaño de los jugadores"
+            />
+            <span className="pz-tam__ic" aria-hidden>
+              <UserRound />
+            </span>
+          </label>
           </div>
         </div>
         {!solo && lista("visitante")}
