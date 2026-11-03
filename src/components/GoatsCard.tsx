@@ -29,12 +29,13 @@ export default async function GoatsCard({ enlace = false }: { enlace?: boolean }
   );
 
   return (
-    <div className="panel promopanel" style={{ cursor: "default" }}>
+    <div className="panel promopanel goats" style={{ cursor: "default" }}>
       <p className="eyebrow"><Crown className="ico-txt" aria-hidden /> El debate eterno</p>
       <h2 className="feat__title" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}>
         Messi vs Ronaldo.
       </h2>
       <div
+        className="goats__tabla"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",

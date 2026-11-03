@@ -898,6 +898,10 @@ img {
 @media (min-width: 900px) {
   .home-duo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
   .home-duo > .panel { height: 100%; }
+  /* Las filas de Messi vs Cristiano se reparten la altura de la columna. */
+  .home-duo .goats { display: flex; flex-direction: column; }
+  .home-duo .goats__tabla { flex: 1; align-content: space-between; }
+  .home-duo .goats .btn { align-self: flex-start; margin-top: 28px !important; }
 }
 
 /* ===== Feed de 3 columnas de la portada (estilo FotMob, escritorio) =====
