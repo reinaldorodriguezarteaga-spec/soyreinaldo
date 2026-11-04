@@ -3196,6 +3196,19 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .lista__txt b { font-size: 1.05rem; font-weight: 600; }
 .lista__txt span { font-size: 0.88rem; color: var(--text-dim); }
 .lista__ir { flex: none; width: 16px; height: 16px; color: color-mix(in oklch, var(--text-dim) 70%, transparent); }
+.seguir-bloqueo { margin: 4px 0 16px; display: grid; gap: 8px; justify-items: start; }
+.seguir-bloqueo span { color: var(--accent); font-size: 0.92rem; }
+.seguir-bloqueo p { margin: 0; font-size: 0.85rem; color: var(--text-dim); }
+.lista__con-avisos { display: flex; align-items: center; }
+.lista__con-avisos > .lista__fila { flex: 1; min-width: 0; padding-right: 8px; }
+.fav-avisos { flex: none; display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; padding: 6px 10px; border-radius: 999px; background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.fav-avisos svg { width: 15px; height: 15px; flex: none; }
+.fav-avisos select { appearance: none; -webkit-appearance: none; background: none; border: 0; color: inherit; font: inherit; padding: 0; cursor: pointer; }
+.fav-avisos select:focus-visible { outline: none; }
+.fav-avisos:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fav-avisos svg.fav-avisos__flecha { width: 13px; height: 13px; margin-left: -2px; opacity: 0.8; }
+.fav-avisos.is-off { background: var(--surface-2); color: var(--text-dim); }
+.fav-avisos option { color: #000; }
 .lista__vacia { padding: 20px; display: grid; gap: 14px; justify-items: start; }
 .lista__vacia p { margin: 0; color: var(--text-dim); }
 /* Esqueletos de carga (31-oct): bloques que laten con la forma del contenido. */

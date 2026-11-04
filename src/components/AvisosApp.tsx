@@ -70,6 +70,13 @@ export default function AvisosApp({ tieneFavoritos }: { tieneFavoritos: boolean 
         </T>
       </p>
 
+      {tieneFavoritos && (
+        <p style={{ margin: "0 0 14px", fontSize: "0.9rem" }}>
+          En <Link href="/favoritos">Favoritos</Link> eliges, equipo a equipo, si quieres todo (inicio, goles y
+          final) o solo el resultado final.
+        </p>
+      )}
+
       {!tieneFavoritos && (
         <p style={{ margin: "0 0 14px", fontSize: "0.9rem" }}>
           Aún no tienes equipos favoritos: márcalos con la <Star className="ico-txt" aria-hidden /> en la ficha de

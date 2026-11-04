@@ -2,6 +2,7 @@
 import { CircleDot } from "lucide-react";
 import Icono from "@/components/Icono";
 
+import Link from "next/link";
 import { useAvisosWeb } from "@/lib/useAvisosWeb";
 
 /**
@@ -25,7 +26,8 @@ export default function GoalAlerts() {
       <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem" }}><Icono icono={CircleDot} tono="azul" tam="sm" /> Avisos de gol</h2>
       <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.92rem" }}>
         Te avisamos en cuanto marca un equipo que tengas en favoritos. Nada más:
-        ni resúmenes, ni promociones.
+        ni resúmenes, ni promociones. En <Link href="/favoritos">Favoritos</Link> eliges, equipo a
+        equipo, si quieres todo (inicio, goles y final) o solo el resultado final.
       </p>
 
       {estado === "ios-sin-instalar" && (
