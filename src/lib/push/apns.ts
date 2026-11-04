@@ -43,7 +43,7 @@ export const b64url = (b: Buffer | string) =>
 
 /** Apple acepta el mismo JWT hasta una hora; se renueva a los 50 minutos. */
 let jwt: { valor: string; t: number } | null = null;
-function firmar(c: Clave): string {
+export function firmar(c: Clave): string {
   if (jwt && Date.now() - jwt.t < 50 * 60_000) return jwt.valor;
   const cabecera = b64url(JSON.stringify({ alg: "ES256", kid: c.keyId }));
   const cuerpo = b64url(JSON.stringify({ iss: c.teamId, iat: Math.floor(Date.now() / 1000) }));

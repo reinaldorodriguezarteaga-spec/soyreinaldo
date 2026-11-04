@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { notificarEquipo } from "@/lib/push/server";
 import { refrescarWidgets } from "@/lib/push/apns";
+import { arrancarActividades, canalDelPartido, difundir } from "@/lib/push/actividad";
 import { TEAM_IDS } from "@/lib/sports/api-football";
 
 import { anunciarExactos } from "@/lib/quiniela-liga/chat-sistema";
@@ -86,13 +87,14 @@ export async function GET(request: Request) {
       const { data: previas } = await supabase
         .from("lq_matches")
         .select(
-          `id, status, score_home, score_away, team_home, team_away,
+          `id, status, live_minute, score_home, score_away, team_home, team_away,
            home:team_home(name), away:team_away(name)`,
         )
         .in("id", lqIds);
       type Previa = {
         id: number;
         status: string | null;
+        live_minute: number | null;
         score_home: number | null;
         score_away: number | null;
         team_home: number;
@@ -189,6 +191,18 @@ export async function GET(request: Request) {
               }
             }
 
+            // Actividad en directo del iPhone (iOS 18+): al empezar se crea el
+            // canal del partido y se enciende en los iPhones de quien sigue a
+            // un equipo con avisos «Todo»; luego, una actualización por cada
+            // cambio (minuto, gol, descanso…) y la de cierre al acabar.
+            if (prev && (isLive || isFinal)) {
+              try {
+                await actividadEnDirecto(supabase, prev, fx, isLive, isFinal);
+              } catch {
+                // no rompe la ingesta
+              }
+            }
+
             // ¿Empieza o termina? Mismo público que los goles.
             const evento = prev ? eventoPartido(prev.status, st) : null;
             // Al acabar, el chat de cada quiniela celebra los exactos (27-oct).
@@ -231,4 +245,66 @@ export async function GET(request: Request) {
     ok: true,
     lq: { polled: lqPolled, updated: lqUpdated, finished: lqFinished },
   });
+}
+
+/** Estado de la actividad en directo de un partido (ver lib/push/actividad.ts). */
+async function actividadEnDirecto(
+  supabase: SupabaseClient,
+  prev: {
+    id: number;
+    status: string | null;
+    live_minute: number | null;
+    score_home: number | null;
+    score_away: number | null;
+    team_home: number;
+    team_away: number;
+    home: { name: string } | null;
+    away: { name: string } | null;
+  },
+  fx: ApiFixture,
+  enJuego: boolean,
+  final: boolean,
+) {
+  const estado = {
+    gl: fx.goals.home ?? 0,
+    gv: fx.goals.away ?? 0,
+    estado: fx.fixture.status.short,
+    minuto: enJuego ? fx.fixture.status.elapsed ?? null : null,
+  };
+  const gol = estado.gl !== (prev.score_home ?? 0) || estado.gv !== (prev.score_away ?? 0);
+  const cambioEstado = estado.estado !== prev.status;
+
+  if (final) {
+    // Solo si había canal (la actividad existía): se cierra con el resultado.
+    const { data } = await supabase
+      .from("la_canales")
+      .select("canal")
+      .eq("partido_id", prev.id)
+      .maybeSingle();
+    const canal = (data as { canal: string } | null)?.canal;
+    if (canal) await difundir(supabase, canal, estado, { urgente: true, fin: true });
+    return;
+  }
+
+  const c = await canalDelPartido(supabase, prev.id);
+  if (!c) return;
+  if (c.nuevo) {
+    await arrancarActividades(
+      supabase,
+      c.canal,
+      {
+        partidoId: prev.id,
+        local: prev.home?.name ?? "Local",
+        visitante: prev.away?.name ?? "Visitante",
+        localId: Number(prev.team_home),
+        visitanteId: Number(prev.team_away),
+      },
+      estado,
+    );
+    return;
+  }
+  if (gol || cambioEstado || estado.minuto !== prev.live_minute) {
+    // Gol o cambio de parte: al momento. El minuto que pasa: sin prisa.
+    await difundir(supabase, c.canal, estado, { urgente: gol || cambioEstado });
+  }
 }

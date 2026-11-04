@@ -1,4 +1,5 @@
 import { Presentation } from "lucide-react";
+import SeguirBloqueo from "./seguir-bloqueo";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Image from "next/image";
@@ -640,6 +641,7 @@ export default async function LigaPartidoPage({
 
       <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
         <div className="wrap">
+          {slug === "laliga" && <SeguirBloqueo fixtureId={fixtureId} enJuego={live} />}
           <Suspense fallback={null}>
             <MatchAnalisis fixtureId={fixtureId} />
           </Suspense>
