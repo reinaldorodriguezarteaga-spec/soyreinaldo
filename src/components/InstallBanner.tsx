@@ -1,42 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import {
-  debeReofrecerInstalacion,
-  esAndroid,
-  esIOS,
-  esMovil,
-  estaInstalada,
-} from "@/lib/pwa";
+import { useState, useSyncExternalStore } from "react";
+import { GOOGLE_PLAY_URL } from "@/components/Footer";
+import { debeReofrecerInstalacion, esAndroid, estaInstalada } from "@/lib/pwa";
 
 const DISMISS_KEY = "install-banner-dismissed";
-
-/** Chrome no tipa este evento en `lib.dom` — solo lo dispara Chromium/Edge
- * en Android (y desktop, que aquí se descarta a propósito). */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 // Ni el user-agent ni lo que hay en localStorage cambian por fuera de esta
 // misma sesión del componente — no hay nada real a lo que suscribirse.
 const suscribirNada = () => () => {};
 
 /**
- * Franja para invitar a instalar la web como app, solo en móvil. El motivo
- * real no es la comodidad del icono en pantalla: en iOS las notificaciones
- * push de `GoalAlerts` SOLO funcionan con la web instalada, y en cualquier
- * plataforma tener la app puesta sube mucho cuántos llegan a activarlas.
+ * Franja para invitar a bajarse la app, solo en Android (4-nov-2026: la app
+ * ya está en Google Play). Antes ofrecía instalar la web como PWA con el
+ * diálogo de Chrome; ahora lleva a la ficha de Google Play, que trae avisos
+ * nativos y widgets. iPhone no la ve: Safari ya anuncia la de la App Store
+ * con su franja nativa (meta `apple-itunes-app` del layout).
  *
- * Android: espera al `beforeinstallprompt` de Chrome y ofrece su diálogo
- * nativo — sin botón "Instalar" que no haga nada si el navegador no lo
- * dispara (Firefox, o Chrome antes de decidir que la web es instalable).
- * Ese evento exige un service worker YA registrado; `GoalAlerts` solo lo
- * registra al activar avisos, así que aquí se registra de antemano — sin
- * pedir permiso de notificación, eso sigue siendo decisión aparte.
- *
- * iOS no la ve: allí se ofrece la app nativa de la App Store.
+ * Dentro de la app (y en la web instalada como PWA) no sale.
  */
 export default function InstallBanner() {
   // El servidor no conoce el UA ni lo que hay en localStorage: snapshot
@@ -48,81 +30,24 @@ export default function InstallBanner() {
     () => localStorage.getItem(DISMISS_KEY),
     () => null,
   );
-
-  // Fijado en el inicializador perezoso de useState —corre una sola vez al
-  // montar—, no leído con Date.now() directo en el cuerpo del render: eso sí
-  // sería impuro (mismo patrón que la página del equipo con "ahora").
+  // Fijado al montar: leer Date.now() en el render sería impuro.
   const [ahora] = useState(() => Date.now());
-  const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [cerrado, setCerrado] = useState(false);
-  const [instalando, setInstalando] = useState(false);
-
-  const movil = ua !== "" && esMovil(ua);
   const dismissedAt = dismissedAtRaw ? Number(dismissedAtRaw) : null;
-
-  // Registrar el SW y escuchar los eventos del navegador es sincronizar con
-  // un sistema externo de verdad — a diferencia de leer el UA o
-  // localStorage, esto sí es trabajo de efecto. El setState vive dentro de
-  // los callbacks de los listeners, nunca en el cuerpo del efecto.
-  useEffect(() => {
-    if (!movil || estaInstalada()) return;
-    if (!debeReofrecerInstalacion(dismissedAt, ahora)) return;
-
-    if (esAndroid(ua) && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Sin service worker no hay beforeinstallprompt; la franja
-        // simplemente no aparece (ver el early-return de más abajo).
-      });
-    }
-
-    function onBeforeInstall(e: Event) {
-      e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
-    }
-    function onInstalled() {
-      setCerrado(true);
-      localStorage.removeItem(DISMISS_KEY);
-    }
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, [movil, ua, dismissedAt, ahora]);
 
   function cerrar() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setCerrado(true);
   }
 
-  async function instalar() {
-    if (!prompt) return;
-    setInstalando(true);
-    try {
-      await prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome !== "accepted") cerrar();
-    } finally {
-      setPrompt(null);
-      setInstalando(false);
-    }
-  }
-
-  if (cerrado || !movil || estaInstalada()) return null;
+  if (cerrado || ua === "" || !esAndroid(ua) || estaInstalada()) return null;
   if (!debeReofrecerInstalacion(dismissedAt, ahora)) return null;
-  // iPhone: desde el 28-oct-2026 hay app de verdad en la App Store, y Safari
-  // ya la anuncia con su franja nativa (meta `apple-itunes-app` del layout).
-  if (esIOS(ua)) return null;
-  // Android sin el prompt todavía disponible: mejor nada que un botón
-  // "Instalar" que no reacciona.
-  if (esAndroid(ua) && !prompt) return null;
 
   return (
     <div
       className="panel"
       role="region"
-      aria-label="Instalar la app"
+      aria-label="Descargar la app"
       style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none" }}
     >
       <div
@@ -145,18 +70,18 @@ export default function InstallBanner() {
             color: "var(--text-dim)",
           }}
         >
-          Instala <b style={{ color: "var(--text)" }}>Soy Reinaldo</b> como
-          app y recibe avisos de gol al instante.
+          Descarga la app de <b style={{ color: "var(--text)" }}>Soy Reinaldo</b>: avisos de gol
+          al instante y widgets.
         </p>
-        <button
-          type="button"
+        <a
           className="btn btn--accent"
-          onClick={instalar}
-          disabled={instalando}
+          href={GOOGLE_PLAY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{ flex: "none" }}
         >
-          {instalando ? "…" : "Instalar"}
-        </button>
+          Descargar
+        </a>
         <button
           type="button"
           aria-label="Cerrar"

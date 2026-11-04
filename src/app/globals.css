@@ -838,6 +838,10 @@ img {
 .foot__store { display: inline-block; margin-top: 28px; transition: transform 0.18s ease; }
 .foot__store:hover { transform: translateY(-2px); }
 .foot__store img { display: block; height: 40px; width: auto; }
+.foot__stores { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 28px; }
+.foot__stores .foot__store { margin-top: 0; }
+/* La insignia de Google trae margen transparente propio: más alta para igualar a la de Apple. */
+.foot__store img.foot__store--play { height: 55px; margin: -8px -7px; }
 .foot__copy { color: var(--text-dim); font-size: 0.8rem; margin-top: 28px; }
 /* Móvil (31-oct, estilo iOS): sin la palabra gigante, que en páginas cortas
    llenaba la pantalla y quedaba bajo la barra de abajo. Enlaces en dos
