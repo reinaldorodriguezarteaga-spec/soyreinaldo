@@ -24,7 +24,7 @@ export default function HeaderSearch({
   onCerrar: () => void;
 }) {
   const [q, setQ] = useState("");
-  const { term, res, cargando, vacio } = useBusqueda(abierto ? q : "");
+  const { term, res, cargando, vacio, destacados } = useBusqueda(abierto ? q : "");
   const cajaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +90,7 @@ export default function HeaderSearch({
             ✕
           </button>
 
-          {term.length > 0 && (
+          {(term.length > 0 || (abierto && destacados.length > 0)) && (
             <div className="navsearch__panel">
               <ResultadosBusqueda
                 term={term}
@@ -99,6 +99,7 @@ export default function HeaderSearch({
                 vacio={vacio}
                 onNavegar={cerrar}
                 compacto
+                destacados={destacados}
               />
             </div>
           )}

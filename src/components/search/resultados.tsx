@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { BusquedaUniversal } from "@/app/api/sports/search/route";
+import type { PlayerGlobalSearchResult } from "@/lib/sports/api-football";
 import { MINIMO_LETRAS } from "./use-busqueda";
 
 /**
@@ -17,6 +18,7 @@ export default function ResultadosBusqueda({
   vacio,
   onNavegar,
   compacto = false,
+  destacados = [],
 }: {
   term: string;
   res: BusquedaUniversal;
@@ -26,8 +28,20 @@ export default function ResultadosBusqueda({
   onNavegar?: () => void;
   /** Menos aire: para el desplegable del header. */
   compacto?: boolean;
+  /** Los más buscados: se enseñan mientras no hay nada que buscar. */
+  destacados?: PlayerGlobalSearchResult[];
 }) {
   if (term.length < MINIMO_LETRAS) {
+    if (destacados.length > 0) {
+      return (
+        <>
+          <p className="srch__titulo">Los más buscados</p>
+          {destacados.map((p) => (
+            <FilaJugador key={p.id} p={p} compacto={compacto} onNavegar={onNavegar} />
+          ))}
+        </>
+      );
+    }
     return (
       <p className="srch__aviso">Escribe al menos {MINIMO_LETRAS} letras.</p>
     );
@@ -59,37 +73,46 @@ export default function ResultadosBusqueda({
         <>
           <p className="srch__titulo">Jugadores</p>
           {res.jugadores.map((p) => (
-            <Link
-              key={p.id}
-              href={`/jugador/${p.id}`}
-              className="srch__fila"
-              onClick={onNavegar}
-            >
-              {p.photo ? (
-                <Image
-                  src={p.photo}
-                  alt=""
-                  width={compacto ? 22 : 28}
-                  height={compacto ? 22 : 28}
-                  unoptimized
-                  style={{ borderRadius: "50%", background: "var(--surface-2)" }}
-                />
-              ) : (
-                <span
-                  style={{
-                    width: compacto ? 22 : 28,
-                    height: compacto ? 22 : 28,
-                    borderRadius: "50%",
-                    background: "var(--surface-2)",
-                  }}
-                />
-              )}
-              <span className="srch__nombre truncate">{p.name}</span>
-              {p.nationality && <span className="srch__meta">{p.nationality}</span>}
-            </Link>
+            <FilaJugador key={p.id} p={p} compacto={compacto} onNavegar={onNavegar} />
           ))}
         </>
       )}
     </>
+  );
+}
+
+function FilaJugador({
+  p,
+  compacto,
+  onNavegar,
+}: {
+  p: PlayerGlobalSearchResult;
+  compacto: boolean;
+  onNavegar?: () => void;
+}) {
+  return (
+    <Link href={`/jugador/${p.id}`} className="srch__fila" onClick={onNavegar}>
+      {p.photo ? (
+        <Image
+          src={p.photo}
+          alt=""
+          width={compacto ? 22 : 28}
+          height={compacto ? 22 : 28}
+          unoptimized
+          style={{ borderRadius: "50%", background: "var(--surface-2)" }}
+        />
+      ) : (
+        <span
+          style={{
+            width: compacto ? 22 : 28,
+            height: compacto ? 22 : 28,
+            borderRadius: "50%",
+            background: "var(--surface-2)",
+          }}
+        />
+      )}
+      <span className="srch__nombre truncate">{p.name}</span>
+      {p.nationality && <span className="srch__meta">{p.nationality}</span>}
+    </Link>
   );
 }
