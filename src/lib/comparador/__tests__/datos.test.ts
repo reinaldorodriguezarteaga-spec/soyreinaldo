@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstadisticaJugadorApi } from "@/lib/sports/api-football";
-import { competiciones, edadQueCumple, temporadaEnQueCumple, esTorneoDeVerano, filas, filasDeTemporada, formatear, sinDuplicados, sumar } from "../datos";
+import { competiciones, edadQueCumple, temporadaEnQueCumple, esTorneoDeVerano, filas, filasDeTemporada, filasPorFechas, formatear, sinDuplicados, sumar, temporadaDeEdicion } from "../datos";
 
 const est = (liga: string, id: number | null, o: Partial<{ ap: number; min: number; g: number; a: number | null; r: string | null }>): EstadisticaJugadorApi => ({
   team: { id: 1, name: "X", logo: null },
@@ -71,6 +71,35 @@ describe("comparador", () => {
     // 2026-27: sin el Mundial 2026. 2025-26: con él.
     expect(sumar(filasDeTemporada([mundial, liga26], [])).goles).toBe(9);
     expect(sumar(filasDeTemporada([liga25], [mundial, liga26])).goles).toBe(41);
+  });
+  it("cada competición, en la temporada de sus fechas reales", () => {
+    // Fechas tal cual las da /leagues (4-nov-2026).
+    expect(temporadaDeEdicion({ start: "2026-06-11", end: "2026-07-19" })).toBe(2025); // Mundial 2026
+    expect(temporadaDeEdicion({ start: "2026-01-07", end: "2026-01-11" })).toBe(2025); // Supercopa «2025»
+    expect(temporadaDeEdicion({ start: "2023-09-07", end: "2025-09-09" })).toBe(2025); // Eliminatorias «2026»
+    expect(temporadaDeEdicion({ start: "2026-08-14", end: "2027-05-23" })).toBe(2026); // LaLiga 2026-27
+    expect(temporadaDeEdicion({ start: "2026-09-24", end: "2026-11-17" })).toBe(2026); // Liga de Naciones
+  });
+  it("Raphinha 2026-27: fuera eliminatorias ya jugadas y una Supercopa que aún no se ha jugado", () => {
+    const con = (n: string, id: number, season: number, g: number) => ({ ...est(n, id, { ap: 5, min: 400, g }), league: { id, name: n, logo: null, season } });
+    const fechas: Record<string, { start: string; end: string }> = {
+      "140:2026": { start: "2026-08-14", end: "2027-05-23" },
+      "556:2026": { start: "2027-02-02", end: "2027-02-02" },
+      "34:2026": { start: "2023-09-07", end: "2025-09-09" },
+      "140:2025": { start: "2025-08-15", end: "2026-05-24" },
+      "556:2025": { start: "2026-01-07", end: "2026-01-11" },
+    };
+    const t = new Map([
+      [2025, [con("La Liga", 140, 2025, 13), con("Super Cup", 556, 2025, 2)]],
+      [2026, [con("La Liga", 140, 2026, 15), con("Super Cup", 556, 2026, 4), con("World Cup - Qualification South America", 34, 2026, 5)]],
+    ]);
+    const f = (id: number, e: number) => fechas[`${id}:${e}`];
+    const hoy = Date.parse("2026-11-04");
+    expect(filasPorFechas(t, 2026, f, hoy).filas.map((s) => s.league.name)).toEqual(["La Liga"]);
+    // 2025-26: liga y Supercopa suman; las eliminatorias (2023-25) van aparte.
+    const t25 = filasPorFechas(t, 2025, f, hoy);
+    expect(sumar(t25.filas).goles).toBe(13 + 2);
+    expect(t25.aparte.map((x) => x.fila.league.id)).toEqual([34]);
   });
   it("temporada en la que cumplió N años", () => {
     expect(temporadaEnQueCumple(18, "1987-06-24")).toBe(2004); // Messi: 24-jun-2005, final de la 2004-05

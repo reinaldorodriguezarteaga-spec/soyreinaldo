@@ -2,7 +2,7 @@ import { Cross } from "lucide-react";
 import { Suspense } from "react";
 import RendimientoPosicion from "./rendimiento-posicion";
 import TemporadaCompeticiones from "./temporada-competiciones";
-import { filasDeTemporada, sinDuplicados } from "@/lib/comparador/datos";
+import { filasPorFechas, sinDuplicados } from "@/lib/comparador/datos";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,10 +10,12 @@ import { notFound } from "next/navigation";
 import {
   cuotaAgotada,
   frenoActivo,
+  getFechasCompeticion,
   getJugadorTemporada,
   getPlayerExtras,
   getPlayerSeasonStats,
   getTemporadasJugador,
+  type EstadisticaJugadorApi,
   type PlayerExtras as PlayerExtrasData,
   type PlayerSeason,
 } from "@/lib/sports/api-football";
@@ -88,13 +90,23 @@ export default async function LigaJugadorPage({
   const pedida = Number(temporadaPedida);
   const temporada =
     Number.isInteger(pedida) && temporadas.includes(pedida) ? pedida : (p?.season ?? competition.season);
-  const [deEsa, delSiguiente] = await Promise.all([
-    getJugadorTemporada(pid, temporada).catch(() => null),
-    temporadas.includes(temporada + 1) ? getJugadorTemporada(pid, temporada + 1).catch(() => null) : null,
-  ]);
-  const filasTemporada = sinDuplicados(
-    filasDeTemporada(deEsa?.statistics ?? [], delSiguiente?.statistics ?? []),
+  // La anterior, esa y la siguiente: el API etiqueta muchas competiciones
+  // con otro año (ver `filasPorFechas`), y cada una se coloca por sus fechas.
+  const porTemporada = new Map<number, EstadisticaJugadorApi[]>();
+  await Promise.all(
+    [temporada - 1, temporada, temporada + 1]
+      .filter((t) => t === temporada || temporadas.includes(t))
+      .map(async (t) => {
+        const r = await getJugadorTemporada(pid, t).catch(() => null);
+        porTemporada.set(t, r?.statistics ?? []);
+      }),
   );
+  const ligas = [...new Set([...porTemporada.values()].flat().map((s) => s.league.id).filter((x): x is number => x != null))];
+  const fechas = new Map(
+    await Promise.all(ligas.map(async (l) => [l, await getFechasCompeticion(l).catch(() => new Map())] as const)),
+  );
+  const colocadas = filasPorFechas(porTemporada, temporada, (l, e) => fechas.get(l)?.get(e));
+  const filasTemporada = sinDuplicados(colocadas.filas);
 
   if (!p && extras.trophies.length === 0) {
     if (cuotaAgotada() || frenoActivo()) {
@@ -221,6 +233,7 @@ export default async function LigaJugadorPage({
               filas={filasTemporada}
               temporada={temporada}
               temporadas={temporadas}
+              aparte={colocadas.aparte}
               base={`/liga/${competition.slug}/jugador/${pid}`}
             />
           ) : (

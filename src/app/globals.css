@@ -917,6 +917,7 @@ img {
 .jtabla__comp { display: inline-flex; align-items: center; gap: 8px; }
 .jtabla__comp small { display: block; color: var(--text-dim); font-size: 0.72rem; }
 .jtabla tfoot td { font-weight: 800; border-top: 2px solid var(--line-strong); }
+.jtabla__nota { margin: 0; padding: 10px 16px 14px; color: var(--text-dim); font-size: 0.78rem; line-height: 1.5; border-top: 1px solid var(--line); }
 
 /* ===== Feed de 3 columnas de la portada (estilo FotMob, escritorio) =====
    LaLiga+Fichajes | marcador/calendario | Premier+Noticias. En pantallas

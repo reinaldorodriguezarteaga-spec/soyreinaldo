@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { competicionEs, type EstadisticaJugadorApi } from "@/lib/sports/api-football";
-import { esAmistoso, nombreTemporada, sumar, type Totales } from "@/lib/comparador/datos";
+import { esAmistoso, nombreTemporada, sumar, type FechasEdicion, type Totales } from "@/lib/comparador/datos";
 
 /**
  * La temporada del jugador en TODAS sus competiciones (4-nov, pedido del
@@ -15,11 +15,14 @@ export default function TemporadaCompeticiones({
   filas,
   temporada,
   temporadas,
+  aparte = [],
   base,
 }: {
   filas: EstadisticaJugadorApi[];
   temporada: number;
   temporadas: number[];
+  /** Competiciones de más de un año (eliminatorias…): se nombran, no se suman. */
+  aparte?: { fila: EstadisticaJugadorApi; fechas: FechasEdicion }[];
   /** Ruta de la ficha, para los enlaces del selector. */
   base: string;
 }) {
@@ -104,6 +107,18 @@ export default function TemporadaCompeticiones({
               )}
             </table>
           </div>
+        )}
+        {aparte.length > 0 && (
+          <p className="jtabla__nota">
+            Sin sumar, porque el API solo da el total de toda la fase:{" "}
+            {aparte
+              .map(
+                ({ fila: s, fechas }) =>
+                  `${competicionEs(s.league.name)} ${fechas.start.slice(0, 4)}-${fechas.end.slice(2, 4)} (${s.games.appearences ?? 0} PJ, ${s.goals.total ?? 0} G, ${s.goals.assists ?? 0} A)`,
+              )
+              .join(" · ")}
+            .
+          </p>
         )}
       </div>
 
