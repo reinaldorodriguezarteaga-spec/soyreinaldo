@@ -12,7 +12,7 @@ import { useBusqueda } from "@/components/search/use-busqueda";
  */
 export default function UniversalSearch({ inicial = "" }: { inicial?: string }) {
   const [q, setQ] = useState(inicial);
-  const { term, res, cargando, vacio } = useBusqueda(q);
+  const { term, res, cargando, vacio, destacados } = useBusqueda(q);
 
   return (
     <div>
@@ -27,7 +27,7 @@ export default function UniversalSearch({ inicial = "" }: { inicial?: string }) 
         aria-label="Buscar equipo o jugador"
       />
       <div className="panel" style={{ marginTop: 18, padding: 6, overflow: "hidden" }}>
-        <ResultadosBusqueda term={term} res={res} cargando={cargando} vacio={vacio} />
+        <ResultadosBusqueda term={term} res={res} cargando={cargando} vacio={vacio} destacados={destacados} />
       </div>
     </div>
   );

@@ -3808,6 +3808,11 @@ export type FilaTemporada = {
 
 const COMPETICION_ES: Record<string, string> = {
   "UEFA Champions League": "Champions League",
+  "La Liga": "LaLiga",
+  "UEFA Europa League": "Europa League",
+  "UEFA Europa Conference League": "Conference League",
+  "UEFA Super Cup": "Supercopa de Europa",
+  "FIFA Club World Cup": "Mundial de Clubes",
   "Major League Soccer": "MLS",
   "Pro League": "Liga saudí",
   "World Cup": "Mundial",

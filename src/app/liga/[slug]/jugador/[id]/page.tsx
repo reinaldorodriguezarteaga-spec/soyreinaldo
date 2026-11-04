@@ -1,6 +1,8 @@
 import { Cross } from "lucide-react";
 import { Suspense } from "react";
 import RendimientoPosicion from "./rendimiento-posicion";
+import TemporadaCompeticiones from "./temporada-competiciones";
+import { filasDeTemporada, sinDuplicados } from "@/lib/comparador/datos";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,8 +10,10 @@ import { notFound } from "next/navigation";
 import {
   cuotaAgotada,
   frenoActivo,
+  getJugadorTemporada,
   getPlayerExtras,
   getPlayerSeasonStats,
+  getTemporadasJugador,
   type PlayerExtras as PlayerExtrasData,
   type PlayerSeason,
 } from "@/lib/sports/api-football";
@@ -56,10 +60,13 @@ export async function generateMetadata({
 
 export default async function LigaJugadorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<{ temporada?: string }>;
 }) {
   const { slug, id } = await params;
+  const { temporada: temporadaPedida } = await searchParams;
   const competition: Competition | undefined = COMPETITIONS_BY_SLUG[slug];
   if (!competition) notFound();
 
@@ -73,6 +80,21 @@ export default async function LigaJugadorPage({
     ),
     isFavorited("player", id),
   ]);
+
+  // Temporada en todas las competiciones (4-nov), con selector. Por defecto,
+  // la de los datos de la liga. Los torneos de verano (Mundial, Euro…) se
+  // juegan con el año siguiente: si existe, se pide también.
+  const temporadas = await getTemporadasJugador(pid).catch(() => [] as number[]);
+  const pedida = Number(temporadaPedida);
+  const temporada =
+    Number.isInteger(pedida) && temporadas.includes(pedida) ? pedida : (p?.season ?? competition.season);
+  const [deEsa, delSiguiente] = await Promise.all([
+    getJugadorTemporada(pid, temporada).catch(() => null),
+    temporadas.includes(temporada + 1) ? getJugadorTemporada(pid, temporada + 1).catch(() => null) : null,
+  ]);
+  const filasTemporada = sinDuplicados(
+    filasDeTemporada(deEsa?.statistics ?? [], delSiguiente?.statistics ?? []),
+  );
 
   if (!p && extras.trophies.length === 0) {
     if (cuotaAgotada() || frenoActivo()) {
@@ -194,9 +216,18 @@ export default async function LigaJugadorPage({
       <section className="section" style={{ paddingTop: 12 }}>
         <div className="wrap" style={{ maxWidth: 680 }}>
           {p && <PlayerBio p={p} />}
-          {p && <SeasonStats p={p} />}
+          {filasTemporada.length > 0 ? (
+            <TemporadaCompeticiones
+              filas={filasTemporada}
+              temporada={temporada}
+              temporadas={temporadas}
+              base={`/liga/${competition.slug}/jugador/${pid}`}
+            />
+          ) : (
+            p && <SeasonStats p={p} />
+          )}
           <Suspense fallback={null}>
-            <RendimientoPosicion jugador={pid} temporada={p?.season ?? competition.season} />
+            <RendimientoPosicion jugador={pid} temporada={temporada} />
           </Suspense>
           <PlayerExtras extras={extras} />
         </div>

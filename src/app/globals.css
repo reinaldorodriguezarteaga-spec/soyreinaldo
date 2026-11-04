@@ -904,6 +904,20 @@ img {
   .home-duo .goats .btn { align-self: flex-start; margin-top: 28px !important; }
 }
 
+/* Ficha de jugador: temporada en todas las competiciones (4-nov). */
+.jtemp { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+.jtemp::-webkit-scrollbar { display: none; }
+.jtemp__chip { flex: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); text-decoration: none; font-variant-numeric: tabular-nums; }
+.jtemp__chip.on { background: var(--accent-fill); border-color: var(--accent-fill); color: var(--on-accent); font-weight: 700; }
+.jtabla { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 8px; }
+.jtabla th { font-family: var(--font-mono-stack); font-size: 0.62rem; letter-spacing: 0.1em; color: var(--text-dim); font-weight: 600; text-align: right; padding: 8px 7px; }
+.jtabla th:first-child, .jtabla td:first-child { text-align: left; padding-left: 16px; }
+.jtabla td { text-align: right; padding: 10px 7px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.jtabla td:last-child, .jtabla th:last-child { padding-right: 16px; }
+.jtabla__comp { display: inline-flex; align-items: center; gap: 8px; }
+.jtabla__comp small { display: block; color: var(--text-dim); font-size: 0.72rem; }
+.jtabla tfoot td { font-weight: 800; border-top: 2px solid var(--line-strong); }
+
 /* ===== Feed de 3 columnas de la portada (estilo FotMob, escritorio) =====
    LaLiga+Fichajes | marcador/calendario | Premier+Noticias. En pantallas
    estrechas se apila con el feed PRIMERO (order) — el móvil no cambia. */

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { slugParaJugador } from "@/lib/sports/search-links";
+import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 
 /**
  * Entrada global a la ficha de un jugador: /jugador/[id] averigua en qué
@@ -17,5 +18,11 @@ export default async function JugadorRedirect({
   const { id } = await params;
   const pid = Number(id);
   if (!Number.isFinite(pid) || pid <= 0) redirect("/buscar");
+  // Un clic más en el buscador: ordena los resultados y «Los más buscados».
+  try {
+    await clienteServicio()?.rpc("jugador_buscado", { p_id: pid });
+  } catch {
+    // Que no contar nunca impida abrir la ficha.
+  }
   redirect(`/liga/${await slugParaJugador(pid)}/jugador/${pid}`);
 }
