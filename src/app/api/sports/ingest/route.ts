@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { notificarEquipo } from "@/lib/push/server";
+import { refrescarWidgets } from "@/lib/push/apns";
+import { TEAM_IDS } from "@/lib/sports/api-football";
+
 import { anunciarExactos } from "@/lib/quiniela-liga/chat-sistema";
 import { eventoPartido } from "@/lib/push/eventos-partido";
+
+/** Equipos cuyo partido enseña el widget del marcador de la app. */
+const WIDGET_EQUIPOS = new Set<number>([TEAM_IDS.barcelona, TEAM_IDS.realMadrid]);
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -162,6 +168,24 @@ export async function GET(request: Request) {
                 } catch {
                   // no rompe la ingesta
                 }
+              }
+            }
+
+            // Widget del marcador (iOS 26+): enseña el partido del Barça o del
+            // Madrid. Si cambia algo (gol, inicio, descanso, segunda parte,
+            // final), se le pide al iPhone que lo recargue ya, en vez de
+            // esperar a la recarga que iOS le raciona.
+            if (
+              prev &&
+              (WIDGET_EQUIPOS.has(Number(prev.team_home)) || WIDGET_EQUIPOS.has(Number(prev.team_away))) &&
+              (prev.status !== st ||
+                (fx.goals.home ?? 0) !== (prev.score_home ?? 0) ||
+                (fx.goals.away ?? 0) !== (prev.score_away ?? 0))
+            ) {
+              try {
+                await refrescarWidgets(supabase);
+              } catch {
+                // no rompe la ingesta
               }
             }
 
