@@ -20,9 +20,11 @@ type Tab = "password" | "magic";
 export default function LoginForm({
   redirect,
   inApp = false,
+  conFacebook = false,
 }: {
   redirect: string;
   inApp?: boolean;
+  conFacebook?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("password");
   const [pwState, pwAction, pwPending] = useActionState(
@@ -46,6 +48,8 @@ export default function LoginForm({
           <ContextWarning />
           <div className="oauth">
             <OAuthButton provider="google" redirect={redirect} />
+            <OAuthButton provider="apple" redirect={redirect} />
+            {conFacebook && <OAuthButton provider="facebook" redirect={redirect} />}
           </div>
           <div className="divider">o con tu email</div>
         </>
