@@ -17,6 +17,8 @@ const SOCIALS = [
 
 /** La app de iOS (aprobada el 28-oct-2026). */
 export const APP_STORE_URL = "https://apps.apple.com/es/app/id6822903408";
+/** La de Android (en Google Play desde el 1-nov-2026). */
+export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.soyreinaldo.app";
 
 export default function Footer({ enApp = false }: { enApp?: boolean }) {
   return (
@@ -50,16 +52,24 @@ export default function Footer({ enApp = false }: { enApp?: boolean }) {
         </div>
         {/* Dentro de la app no tiene sentido invitar a descargarla. */}
         {!enApp && (
-          <a
-            className="foot__store"
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {/* Insignia oficial de Apple (no se puede redibujar ni recolorear). */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/app-store-es.svg" alt="Descárgalo en el App Store" width={120} height={40} />
-          </a>
+          <div className="foot__stores">
+            <a className="foot__store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+              {/* Insignia oficial de Apple (no se puede redibujar ni recolorear). */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/app-store-es.svg" alt="Descárgalo en el App Store" width={120} height={40} />
+            </a>
+            <a className="foot__store" href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer">
+              {/* Insignia oficial de Google Play, servida por Google. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://play.google.com/intl/en_us/badges/static/images/badges/es_badge_web_generic.png"
+                alt="Disponible en Google Play"
+                width={155}
+                height={60}
+                className="foot__store--play"
+              />
+            </a>
+          </div>
         )}
         <p className="foot__copy">
           © {new Date().getFullYear()} Reinaldo Rodríguez · Fútbol con Reinaldo
