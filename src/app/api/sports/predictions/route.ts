@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getFixturePredictions } from "@/lib/sports/api-football";
+import { isAppRequest } from "@/lib/is-app";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,9 @@ const MAX = 16;
  *
  * GET /api/sports/predictions?fixtures=1,2,3
  * → { "1": { home, draw, away }, ... }  (solo los que tienen predicción)
+ *
+ * Dentro de la app, nada: Apple las cuenta como información de apuestas
+ * (rechazo de la 1.1, norma 2.3.6, 4-nov-2026).
  */
 export async function GET(req: Request) {
   const raw = new URL(req.url).searchParams.get("fixtures") ?? "";
@@ -22,7 +26,7 @@ export async function GET(req: Request) {
     .filter((n) => Number.isFinite(n) && n > 0)
     .slice(0, MAX);
 
-  if (ids.length === 0) return NextResponse.json({});
+  if (ids.length === 0 || (await isAppRequest())) return NextResponse.json({});
 
   const out: Record<number, { home: number; draw: number; away: number }> = {};
   await Promise.all(
