@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import OAuthButton from "@/components/OAuthButton";
+import AppleLogin from "@/components/AppleLogin";
 import CodeLogin from "./code-login";
 import ContextWarning from "./context-warning";
 import {
@@ -49,6 +50,7 @@ export default function LoginForm({
           <div className="divider">o con tu email</div>
         </>
       )}
+      {inApp && <AppleLogin redirect={redirect} />}
 
       {inApp && tab === "password" && (
         <p className="notice notice--info" style={{ marginBottom: 14, textAlign: "left" }}>

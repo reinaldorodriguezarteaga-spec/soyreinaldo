@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revocar } from "@/lib/apple/siwa";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -199,6 +200,14 @@ export async function deleteAccount(
   const admin = createAdminClient(url, serviceKey, {
     auth: { persistSession: false },
   });
+  // Si entró con Apple, se le revoca el acceso antes de borrar (Apple lo
+  // exige, norma 5.1.1(v)). Que falle no impide borrar la cuenta.
+  const { data: apple } = await admin
+    .from("apple_tokens")
+    .select("refresh_token")
+    .eq("user_id", user.id)
+    .maybeSingle<{ refresh_token: string }>();
+  if (apple?.refresh_token) await revocar(admin, apple.refresh_token).catch(() => false);
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
     return {
