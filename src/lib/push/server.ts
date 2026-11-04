@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 import { enviarApns, type DispositivoApns } from "./apns";
+import { enviarFcm } from "./fcm";
 
 /**
  * Envío de avisos de gol: a los navegadores (Web Push) y, desde la app 1.1,
@@ -116,6 +117,14 @@ export async function notificarEquipo(
     for (const d of (data ?? []) as DispositivoApns[]) porToken.set(d.token, d);
   }
   total += await enviarApns(supabase, [...porToken.values()], payload, 900);
+
+  // Android (app Android 1.1, por FCM).
+  const android = new Set<string>();
+  for (const id of ids) {
+    const { data } = await supabase.rpc("fcm_targets_for_team", { p_team_id: String(id) });
+    for (const d of (data ?? []) as { token: string }[]) android.add(d.token);
+  }
+  total += await enviarFcm(supabase, [...android], payload, 900);
   return total;
 }
 
@@ -135,10 +144,18 @@ export async function notificarUsuario(
       .eq("user_id", userId);
     total += await enviar(supabase, (data ?? []) as Destino[], payload, ttl);
   }
-  const { data: iphones } = await supabase
+  const { data: moviles } = await supabase
     .from("push_dispositivos")
-    .select("token, entorno")
-    .eq("user_id", userId);
-  total += await enviarApns(supabase, (iphones ?? []) as DispositivoApns[], payload, ttl);
+    .select("token, entorno, plataforma")
+    .eq("user_id", userId)
+    .returns<(DispositivoApns & { plataforma: "ios" | "android" })[]>();
+  const lista = moviles ?? [];
+  total += await enviarApns(supabase, lista.filter((m) => m.plataforma === "ios"), payload, ttl);
+  total += await enviarFcm(
+    supabase,
+    lista.filter((m) => m.plataforma === "android").map((m) => m.token),
+    payload,
+    ttl,
+  );
   return total;
 }
