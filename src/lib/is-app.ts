@@ -4,7 +4,8 @@ import { headers } from "next/headers";
  * True si la petición viene desde la app nativa (Capacitor añade
  * "SoyReinaldoApp" al User-Agent). Se usa para ocultar dentro de la app lo
  * que provoca rechazo en App Store / Play Store o no funciona en el webview:
- * pagos (Stripe), login con Google, cuotas, anuncios y banner de cookies,
+ * pagos (Stripe), login con Google, cuotas y predicciones del proveedor
+ * (Apple, 2.3.6, 4-nov-2026), anuncios y banner de cookies,
  * franja de instalar, avisos de gol (Web Push) y comentarios.
  *
  * ⚠️ Lo que se oculta aquí tiene que SEGUIR oculto después de aprobada la

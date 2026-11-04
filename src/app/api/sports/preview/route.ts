@@ -38,8 +38,10 @@ function localizePrediction(
  * alineaciones y cuotas. Las llamadas a API-Football van cacheadas
  * (unstable_cache), así que un aluvión de aperturas no dispara la quota.
  *
- * ⚠️ Las CUOTAS se omiten dentro de la app nativa (isAppRequest) por la política
- * "no gambling" de App Store / Play Store.
+ * ⚠️ Las CUOTAS y la PREDICCIÓN del proveedor (porcentajes y «consejo» tipo
+ * «doble oportunidad») se omiten dentro de la app nativa (isAppRequest): Apple
+ * rechazó la 1.1 el 4-nov-2026 (norma 2.3.6) por enseñar «predicciones o
+ * información relacionada con apuestas». En la web siguen.
  */
 export type PreviewData = {
   prediction: MatchPrediction | null;
@@ -59,7 +61,7 @@ export async function GET(req: Request) {
 
   try {
     const [prediction, injuries, lineups, odds, subs, esMap] = await Promise.all([
-      getFixturePredictions(fixture),
+      inApp ? Promise.resolve(null) : getFixturePredictions(fixture),
       getFixtureInjuries(fixture),
       getFixtureLineups(fixture),
       inApp ? Promise.resolve(null) : getFixtureOdds(fixture),
