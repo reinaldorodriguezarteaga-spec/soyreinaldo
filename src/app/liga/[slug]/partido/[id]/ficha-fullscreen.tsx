@@ -169,20 +169,15 @@ export default function FichaFullscreen({
       // como mucho cada una).
       const imgs = [...nodo.querySelectorAll("img")];
       for (const img of imgs) img.loading = "eager";
-      await Promise.all(
-        imgs.map((img) =>
-          img.complete && img.naturalWidth > 0
-            ? Promise.resolve()
-            : new Promise<void>((listo) => {
-                const fin = setTimeout(listo, 4000);
-                img.addEventListener("load", () => (clearTimeout(fin), listo()), { once: true });
-                img.addEventListener("error", () => (clearTimeout(fin), listo()), { once: true });
-              }),
-        ),
-      );
+      // 4-nov: en el iPhone (Safari y la app) la foto volvía a salir sin
+      // caras ni escudos. html-to-image vuelve a pedir cada imagen con CORS y
+      // WebKit le daba la copia de caché de la <img> (pedida sin CORS), que
+      // descarta. Se pide cada una de nuevo, sin caché, y se incrusta como
+      // datos en la copia: así la captura ya no depende de nada externo.
+      await Promise.all(imgs.map((img) => incrustar(img)));
       const { toBlob } = await import("html-to-image");
       const fondo = getComputedStyle(document.body).backgroundColor || "#0a1030";
-      const opciones = { pixelRatio: 2, backgroundColor: fondo };
+      const opciones = { pixelRatio: 2, backgroundColor: fondo, cacheBust: true };
       // Safari pinta las imágenes del SVG intermedio tarde: la primera pasada
       // sale sin ellas (fallo conocido de html-to-image). Una de calentamiento.
       if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) await toBlob(nodo, opciones).catch(() => null);
@@ -295,4 +290,34 @@ export default function FichaFullscreen({
       )}
     </div>
   );
+}
+
+/** La imagen como datos (data:) para que la captura no tenga que pedirla. Si
+ * falla, se queda como estaba. Espera a que la copia la pinte (4 s como mucho). */
+async function incrustar(img: HTMLImageElement): Promise<void> {
+  const src = img.currentSrc || img.src;
+  if (src && !src.startsWith("data:")) {
+    try {
+      const r = await fetch(src, { mode: "cors", cache: "no-store" });
+      if (r.ok) {
+        const blob = await r.blob();
+        const datos = await new Promise<string>((ok, mal) => {
+          const lector = new FileReader();
+          lector.onload = () => ok(String(lector.result));
+          lector.onerror = mal;
+          lector.readAsDataURL(blob);
+        });
+        img.removeAttribute("srcset");
+        img.src = datos;
+      }
+    } catch {
+      // sin red o sin CORS: html-to-image lo intentará igual
+    }
+  }
+  if (img.complete && img.naturalWidth > 0) return;
+  await new Promise<void>((listo) => {
+    const fin = setTimeout(listo, 4000);
+    img.addEventListener("load", () => (clearTimeout(fin), listo()), { once: true });
+    img.addEventListener("error", () => (clearTimeout(fin), listo()), { once: true });
+  });
 }
