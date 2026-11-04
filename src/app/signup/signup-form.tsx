@@ -44,7 +44,7 @@ export default function SignupForm({
               label="Registrarme con Google"
             />
             <OAuthButton provider="apple" redirect={redirect} label="Registrarme con Apple" />
-            <OAuthButton provider="facebook" redirect={redirect} label="Registrarme con Facebook" />
+            {/* Facebook: en cuanto Meta publique la app (ver login/page.tsx). */}
           </div>
           <div className="divider">o con tu email</div>
         </>
