@@ -3,7 +3,7 @@ import TeamAnalisis from "./team-analisis";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   cuotaAgotada,
   frenoActivo,
@@ -20,7 +20,7 @@ import {
   type TeamSeasonStats,
 } from "@/lib/sports/api-football";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
-import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
+import { COMPETITIONS, COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competitions";
 import { isFavorited } from "@/app/actions/favorites";
 import FavoriteStar from "@/components/FavoriteStar";
 import { StandingsTableView } from "@/components/competition/tab-views";
@@ -111,6 +111,13 @@ export default async function LigaEquipoPage({
     (a, b) =>
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime(),
   );
+
+  // Ficha abierta bajo una competición que no es la del equipo (4-nov: el
+  // PSG salía con la clasificación de LaLiga). Sus propios partidos dicen
+  // dónde juega: se le lleva a su liga (o, si no es de ninguna nuestra, a la
+  // primera competición nuestra en la que juegue). Sin llamadas extra.
+  const suya = competicionDelEquipo(competition, allFixtures);
+  if (suya) redirect(`/liga/${suya.slug}/equipo/${teamId}`);
 
   const base = `/liga/${competition.slug}`;
 
@@ -384,3 +391,23 @@ async function TeamDetails({ competition, teamId, allFixtures, liveFixtures, squ
   );
 }
 
+
+/** Regiones que no son de una liga nacional (copas continentales, selecciones). */
+const NO_DOMESTICAS = new Set(["Internacional", "Conmebol", "Concacaf", "Selecciones"]);
+
+/**
+ * Si el equipo no juega `actual`, la competición nuestra que le toca: su liga
+ * nacional si la seguimos, si no la primera nuestra en la que aparezca. null
+ * si ya está donde debe (o no hay partidos para saberlo).
+ */
+function competicionDelEquipo(actual: Competition, partidos: Fixture[]): Competition | null {
+  if (partidos.length === 0) return null;
+  const ligas = new Set(partidos.map((f) => f.league.id));
+  if (ligas.has(actual.leagueId)) return null;
+  const nuestras = COMPETITIONS.filter((c) => ligas.has(c.leagueId) && c.slug !== actual.slug);
+  return (
+    nuestras.find((c) => c.standingsMode === "table" && !NO_DOMESTICAS.has(c.region)) ??
+    nuestras[0] ??
+    null
+  );
+}
