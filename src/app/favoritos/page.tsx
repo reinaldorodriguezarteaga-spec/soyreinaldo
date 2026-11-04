@@ -4,13 +4,21 @@ import { ChevronRight } from "lucide-react";
 import MiEquipoCard from "@/components/MiEquipoCard";
 import { createClient } from "@/lib/supabase/server";
 import { COMPETITIONS_BY_SLUG } from "@/lib/sports/competitions";
+import type { NivelAvisos } from "@/app/actions/favorites";
+import AvisosEquipo from "./avisos-equipo";
 
 export const metadata: Metadata = {
   title: "Mis favoritos | Soy Reinaldo",
   robots: { index: false },
 };
 
-type Fila = { kind: "competition" | "team" | "player"; ref_id: string; label: string; link_path: string };
+type Fila = {
+  kind: "competition" | "team" | "player";
+  ref_id: string;
+  label: string;
+  link_path: string;
+  avisos: NivelAvisos;
+};
 
 /** Selección o club (31-oct, pedido del dueño: separarlos). El favorito no
  * guarda el tipo de equipo, pero sí el enlace a su ficha, que cuelga de una
@@ -44,7 +52,7 @@ export default async function FavoritosPage() {
   const { data } = user
     ? await supabase
         .from("user_favorites")
-        .select("kind, ref_id, label, link_path")
+        .select("kind, ref_id, label, link_path, avisos")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true })
     : { data: null };
@@ -90,7 +98,7 @@ export default async function FavoritosPage() {
                       {lista.map((f) => {
                         const src = imagen(f);
                         return (
-                          <li key={`${f.kind}-${f.ref_id}`}>
+                          <li key={`${f.kind}-${f.ref_id}`} className={f.kind === "team" ? "lista__con-avisos" : undefined}>
                             <Link href={f.link_path} className="lista__fila">
                               {src ? (
                                 // eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API
@@ -101,8 +109,11 @@ export default async function FavoritosPage() {
                               <span className="lista__txt">
                                 <b>{f.label}</b>
                               </span>
-                              <ChevronRight className="lista__ir" aria-hidden />
+                              {f.kind !== "team" && <ChevronRight className="lista__ir" aria-hidden />}
                             </Link>
+                            {f.kind === "team" && (
+                              <AvisosEquipo teamId={f.ref_id} nombre={f.label} inicial={f.avisos} />
+                            )}
                           </li>
                         );
                       })}
@@ -110,7 +121,10 @@ export default async function FavoritosPage() {
                   </section>
                 );
               })}
-              <p className="ios__nota">Toca la estrella en un equipo, una competición o un jugador para añadirlo o quitarlo.</p>
+              <p className="ios__nota">
+                Junto a cada equipo eliges sus avisos: <b>Todo</b> (inicio, goles y final), <b>Solo el final</b> o{" "}
+                <b>Sin avisos</b>. Toca la estrella en un equipo, una competición o un jugador para añadirlo o quitarlo.
+              </p>
             </>
           )}
         </div>

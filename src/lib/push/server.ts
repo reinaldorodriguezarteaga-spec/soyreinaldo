@@ -83,13 +83,18 @@ async function enviar(
   return enviados;
 }
 
+/** Qué pasa en el partido. Cada favorito elige cuáles quiere (migración 110):
+ * 'todo' recibe los tres; 'final', solo el resultado; 'nada', ninguno. */
+export type EventoAviso = "gol" | "inicio" | "final";
+
 /**
- * Avisa a quien tenga ese equipo en favoritos. Devuelve cuántos avisos
- * salieron.
+ * Avisa a quien tenga ese equipo en favoritos y quiera ese tipo de aviso.
+ * Devuelve cuántos avisos salieron.
  */
 export async function notificarEquipo(
   teamIds: number | number[],
   payload: PushPayload,
+  evento: EventoAviso,
 ): Promise<number> {
   const supabase = admin();
   if (!supabase) return 0;
@@ -103,6 +108,7 @@ export async function notificarEquipo(
     for (const id of ids) {
       const { data } = await supabase.rpc("push_targets_for_team", {
         p_team_id: String(id),
+        p_evento: evento,
       });
       for (const d of (data ?? []) as Destino[]) porEndpoint.set(d.endpoint, d);
     }
@@ -113,7 +119,7 @@ export async function notificarEquipo(
   // iPhones (app 1.1).
   const porToken = new Map<string, DispositivoApns>();
   for (const id of ids) {
-    const { data } = await supabase.rpc("apns_targets_for_team", { p_team_id: String(id) });
+    const { data } = await supabase.rpc("apns_targets_for_team", { p_team_id: String(id), p_evento: evento });
     for (const d of (data ?? []) as DispositivoApns[]) porToken.set(d.token, d);
   }
   total += await enviarApns(supabase, [...porToken.values()], payload, 900);
@@ -121,7 +127,7 @@ export async function notificarEquipo(
   // Android (app Android 1.1, por FCM).
   const android = new Set<string>();
   for (const id of ids) {
-    const { data } = await supabase.rpc("fcm_targets_for_team", { p_team_id: String(id) });
+    const { data } = await supabase.rpc("fcm_targets_for_team", { p_team_id: String(id), p_evento: evento });
     for (const d of (data ?? []) as { token: string }[]) android.add(d.token);
   }
   total += await enviarFcm(supabase, [...android], payload, 900);

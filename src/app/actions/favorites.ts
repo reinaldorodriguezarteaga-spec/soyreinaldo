@@ -134,3 +134,27 @@ export async function isFavorited(
 
   return !!data;
 }
+
+export type NivelAvisos = "todo" | "final" | "nada";
+const NIVELES: NivelAvisos[] = ["todo", "final", "nada"];
+
+/** Qué avisos quiere de un equipo favorito (migración 110, 4-nov). */
+export async function ponerAvisosEquipo(
+  teamId: string,
+  nivel: NivelAvisos,
+): Promise<{ ok: boolean }> {
+  if (!NIVELES.includes(nivel) || !/^\d+$/.test(teamId)) return { ok: false };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const { error } = await supabase
+    .from("user_favorites")
+    .update({ avisos: nivel })
+    .eq("user_id", user.id)
+    .eq("kind", "team")
+    .eq("ref_id", teamId);
+  if (!error) revalidatePath("/favoritos");
+  return { ok: !error };
+}

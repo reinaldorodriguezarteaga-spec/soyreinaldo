@@ -157,6 +157,7 @@ export async function GET(request: Request) {
                   await notificarEquipo(
                     [equipoQueMarco, localMarco ? prev.team_away : prev.team_home],
                     payload,
+                    "gol",
                   );
                 } catch {
                   // no rompe la ingesta
@@ -186,7 +187,7 @@ export async function GET(request: Request) {
                       tag: `final-${fx.fixture.id}`,
                     };
               try {
-                await notificarEquipo([prev.team_home, prev.team_away], payload);
+                await notificarEquipo([prev.team_home, prev.team_away], payload, evento);
               } catch {
                 // no rompe la ingesta
               }
