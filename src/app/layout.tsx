@@ -8,6 +8,7 @@ import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
 import InstallBanner from "@/components/InstallBanner";
 import PuenteAvisosApp from "@/components/PuenteAvisosApp";
+import PuenteWidget from "@/components/PuenteWidget";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
@@ -190,6 +191,7 @@ export default async function RootLayout({
         {user && <Actividad />}
         {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
+        {inApp && <PuenteWidget conSesion={!!user} />}
         {pedirFavoritos && (
           <SelectorFavoritos
             ligas={COMPETITIONS.map((c) => ({
