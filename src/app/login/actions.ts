@@ -219,15 +219,18 @@ export async function signInWithPassword(
   redirect(redirectTarget);
 }
 
-type OAuthProvider = "google" | "facebook";
+type OAuthProvider = "google" | "facebook" | "apple";
 
 const PROVIDER_LABELS: Record<OAuthProvider, string> = {
   google: "Google",
   facebook: "Facebook",
+  apple: "Apple",
 };
 
 export async function signInWithOAuthProvider(formData: FormData) {
-  const provider = (formData.get("provider") as OAuthProvider | null) ?? "google";
+  const pedido = formData.get("provider");
+  const provider: OAuthProvider =
+    pedido === "facebook" || pedido === "apple" ? pedido : "google";
   const redirectTarget =
     (formData.get("redirect") as string | null) ?? "/quiniela";
 

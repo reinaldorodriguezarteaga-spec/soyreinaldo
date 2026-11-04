@@ -46,6 +46,8 @@ export default function LoginForm({
           <ContextWarning />
           <div className="oauth">
             <OAuthButton provider="google" redirect={redirect} />
+            <OAuthButton provider="apple" redirect={redirect} />
+            <OAuthButton provider="facebook" redirect={redirect} />
           </div>
           <div className="divider">o con tu email</div>
         </>

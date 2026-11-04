@@ -4,7 +4,7 @@ import { isAppRequest } from "@/lib/is-app";
 export const metadata = {
   title: "Entrar | Soy Reinaldo",
   description:
-    "Entra en tu cuenta de Soy Reinaldo con tu email o con Google.",
+    "Entra en tu cuenta de Soy Reinaldo con tu email, Google, Apple o Facebook.",
 };
 
 export default async function LoginPage({

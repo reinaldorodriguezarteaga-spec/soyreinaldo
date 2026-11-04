@@ -43,6 +43,8 @@ export default function SignupForm({
               redirect={redirect}
               label="Registrarme con Google"
             />
+            <OAuthButton provider="apple" redirect={redirect} label="Registrarme con Apple" />
+            <OAuthButton provider="facebook" redirect={redirect} label="Registrarme con Facebook" />
           </div>
           <div className="divider">o con tu email</div>
         </>
