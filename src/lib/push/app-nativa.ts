@@ -27,6 +27,12 @@ type CapacitorGlobal = {
   Plugins?: Record<string, unknown>;
 };
 
+/** «android» o «ios» según la app que muestra la web (Capacitor lo dice). */
+function plataformaApp(): "android" | "ios" {
+  const cap = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
+  return cap?.getPlatform?.() === "android" ? "android" : "ios";
+}
+
 export function pushNativo(): PluginAvisos | null {
   if (typeof window === "undefined") return null;
   const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
@@ -54,7 +60,7 @@ export async function registrarDispositivo(plugin: PluginAvisos): Promise<string
   const res = await fetch("/api/push/dispositivo", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ token, plataforma: plataformaApp() }),
   }).catch(() => null);
   return res?.ok ? token : null;
 }

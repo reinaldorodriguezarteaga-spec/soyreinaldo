@@ -4,14 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-/** Alta y baja de un iPhone en los avisos nativos (app 1.1). Mismo patrón
+/** Alta y baja de un móvil en los avisos nativos (app 1.1: iPhone por
+ * APNs; desde el 4-nov también Android por FCM, con `plataforma`). Mismo patrón
  * que /api/push/subscribe: hace falta sesión (los avisos van por los
  * favoritos del usuario) y la RLS de `push_dispositivos` impide tocar los
  * de otro. */
 
 // Los tokens de APNs son hexadecimales (64 caracteres hoy; Apple avisa de
-// que pueden crecer).
+// que pueden crecer). Los de FCM, base64url con «:» (unos 160).
 const TOKEN_RE = /^[0-9a-f]{32,200}$/i;
+const TOKEN_FCM_RE = /^[A-Za-z0-9_:\-]{100,400}$/;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -20,9 +22,12 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
 
-  const body = (await request.json().catch(() => null)) as { token?: string } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { token?: string; plataforma?: string }
+    | null;
   const token = body?.token?.trim();
-  if (!token || !TOKEN_RE.test(token)) {
+  const plataforma = body?.plataforma === "android" ? "android" : "ios";
+  if (!token || !(plataforma === "android" ? TOKEN_FCM_RE : TOKEN_RE).test(token)) {
     return NextResponse.json({ error: "token no válido" }, { status: 400 });
   }
 
@@ -36,7 +41,7 @@ export async function POST(request: Request) {
   const admin = createAdmin(url, key, { auth: { persistSession: false } });
   const { error } = await admin
     .from("push_dispositivos")
-    .upsert({ token, user_id: user.id, plataforma: "ios" }, { onConflict: "token" });
+    .upsert({ token, user_id: user.id, plataforma }, { onConflict: "token" });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
