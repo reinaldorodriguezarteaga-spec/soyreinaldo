@@ -22,10 +22,12 @@ const HOST: Record<Entorno, string> = {
 export type Entorno = "production" | "sandbox";
 export type DispositivoApns = { token: string; entorno: Entorno };
 
-type Clave = { keyId: string; teamId: string; p8: string };
+export type Clave = { keyId: string; teamId: string; p8: string };
 
 let clave: Clave | null | undefined;
-async function leerClave(supabase: SupabaseClient): Promise<Clave | null> {
+/** La clave .p8 de Apple del Vault. Desde el 4-nov la misma clave también
+ * firma Sign in with Apple (lib/apple/siwa.ts). */
+export async function leerClave(supabase: SupabaseClient): Promise<Clave | null> {
   if (clave !== undefined) return clave;
   const { data } = await supabase.rpc("push_apns_key");
   const fila = (data as { key_id: string | null; team_id: string | null; p8: string | null }[] | null)?.[0];
@@ -36,7 +38,7 @@ async function leerClave(supabase: SupabaseClient): Promise<Clave | null> {
   return clave;
 }
 
-const b64url = (b: Buffer | string) =>
+export const b64url = (b: Buffer | string) =>
   Buffer.from(b).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
 
 /** Apple acepta el mismo JWT hasta una hora; se renueva a los 50 minutos. */

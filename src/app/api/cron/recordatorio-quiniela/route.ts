@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { notificarUsuario } from "@/lib/push/server";
 import {
+  avisoRecordatorio,
   emailRecordatorio,
   pendientesPorUsuario,
   type PartidoProximo,
@@ -22,7 +23,9 @@ export const maxDuration = 60;
  * jugaron no reciben nada. Un aviso al día como máximo, por email y, si lo
  * tiene activado, push.
  */
-const VENTANA_H = 24;
+// Corre a las 10:00 de España: 38 h llegan hasta el final de mañana (el
+// aviso del día antes, 4-nov).
+const VENTANA_H = 38;
 const ACTIVO_DIAS = 60;
 
 export async function GET(request: Request) {
@@ -45,7 +48,7 @@ export async function GET(request: Request) {
   const simular = q.get("simular") === "1";
   const ventanaH = simular ? Number(q.get("horas") ?? VENTANA_H) || VENTANA_H : VENTANA_H;
 
-  // 1. Partidos que empiezan en las próximas 24 h.
+  // 1. Partidos de hoy y de mañana.
   const ahora = new Date();
   const hasta = new Date(ahora.getTime() + ventanaH * 3_600_000);
   const { data: proximos } = await db
@@ -134,11 +137,7 @@ export async function GET(request: Request) {
 
     try {
       pushes += await notificarUsuario(perfil.id, {
-        title: "⚽ Quiniela: te faltan pronósticos",
-        body:
-          faltan.length === 1
-            ? `${faltan[0].local} - ${faltan[0].visitante} empieza hoy. ¡No te quedes sin puntos!`
-            : `Hoy hay ${faltan.length} partidos que aún no has pronosticado.`,
+        ...avisoRecordatorio(faltan, ahora),
         url: "/quiniela-liga/partidos",
         tag: `recordatorio-${ahora.toISOString().slice(0, 10)}`,
       });

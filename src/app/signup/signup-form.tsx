@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import OAuthButton from "@/components/OAuthButton";
+import AppleLogin from "@/components/AppleLogin";
 import ContextWarning from "@/app/login/context-warning";
 import { enviarSinBorrar } from "@/lib/enviar-sin-borrar";
 import { signUp, type SignupState } from "./actions";
@@ -46,6 +47,7 @@ export default function SignupForm({
           <div className="divider">o con tu email</div>
         </>
       )}
+      {inApp && <AppleLogin redirect={redirect} />}
 
       <form ref={formRef} onSubmit={enviarSinBorrar(action)}>
         <input type="hidden" name="redirect" value={redirect} />

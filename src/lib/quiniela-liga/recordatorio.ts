@@ -1,8 +1,9 @@
 /**
  * Recordatorio diario de la quiniela (cron `recordatorio-quiniela`, 10:00 de
  * España): a quien juega de verdad y no se ha dado de baja, UN aviso con los
- * partidos de las próximas 24 h que aún no ha pronosticado. Cada partido se
- * cierra a su hora de inicio, así que el que llega tarde pierde esos puntos.
+ * partidos de hoy y de mañana que aún no ha pronosticado (desde el 4-nov
+ * avisa también el día antes, pedido del dueño). Cada partido se cierra a su
+ * hora de inicio, así que el que llega tarde pierde esos puntos.
  */
 
 export type PartidoProximo = {
@@ -25,6 +26,38 @@ export function pendientesPorUsuario(
     if (faltan.length > 0) out.set(u, faltan);
   }
   return out;
+}
+
+const diaMadrid = (d: Date) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(d);
+
+/** «hoy» o «mañana» de un partido, en hora de España. */
+export function cuando(kickoffAt: string, ahora = new Date()): "hoy" | "mañana" {
+  return diaMadrid(new Date(kickoffAt)) === diaMadrid(ahora) ? "hoy" : "mañana";
+}
+
+/**
+ * Texto del aviso al móvil. Sin la palabra «quiniela»: el aviso también le
+ * sale al iPhone con la app, y dentro de la app no se nombra (tiendas).
+ */
+export function avisoRecordatorio(faltan: PartidoProximo[], ahora = new Date()): { title: string; body: string } {
+  const hoy = faltan.filter((m) => cuando(m.kickoffAt, ahora) === "hoy");
+  const lista = hoy.length > 0 ? hoy : faltan;
+  const dia = hoy.length > 0 ? "hoy" : "mañana";
+  if (lista.length === 1) {
+    const m = lista[0];
+    return {
+      title: "⚽ Te falta un pronóstico",
+      body: `${m.local} - ${m.visitante} se juega ${dia}. ¡No te quedes sin puntos!`,
+    };
+  }
+  return {
+    title: "⚽ Te faltan pronósticos",
+    body:
+      dia === "hoy"
+        ? `Hoy hay ${lista.length} partidos que aún no has pronosticado.`
+        : `Mañana hay jornada: recuerda rellenar tus ${lista.length} pronósticos.`,
+  };
 }
 
 const hora = (iso: string) =>
@@ -58,7 +91,7 @@ export function emailRecordatorio(opts: {
     .join("");
   const html = `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:28px;border-radius:16px;max-width:460px;margin:auto">
   <h2 style="margin:0 0 8px;font-size:20px">Hola, ${esc(opts.nombre)}</h2>
-  <p style="margin:0 0 14px;color:#c5cbef">Hoy se juegan partidos de la quiniela que aún no has pronosticado. Cada uno se cierra a su hora de inicio:</p>
+  <p style="margin:0 0 14px;color:#c5cbef">Entre hoy y mañana se juegan partidos de la quiniela que aún no has pronosticado. Cada uno se cierra a su hora de inicio:</p>
   <table style="border-collapse:collapse;margin:0 0 18px">${filas}</table>
   <a href="${opts.urlPronosticar}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">Hacer mis pronósticos</a>
   <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a la quiniela de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más recordatorios</a>.</p>
