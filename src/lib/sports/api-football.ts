@@ -3907,6 +3907,17 @@ export async function getJugadorTemporada(id: number, season: number): Promise<J
   return r.response[0] ?? null;
 }
 
+/** Fechas de cada edición de una competición, por año del API. Para
+ * colocar cada competición en su temporada en la ficha del jugador (4-nov).
+ * Caché de 30 días: el calendario de una edición casi no cambia. */
+export async function getFechasCompeticion(ligaId: number): Promise<Map<number, { start: string; end: string }>> {
+  type Liga = { seasons: { year: number; start: string | null; end: string | null }[] };
+  const r = await get<Liga>("/leagues", { id: ligaId }, 30 * 86400);
+  const m = new Map<number, { start: string; end: string }>();
+  for (const s of r.response[0]?.seasons ?? []) if (s.start && s.end) m.set(s.year, { start: s.start, end: s.end });
+  return m;
+}
+
 /** Clubes (y selecciones) por los que ha pasado un jugador, con sus ids.
  * Para validar el tiki-taka-toe con cualquier jugador (23-oct). Caché 30 días. */
 export async function getEquiposJugador(id: number): Promise<number[]> {

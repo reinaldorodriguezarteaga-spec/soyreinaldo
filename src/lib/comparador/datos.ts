@@ -218,6 +218,61 @@ export function filasDeTemporada(
   return [...deEse.filter((x) => !esTorneoDeVerano(x)), ...delSiguiente.filter(esTorneoDeVerano)];
 }
 
+/** Fechas reales de una edición de una competición (`/leagues?id=`). */
+export type FechasEdicion = { start: string; end: string };
+
+/**
+ * Temporada (de julio a junio) a la que pertenece una edición de una
+ * competición, por sus fechas reales (4-nov). El API etiqueta muchas con otro
+ * año: la Supercopa de enero de 2026 es «2025», las eliminatorias de la
+ * Conmebol que acabaron en septiembre de 2025 son «2026» (el año del
+ * Mundial). Las cortas (un torneo de verano, una supercopa) van con la
+ * temporada en que empiezan; las largas, con la que acaban (las
+ * eliminatorias y la Liga de Naciones duran más de un año y el API solo da
+ * el total: se ponen donde terminan).
+ */
+export function temporadaDeEdicion(f: FechasEdicion): number {
+  const dias = (Date.parse(f.end) - Date.parse(f.start)) / 86_400_000;
+  const d = new Date(dias < 90 ? f.start : f.end);
+  return d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+}
+
+/**
+ * Las filas de la temporada `temporada` sacadas de las de varias temporadas
+ * del API (la anterior, esa y la siguiente), colocando cada una por las
+ * fechas de su competición. Sin fechas, la regla de siempre
+ * (`filasDeTemporada`). Una edición que aún no ha empezado no cuenta: el API
+ * le cuelga a veces números que no son suyos (la Supercopa 2026-27, que se
+ * juega en febrero de 2027, salía con cuatro goles de Raphinha).
+ *
+ * Las ediciones de más de un año (eliminatorias, Liga de Naciones) el API las
+ * da como un solo total que no se puede repartir por temporadas: van aparte
+ * (`aparte`), en la temporada en que acaban, para enseñarlas sin sumarlas.
+ */
+export function filasPorFechas(
+  porTemporada: Map<number, EstadisticaJugadorApi[]>,
+  temporada: number,
+  fechas: (ligaId: number, edicion: number) => FechasEdicion | undefined,
+  hoy = Date.now(),
+): { filas: EstadisticaJugadorApi[]; aparte: { fila: EstadisticaJugadorApi; fechas: FechasEdicion }[] } {
+  const fuera: EstadisticaJugadorApi[] = [];
+  const aparte: { fila: EstadisticaJugadorApi; fechas: FechasEdicion }[] = [];
+  for (const [t, filas] of porTemporada) {
+    for (const s of filas) {
+      const f = s.league.id != null && s.league.season != null ? fechas(s.league.id, s.league.season) : undefined;
+      if (f) {
+        if (Date.parse(f.start) > hoy) continue;
+        if (temporadaDeEdicion(f) !== temporada) continue;
+        if ((Date.parse(f.end) - Date.parse(f.start)) / 86_400_000 > 400) aparte.push({ fila: s, fechas: f });
+        else fuera.push(s);
+      } else if (t === temporada ? !esTorneoDeVerano(s) : t === temporada + 1 && esTorneoDeVerano(s)) {
+        fuera.push(s);
+      }
+    }
+  }
+  return { filas: fuera, aparte };
+}
+
 /**
  * Temporada (de julio a junio) en la que el jugador cumple `edad` años. El
  * API solo da totales por temporada, y partido a partido no tiene nada antes
