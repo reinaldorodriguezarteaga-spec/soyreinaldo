@@ -23,7 +23,7 @@ async function cargar() {
 
     const pasos = [
       { hecho: perfil.data?.mi_equipo_id != null, titulo: "Elige tu equipo", href: "/liga/laliga" },
-      { hecho: !!pronosticos.data?.length, titulo: "Haz tu primer pronóstico", href: "/quiniela-liga/partidos" },
+      { hecho: !!pronosticos.data?.length, titulo: "Pon tu primer marcador", href: "/quiniela-liga/partidos" },
       { hecho: !!duelos.data?.length, titulo: "Reta a un amigo", href: "/quiniela-liga/ranking?vista=duelos" },
     ];
     return pasos.every((p) => p.hecho) ? null : pasos;

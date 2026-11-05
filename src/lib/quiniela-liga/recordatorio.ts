@@ -47,16 +47,16 @@ export function avisoRecordatorio(faltan: PartidoProximo[], ahora = new Date()):
   if (lista.length === 1) {
     const m = lista[0];
     return {
-      title: "⚽ Te falta un pronóstico",
+      title: "⚽ Te falta un marcador",
       body: `${m.local} - ${m.visitante} se juega ${dia}. ¡No te quedes sin puntos!`,
     };
   }
   return {
-    title: "⚽ Te faltan pronósticos",
+    title: "⚽ Te faltan marcadores",
     body:
       dia === "hoy"
-        ? `Hoy hay ${lista.length} partidos que aún no has pronosticado.`
-        : `Mañana hay jornada: recuerda rellenar tus ${lista.length} pronósticos.`,
+        ? `Hoy hay ${lista.length} partidos sin tu marcador.`
+        : `Mañana hay jornada: recuerda poner tus ${lista.length} marcadores.`,
   };
 }
 

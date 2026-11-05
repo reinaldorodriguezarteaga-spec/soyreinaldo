@@ -73,7 +73,7 @@ export default async function QuinielaPendientes() {
       <Icono icono={CircleDot} tono="azul" />
       <span style={{ flex: 1 }}>
         <strong>
-          Te {faltan === 1 ? "falta 1 pronóstico" : `faltan ${faltan} pronósticos`}
+          <T>{faltan === 1 ? "Te falta 1 pronóstico" : `Te faltan ${faltan} pronósticos`}</T>
         </strong>
         <span style={{ display: "block", color: "var(--text-dim)", fontSize: "0.88rem" }}>
           <T>Partidos de la quiniela en los próximos dos días. Cada uno se cierra al empezar.</T>
