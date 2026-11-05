@@ -71,9 +71,9 @@ export default async function MatchQuiniela({
           </strong>
         </>
       ) : anf.hecho ? (
-        <>{ANFITRION_NOMBRE} ya ha pronosticado este partido. ¿Le ganas?</>
+        <T>{ANFITRION_NOMBRE} ya ha pronosticado este partido. ¿Le ganas?</T>
       ) : (
-        <>{ANFITRION_NOMBRE} aún no lo ha pronosticado.</>
+        <T>{ANFITRION_NOMBRE} aún no lo ha pronosticado.</T>
       )}
     </p>
   ) : null;
@@ -198,7 +198,7 @@ export default async function MatchQuiniela({
     <Caja titulo={liga && !liga.isPublic ? liga.name : undefined}>
       {mio ? (
         <p style={{ margin: "0 0 14px" }}>
-          Tu pronóstico:{" "}
+          <T>Tu pronóstico:</T>{" "}
           <strong style={{ fontSize: "1.15rem" }}>
             {mio.score_home}–{mio.score_away}
           </strong>
@@ -217,9 +217,7 @@ export default async function MatchQuiniela({
         </p>
       ) : (
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          {played
-            ? "No pronosticaste este partido."
-            : "Aún no has pronosticado este partido."}
+          <T>{played ? "No pronosticaste este partido." : "Aún no has pronosticado este partido."}</T>
         </p>
       )}
 
@@ -229,7 +227,7 @@ export default async function MatchQuiniela({
             <thead>
               <tr>
                 <th>Jugador</th>
-                <th style={{ textAlign: "right" }}>Pronóstico</th>
+                <th style={{ textAlign: "right" }}><T>Pronóstico</T></th>
                 {hayResultado && <th className="pts">Pts</th>}
               </tr>
             </thead>
@@ -294,7 +292,7 @@ function BloqueComunidad({
           textTransform: "uppercase",
         }}
       >
-        Lo que pronostica la comunidad · {c.total} pronósticos
+        <T>Lo que pronostica la comunidad · </T>{c.total} <T>pronósticos</T>
       </p>
       {filas.map((f) => (
         <div key={f.etiqueta} style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>

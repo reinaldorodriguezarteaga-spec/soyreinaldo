@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { savePrediction } from "./actions";
 import type { FormaEquipo } from "@/lib/quiniela-liga/forma";
 import { ANFITRION_NOMBRE, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
+import { T } from "@/components/EnApp";
 
 export type ClubTeam = {
   id: number;
@@ -192,7 +193,7 @@ export default function LqMatchCard({
       {showScoreBlock && match.prediction && (
         <div className="predbar">
           <span>
-            Tu pronóstico:{" "}
+            <T>Tu pronóstico:</T>{" "}
             <b>
               {match.prediction.home}–{match.prediction.away}
             </b>
@@ -214,7 +215,7 @@ export default function LqMatchCard({
       )}
       {showScoreBlock && !match.prediction && isFinal && (
         <p className="predbar" style={{ justifyContent: "center" }}>
-          No pronosticaste este partido.
+          <T>No pronosticaste este partido.</T>
         </p>
       )}
 
@@ -286,9 +287,9 @@ function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
           </b>
         </>
       ) : p.hecho ? (
-        <>{ANFITRION_NOMBRE} ya ha pronosticado. ¿Le ganas?</>
+        <T>{ANFITRION_NOMBRE} ya ha pronosticado. ¿Le ganas?</T>
       ) : (
-        <>{ANFITRION_NOMBRE} aún no ha pronosticado</>
+        <T>{ANFITRION_NOMBRE} aún no ha pronosticado</T>
       )}
     </p>
   );

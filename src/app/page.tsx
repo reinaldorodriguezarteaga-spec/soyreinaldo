@@ -374,7 +374,7 @@ async function HomePromoQuiniela() {
           lineHeight: 1.5,
         }}
       >
-        Pronostica cada jornada, marcador exacto{" "}
+        <T>Pronostica cada jornada, marcador exacto</T>{" "}
         <b style={{ color: "var(--text)" }}>{baremo.exacto} pts</b>, y
         compite en la clasificación pública. Sin código: entras de un
         toque y a jugar.

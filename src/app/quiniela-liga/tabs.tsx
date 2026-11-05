@@ -72,7 +72,7 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
             const on = enRuta && (t.vista ? vistaActual === t.vista : vistaActual !== "duelos");
             return (
               <Link key={t.label} href={hrefDe(t)} className={on ? "on" : ""}>
-                {t.icono && <t.icono className="ico-txt" aria-hidden />} {t.label}
+                {t.icono && <t.icono className="ico-txt" aria-hidden />} <T>{t.label}</T>
               </Link>
             );
           })}

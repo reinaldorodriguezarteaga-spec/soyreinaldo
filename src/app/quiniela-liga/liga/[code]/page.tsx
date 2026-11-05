@@ -193,7 +193,7 @@ export default async function LeaguePanelPage({
               }
               className="btn"
             >
-              Pronosticar
+              <T>Pronosticar</T>
             </Link>
           </p>
           {guardado === "1" && (

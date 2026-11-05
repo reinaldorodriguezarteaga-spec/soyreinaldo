@@ -130,14 +130,16 @@ export default async function QuinielaLigaIndex({
 
           <div className="panel qcard-champions" style={{ padding: 24 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}><Icono icono={Trophy} tono="oro" tam="sm" /> Quiniela de la Champions</h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}><Icono icono={Trophy} tono="oro" tam="sm" /> <T>Quiniela de la Champions</T></h2>
               <span className="mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--text-dim)" }}>
                 2026-27 · OTRA COMPETICIÓN
               </span>
             </div>
             <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-              Pronostica la Champions jornada a jornada, de la fase liga a la final, con su propia clasificación:
-              aquí no suman los puntos de LaLiga.
+              <T>
+                Pronostica la Champions jornada a jornada, de la fase liga a la final, con su propia clasificación:
+                aquí no suman los puntos de LaLiga.
+              </T>
               {idxChampions >= 0
                 ? ` Vas ${idxChampions + 1}.º de ${filasChampions.length} con ${filasChampions[idxChampions].puntos} puntos.`
                 : filasChampions.length > 0
@@ -146,7 +148,7 @@ export default async function QuinielaLigaIndex({
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href="/quiniela-champions" className="btn btn--accent">
-                Pronosticar <span className="arr">→</span>
+                <T>Pronosticar</T> <span className="arr">→</span>
               </Link>
               <Link href="/quiniela-champions?vista=clasificacion" className="btn">
                 Clasificación
@@ -213,7 +215,7 @@ export default async function QuinielaLigaIndex({
             <div className="panel" style={{ padding: 24 }}>
               <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Entra para jugar</h2>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                Con tu cuenta guardas pronósticos y apareces en la clasificación.
+                <T>Con tu cuenta guardas pronósticos y apareces en la clasificación.</T>
               </p>
               <Link href="/login?redirect=/quiniela-liga" className="btn btn--accent">
                 Iniciar sesión <span className="arr">→</span>
@@ -292,7 +294,7 @@ function LeagueCard({
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Link href={base} className="btn btn--accent">
-          Pronosticar <span className="arr">→</span>
+          <T>Pronosticar</T> <span className="arr">→</span>
         </Link>
         <Link href={ranking} className="btn">
           Clasificación
