@@ -96,22 +96,32 @@ export async function guardarAnalisis(
     ? (previo?.published_at ?? new Date().toISOString())
     : null;
 
-  const { error } = id
-    ? await supabase.from("articles").update({ ...fila, published_at }).eq("id", id)
-    : await supabase.from("articles").insert({ ...fila, published_at });
+  // Enlace sacado del título y ya ocupado (5-nov: un análisis nuevo con un
+  // título igual o casi igual a otro daba error al escribirlo por primera
+  // vez): se le añade -2, -3… Si el enlace lo puso el autor a mano, se le avisa.
+  const guardar = (s: string) =>
+    id
+      ? supabase.from("articles").update({ ...fila, slug: s, published_at }).eq("id", id)
+      : supabase.from("articles").insert({ ...fila, slug: s, published_at });
+  let slugFinal = slug;
+  let { error } = await guardar(slugFinal);
+  for (let n = 2; error?.code === "23505" && !slugManual && n <= 9; n++) {
+    slugFinal = `${slug}-${n}`;
+    ({ error } = await guardar(slugFinal));
+  }
 
   if (error) {
     if (error.code === "23505") {
       return {
         status: "error",
-        message: `Ya hay un análisis con el enlace "${slug}". Cambia el título o pon un enlace propio.`,
+        message: `Ya hay un análisis con el enlace "${slugFinal}". Pon otro enlace.`,
       };
     }
     return { status: "error", message: error.message };
   }
 
   revalidatePath("/analisis");
-  revalidatePath(`/analisis/${slug}`);
+  revalidatePath(`/analisis/${slugFinal}`);
   revalidatePath("/admin/analisis");
   if (fixtureId && competicion) {
     revalidatePath(`/liga/${competicion}/partido/${fixtureId}`);
