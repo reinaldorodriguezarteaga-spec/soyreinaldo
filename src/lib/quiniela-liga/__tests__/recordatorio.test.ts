@@ -66,7 +66,7 @@ describe("aviso al móvil del recordatorio", () => {
 
   it("el día antes avisa de los de mañana, sin la palabra quiniela", () => {
     const a = avisoRecordatorio([m(1, "2026-11-05T20:00:00Z"), m(2, "2026-11-05T18:00:00Z")], ahora);
-    expect(a.body).toBe("Mañana hay jornada: recuerda rellenar tus 2 pronósticos.");
+    expect(a.body).toBe("Mañana hay jornada: recuerda poner tus 2 marcadores.");
     expect(`${a.title} ${a.body}`.toLowerCase()).not.toContain("quiniela");
   });
   it("si hay partidos hoy, manda lo de hoy", () => {

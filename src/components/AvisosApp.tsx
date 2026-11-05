@@ -66,7 +66,7 @@ export default function AvisosApp({ tieneFavoritos }: { tieneFavoritos: boolean 
       <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.92rem" }}>
         <T>
           Te avisamos en cuanto marca un equipo que tengas en favoritos, y te
-          recordamos los pronósticos de la quiniela antes de cada jornada.
+          recordamos jugar a la quiniela antes de cada jornada.
         </T>
       </p>
 

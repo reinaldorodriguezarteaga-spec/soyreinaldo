@@ -89,7 +89,7 @@ export default function PuenteAvisosApp({ conSesion }: { conSesion: boolean }) {
       <p className="avisos-oferta__titulo">⚽ ¿Te avisamos?</p>
       <p className="avisos-oferta__texto">
         Los goles de tus equipos favoritos al momento y un recordatorio el día antes de cada
-        jornada para que no se te olviden tus pronósticos.
+        jornada para que no se te olvide poner tus marcadores.
       </p>
       <div className="avisos-oferta__botones">
         <button type="button" className="btn btn--accent" onClick={activar} disabled={trabajando}>

@@ -81,7 +81,7 @@ export async function GET(request: Request) {
         payload: {
           title: `⭐ Hoy juega el ${conTildes(mio)}`,
           body: `${conTildes(f.teams.home.name)} – ${conTildes(f.teams.away.name)} a las ${hora(f.fixture.date)}. ${
-            falta ? "¡Haz tu pronóstico antes de que empiece!" : "Síguelo en directo."
+            falta ? "¡Pon tu marcador antes de que empiece!" : "Síguelo en directo."
           }`,
           url: falta ? "/quiniela-liga/partidos" : `/liga/${slug}/partido/${f.fixture.id}`,
           tag: `dia-de-partido-${hoy}`,
