@@ -60,6 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/quiniela-liga`, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE}/quiniela-liga/reglas`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE}/privacidad`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE}/terminos`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const competiciones: MetadataRoute.Sitemap = COMPETITIONS.map((c) => ({

@@ -35,6 +35,7 @@ export default function Footer({ enApp = false }: { enApp?: boolean }) {
             <Link href="/redes">Redes</Link>
             <Link href="/contacto">Contáctame</Link>
             <Link href="/privacidad">Privacidad</Link>
+            <Link href="/terminos">Términos</Link>
             <Link href="/eliminar-datos">Eliminar mis datos</Link>
             <ReportarFallo tipoInicial="fallo" />
           </nav>
