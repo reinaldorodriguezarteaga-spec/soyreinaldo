@@ -191,7 +191,7 @@ export default async function QuinielaLigaRankingPage({
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
-            ← Pronósticos
+            <T>← Pronósticos</T>
           </Link>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)", marginTop: 12 }}>
             Clasificación
@@ -315,7 +315,7 @@ export default async function QuinielaLigaRankingPage({
           ) : enVistaJornada ? (
             filasJornada.length === 0 ? (
               <div className="panel" style={{ padding: 24, textAlign: "center", color: "var(--text-dim)" }}>
-                Nadie de esta liga pronosticó los partidos ya jugados de la jornada {jornadaVista}.
+                <T>Nadie de esta liga pronosticó los partidos ya jugados de la jornada </T>{jornadaVista}.
               </div>
             ) : (
               <div className="panel" style={{ overflowX: "auto" }}>
@@ -361,14 +361,13 @@ export default async function QuinielaLigaRankingPage({
                 color: "var(--text-dim)",
               }}
             >
-              Todavía no hay nadie en la clasificación. Haz tu primer pronóstico
-              y aparecerás aquí.
+              <T>Todavía no hay nadie en la clasificación. Haz tu primer pronóstico y aparecerás aquí.</T>
               <div style={{ marginTop: 16 }}>
                 <Link
                   href={leagueHref("/quiniela-liga/partidos", active)}
                   className="btn btn--accent"
                 >
-                  Ir a pronosticar <span className="arr">→</span>
+                  <T>Ir a pronosticar</T> <span className="arr">→</span>
                 </Link>
               </div>
             </div>

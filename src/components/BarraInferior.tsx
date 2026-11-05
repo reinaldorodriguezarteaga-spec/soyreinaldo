@@ -40,8 +40,8 @@ const PESTANAS = [
   {
     href: "/quiniela-liga",
     label: "Quiniela",
-    // En la app nunca «quiniela» (termino.ts); «Liga de pronósticos» no cabe.
-    labelApp: "Pronósticos",
+    // En la app el juego es «Adivina el marcador» (termino.ts); no cabe entero.
+    labelApp: "Adivina",
     activa: (p: string) => p.startsWith("/quiniela") || p.startsWith("/mi-jornada") || p.startsWith("/mi-temporada"),
     icono: (
       <>

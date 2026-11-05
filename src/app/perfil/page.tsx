@@ -136,8 +136,10 @@ export default async function PerfilPage() {
             <div className="acard">
               <h2>Recordatorios por email</h2>
               <p className="sub">
-                Te avisamos cada noche si tienes partidos sin pronosticar para
-                el día siguiente, y los domingos un resumen de toda la semana.
+                <T>
+                  Te avisamos cada noche si tienes partidos sin pronosticar para
+                  el día siguiente, y los domingos un resumen de toda la semana.
+                </T>
               </p>
               <div className="setting">
                 <div className="setting__t">

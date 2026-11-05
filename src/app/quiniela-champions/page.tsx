@@ -122,7 +122,7 @@ export default async function QuinielaChampionsPage({
                 {!user && (
                   <>
                     {" "}
-                    <Link href="/login?redirect=/quiniela-champions">Entra</Link> para pronosticar.
+                    <Link href="/login?redirect=/quiniela-champions">Entra</Link> <T>para pronosticar.</T>
                   </>
                 )}
               </p>

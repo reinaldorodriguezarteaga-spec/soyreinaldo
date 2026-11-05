@@ -1,5 +1,6 @@
 import LoginForm from "./login-form";
 import { isAppRequest } from "@/lib/is-app";
+import { T } from "@/components/EnApp";
 
 /** Facebook visible para todos (cuando Meta publique la app). */
 const FACEBOOK_PUBLICO = false;
@@ -32,7 +33,7 @@ export default async function LoginPage({
         </div>
         <div className="auth__card">
           <h1>Entra a la comunidad</h1>
-          <p className="sub">Pronostica, compite y debate con el resto de culés.</p>
+          <p className="sub"><T>Pronostica, compite y debate con el resto de culés.</T></p>
           <LoginForm redirect={redirect} inApp={inApp} conFacebook={conFacebook} />
         </div>
       </div>

@@ -169,8 +169,10 @@ export default async function QuinielaLigaReglasPage({
             Reglas
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            Cómo se puntúa, cuándo se cierran los pronósticos y qué hacer si
-            algo no cuadra. Todo lo que hay que saber para jugar sin sorpresas.
+            <T>
+              Cómo se puntúa, cuándo se cierran los pronósticos y qué hacer si
+              algo no cuadra. Todo lo que hay que saber para jugar sin sorpresas.
+            </T>
           </p>
         </div>
       </section>
@@ -179,12 +181,12 @@ export default async function QuinielaLigaReglasPage({
         <div className="wrap" style={{ maxWidth: 620 }}>
           <div className="shead" style={{ marginBottom: 16 }}>
             <h2 style={{ fontFamily: "var(--font-display-stack)", fontWeight: 900, textTransform: "uppercase", fontSize: "1.6rem", margin: 0 }}>
-              Pronósticos, jornada a jornada
+              <T>Pronósticos, jornada a jornada</T>
             </h2>
           </div>
           <PointsTable rows={PREDICTION_ROWS} />
           <p className="hint" style={{ marginTop: 12 }}>
-            Se pronostica partido a partido, hasta <b>30 minutos antes</b> del
+            <T>Se pronostica partido a partido, hasta</T> <b>30 minutos antes</b> del
             pitido inicial — pasado ese punto, el marcador queda bloqueado.
           </p>
         </div>
@@ -278,7 +280,7 @@ export default async function QuinielaLigaReglasPage({
             </details>
             <details className="faq">
               <summary>
-                ¿Puedo cambiar un pronóstico ya guardado?
+                <T>¿Puedo cambiar un pronóstico ya guardado?</T>
                 <span className="chev">▾</span>
               </summary>
               <p>
@@ -315,13 +317,15 @@ export default async function QuinielaLigaReglasPage({
             </details>
             <details className="faq">
               <summary>
-                ¿Los mismos pronósticos valen para todas las ligas privadas?
+                <T>¿Los mismos pronósticos valen para todas las ligas privadas?</T>
                 <span className="chev">▾</span>
               </summary>
               <p>
-                Sí — tu pronóstico de cada partido es uno solo y vale para
-                todas las ligas en las que participes. Lo que puede cambiar
-                de una liga a otra es cómo se reparten los puntos.
+                <T>
+                  Sí — tu pronóstico de cada partido es uno solo y vale para
+                  todas las ligas en las que participes. Lo que puede cambiar
+                  de una liga a otra es cómo se reparten los puntos.
+                </T>
               </p>
             </details>
           </div>
