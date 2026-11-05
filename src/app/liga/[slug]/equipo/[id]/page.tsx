@@ -1,4 +1,5 @@
 import { cache, Suspense } from "react";
+import ReportarFallo from "@/components/ReportarFallo";
 import TeamAnalisis from "./team-analisis";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -199,6 +200,9 @@ export default async function LigaEquipoPage({
             <TeamDetails competition={competition} teamId={teamId} allFixtures={allFixtures}
               liveFixtures={liveFixtures} squadPromise={squadPromise} standingsPromise={standingsPromise} />
           </Suspense>
+          <div className="reporte-fila">
+            <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`Ficha de ${team?.name ?? "equipo"} (${competition.name})`} />
+          </div>
         </div>
       </section>
     </main>

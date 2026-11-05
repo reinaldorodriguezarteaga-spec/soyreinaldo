@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReportarFallo from "@/components/ReportarFallo";
 import {
   YouTubeLogo,
   InstagramLogo,
@@ -35,6 +36,7 @@ export default function Footer({ enApp = false }: { enApp?: boolean }) {
             <Link href="/contacto">Contáctame</Link>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/eliminar-datos">Eliminar mis datos</Link>
+            <ReportarFallo tipoInicial="fallo" />
           </nav>
           <div className="foot__social">
             {SOCIALS.map(({ href, Logo, label }) => (

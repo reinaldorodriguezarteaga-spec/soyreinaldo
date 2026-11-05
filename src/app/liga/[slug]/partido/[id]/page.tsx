@@ -1,4 +1,5 @@
 import { Presentation } from "lucide-react";
+import ReportarFallo from "@/components/ReportarFallo";
 import SeguirBloqueo from "./seguir-bloqueo";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -649,6 +650,9 @@ export default async function LigaPartidoPage({
           <Suspense fallback={null}>
             <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
           </Suspense>
+          <div className="reporte-fila">
+            <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`${home.name} – ${away.name} (${competition.name})`} />
+          </div>
           {played && (
             <Suspense fallback={null}>
               <MatchSiguienteGol
