@@ -59,6 +59,9 @@ export default async function AdminLayout({
                 <Link href="/admin/seguidores" className="hover:text-white">
                   Redes
                 </Link>
+                <Link href="/admin/reportes" className="hover:text-white">
+                  Reportes
+                </Link>
               </>
             )}
             {ve("imagenes") && (
