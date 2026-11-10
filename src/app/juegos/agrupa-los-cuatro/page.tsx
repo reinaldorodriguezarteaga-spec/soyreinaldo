@@ -24,7 +24,7 @@ export default async function AgrupaPage() {
             Agrupa los cuatro
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 640 }}>
-            16 nombres, 4 grupos de 4. Elige cuatro que tengan algo en común y comprueba. Con cuatro errores, se acabó.
+            16 nombres, 4 grupos de 4. Toca un nombre (azul) y luego sus compañeros: si van juntos se ponen en verde; si no, en rojo y cuenta un error. Con cuatro errores, se acabó.
           </p>
           <Juego numero={numeroDelDia()} />
         </div>

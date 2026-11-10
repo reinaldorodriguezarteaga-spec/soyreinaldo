@@ -12,12 +12,15 @@ import { useCronometro } from "@/components/juegos/useCronometro";
 import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
 
 /**
- * «Agrupa los cuatro»: se eligen cuatro casillas y se comprueba. Si forman
- * un grupo, se quedan arriba con su color; si no, cuenta un error (y si eran
- * tres de cuatro, se avisa). Cuatro errores y se destapa todo. Paneles en
+ * «Agrupa los cuatro»: se comprueba casilla a casilla. La primera que se toca
+ * queda en azul; cada una de las siguientes se compara con ella: si es del
+ * mismo grupo, todas las elegidas pasan a verde; si no, solo esa se pone en
+ * rojo un momento y cuenta un error. Al acertar la cuarta, el grupo se
+ * resuelve solo. Cuatro errores y se destapa todo. Paneles en
  * `lib/juegos/agrupa.ts`. Tiempo como el Top 10 (más largo).
  */
 
+/** `probados`: «grupo|nombre» ya fallados, para no cobrar dos veces el mismo error. */
 type Datos = { resueltos: string[]; errores: number; probados: string[] };
 const VACIO: Datos = { resueltos: [], errores: 0, probados: [] };
 const COLOR = ["ag-g0", "ag-g1", "ag-g2", "ag-g3"];
@@ -28,6 +31,7 @@ export default function Juego({ numero }: { numero: number }) {
   const [panelPractica, setPanelPractica] = useState<Panel | null>(null);
   const [elegidos, setElegidos] = useState<string[]>([]);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [rojo, setRojo] = useState<string | null>(null);
   const panelDia = useMemo(() => delDia(PANELES, numero), [numero]);
   const panel = p.modo === "dia" ? panelDia : (panelPractica ?? panelDia);
   const orden = useMemo(() => mezclar(panel, p.modo === "dia" ? numero : panel.id.length), [panel, p.modo, numero]);
@@ -50,35 +54,51 @@ export default function Juego({ numero }: { numero: number }) {
     : resueltos.map((t) => panel.grupos.find((g) => g.titulo === t)!);
   const sueltos = orden.filter((n) => !gruposVistos.some((g) => g.nombres.includes(n)));
 
-  function tocar(nombre: string) {
-    if (terminado) return;
-    setAviso(null);
-    setElegidos((e) => (e.includes(nombre) ? e.filter((x) => x !== nombre) : e.length < 4 ? [...e, nombre] : e));
-  }
+  // El rojo se ve un momento y la casilla vuelve a quedar libre.
+  useEffect(() => {
+    if (!rojo) return;
+    const t = setTimeout(() => setRojo(null), 700);
+    return () => clearTimeout(t);
+  }, [rojo]);
 
-  function comprobar() {
-    if (elegidos.length !== 4 || terminado) return;
-    const clave = [...elegidos].sort().join("|");
-    if (probados.includes(clave)) {
-      setAviso("Ya lo has probado.");
+  function tocar(nombre: string) {
+    if (terminado || rojo) return;
+    setAviso(null);
+    if (elegidos.includes(nombre)) {
+      // Solo se puede soltar la azul (las verdes ya están confirmadas).
+      if (elegidos.length === 1) setElegidos([]);
       return;
     }
-    const grupos = elegidos.map((n) => grupoDe(n).titulo);
-    const mayor = Math.max(...grupos.map((t) => grupos.filter((x) => x === t).length));
-    if (mayor === 4) {
-      const nuevos = [...resueltos, grupos[0]];
-      p.cambiarDatos({ resueltos: nuevos, errores, probados: [...probados, clave] }, nuevos.length === 4);
-      setElegidos([]);
-      setAviso(null);
-    } else {
-      const e = errores + 1;
-      p.cambiarDatos({ resueltos, errores: e, probados: [...probados, clave] }, e >= MAX_ERRORES_AGRUPA);
-      setAviso(mayor === 3 ? "¡A uno! Tres de los cuatro van juntos." : "No es un grupo.");
+    if (elegidos.length === 0) {
+      setElegidos([nombre]);
+      return;
     }
+    const grupo = grupoDe(elegidos[0]);
+    if (grupo.nombres.includes(nombre)) {
+      const nuevos = [...elegidos, nombre];
+      if (nuevos.length === 4) {
+        const hechos = [...resueltos, grupo.titulo];
+        p.cambiarDatos({ resueltos: hechos, errores, probados }, hechos.length === 4);
+        setElegidos([]);
+      } else {
+        setElegidos(nuevos);
+      }
+      return;
+    }
+    setRojo(nombre);
+    const clave = `${grupo.titulo}|${nombre}`;
+    if (probados.includes(clave)) {
+      setAviso("Ya lo has probado: ese no va.");
+      return;
+    }
+    const e = errores + 1;
+    p.cambiarDatos({ resueltos, errores: e, probados: [...probados, clave] }, e >= MAX_ERRORES_AGRUPA);
+    setAviso(elegidos.length === 1 ? "Esos dos no van juntos." : "Ese no es del grupo.");
   }
 
   function barajar() {
     setElegidos([]);
+    setAviso(null);
   }
 
   function otro() {
@@ -138,7 +158,7 @@ export default function Juego({ numero }: { numero: number }) {
                 <button
                   key={n}
                   type="button"
-                  className={`ag-casilla${elegidos.includes(n) ? " is-on" : ""}`}
+                  className={`ag-casilla${rojo === n ? " is-mal" : elegidos.includes(n) ? (elegidos.length === 1 ? " is-on" : " is-ok") : ""}`}
                   onClick={() => tocar(n)}
                   aria-pressed={elegidos.includes(n)}
                 >
@@ -162,9 +182,6 @@ export default function Juego({ numero }: { numero: number }) {
                 </p>
               )}
               <div className="jg-acciones">
-                <button type="button" className="btn btn--accent" onClick={comprobar} disabled={elegidos.length !== 4}>
-                  Comprobar
-                </button>
                 <button type="button" className="btn btn--ghost" onClick={barajar} disabled={elegidos.length === 0}>
                   Quitar selección
                 </button>
