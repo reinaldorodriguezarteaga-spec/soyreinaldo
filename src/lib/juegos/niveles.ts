@@ -5,7 +5,7 @@
  */
 
 export type Nivel = "facil" | "medio" | "dificil";
-export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos" | "top10";
+export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos" | "top10" | "ahorcado";
 
 export const NIVELES: Record<Nivel, { nombre: string; segundos: number; mult: number }> = {
   facil: { nombre: "Fácil", segundos: 120, mult: 1 },
@@ -20,6 +20,7 @@ export const NOMBRE_JUEGO: Record<JuegoRanking, string> = {
   leyenda: "Once de leyenda",
   masomenos: "¿Más o menos?",
   top10: "Top 10",
+  ahorcado: "Ahorcado",
 };
 
 /** Tope de puntos por partida (el servidor no acepta más: evita trampas burdas). */
@@ -30,6 +31,7 @@ export const MAX_PUNTOS: Record<JuegoRanking, number> = {
   leyenda: 500,
   masomenos: 1000,
   top10: 1000,
+  ahorcado: 500,
 };
 
 /** Adivina el equipo / el jugador: 100 por acertar, −15 por cada fallo, +1

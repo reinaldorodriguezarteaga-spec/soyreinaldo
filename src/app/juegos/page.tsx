@@ -7,6 +7,7 @@ import {
   Flag,
   Grid3x3,
   ListOrdered,
+  Spline,
   Scale,
   Star,
   TrendingUp,
@@ -19,7 +20,7 @@ import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
   description:
-    "Juegos de fútbol diarios para retar a tus amigos: adivina el equipo o el jugador, top 10, tiki-taka-toe, once de leyenda, ¿más o menos? y el once del Barça. Ranking semanal y ligas privadas.",
+    "Juegos de fútbol diarios para retar a tus amigos: adivina el equipo o el jugador, top 10, ahorcado, tiki-taka-toe, once de leyenda, ¿más o menos? y el once del Barça. Ranking semanal y ligas privadas.",
   alternates: { canonical: "/juegos" },
 };
 
@@ -38,6 +39,13 @@ const JUEGOS = [
     icono: ListOrdered,
     tono: "verde",
     titulo: "Top 10",
+  },
+  {
+    href: "/juegos/ahorcado",
+    corto: "Letra a letra, antes de cinco fallos",
+    icono: Spline,
+    tono: "rojo",
+    titulo: "Ahorcado",
   },
   {
     href: "/juegos/adivina-el-jugador",

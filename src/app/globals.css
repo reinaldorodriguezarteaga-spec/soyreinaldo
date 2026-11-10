@@ -2647,6 +2647,41 @@ select.field { appearance: none; }
 .jg-stats b { display: block; font-family: var(--font-display-stack); font-size: 1.5rem; }
 .jg-stats span { color: var(--text-dim); font-size: 0.75rem; }
 
+/* Ahorcado (/juegos/ahorcado): dibujo a la izquierda, nombre y teclado. */
+.ah-pista { display: inline-flex; align-items: center; gap: 10px; margin: 2px 0 14px; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.ah-pista img { width: 36px; height: 36px; object-fit: contain; background: #fff; border-radius: 50%; padding: 3px; }
+.ah-pista small { display: block; color: var(--text-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ah-pista b { font-size: 1.05rem; }
+.ah { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 22px; align-items: start; transition: opacity 0.2s; }
+.ah.is-cargando { opacity: 0.5; }
+@media (max-width: 700px) { .ah { grid-template-columns: minmax(0, 1fr); gap: 8px; } .ah-dibujo { max-height: 140px; } .ah-tecla { height: 40px; } }
+.ah-izq { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ah-dibujo { width: 100%; max-width: 260px; height: auto; }
+.ah-dibujo line, .ah-dibujo circle, .ah-dibujo path { fill: none; stroke-linecap: round; }
+.ah-palo line { stroke: var(--text-dim); stroke-width: 6; }
+.ah-cuerpo line, .ah-cuerpo > g > circle { stroke: var(--text); stroke-width: 5; }
+.ah-cara circle { fill: var(--text); stroke: none; }
+.ah-cara path { stroke: var(--text); stroke-width: 2.5; }
+.ah-dibujo.is-ahorcado .ah-cuerpo line, .ah-dibujo.is-ahorcado .ah-cuerpo > g > circle, .ah-dibujo.is-ahorcado .ah-cara path { stroke: var(--mal); }
+@keyframes ah-aparece { from { opacity: 0; } to { opacity: 1; } }
+.ah-parte { animation: ah-aparece 0.35s ease-out; }
+@media (prefers-reduced-motion: reduce) { .ah-parte { animation: none; } }
+.ah-fallos { margin: 0; color: var(--text-dim); font-size: 0.82rem; text-align: center; }
+.ah-palabra { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; }
+.ah-palabra__trozo { display: inline-flex; gap: 4px; }
+.ah-letra { display: inline-flex; align-items: flex-end; justify-content: center; width: clamp(20px, 5.5vw, 30px); height: clamp(30px, 7vw, 40px); border-bottom: 3px solid var(--text-dim); font-family: var(--font-display-stack); font-size: clamp(1.15rem, 4.5vw, 1.6rem); line-height: 1; padding-bottom: 3px; }
+.ah-letra.is-signo { border-bottom-color: transparent; width: auto; }
+.ah-letra.is-faltaba { color: var(--mal); }
+.ah-teclado { display: flex; flex-direction: column; gap: 6px; }
+.ah-teclado__fila { display: flex; justify-content: center; gap: 5px; }
+.ah-tecla { flex: 1 1 0; max-width: 42px; min-width: 0; height: 44px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 800; font-size: 1rem; cursor: pointer; }
+.ah-tecla:hover:not(:disabled) { background: var(--surface-2); }
+.ah-tecla.is-ok { background: rgba(34,197,94,0.25); border-color: var(--ok); }
+.ah-tecla.is-mal { background: rgba(239,68,68,0.15); border-color: transparent; color: var(--text-dim); text-decoration: line-through; }
+.ah-tecla:disabled { cursor: default; }
+.jg-final img.ah-foto { border-radius: 50%; object-fit: cover; object-position: top; background: var(--surface-2); }
+.jg-final img.ah-escudo { width: 16px; height: 16px; vertical-align: -3px; }
+
 /* Top 10 (/juegos/top-10): diez filas con bandera, nombre oculto y cifra. */
 .t10-filtros select { padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 700; font-size: 0.85rem; max-width: 100%; }
 .t10-cab { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }

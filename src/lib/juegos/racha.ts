@@ -15,6 +15,7 @@ const JUEGOS: [clave: string, directo: boolean][] = [
   ["jg-tikitaka-v1", false],
   ["jg-leyendas-v1", true],
   ["jg-top10-v1", false],
+  ["jg-ahorcado-v1", false],
 ];
 
 function leerDias(): Set<number> {
