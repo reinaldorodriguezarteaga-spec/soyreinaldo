@@ -2646,6 +2646,33 @@ select.field { appearance: none; }
 .jg-stats div { padding: 10px 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .jg-stats b { display: block; font-family: var(--font-display-stack); font-size: 1.5rem; }
 .jg-stats span { color: var(--text-dim); font-size: 0.75rem; }
+
+/* Top 10 (/juegos/top-10): diez filas con bandera, nombre oculto y cifra. */
+.t10-filtros select { padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 700; font-size: 0.85rem; max-width: 100%; }
+.t10-cab { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+.t10-cab img { width: 48px; height: 48px; object-fit: contain; flex: none; }
+.t10-cab p { margin: 0; }
+.t10-cab__tit { font-family: var(--font-display-stack); font-size: clamp(1.15rem, 3vw, 1.5rem); text-transform: uppercase; line-height: 1.1; }
+.t10-cab__sub { color: var(--text-dim); font-size: 0.88rem; }
+.t10-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; transition: opacity 0.2s; }
+.t10-lista.is-cargando { opacity: 0.5; }
+.t10-fila { display: grid; grid-template-columns: 28px 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+.t10-fila__pos { font-family: var(--font-mono-stack); font-weight: 800; color: var(--text-dim); text-align: right; }
+.t10-fila__bandera { width: 28px; height: 20px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px var(--line); background: var(--surface-2); display: inline-block; }
+.t10-fila__nombre { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+.t10-fila__valor { font-family: var(--font-mono-stack); font-size: 0.85rem; color: var(--text-dim); }
+.t10-fila.is-ok { border-color: var(--ok); background: rgba(34,197,94,0.1); }
+.t10-fila.is-ok .t10-fila__nombre { color: var(--text); }
+.t10-fila.is-falta .t10-fila__nombre { color: var(--text-dim); font-style: italic; }
+/* En móvil, el reloj y el campo van arriba (y fijos mientras se juega): si
+   no, habría que bajar diez filas para escribir. */
+@media (max-width: 800px) {
+  .t10-cuerpo .jg-panel { order: -1; }
+  .t10-cuerpo.is-jugando .jg-panel { position: sticky; top: 8px; z-index: 3; padding: 10px; margin: 0 -10px; border-radius: var(--radius); background: var(--bg); box-shadow: 0 6px 16px rgba(0,0,0,0.35); }
+}
+@keyframes t10-destapa { from { transform: scale(0.97); background: rgba(34,197,94,0.3); } to { transform: none; } }
+.t10-fila.is-ok { animation: t10-destapa 0.35s ease-out; }
+@media (prefers-reduced-motion: reduce) { .t10-fila.is-ok { animation: none; } }
 /* Adivina el jugador: la carrera, club a club. */
 .jg-carrera { list-style: none; margin: 0 0 16px; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .jg-club { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 86px; text-align: center; }

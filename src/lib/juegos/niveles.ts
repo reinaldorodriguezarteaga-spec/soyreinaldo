@@ -5,7 +5,7 @@
  */
 
 export type Nivel = "facil" | "medio" | "dificil";
-export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos";
+export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos" | "top10";
 
 export const NIVELES: Record<Nivel, { nombre: string; segundos: number; mult: number }> = {
   facil: { nombre: "Fácil", segundos: 120, mult: 1 },
@@ -19,6 +19,7 @@ export const NOMBRE_JUEGO: Record<JuegoRanking, string> = {
   tikitaka: "Tiki-taka-toe",
   leyenda: "Once de leyenda",
   masomenos: "¿Más o menos?",
+  top10: "Top 10",
 };
 
 /** Tope de puntos por partida (el servidor no acepta más: evita trampas burdas). */
@@ -28,6 +29,7 @@ export const MAX_PUNTOS: Record<JuegoRanking, number> = {
   tikitaka: 500,
   leyenda: 500,
   masomenos: 1000,
+  top10: 1000,
 };
 
 /** Adivina el equipo / el jugador: 100 por acertar, −15 por cada fallo, +1
@@ -51,6 +53,17 @@ export function puntosLeyenda(o: { mejores: number; sobra: number; nivel: Nivel;
 /** ¿Más o menos? contrarreloj: 10 por acierto. */
 export function puntosMasOMenos(o: { racha: number; nivel: Nivel }): number {
   return Math.round(o.racha * 10 * NIVELES[o.nivel].mult);
+}
+
+/** Top 10: tiempo de cada nivel. Diez nombres piden más reloj que un
+ * acierto suelto: 3:00, 2:15 y 1:30. */
+export const SEGUNDOS_TOP10: Record<Nivel, number> = { facil: 180, medio: 135, dificil: 90 };
+
+/** Top 10: 10 por nombre, +40 si se sacan los diez y +1 por segundo que sobre
+ * (solo si se sacan todos); todo por el multiplicador del nivel. */
+export function puntosTop10(o: { aciertos: number; sobra: number; nivel: Nivel }): number {
+  const base = o.aciertos * 10 + (o.aciertos === 10 ? 40 + Math.max(0, o.sobra) : 0);
+  return Math.round(base * NIVELES[o.nivel].mult);
 }
 
 /** «1:05» */

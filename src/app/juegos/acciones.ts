@@ -6,7 +6,7 @@ import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import { MAX_PUNTOS, NIVELES, type JuegoRanking, type Nivel } from "@/lib/juegos/niveles";
 
-const JUEGOS: JuegoRanking[] = ["equipo", "jugador", "tikitaka", "leyenda", "masomenos"];
+const JUEGOS: JuegoRanking[] = ["equipo", "jugador", "tikitaka", "leyenda", "masomenos", "top10"];
 
 /**
  * Apunta los puntos del reto del día en el ranking (migración 085). Solo con

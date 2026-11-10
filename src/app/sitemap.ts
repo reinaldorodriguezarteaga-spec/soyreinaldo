@@ -135,6 +135,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/juegos`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 },
     { url: `${SITE}/juegos/adivina-el-equipo`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     { url: `${SITE}/juegos/adivina-el-jugador`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
+    { url: `${SITE}/juegos/top-10`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     { url: `${SITE}/juegos/adivina-el-once`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     { url: `${SITE}/juegos/once-de-leyenda`, lastModified: now, changeFrequency: "daily" as const, priority: 0.6 },
     { url: `${SITE}/juegos/mas-o-menos`, lastModified: now, changeFrequency: "daily" as const, priority: 0.6 },
