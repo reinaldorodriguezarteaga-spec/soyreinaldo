@@ -97,7 +97,7 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
   const nativo = useSyncExternalStore(sinSuscripcion, () => "share" in navigator, () => false);
 
   const partida = modo === "dia" ? delDia : (practica ?? delDia);
-  const objetivo = useMemo(() => letrasDe(partida.nombre), [partida.nombre]);
+  const objetivo = useMemo(() => letrasDe(partida.palabra), [partida.palabra]);
 
   // El reto de hoy, si ya se empezó en este navegador.
   useEffect(() => {
@@ -270,8 +270,8 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
               </span>
             )}
 
-            <p className="ah-palabra" aria-label={terminado ? partida.nombre : "Nombre oculto"}>
-              {partida.nombre.split(" ").map((palabra, i) => (
+            <p className="ah-palabra" aria-label={terminado ? partida.palabra : "Apellido oculto"}>
+              {partida.palabra.split(" ").map((palabra, i) => (
                 <span key={i} className="ah-palabra__trozo">
                   {[...palabra].map((c, j) => {
                     const l = letraBase(c);

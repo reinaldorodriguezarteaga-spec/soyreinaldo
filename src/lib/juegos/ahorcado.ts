@@ -59,13 +59,34 @@ function nombreDe(j: Jugador): string {
   return pila ? `${pila.split("-")[0]} ${m[2]}` : m[2];
 }
 
-/** Fuera los nombres demasiado cortos para un ahorcado («Rodri» sí, «Pau» no). */
-const JUGADORES = (datos.jugadores as Jugador[]).filter((j) => nombreDe(j).replace(/[^\p{L}]/gu, "").length >= 4);
+/** Partículas que van con el apellido: «van Dijk», «De Bruyne», «Di Lorenzo». */
+const PARTICULAS = new Set(["van", "von", "de", "der", "den", "di", "da", "del", "dos", "le", "la", "mac", "mc", "el", "ten", "ter"]);
+
+/** Lo que se adivina: el apellido (pedido del dueño, 10-nov: «así es más
+ * fácil»). Se quita el nombre de pila; las partículas se quedan con el
+ * apellido. Los de un solo nombre, tal cual. */
+const APELLIDO: Record<number, string> = {
+  762: "Vinícius", // «Vinícius Júnior»: se le conoce por el nombre
+  21104: "Kolo Muani",
+  3406: "Zambo Anguissa",
+};
+function palabraDe(j: Jugador): string {
+  if (APELLIDO[j.id]) return APELLIDO[j.id];
+  const partes = nombreDe(j).split(" ");
+  if (partes.length === 1) return partes[0];
+  let i = partes.length - 1;
+  while (i > 1 && PARTICULAS.has(partes[i - 1].toLowerCase())) i--;
+  return partes.slice(i).join(" ");
+}
+
+/** Fuera los apellidos demasiado cortos para un ahorcado («Kane» sí, «Kim» no). */
+const JUGADORES = (datos.jugadores as Jugador[]).filter((j) => palabraDe(j).replace(/[^\p{L}]/gu, "").length >= 4);
 
 function partida(j: Jugador): PartidaAhorcado {
   return {
     id: j.id,
     nombre: nombreDe(j),
+    palabra: palabraDe(j),
     liga: { id: j.liga, nombre: LIGAS_AHORCADO[j.liga] ?? "" },
     equipo: { id: j.eq, nombre: EQUIPOS[j.eq] ?? "" },
     pais: j.p,

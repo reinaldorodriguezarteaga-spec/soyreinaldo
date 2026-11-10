@@ -20,8 +20,11 @@ export const PARTES = ["cabeza", "pierna izquierda", "pierna derecha", "brazo iz
 
 export type PartidaAhorcado = {
   id: number;
-  /** Nombre tal cual se enseña al final («Lamine Yamal»). */
+  /** Nombre completo, el que se enseña al final («Lamine Yamal»). */
   nombre: string;
+  /** Lo que se adivina: solo el apellido («Yamal»), que es más fácil
+   * (pedido del dueño, 10-nov). Los de un solo nombre, tal cual («Pedri»). */
+  palabra: string;
   liga: { id: number; nombre: string };
   equipo: { id: number; nombre: string };
   pais: string | null;
