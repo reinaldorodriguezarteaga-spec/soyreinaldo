@@ -42,6 +42,9 @@ const SELECCIONES: Record<string, string> = {
   Cameroon: "Camerún", "Ivory Coast": "Costa de Marfil", "South Africa": "Sudáfrica",
   Canada: "Canadá", Panama: "Panamá", Haiti: "Haití", Jordan: "Jordania",
   Qatar: "Catar", Iran: "Irán", Iraq: "Irak", "New Zealand": "Nueva Zelanda",
+  // 10-nov-2026, para los juegos (país del jugador).
+  "Congo DR": "RD del Congo", "Côte d'Ivoire": "Costa de Marfil", "Korea Republic": "Corea del Sur",
+  Kenya: "Kenia", Uzbekistan: "Uzbekistán",
 };
 
 export function conTildes(nombre: string): string {

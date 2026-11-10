@@ -15,8 +15,8 @@ import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
 /**
  * «Foto oculta»: la foto tapada por una cuadrícula de 3×3. Se empieza con un
  * trozo destapado y cada fallo destapa otro, en un orden fijo por jugador
- * (la cara, que es lo que más delata, sale de las últimas). Pistas: la liga
- * al segundo fallo y el equipo al cuarto.
+ * (la cara, que es lo que más delata, sale de las últimas). Cada fallo suma
+ * también una pista, de menos a más: posición, país, liga, edad y equipo.
  */
 
 const MAX = 6;
@@ -76,6 +76,17 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
     p.irA(m);
     if (m === "practica") nuevoObjetivo(objetivoDia);
   }
+
+  // Una pista por fallo, de la más vaga a la que casi lo da. Las que no hay
+  // (sin posición, país o edad en los datos) se saltan.
+  const todasPistas = [
+    objetivo.posicion && `Es ${objetivo.posicion.toLowerCase()}.`,
+    objetivo.pais && `Es de ${objetivo.pais}.`,
+    `Juega en ${objetivo.liga.nombre}.`,
+    objetivo.edad != null && `Tiene ${objetivo.edad} años.`,
+    `Su equipo es el ${objetivo.equipo.nombre}.`,
+  ].filter((t): t is string => Boolean(t));
+  const pistas = todasPistas.slice(0, fallos);
 
   const puntos = p.nivel ? puntosIntentos({ acertado, fallos, sobra: restante, nivel: p.nivel }) : 0;
   const cuadros = intentos.map((id) => (id === objetivoId ? "🟩" : "🟥")).join("");
@@ -144,21 +155,18 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                   ))}
               </ul>
             )}
-            {!terminado && fallos >= 2 && (
+            {!terminado && pistas.length > 0 && (
               <ul className="jg-pistas">
-                <li>
-                  <b>Pista</b> Juega en {objetivo.liga.nombre}.
-                </li>
-                {fallos >= 4 && (
-                  <li>
-                    <b>Pista</b> Su equipo es el {objetivo.equipo.nombre}.
+                {pistas.map((t) => (
+                  <li key={t}>
+                    <b>Pista</b> {t}
                   </li>
-                )}
+                ))}
               </ul>
             )}
             {!terminado && fallos === 0 && (
               <p className="pz-ayuda" style={{ margin: 0 }}>
-                Cada fallo destapa un trozo. Al segundo te damos la liga y al cuarto, el equipo.
+                Cada fallo destapa un trozo y te da una pista más: posición, país, liga, edad y, al final, el equipo.
               </p>
             )}
 

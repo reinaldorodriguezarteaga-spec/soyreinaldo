@@ -15,7 +15,8 @@ import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
 
 /**
  * «Futbolista misterioso»: se elige un jugador cualquiera y cada casilla dice
- * si coincide con el misterioso. Reto del día (al ranking) y práctica.
+ * si coincide con el misterioso. Para arrancar se da una pista de salida (la
+ * liga), que orienta sin regalarlo. Reto del día (al ranking) y práctica.
  */
 
 const VACIO: number[] = [];
@@ -107,7 +108,14 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
               </div>
             </div>
           ) : (
-            <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+            <>
+              <ul className="jg-pistas">
+                <li>
+                  <b>Pista</b> Juega en {misterioso.liga.nombre}.
+                </li>
+              </ul>
+              <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+            </>
           )}
 
           {intentos.length > 0 && (

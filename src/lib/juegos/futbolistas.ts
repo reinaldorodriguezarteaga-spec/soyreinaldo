@@ -2,6 +2,7 @@ import "server-only";
 import datos from "./ahorcado-datos.json";
 import { LIGAS_AHORCADO } from "./ahorcado-comun";
 import type { Futbolista } from "./futbolistas-comun";
+import { conTildes } from "@/lib/sports/nombres";
 
 /**
  * Futbolistas de hoy para los juegos (Ahorcado, Futbolista misterioso, Foto
@@ -107,7 +108,8 @@ function futbolista(j: Jugador): Futbolista {
     edad: edad(j.nac),
     dorsal: j.dorsal,
     bandera: j.b,
-    pais: j.p,
+    // El API da el país en inglés («Spain»): en los juegos, en español.
+    pais: j.p ? conTildes(j.p) : null,
     foto: j.foto,
   };
 }
