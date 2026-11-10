@@ -4,7 +4,16 @@ import { Timer } from "lucide-react";
 import { NIVELES, reloj, type Nivel } from "@/lib/juegos/niveles";
 
 /** Antes de empezar: el nivel decide el tiempo y cuánto multiplican los puntos. */
-export default function ElegirNivel({ onElegir, titulo = "Elige nivel para empezar" }: { onElegir: (n: Nivel) => void; titulo?: string }) {
+export default function ElegirNivel({
+  onElegir,
+  titulo = "Elige nivel para empezar",
+  segundos,
+}: {
+  onElegir: (n: Nivel) => void;
+  titulo?: string;
+  /** Tiempo propio de un juego (Top 10); si no, el de NIVELES. */
+  segundos?: Record<Nivel, number>;
+}) {
   return (
     <div className="jn">
       <p className="jn__tit">{titulo}</p>
@@ -12,7 +21,7 @@ export default function ElegirNivel({ onElegir, titulo = "Elige nivel para empez
         {(Object.keys(NIVELES) as Nivel[]).map((n) => (
           <button key={n} type="button" className={`jn__op jn__op--${n}`} onClick={() => onElegir(n)}>
             <b>{NIVELES[n].nombre}</b>
-            <span><Timer className="ico-txt" aria-hidden /> {reloj(NIVELES[n].segundos)}</span>
+            <span><Timer className="ico-txt" aria-hidden /> {reloj(segundos?.[n] ?? NIVELES[n].segundos)}</span>
             <span className="jn__mult">×{String(NIVELES[n].mult).replace(".", ",")} puntos</span>
           </button>
         ))}
