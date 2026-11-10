@@ -2682,6 +2682,68 @@ select.field { appearance: none; }
 .jg-final img.ah-foto { border-radius: 50%; object-fit: cover; object-position: top; background: var(--surface-2); }
 .jg-final img.ah-escudo { width: 16px; height: 16px; vertical-align: -3px; }
 
+/* Buscador común de los juegos: detalle (equipo) junto al nombre. */
+.jg-opciones__det { color: var(--text-dim); font-size: 0.8rem; }
+
+/* Futbolista misterioso: tabla de intentos con casillas de colores. */
+.mi-tabla { display: flex; flex-direction: column; gap: 6px; overflow-x: auto; }
+.mi-fila { display: grid; grid-template-columns: minmax(110px, 1.6fr) repeat(6, minmax(52px, 1fr)); gap: 4px; align-items: stretch; min-width: 470px; }
+.mi-cab span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); text-align: center; }
+.mi-cab span:first-child { text-align: left; }
+.mi-nombre { display: flex; align-items: center; font-weight: 700; font-size: 0.85rem; line-height: 1.15; }
+.mi-celda { position: relative; display: flex; align-items: center; justify-content: center; gap: 2px; min-height: 44px; padding: 4px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 0.75rem; font-weight: 700; text-align: center; line-height: 1.1; }
+.mi-celda.is-ok { background: rgba(34,197,94,0.3); border-color: var(--ok); }
+.mi-celda.is-cerca { background: rgba(234,179,8,0.3); border-color: #eab308; }
+.mi-celda img { width: 22px; height: auto; max-height: 22px; object-fit: contain; }
+.mi-txt { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mi-flecha { width: 14px; height: 14px; flex: none; }
+
+/* Escudo borroso. */
+.eb-marco { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; max-width: 300px; width: 100%; margin: 0 auto; padding: 30px; border-radius: 20px; background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%); border: 1px solid var(--line); overflow: hidden; }
+.eb-escudo { width: 100%; height: 100%; object-fit: contain; transition: filter 0.6s ease; user-select: none; -webkit-user-drag: none; }
+@media (prefers-reduced-motion: reduce) { .eb-escudo { transition: none; } }
+
+/* Foto oculta: foto tapada por una cuadrícula de 3×3. */
+.fo-marco { position: relative; aspect-ratio: 1; max-width: 300px; width: 100%; margin: 0 auto; border-radius: 20px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); }
+.fo-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; user-select: none; -webkit-user-drag: none; }
+.fo-tapas { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.fo-tapa { background: var(--surface); border: 1px solid var(--line-strong); transition: opacity 0.4s ease; }
+.fo-tapa.is-fuera { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fo-tapa { transition: none; } }
+
+/* Agrupa los cuatro. */
+.ag { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+.ag-rejilla { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ag-casilla { min-height: 64px; padding: 6px 4px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 800; font-size: clamp(0.68rem, 2.6vw, 0.9rem); line-height: 1.15; cursor: pointer; overflow-wrap: anywhere; }
+.ag-casilla:hover { background: var(--surface-2); }
+.ag-casilla.is-on { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent); }
+.ag-grupo { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 12px; border-radius: 10px; text-align: center; color: #0a1030; }
+.ag-grupo b { text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.03em; }
+.ag-grupo span { font-size: 0.85rem; }
+.ag-grupo.is-perdido { opacity: 0.75; }
+.ag-g0 { background: #facc15; }
+.ag-g1 { background: #4ade80; }
+.ag-g2 { background: #60a5fa; }
+.ag-g3 { background: #c084fc; }
+.ag-vidas { display: flex; align-items: center; gap: 6px; color: var(--text-dim); font-size: 0.85rem; }
+.ag-vida { width: 12px; height: 12px; border-radius: 50%; background: var(--text); }
+.ag-vida.is-gastada { background: var(--surface-2); border: 1px solid var(--line-strong); }
+.ag-aviso { margin: 0; font-weight: 700; }
+
+/* Cronología. */
+.cr { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+.cr-eje { margin: 0; color: var(--text-dim); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.cr-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cr-fila { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+.cr-fila.is-ok { border-color: var(--ok); background: rgba(34,197,94,0.12); }
+.cr-fila.is-mal { border-color: var(--mal); background: rgba(239,68,68,0.08); }
+.cr-texto { flex: 1; font-weight: 600; font-size: 0.95rem; line-height: 1.3; }
+.cr-anio { display: block; font-family: var(--font-display-stack); font-size: 1.1rem; color: var(--accent-2); }
+.cr-flechas { display: flex; flex-direction: column; gap: 4px; }
+.cr-flechas button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 32px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.cr-flechas button:disabled { opacity: 0.3; cursor: default; }
+.cr-flechas svg { width: 18px; height: 18px; }
+
 /* Top 10 (/juegos/top-10): diez filas con bandera, nombre oculto y cifra. */
 .t10-filtros select { padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 700; font-size: 0.85rem; max-width: 100%; }
 .t10-cab { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }

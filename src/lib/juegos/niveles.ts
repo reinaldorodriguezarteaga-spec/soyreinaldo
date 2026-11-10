@@ -5,7 +5,7 @@
  */
 
 export type Nivel = "facil" | "medio" | "dificil";
-export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos" | "top10" | "ahorcado";
+export type JuegoRanking = "equipo" | "jugador" | "tikitaka" | "leyenda" | "masomenos" | "top10" | "ahorcado" | "misterioso" | "escudo" | "foto" | "agrupa" | "cronologia";
 
 export const NIVELES: Record<Nivel, { nombre: string; segundos: number; mult: number }> = {
   facil: { nombre: "Fácil", segundos: 120, mult: 1 },
@@ -21,6 +21,11 @@ export const NOMBRE_JUEGO: Record<JuegoRanking, string> = {
   masomenos: "¿Más o menos?",
   top10: "Top 10",
   ahorcado: "Ahorcado",
+  misterioso: "Futbolista misterioso",
+  escudo: "Escudo borroso",
+  foto: "Foto oculta",
+  agrupa: "Agrupa los cuatro",
+  cronologia: "Cronología",
 };
 
 /** Tope de puntos por partida (el servidor no acepta más: evita trampas burdas). */
@@ -32,6 +37,11 @@ export const MAX_PUNTOS: Record<JuegoRanking, number> = {
   masomenos: 1000,
   top10: 1000,
   ahorcado: 500,
+  misterioso: 500,
+  escudo: 500,
+  foto: 500,
+  agrupa: 500,
+  cronologia: 500,
 };
 
 /** Adivina el equipo / el jugador: 100 por acertar, −15 por cada fallo, +1
@@ -65,6 +75,29 @@ export const SEGUNDOS_TOP10: Record<Nivel, number> = { facil: 180, medio: 135, d
  * (solo si se sacan todos); todo por el multiplicador del nivel. */
 export function puntosTop10(o: { aciertos: number; sobra: number; nivel: Nivel }): number {
   const base = o.aciertos * 10 + (o.aciertos === 10 ? 40 + Math.max(0, o.sobra) : 0);
+  return Math.round(base * NIVELES[o.nivel].mult);
+}
+
+/** Juegos de varios intentos (misterioso, escudo, foto): 100 por acertar,
+ * −10 por cada fallo y +1 por segundo que sobre; sin acertar, 0. Nunca
+ * negativo (el ranking no lo admite). */
+export function puntosIntentos(o: { acertado: boolean; fallos: number; sobra: number; nivel: Nivel }): number {
+  if (!o.acertado) return 0;
+  return Math.max(0, Math.round((100 - 10 * o.fallos + Math.max(0, o.sobra)) * NIVELES[o.nivel].mult));
+}
+
+/** Agrupa los cuatro: 25 por grupo, −5 por error, +1 por segundo que sobre
+ * si se sacan los cuatro. */
+export function puntosAgrupa(o: { grupos: number; errores: number; sobra: number; nivel: Nivel }): number {
+  const base = o.grupos * 25 - o.errores * 5 + (o.grupos === 4 ? Math.max(0, o.sobra) : 0);
+  return Math.max(0, Math.round(base * NIVELES[o.nivel].mult));
+}
+
+/** Cronología: 100 a la primera, 70 a la segunda, 40 a la tercera, +1 por
+ * segundo que sobre; sin acertar, 0. */
+export function puntosCronologia(o: { acertado: boolean; intentos: number; sobra: number; nivel: Nivel }): number {
+  if (!o.acertado) return 0;
+  const base = ([100, 70, 40][o.intentos - 1] ?? 40) + Math.max(0, o.sobra);
   return Math.round(base * NIVELES[o.nivel].mult);
 }
 

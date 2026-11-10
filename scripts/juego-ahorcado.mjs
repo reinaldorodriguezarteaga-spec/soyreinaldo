@@ -92,12 +92,53 @@ for (const [equipo, liga] of EQUIPOS) {
         eq: equipo,
         liga,
         pos: s.games?.position ?? null,
+        nac: p.birth?.date ?? null,
+        dorsal: s.games?.number ?? null,
       });
     }
     if (pagina >= (json.paging?.total ?? 1)) break;
   }
   console.log(`· ${equipo}: ${jugadores.size - antes} jugadores`);
 }
+
+// Bandera de la nacionalidad (para «Futbolista misterioso»): /countries da
+// el código de la CDN; las que se escriben distinto, a mano.
+const paises = await api("/countries");
+const codigo = new Map((paises?.response ?? []).map((c) => [c.name, c.code?.toLowerCase()]));
+for (const [nombre, c] of Object.entries({
+  "Bosnia and Herzegovina": "ba", "Côte d'Ivoire": "ci", "Costa Rica": "cr", "Dominican Republic": "do", "Türkiye": "tr",
+  "Czech Republic": "cz", "Central African Republic": "cf", Mozambique: "mz", "Northern Ireland": "gb-nir", "Korea Republic": "kr",
+  "Cape Verde Islands": "cv", "Congo DR": "cd", "Guinea-Bissau": "gw", "Equatorial Guinea": "gq",
+  "Republic of Ireland": "ie", Czechia: "cz", "Burkina Faso": "bf",
+})) if (!codigo.get(nombre)) codigo.set(nombre, c);
+
+// ¿Foto real? La CDN devuelve una silueta genérica a quien no tiene foto
+// (para «Foto oculta»). Se detecta porque la silueta es idéntica para todos:
+// la huella que más se repite es la de la silueta.
+const crypto = await import("node:crypto");
+const huellas = new Map();
+for (const j of jugadores.values()) {
+  const archivo = path.join(CACHE, `foto_${j.id}.txt`);
+  let h = fs.existsSync(archivo) ? fs.readFileSync(archivo, "utf8") : null;
+  if (!h && !OFFLINE) {
+    const res = await fetch(`https://media.api-sports.io/football/players/${j.id}.png`);
+    h = res.ok ? crypto.createHash("md5").update(Buffer.from(await res.arrayBuffer())).digest("hex") : "sin-foto";
+    fs.writeFileSync(archivo, h);
+    await dormir(60);
+  }
+  huellas.set(j.id, h);
+}
+const veces = new Map();
+for (const h of huellas.values()) veces.set(h, (veces.get(h) ?? 0) + 1);
+const silueta = [...veces].sort((a, b) => b[1] - a[1])[0];
+for (const j of jugadores.values()) {
+  j.b = codigo.get(j.p) ?? null;
+  const h = huellas.get(j.id);
+  j.foto = !!h && h !== "sin-foto" && !(silueta && silueta[1] > 3 && h === silueta[0]);
+}
+console.log(`  Fotos reales: ${[...jugadores.values()].filter((j) => j.foto).length}/${jugadores.size} (silueta repetida ${silueta?.[1]} veces)`);
+const sinBandera = [...new Set([...jugadores.values()].filter((j) => !j.b).map((j) => j.p))];
+if (sinBandera.length) console.log(`⚠ Sin bandera: ${sinBandera.join(", ")}`);
 
 fs.writeFileSync(
   SALIDA,
