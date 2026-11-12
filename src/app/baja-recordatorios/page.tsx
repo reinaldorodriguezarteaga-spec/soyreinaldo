@@ -87,7 +87,7 @@ export default async function UnsubscribePage({
                 <h1>Algo no fue bien</h1>
                 <p>
                   No pude darte de baja en este momento. Inténtalo otra vez en
-                  unos minutos o escríbeme a hola@soyreinaldo.com.
+                  unos minutos o escríbeme a reinaldorodriguezarteaga@gmail.com.
                 </p>
               </>
             )}

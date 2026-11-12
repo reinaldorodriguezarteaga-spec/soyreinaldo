@@ -33,7 +33,7 @@ export default function TerminosPage() {
                 Soy Reinaldo (la web <strong>soyreinaldo.com</strong> y sus apps para iPhone y
                 Android) es un proyecto de <strong>Reinaldo Rodríguez</strong> (en adelante
                 &quot;yo&quot;). Contacto:{" "}
-                <a href="mailto:hola@soyreinaldo.com">hola@soyreinaldo.com</a>.
+                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
               </p>
               <p>
                 Al usar la web o las apps aceptas estos términos. Si no estás de acuerdo, no
@@ -118,7 +118,7 @@ export default function TerminosPage() {
               <p>
                 Puedo borrar el contenido que no cumpla estas normas y suspender o cerrar las
                 cuentas que las incumplan. Si ves algo así, avísame con «Reportar un fallo» o en{" "}
-                <a href="mailto:hola@soyreinaldo.com">hola@soyreinaldo.com</a>.
+                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
               </p>
             </section>
 
