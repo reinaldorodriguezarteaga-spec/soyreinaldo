@@ -3370,3 +3370,8 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .reporte__acciones { display: flex; justify-content: flex-end; gap: 10px; }
 .reporte__error { color: var(--danger, #ff6b6b) !important; font-size: 0.88rem; }
 .reporte__nota { font-size: 0.78rem; }
+
+/* Media kit: correo visible arriba (las marcas escriben directo). */
+.mk-contacto { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.mk-contacto a { font-family: var(--font-mono-stack); font-size: 0.9rem; color: var(--accent); overflow-wrap: anywhere; }
+.mk-contacto span { font-size: 0.8rem; color: var(--text-dim); }

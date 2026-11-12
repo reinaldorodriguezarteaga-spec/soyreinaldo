@@ -30,7 +30,7 @@ export default function PrivacidadPage() {
                 Esta web es un proyecto personal de{" "}
                 <strong>Reinaldo Rodríguez</strong> (en adelante
                 &quot;yo&quot;). Contacto:{" "}
-                <a href="mailto:hola@soyreinaldo.com">hola@soyreinaldo.com</a>.
+                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
               </p>
             </section>
 
@@ -176,7 +176,7 @@ export default function PrivacidadPage() {
               </ul>
               <p>
                 Para ejercer cualquiera de ellos, escríbeme a{" "}
-                <a href="mailto:hola@soyreinaldo.com">hola@soyreinaldo.com</a>.
+                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
                 Te respondo en menos de 30 días. Para borrar tu cuenta también
                 puedes seguir las instrucciones en{" "}
                 <a href="/eliminar-datos">/eliminar-datos</a>.
@@ -226,7 +226,7 @@ export default function PrivacidadPage() {
               <h2>10. Contacto</h2>
               <p>
                 Cualquier duda escríbeme a{" "}
-                <a href="mailto:hola@soyreinaldo.com">hola@soyreinaldo.com</a>.
+                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
                 Intento responder rápido.
               </p>
             </section>

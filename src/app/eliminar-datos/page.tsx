@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 const MAILTO =
-  "mailto:hola@soyreinaldo.com?subject=Eliminar%20mi%20cuenta&body=Hola%20Reinaldo%2C%0A%0ASolicito%20la%20eliminaci%C3%B3n%20completa%20de%20mi%20cuenta%20y%20datos%20asociados.%0A%0AEmail%20de%20la%20cuenta%3A%20%5BPONLO%20AQU%C3%8D%5D%0A%0AGracias.";
+  "mailto:reinaldorodriguezarteaga@gmail.com?subject=Eliminar%20mi%20cuenta&body=Hola%20Reinaldo%2C%0A%0ASolicito%20la%20eliminaci%C3%B3n%20completa%20de%20mi%20cuenta%20y%20datos%20asociados.%0A%0AEmail%20de%20la%20cuenta%3A%20%5BPONLO%20AQU%C3%8D%5D%0A%0AGracias.";
 
 export default function EliminarDatosPage() {
   return (
@@ -45,7 +45,7 @@ export default function EliminarDatosPage() {
               <p>
                 Si no puedes entrar a tu cuenta, envía un email a{" "}
                 <a href={MAILTO}>
-                  <strong>hola@soyreinaldo.com</strong>
+                  <strong>reinaldorodriguezarteaga@gmail.com</strong>
                 </a>{" "}
                 con el asunto <strong>&quot;Eliminar mi cuenta&quot;</strong> e
                 indica el <strong>email con el que te registraste</strong>. Te
