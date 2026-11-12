@@ -77,15 +77,53 @@ const PLATFORM_META = [
   },
 ] as const;
 
+/**
+ * Periodo de las estadísticas de Instagram y de la audiencia: el panel
+ * profesional de Meta, «últimos 30 días» a fecha de la captura. Al
+ * actualizar las cifras, cambiar también esta fecha (una marca desconfía
+ * de unos «últimos 30 días» sin fecha).
+ */
+const PERIODO_IG = "13 oct – 11 nov 2026";
+
+const CORREO = "reinaldorodriguezarteaga@gmail.com";
+
 const igStats: Metric[] = [
-  { key: "interactions", label: "Interacciones totales", value: "957.600" },
-  { key: "accounts", label: "Cuentas alcanzadas", value: "300.936" },
-  { key: "views", label: "Visualizaciones", value: "7,69M" },
-  { key: "likes", label: "Me gusta", value: "415.848" },
-  { key: "comments", label: "Comentarios", value: "11.875" },
-  { key: "shares", label: "Veces compartido", value: "190.339" },
-  { key: "saves", label: "Veces guardado", value: "23.809" },
-  { key: "reposts", label: "Reposts", value: "15.293" },
+  { key: "views", label: "Reproducciones", value: "15,6M" },
+  { key: "viewers", label: "Espectadores únicos", value: "5,85M" },
+  { key: "accounts", label: "Vistas de no seguidores", value: "8,8M" },
+  { key: "subscribers", label: "Vistas de seguidores", value: "1,25M" },
+];
+
+/** Audiencia de Instagram, mismo periodo (pestaña «Público» del panel). */
+const genero = [
+  { label: "Hombres", percent: 91.0 },
+  { label: "Mujeres", percent: 9.0 },
+];
+
+const edades = [
+  { label: "13-17", percent: 5.3 },
+  { label: "18-24", percent: 16.2 },
+  { label: "25-34", percent: 34.1 },
+  { label: "35-44", percent: 23.8 },
+  { label: "45-54", percent: 12.7 },
+  { label: "55-64", percent: 5.2 },
+  { label: "65+", percent: 2.8 },
+];
+
+const paises = [
+  { label: "España", percent: 18.6 },
+  { label: "Venezuela", percent: 11.9 },
+  { label: "Estados Unidos", percent: 10.5 },
+  { label: "Cuba", percent: 7.6 },
+  { label: "México", percent: 5.7 },
+];
+
+const idiomas = [
+  { label: "Español", percent: 82.7 },
+  { label: "Inglés", percent: 8.0 },
+  { label: "Árabe", percent: 2.8 },
+  { label: "Francés", percent: 2.2 },
+  { label: "Portugués", percent: 1.2 },
 ];
 
 const fbStats: Metric[] = [
@@ -119,10 +157,12 @@ const threadsStats: Metric[] = [
   { key: "views", label: "Visualizaciones", value: "670" },
 ];
 
+// Reels 13M · publicaciones 1,9M · historias 332K (los reels incluyen sus
+// vistas en Facebook, como las cuenta el panel de Meta).
 const igDistribution = [
-  { label: "Reels", percent: 71.9 },
-  { label: "Publicaciones", percent: 22.0 },
-  { label: "Historias", percent: 6.1 },
+  { label: "Reels", percent: 85.3 },
+  { label: "Publicaciones", percent: 12.5 },
+  { label: "Historias", percent: 2.2 },
 ];
 
 const marketing = [
@@ -305,12 +345,17 @@ function MetricCard({ metric }: { metric: Metric }) {
 
 function DistributionBars({
   data,
+  titulo = "Distribución de contenido",
 }: {
   data: { label: string; percent: number }[];
+  titulo?: string;
 }) {
+  // La barra más larga llena la pista: con el porcentaje tal cual, un
+  // 18,6% (el país que más pesa) se quedaba en una raya.
+  const max = Math.max(...data.map((r) => r.percent));
   return (
     <div className="bars">
-      <div className="bars__h">Distribución de contenido</div>
+      <div className="bars__h">{titulo}</div>
       {data.map((row) => (
         <div key={row.label} className="bar">
           <div className="bar__top">
@@ -320,7 +365,7 @@ function DistributionBars({
             </span>
           </div>
           <div className="bar__track">
-            <div className="bar__fill" style={{ width: `${row.percent}%` }} />
+            <div className="bar__fill" style={{ width: `${(row.percent / max) * 100}%` }} />
           </div>
         </div>
       ))}
@@ -427,6 +472,10 @@ export default async function MediaKitPage() {
             Toda la información sobre mis perfiles, métricas y opciones de
             colaboración. Si crees que hay encaje con tu marca, hablemos.
           </p>
+          <p className="mk-contacto">
+            <a href={`mailto:${CORREO}`}>{CORREO}</a>
+            <span>Instagram y audiencia: {PERIODO_IG}</span>
+          </p>
         </div>
       </section>
 
@@ -513,12 +562,35 @@ export default async function MediaKitPage() {
             ))}
           </div>
 
+          {/* Audiencia */}
+          <div style={{ marginTop: 64 }}>
+            <PlatformHeader
+              Logo={InstagramLogo}
+              name="Mi audiencia"
+              period={PERIODO_IG}
+            />
+            <div className="grid2">
+              <DistributionBars data={paises} titulo="Top países" />
+              <DistributionBars data={edades} titulo="Edad" />
+              <DistributionBars data={genero} titulo="Género" />
+              <DistributionBars data={idiomas} titulo="Idiomas" />
+            </div>
+            <div className="mcard" style={{ marginTop: 16 }}>
+              <div className="bars__h">Cuándo están más activos</div>
+              <p style={{ marginTop: 10 }}>
+                Domingos de 18 a 21 h y lunes de 18 a 00 h (hora de España).
+                El 58% tiene entre 25 y 44 años: público adulto, con poder de
+                compra, repartido entre España, Latinoamérica y EE. UU.
+              </p>
+            </div>
+          </div>
+
           {/* Instagram */}
           <div style={{ marginTop: 64 }}>
             <PlatformHeader
               Logo={InstagramLogo}
               name="Estadísticas Instagram"
-              period="últimos 30 días"
+              period={PERIODO_IG}
             />
             <div className="grid gap-4 lg:grid-cols-[1fr_240px]">
               <div className="grid2">
@@ -528,9 +600,9 @@ export default async function MediaKitPage() {
               </div>
               <div className="mcard flex flex-col items-center">
                 <DonutChart
-                  followersPercent={41.9}
-                  centerValue="41,9%"
-                  centerLabel="seguidores que interactúan"
+                  followersPercent={87.6}
+                  centerValue="87,6%"
+                  centerLabel="de las vistas, de gente que aún no me sigue"
                 />
                 <div
                   className="w-full"
@@ -546,10 +618,10 @@ export default async function MediaKitPage() {
                           background: "var(--accent)",
                         }}
                       />
-                      Seguidores
+                      No seguidores
                     </span>
                     <span className="mono" style={{ color: "var(--text-dim)" }}>
-                      41,9%
+                      87,6%
                     </span>
                   </div>
                   <div
@@ -565,10 +637,10 @@ export default async function MediaKitPage() {
                           background: "var(--surface-2)",
                         }}
                       />
-                      No seguidores
+                      Seguidores
                     </span>
                     <span className="mono" style={{ color: "var(--text-dim)" }}>
-                      58,1%
+                      12,4%
                     </span>
                   </div>
                 </div>
@@ -577,6 +649,10 @@ export default async function MediaKitPage() {
             <div style={{ marginTop: 16 }}>
               <DistributionBars data={igDistribution} />
             </div>
+            <p className="hint" style={{ marginTop: 12 }}>
+              Panel profesional de Meta. Las reproducciones de los reels
+              incluyen las que tienen en Facebook.
+            </p>
           </div>
 
           {/* Facebook */}
@@ -584,7 +660,7 @@ export default async function MediaKitPage() {
             <PlatformHeader
               Logo={FacebookLogo}
               name="Estadísticas Facebook"
-              period="últimos 30 días"
+              period="30 días · mayo 2026"
             />
             <div className="grid3">
               {fbStats.map((s) => (
@@ -601,7 +677,7 @@ export default async function MediaKitPage() {
             <PlatformHeader
               Logo={TikTokLogo}
               name="Estadísticas TikTok"
-              period="últimos 30 días"
+              period="30 días · abril 2026"
             />
             <div className="grid3">
               {tiktokStats.map((s) => (
@@ -629,7 +705,7 @@ export default async function MediaKitPage() {
             <PlatformHeader
               Logo={ThreadsLogo}
               name="Estadísticas Threads"
-              period="últimos 30 días"
+              period="30 días · abril 2026"
             />
             <div className="grid3">
               {threadsStats.map((s) => (
@@ -699,13 +775,14 @@ export default async function MediaKitPage() {
               mundo del fútbol. Si crees que hay encaje, ponte en contacto y
               vemos qué podemos hacer juntos.
             </p>
-            <Link
-              href="/contacto"
-              className="btn btn--accent"
-              style={{ marginTop: 22 }}
-            >
-              Contáctame <span className="arr">→</span>
-            </Link>
+            <div className="flex flex-wrap gap-3" style={{ marginTop: 22 }}>
+              <a href={`mailto:${CORREO}`} className="btn btn--accent">
+                {CORREO}
+              </a>
+              <Link href="/contacto" className="btn btn--ghost">
+                Formulario de contacto <span className="arr">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
