@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Agrupa los cuatro | Juegos · Soy Reinaldo",
@@ -27,6 +28,7 @@ export default async function AgrupaPage() {
             16 nombres, 4 grupos de 4. Toca un nombre (azul) y luego sus compañeros: si van juntos se ponen en verde; si no, en rojo y cuenta un error. Con cuatro errores, se acabó.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="agrupa-los-cuatro" nombre="Agrupa los cuatro" />
         </div>
       </section>
     </main>

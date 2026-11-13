@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Cronología del fútbol | Juegos · Soy Reinaldo",
@@ -28,6 +29,7 @@ export default async function CronologiaPage() {
             cada uno te marcamos los que están en su sitio.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="cronologia" nombre="Cronología" />
         </div>
       </section>
     </main>

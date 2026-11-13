@@ -1,3 +1,4 @@
+import { porPartido } from "@/lib/analisis/queries";
 import { Presentation } from "lucide-react";
 import ReportarFallo from "@/components/ReportarFallo";
 import SeguirBloqueo from "./seguir-bloqueo";
@@ -87,9 +88,14 @@ export async function generateMetadata({
   const description = played
     ? `Marcador, estadísticas, alineaciones y valoraciones de ${home} contra ${away} (${round}) en ${competition.name}.`
     : `Previa, probabilidades y cuenta atrás de ${home} contra ${away} (${round}) en ${competition.name}.`;
+  // Ficha hecha con datos de la API: fuera del índice de Google (AdSense la
+  // cuenta como «contenido de poco valor»), salvo que el dueño haya escrito
+  // un análisis del partido. `follow` para que Google siga los enlaces.
+  const conAnalisis = (await porPartido(fixtureId).catch(() => [])).length > 0;
   return {
     title,
     description,
+    robots: { index: conAnalisis, follow: true },
     alternates: { canonical: `/liga/${slug}/partido/${id}` },
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },

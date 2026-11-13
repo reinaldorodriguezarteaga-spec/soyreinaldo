@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import { equiposConListas, temporadasTop10, top10DelDia, totalListas } from "@/lib/juegos/top10";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Top 10: los que más jugaron, marcaron y asistieron | Juegos · Soy Reinaldo",
@@ -32,6 +33,7 @@ export default async function Top10Page() {
             escribe los nombres antes de que se acabe el tiempo. {totalListas()} listas, de la {desde} a la {hasta}.
           </p>
           <Juego numero={numero} delDia={top10DelDia(numero)} equipos={equiposConListas()} />
+          <ComoSeJuega juego="top-10" nombre="Top 10" />
         </div>
       </section>
     </main>

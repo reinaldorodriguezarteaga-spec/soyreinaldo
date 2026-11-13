@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Escudo borroso | Juegos · Soy Reinaldo",
@@ -27,6 +28,7 @@ export default async function EscudoPage() {
             Un escudo muy borroso que se aclara con cada fallo. ¿De qué equipo es? Tienes seis intentos.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="escudo-borroso" nombre="Escudo borroso" />
         </div>
       </section>
     </main>

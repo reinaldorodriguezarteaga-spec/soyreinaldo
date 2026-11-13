@@ -52,6 +52,8 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Datos de la API: fuera del índice (AdSense, «contenido de poco valor»).
+    robots: { index: false, follow: true },
     alternates: { canonical: `/liga/${slug}/equipo/${id}` },
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },

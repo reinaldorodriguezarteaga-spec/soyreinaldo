@@ -14,6 +14,7 @@ import { equiposEnEspanol, nombreCorto } from "@/lib/sports/nombres";
 import { FORMACIONES } from "@/lib/pizarra/formaciones";
 import { EQUIPO_ONCE, TEMPORADA_DESDE, cerrado, puntuarPendientes } from "@/lib/juegos/adivina-once";
 import Formulario, { type JugadorOnce } from "./formulario";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Adivina el once del Barça | Juegos · Soy Reinaldo",
@@ -216,6 +217,7 @@ export default async function AdivinaElOncePage() {
               )}
             </div>
           </div>
+          <ComoSeJuega juego="adivina-el-once" nombre="Adivina el once" />
         </div>
       </section>
     </main>

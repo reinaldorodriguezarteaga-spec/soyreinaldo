@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Adivina el jugador por su carrera | Juegos · Soy Reinaldo",
@@ -28,6 +29,7 @@ export default async function AdivinaElJugadorPage() {
             Estos son los clubes por los que pasó, en orden. Tienes cinco intentos y cada fallo te da una pista.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="adivina-el-jugador" nombre="Adivina el jugador" />
         </div>
       </section>
     </main>

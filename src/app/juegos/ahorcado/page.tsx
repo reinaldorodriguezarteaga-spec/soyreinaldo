@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import { ahorcadoDelDia, totalAhorcado } from "@/lib/juegos/ahorcado";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Ahorcado de futbolistas | Juegos · Soy Reinaldo",
@@ -31,6 +32,7 @@ export default async function AhorcadoPage() {
             estás ahorcado. {totalAhorcado()} jugadores de LaLiga, la Premier y los grandes de la Champions.
           </p>
           <Juego numero={numero} delDia={ahorcadoDelDia(numero)} />
+          <ComoSeJuega juego="ahorcado" nombre="Ahorcado" />
         </div>
       </section>
     </main>
