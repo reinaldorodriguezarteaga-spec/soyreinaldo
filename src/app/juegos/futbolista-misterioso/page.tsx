@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import { JUGADORES_MISTERIOSO, misteriosoDelDia } from "@/lib/juegos/misterioso";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Futbolista misterioso | Juegos · Soy Reinaldo",
@@ -31,6 +32,7 @@ export default async function MisteriosoPage() {
             dorsal. Verde si coincide, amarillo si está cerca. Tienes ocho intentos.
           </p>
           <Juego numero={numero} objetivoDia={misteriosoDelDia(numero)} jugadores={JUGADORES_MISTERIOSO} />
+          <ComoSeJuega juego="futbolista-misterioso" nombre="Futbolista misterioso" />
         </div>
       </section>
     </main>

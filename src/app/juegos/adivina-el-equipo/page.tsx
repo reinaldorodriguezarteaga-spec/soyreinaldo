@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/adivina-equipo";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Adivina el equipo: el once con banderas | Juegos · Soy Reinaldo",
@@ -29,6 +30,7 @@ export default async function AdivinaElEquipoPage() {
             una pista.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="adivina-el-equipo" nombre="Adivina el equipo" />
         </div>
       </section>
     </main>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Once de leyenda: arma el mejor equipo de la historia | Juegos · Soy Reinaldo",
@@ -29,6 +30,7 @@ export default async function OnceDeLeyendaPage() {
             era mejor?
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="once-de-leyenda" nombre="Once de leyenda" />
         </div>
       </section>
     </main>

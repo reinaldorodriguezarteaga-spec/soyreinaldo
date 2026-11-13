@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "Tiki-taka-toe: el tres en raya del fútbol | Juegos · Soy Reinaldo",
@@ -29,6 +30,7 @@ export default async function TikiTakaToePage() {
             columna. Nueve intentos.
           </p>
           <Juego numero={numeroDelDia()} />
+          <ComoSeJuega juego="tiki-taka-toe" nombre="Tiki-taka-toe" />
         </div>
       </section>
     </main>

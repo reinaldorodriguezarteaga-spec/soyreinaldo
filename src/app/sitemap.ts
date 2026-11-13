@@ -1,13 +1,8 @@
 import type { MetadataRoute } from "next";
 import { COMPETITIONS } from "@/lib/sports/competitions";
-import { allFixturesCacheKey, type Fixture } from "@/lib/sports/api-football";
-import { readCache } from "@/lib/sports/sports-cache";
 import { listarPublicados } from "@/lib/analisis/queries";
 
 const SITE = "https://www.soyreinaldo.com";
-
-/** Una semana: al sitemap le vale cualquier cosa que el cron haya dejado. */
-const MAX_AGE = 60 * 60 * 24 * 7;
 
 export const revalidate = 3600;
 
@@ -30,21 +25,14 @@ export const revalidate = 3600;
  *
  * Las fichas de jugador se quedan fuera igual que antes: son cientos por
  * competición y las más caras de servir; Google llega por los enlaces.
+ *
+ * ADSENSE (13-nov-2026): fuera también las fichas de PARTIDO y de EQUIPO.
+ * AdSense rechazó dos veces por «contenido de poco valor»: el sitemap tenía
+ * 580 fichas hechas en automático con datos de la API (94%) frente a 38
+ * análisis propios. Además llevan `noindex, follow` (salvo un partido con
+ * análisis del dueño). Las páginas siguen en la web para quien las use.
  */
 
-/** Ligas domésticas cuyos clubes son "conocidos". Sirve para dos cosas:
- *  1. Un equipo entra en el sitemap SOLO bajo su liga doméstica. Antes el
- *     mismo club tenía una URL por cada competición que juega
- *     (/liga/champions/equipo/529 y /liga/laliga/equipo/529 son el mismo
- *     Barça): contenido duplicado servido en bandeja.
- *  2. Un partido entra solo si lo juega al menos uno de esos clubes, que es
- *     lo que deja fuera los cruces de rondas previas entre desconocidos. */
-const LIGAS_DOMESTICAS = ["laliga", "premier", "serie-a", "ligue-1"];
-
-/** Ventana de partidos: un partido se busca cuando está cerca, no ocho meses
- * antes. Fuera de esto la página existe pero no la anunciamos. */
-const DIAS_ATRAS = 45;
-const DIAS_ADELANTE = 30;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
@@ -80,47 +68,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     }));
 
-  const desde = now.getTime() - DIAS_ATRAS * 86_400_000;
-  const hasta = now.getTime() + DIAS_ADELANTE * 86_400_000;
-
-  // Los partidos de cada competición, una sola lectura de caché por liga.
-  const porCompeticion = await Promise.all(
-    COMPETITIONS.map(async (c) => ({
-      c,
-      fixtures: (await readCache<Fixture[]>(allFixturesCacheKey(c), MAX_AGE)) ?? [],
-    })),
-  );
-
-  // Paso 1: quiénes son los clubes conocidos y bajo qué liga se les enlaza.
-  const equipos = new Map<number, { url: string }>();
-  for (const { c, fixtures } of porCompeticion) {
-    if (!LIGAS_DOMESTICAS.includes(c.slug)) continue;
-    for (const f of fixtures) {
-      for (const t of [f.teams.home, f.teams.away]) {
-        if (!equipos.has(t.id)) {
-          equipos.set(t.id, { url: `${SITE}/liga/${c.slug}/equipo/${t.id}` });
-        }
-      }
-    }
-  }
-
-  // Paso 2: los partidos, con ventana temporal y al menos un club conocido.
-  const partidos: MetadataRoute.Sitemap = [];
-  for (const { c, fixtures } of porCompeticion) {
-    for (const f of fixtures) {
-      const cuando = new Date(f.fixture.date).getTime();
-      if (cuando < desde || cuando > hasta) continue;
-      if (!equipos.has(f.teams.home.id) && !equipos.has(f.teams.away.id)) continue;
-      partidos.push({
-        url: `${SITE}/liga/${c.slug}/partido/${f.fixture.id}`,
-        lastModified: new Date(f.fixture.date),
-        // Un partido cambia mientras se juega y luego ya no.
-        changeFrequency: "weekly",
-        priority: 0.7,
-      });
-    }
-  }
-
   return [
     ...estaticas,
     { url: `${SITE}/analisis`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.9 },
@@ -148,12 +95,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/juegos/tiki-taka-toe`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     ...analisis,
     ...competiciones,
-    ...[...equipos.values()].map((e) => ({
-      url: e.url,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
-    ...partidos,
   ];
 }

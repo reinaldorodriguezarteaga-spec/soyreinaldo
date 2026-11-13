@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
 import { jugadoresMasOMenos } from "@/lib/juegos/mas-o-menos";
 import Juego from "./juego";
+import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
 export const metadata: Metadata = {
   title: "¿Más o menos? Goles y asistencias de esta temporada | Juegos · Soy Reinaldo",
@@ -35,6 +36,7 @@ export default async function MasOMenosPage() {
           ) : (
             <Juego jugadores={jugadores} numero={numeroDelDia()} />
           )}
+          <ComoSeJuega juego="mas-o-menos" nombre="¿Más o menos?" />
         </div>
       </section>
     </main>

@@ -3375,3 +3375,11 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .mk-contacto { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
 .mk-contacto a { font-family: var(--font-mono-stack); font-size: 0.9rem; color: var(--accent); overflow-wrap: anywhere; }
 .mk-contacto span { font-size: 0.8rem; color: var(--text-dim); }
+
+/* «Cómo se juega» bajo cada juego. */
+.csj { margin-top: 48px; max-width: 680px; padding-top: 28px; border-top: 1px solid var(--line); color: var(--text-dim); line-height: 1.6; font-size: 0.95rem; }
+.csj h2 { color: var(--text); font-size: 1.15rem; margin: 0 0 12px; }
+.csj h3 { color: var(--text); font-size: 0.95rem; margin: 20px 0 6px; }
+.csj ol { margin: 0; padding-left: 1.3em; }
+.csj li + li { margin-top: 6px; }
+.csj p { margin: 0; }
