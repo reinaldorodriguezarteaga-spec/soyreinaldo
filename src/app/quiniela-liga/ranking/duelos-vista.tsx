@@ -1,5 +1,3 @@
-import { Trophy, Swords, ArrowUpRight } from "lucide-react";
-
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -67,7 +65,7 @@ export default async function DuelosVista({
     <div style={{ display: "grid", gap: 16 }}>
       <div className="panel duelo__intro">
         <p style={{ margin: 0 }}>
-          <strong><Swords className="ico-txt" aria-hidden /> Duelos:</strong> reta a alguien de tu liga para una jornada. Gana quien más
+          <strong>⚔️ Duelos:</strong> reta a alguien de tu liga para una jornada. Gana quien más
           puntos saque en ella. Al final de la temporada, <strong>quien más duelos gane suma {PREMIO_DUELOS} puntos</strong> a
           la general.
         </p>
@@ -186,7 +184,7 @@ export default async function DuelosVista({
 
 function FilaResultado({ d, meId }: { d: Duelo; meId: string | null }) {
   const g = ganadorDuelo(d);
-  const marca = (id: string) => (g === id ? <Trophy className="ico-txt" aria-hidden /> : null);
+  const marca = (id: string) => (g === id ? " 🏆" : "");
   return (
     <div className={`duelo__fila${d.retador === meId || d.rival === meId ? " mio" : ""}`}>
       <span className="mono duelo__j">J{d.matchday}</span>
@@ -199,7 +197,7 @@ function FilaResultado({ d, meId }: { d: Duelo; meId: string | null }) {
       {!d.terminada && <span className="mono duelo__nota">{d.empezada ? "en juego" : "por empezar"}</span>}
       {g === meId && (
         <Link href={`/logro/duelo/${d.id}`} className="mono duelo__compartir">
-          Compartir <ArrowUpRight className="ico-txt" aria-hidden />
+          Compartir ↗
         </Link>
       )}
     </div>

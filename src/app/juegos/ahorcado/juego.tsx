@@ -8,6 +8,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import { otroAhorcado } from "./acciones";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /**
  * «Ahorcado»: el nombre de un futbolista en huecos y la liga en la que juega.
@@ -358,6 +359,7 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
                 >
                   {copiado ? "¡Copiado!" : "Copiar"}
                 </button>
+                <VolverJuegos />
                 {modo === "practica" ? (
                   <button type="button" className="btn btn--ghost" onClick={() => nuevo()} disabled={cargando}>
                     Otro jugador →

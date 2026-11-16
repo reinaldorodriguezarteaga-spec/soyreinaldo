@@ -12,6 +12,7 @@ import { NIVELES, puntosTikitaka, reloj, type Nivel } from "@/lib/juegos/niveles
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /**
  * Tiki-taka-toe: eliges casilla, escribes un jugador que haya pasado por el
@@ -360,6 +361,7 @@ export default function Juego({ numero }: { numero: number }) {
                 >
                   {copiado ? "¡Copiado!" : "Copiar"}
                 </button>
+                <VolverJuegos />
                 {modo === "practica" ? (
                   <button type="button" className="btn btn--ghost" onClick={nuevoTablero}>
                     Otro tablero →

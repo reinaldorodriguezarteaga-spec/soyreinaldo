@@ -10,6 +10,7 @@ import { NIVELES, puntosAdivinar, reloj, type Nivel } from "@/lib/juegos/niveles
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /**
  * «Adivina el jugador»: la carrera club a club y cinco intentos. Mismo
@@ -315,6 +316,7 @@ export default function Juego({ numero }: { numero: number }) {
                 >
                   {copiado ? "¡Copiado!" : "Copiar"}
                 </button>
+                <VolverJuegos />
                 {modo === "practica" ? (
                   <button type="button" className="btn btn--ghost" onClick={nuevoReto}>
                     Otro jugador →

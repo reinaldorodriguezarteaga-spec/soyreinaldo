@@ -1,5 +1,3 @@
-import { Trophy, Lock } from "lucide-react";
-import Icono from "@/components/Icono";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -130,7 +128,7 @@ export default async function QuinielaLigaIndex({
 
           <div className="panel qcard-champions" style={{ padding: 24 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}><Icono icono={Trophy} tono="oro" tam="sm" /> <T>Quiniela de la Champions</T></h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>🏆 <T>Quiniela de la Champions</T></h2>
               <span className="mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--text-dim)" }}>
                 2026-27 · OTRA COMPETICIÓN
               </span>
@@ -190,7 +188,7 @@ export default async function QuinielaLigaIndex({
                     padding: "3px 10px",
                   }}
                 >
-                  <Lock className="ico-txt" aria-hidden /> PRIVADO
+                  🔒 PRIVADO
                 </span>
                 )}
               </div>
