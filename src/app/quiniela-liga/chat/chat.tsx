@@ -1,5 +1,4 @@
 "use client";
-import { SmilePlus, Trash2, Flag, VolumeX } from "lucide-react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -248,7 +247,7 @@ export default function ChatQuiniela({
                     </button>
                   ))}
                   <button type="button" className="chat__mini" aria-label="Reaccionar" onClick={() => setSelector(selector === m.id ? null : m.id)}>
-                    <SmilePlus className="ico-txt" aria-hidden />+
+                    ☺︎+
                   </button>
                   <button type="button" className="chat__mini" aria-label="Más opciones" onClick={() => setMenu(menu === m.id ? null : m.id)}>
                     ⋯
@@ -266,12 +265,12 @@ export default function ChatQuiniela({
                     <span className="chat__menu">
                       {(mio || moderador) && (
                         <button type="button" onClick={() => accion(() => borrarMensaje(m.id))}>
-                          <Trash2 className="ico-txt" aria-hidden /> Borrar
+                          🗑 Borrar
                         </button>
                       )}
                       {!mio && (
                         <button type="button" onClick={() => accion(() => reportarMensaje(m.id), "Gracias: lo revisamos. Con varios reportes se oculta solo.")}>
-                          <Flag className="ico-txt" aria-hidden /> Reportar
+                          🚩 Reportar
                         </button>
                       )}
                       {!mio && m.user_id && (
@@ -285,7 +284,7 @@ export default function ChatQuiniela({
                             }, `Has silenciado a ${m.autor ?? "esta persona"}: ya no verás sus mensajes.`)
                           }
                         >
-                          <VolumeX className="ico-txt" aria-hidden /> Silenciar a {m.autor ?? "esta persona"}
+                          🔇 Silenciar a {m.autor ?? "esta persona"}
                         </button>
                       )}
                     </span>

@@ -1,5 +1,4 @@
 "use client";
-import { Trophy, CircleDot, TrendingDown, Lock, TriangleAlert } from "lucide-react";
 
 import { useState, useTransition } from "react";
 import { saveSeasonPicks } from "../actions";
@@ -64,7 +63,7 @@ export default function PicksForm({
     return (
       <div className="panel" style={{ padding: 24 }}>
         <p style={{ margin: 0, color: "var(--text-dim)" }}>
-          <Lock className="ico-txt" aria-hidden /> Los picks están cerrados (LaLiga ya arrancó). Estas fueron tus
+          🔒 Los picks están cerrados (LaLiga ya arrancó). Estas fueron tus
           selecciones:
         </p>
         <ul style={{ marginTop: 12, lineHeight: 1.9 }}>
@@ -90,7 +89,7 @@ export default function PicksForm({
 
   return (
     <div className="panel" style={{ padding: 24, display: "grid", gap: 20 }}>
-      <Field label={<><Trophy className="ico-txt" aria-hidden /> Campeón de LaLiga</>} hint="15 pts">
+      <Field label="🏆 Campeón de LaLiga" hint="15 pts">
         <select
           className="scorein"
           style={{ width: "100%", height: 46 }}
@@ -106,7 +105,7 @@ export default function PicksForm({
         </select>
       </Field>
 
-      <Field label={<><CircleDot className="ico-txt" aria-hidden /> Pichichi (máximo goleador)</>} hint="10 pts">
+      <Field label="⚽ Pichichi (máximo goleador)" hint="10 pts">
         <input
           className="scorein"
           style={{ width: "100%", height: 46, textAlign: "left", paddingLeft: 12 }}
@@ -118,7 +117,7 @@ export default function PicksForm({
         />
       </Field>
 
-      <Field label={<><TrendingDown className="ico-txt" aria-hidden /> Los 3 descendidos</>} hint="5 pts cada uno">
+      <Field label="🔻 Los 3 descendidos" hint="5 pts cada uno">
         <div style={{ display: "grid", gap: 8 }}>
           {[0, 1, 2].map((i) => (
             <select
@@ -158,7 +157,7 @@ export default function PicksForm({
           <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
         )}
         {status === "error" && msg && (
-          <span style={{ color: "#ffb4b4" }}><TriangleAlert className="ico-txt" aria-hidden /> {msg}</span>
+          <span style={{ color: "#ffb4b4" }}>⚠ {msg}</span>
         )}
       </div>
     </div>
@@ -170,7 +169,7 @@ function Field({
   hint,
   children,
 }: {
-  label: React.ReactNode;
+  label: string;
   hint: string;
   children: React.ReactNode;
 }) {
