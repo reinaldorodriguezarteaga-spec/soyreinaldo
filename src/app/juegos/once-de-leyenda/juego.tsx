@@ -9,6 +9,7 @@ import { NIVELES, puntosLeyenda, reloj, type Nivel } from "@/lib/juegos/niveles"
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /**
  * Once de leyenda: en cada ronda, tres leyendas para un puesto y te quedas
@@ -244,6 +245,7 @@ export default function Juego({ numero }: { numero: number }) {
                     >
                       {copiado ? "¡Copiado!" : "Copiar"}
                     </button>
+                    <VolverJuegos />
                     <button type="button" className="btn btn--ghost" onClick={() => irA("practica")}>
                       {modo === "practica" ? "Otro sorteo →" : "Jugar en práctica →"}
                     </button>

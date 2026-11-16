@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 const sinSuscripcion = () => () => {};
 
@@ -45,6 +46,7 @@ export default function AccionesFinal({
       >
         {copiado ? "¡Copiado!" : "Copiar"}
       </button>
+      <VolverJuegos />
       {practica ? (
         <button type="button" className="btn btn--ghost" onClick={onOtra} disabled={cargando}>
           {otraTexto} →

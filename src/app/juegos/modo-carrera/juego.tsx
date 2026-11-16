@@ -45,6 +45,7 @@ import {
 import { aplicar, type Accion, type Inicio as InicioCarrera } from "@/lib/juegos/carrera/replay";
 import { guardarCarrera, type Especial, type FilaTop } from "./acciones";
 import { fotoTrofeo, tipoTrofeo } from "@/lib/juegos/carrera/trofeos";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 type Modo = "rapida" | "extendida";
 type Tabla = Modo | Especial;
@@ -683,6 +684,7 @@ function Final({ p, conSesion, onNueva, onTop }: { p: Partida; conSesion: boolea
         <button type="button" className="btn" onClick={onNueva}>
           Nueva carrera
         </button>
+        <VolverJuegos />
       </div>
     </div>
   );

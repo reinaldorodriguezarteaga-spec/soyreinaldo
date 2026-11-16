@@ -21,6 +21,7 @@ import {
 import Icono from "@/components/Icono";
 import RachaJuegos from "@/components/juegos/RachaJuegos";
 import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
+import ArribaAlEntrar from "@/components/juegos/ArribaAlEntrar";
 
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
@@ -135,6 +136,7 @@ export default function JuegosPage() {
   const reto = JUEGOS[0];
   return (
     <main className="page">
+      <ArribaAlEntrar />
       <section className="section" style={{ paddingTop: 28 }}>
         <div className="wrap ios">
           <header className="ios__cab">

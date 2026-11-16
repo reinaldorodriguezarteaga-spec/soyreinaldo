@@ -7,6 +7,7 @@ import { NIVELES, puntosMasOMenos, reloj, type Nivel } from "@/lib/juegos/nivele
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /** Racha hasta el primer fallo; la mejor se guarda en el navegador. */
 
@@ -157,6 +158,7 @@ export default function Juego({ jugadores, numero }: { jugadores: JugadorMm[]; n
                       {copiado ? "¡Copiado!" : "Copiar racha"}
                     </button>
                   )}
+                  <VolverJuegos />
                 </>
               )}
               <button type="button" className="btn btn--accent" onClick={seguir}>

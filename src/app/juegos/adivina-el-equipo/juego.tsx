@@ -16,6 +16,7 @@ import { caraOnce } from "@/lib/juegos/caras-onces";
 import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
+import VolverJuegos from "@/components/juegos/VolverJuegos";
 
 /**
  * «Adivina el equipo»: un once histórico con solo las banderas. El reto del
@@ -386,6 +387,7 @@ export default function Juego({ numero }: { numero: number }) {
               >
                 {copiado ? "¡Copiado!" : "Copiar"}
               </button>
+              <VolverJuegos />
               {modo === "practica" ? (
                 <button type="button" className="btn btn--ghost" onClick={() => nuevoReto()}>
                   Otro equipo →
