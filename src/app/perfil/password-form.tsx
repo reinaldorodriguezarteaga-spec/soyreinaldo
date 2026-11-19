@@ -7,8 +7,11 @@ const initialState: PasswordState = { status: "idle" };
 
 export default function PasswordForm({
   hasPassword,
+  sinTitulo = false,
 }: {
   hasPassword: boolean;
+  /** En /nueva-contrasena el título lo pone la página (tras el correo de recuperación). */
+  sinTitulo?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState(async (
@@ -29,8 +32,12 @@ export default function PasswordForm({
 
   return (
     <div>
-      <h2>{heading}</h2>
-      <p className="sub">{helper}</p>
+      {!sinTitulo && (
+        <>
+          <h2>{heading}</h2>
+          <p className="sub">{helper}</p>
+        </>
+      )}
 
       <form ref={formRef} action={action} className="space-y-4">
         <Field

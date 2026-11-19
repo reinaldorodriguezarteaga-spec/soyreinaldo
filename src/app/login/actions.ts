@@ -156,6 +156,67 @@ export async function verifyEmailCode(
   redirect(redirectTarget);
 }
 
+/**
+ * «¿Olvidaste tu contraseña?» (19-nov, pedido del dueño). Como el código de
+ * la app: el enlace lo genera el servidor (admin.generateLink, que NO manda
+ * correo) y el correo sale por Resend. El enlace va a /auth/confirm con
+ * `token_hash`, así vale aunque se abra en otro navegador (Gmail, la app…),
+ * y deja la sesión abierta en /nueva-contrasena. Anti-enumeración: responde
+ * igual exista o no la cuenta.
+ */
+export async function sendPasswordReset(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = (formData.get("email") as string | null)?.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { status: "error", message: "Introduce un email válido." };
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!url || !serviceKey || !resendKey) {
+    return { status: "error", message: "No se pudo enviar el correo ahora mismo." };
+  }
+
+  const ok: AuthState = {
+    status: "success",
+    message: `Si ${email} tiene cuenta, te hemos enviado un enlace para poner una contraseña nueva.`,
+  };
+
+  const admin = createAdminClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+  });
+  const hash = data?.properties?.hashed_token;
+  if (error || !hash) return ok; // cuenta inexistente → no lo revelamos
+
+  const origin = await siteOrigin();
+  const enlace = `${origin}/auth/confirm?token_hash=${encodeURIComponent(hash)}&type=recovery&next=${encodeURIComponent("/nueva-contrasena")}`;
+
+  try {
+    await new Resend(resendKey).emails.send({
+      from: "Reinaldo <hola@soyreinaldo.com>",
+      to: email,
+      subject: "Pon una contraseña nueva en Soy Reinaldo",
+      html: `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:32px;border-radius:16px;max-width:420px;margin:auto">
+  <h2 style="margin:0 0 8px;font-size:20px">¿Olvidaste tu contraseña?</h2>
+  <p style="color:#8a93b8;margin:0 0 24px;font-size:14px">Pulsa el botón y escribe una nueva. El enlace caduca pronto y solo vale una vez.</p>
+  <a href="${enlace}" style="display:inline-block;background:#2c8fff;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:999px">Poner contraseña nueva</a>
+  <p style="color:#8a93b8;margin:24px 0 0;font-size:12px">Si no lo pediste tú, ignora este correo: tu contraseña no cambia.</p>
+</div>`,
+    });
+  } catch {
+    return { status: "error", message: "No se pudo enviar el correo. Inténtalo de nuevo." };
+  }
+
+  return ok;
+}
+
 export async function signInWithPassword(
   _prev: AuthState,
   formData: FormData,
