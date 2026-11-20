@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
-import { JUGADORES_FOTO, fotoDelDia } from "@/lib/juegos/foto-oculta";
+import { BUSCABLES_FOTO, fotoDelDia } from "@/lib/juegos/foto-oculta";
 import Juego from "./juego";
 import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
@@ -29,7 +29,7 @@ export default async function FotoOcultaPage() {
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 640 }}>
             Un futbolista de hoy con la foto tapada. Cada fallo destapa un trozo más. Tienes seis intentos.
           </p>
-          <Juego numero={numero} objetivoDia={fotoDelDia(numero)} jugadores={JUGADORES_FOTO} />
+          <Juego numero={numero} objetivoDia={fotoDelDia(numero)} jugadores={BUSCABLES_FOTO} />
           <ComoSeJuega juego="foto-oculta" nombre="Foto oculta" />
         </div>
       </section>

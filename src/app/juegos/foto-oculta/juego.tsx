@@ -67,7 +67,8 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
   }
 
   function nuevoObjetivo(excluir: number) {
-    const libres = jugadores.filter((j) => j.id !== excluir);
+    // Respuestas: los que juegan y tienen foto. El resto solo se puede escribir.
+    const libres = jugadores.filter((j) => j.respuesta && j.foto && j.id !== excluir);
     setObjetivoPractica(libres[Math.floor(aleatorio(Date.now())() * libres.length)].id);
   }
 
