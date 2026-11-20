@@ -12,6 +12,8 @@ import VolverJuegos from "@/components/juegos/VolverJuegos";
 /** Racha hasta el primer fallo; la mejor se guarda en el navegador. */
 
 const CLAVE = "jg-masomenos-mejor";
+/** Días con una partida terminada (formato de `racha.ts`). */
+const CLAVE_DIAS = "jg-masomenos-v1";
 const sinSuscripcion = () => () => {};
 type Pareja = NonNullable<ReturnType<typeof siguientePareja>>;
 
@@ -47,6 +49,20 @@ export default function Juego({ jugadores, numero }: { jugadores: JugadorMm[]; n
   const restante = useCronometro(NIVELES[nivel ?? "facil"].segundos, inicio, fin);
   const agotado = inicio != null && fin == null && restante === 0;
   const terminado = fin != null || agotado;
+
+  // Partida del día terminada: se apunta para el tick de «hecho hoy» de la
+  // lista de juegos (20-nov). Solo el día; la racha y el ranking los lleva
+  // CierreJuego.
+  useEffect(() => {
+    if (!terminado) return;
+    try {
+      const g = JSON.parse(localStorage.getItem(CLAVE_DIAS) ?? "null") as { dias?: Record<number, { fin: number }> } | null;
+      const dias = { ...(g?.dias ?? {}), [numero]: { fin: Date.now() } };
+      localStorage.setItem(CLAVE_DIAS, JSON.stringify({ dias }));
+    } catch {
+      // Sin storage: no hay tick.
+    }
+  }, [terminado, numero]);
 
   useEffect(() => {
     if (!agotado) return;

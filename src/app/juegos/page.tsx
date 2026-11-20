@@ -123,6 +123,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/mas-o-menos",
+    clave: "jg-masomenos-v1",
     corto: "Racha hasta que falles",
     icono: Scale,
     tono: "naranja",
