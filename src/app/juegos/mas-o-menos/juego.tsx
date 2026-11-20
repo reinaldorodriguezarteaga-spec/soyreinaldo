@@ -34,10 +34,13 @@ export default function Juego({ jugadores, numero }: { jugadores: JugadorMm[]; n
   const [copiado, setCopiado] = useState(false);
   const nativo = useSyncExternalStore(sinSuscripcion, () => "share" in navigator, () => false);
 
-  // La primera pareja, al montar: con Math.random en el servidor no casaría al hidratar.
+  // La primera pareja, al montar: con Math.random en el servidor no casaría al
+  // hidratar. Solo si no hay ya una: al perder, guardar los puntos refresca la
+  // página, llega otra lista de `jugadores` y antes se cambiaba la pareja con
+  // la que acababas de fallar (20-nov, pedido del dueño).
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- arranque único al montar, no cascada
-    setPareja(siguientePareja(jugadores, Math.random));
+    setPareja((actual) => actual ?? siguientePareja(jugadores, Math.random));
     setMejor(leerMejor());
   }, [jugadores]);
 
