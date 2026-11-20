@@ -22,6 +22,7 @@ import Icono from "@/components/Icono";
 import RachaJuegos from "@/components/juegos/RachaJuegos";
 import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
 import ArribaAlEntrar from "@/components/juegos/ArribaAlEntrar";
+import HechoHoy from "@/components/juegos/HechoHoy";
 
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
@@ -34,6 +35,7 @@ export const metadata: Metadata = {
 const JUEGOS = [
   {
     href: "/juegos/adivina-el-equipo",
+    clave: "jg-equipo-v1",
     corto: "Un once histórico con banderas",
     icono: Flag,
     tono: "azul",
@@ -41,6 +43,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/top-10",
+    clave: "jg-top10-v1",
     corto: "Los 10 que más jugaron o marcaron",
     icono: ListOrdered,
     tono: "verde",
@@ -48,6 +51,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/futbolista-misterioso",
+    clave: "jg-misterioso-v1",
     corto: "Pistas al comparar con otros jugadores",
     icono: HelpCircle,
     tono: "morado",
@@ -55,6 +59,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/escudo-borroso",
+    clave: "jg-escudo-v1",
     corto: "Se aclara con cada fallo",
     icono: Shield,
     tono: "azul",
@@ -62,6 +67,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/foto-oculta",
+    clave: "jg-foto-v1",
     corto: "Se destapa por trozos",
     icono: ImageOff,
     tono: "naranja",
@@ -69,6 +75,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/agrupa-los-cuatro",
+    clave: "jg-agrupa-v1",
     corto: "16 nombres, 4 grupos",
     icono: LayoutGrid,
     tono: "verde",
@@ -76,6 +83,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/cronologia",
+    clave: "jg-cronologia-v1",
     corto: "Ordena los momentos por fecha",
     icono: CalendarRange,
     tono: "oro",
@@ -83,6 +91,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/ahorcado",
+    clave: "jg-ahorcado-v1",
     corto: "Letra a letra, antes de cinco fallos",
     icono: Spline,
     tono: "rojo",
@@ -90,6 +99,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/adivina-el-jugador",
+    clave: "jg-jugador-v1",
     corto: "Sus clubes, en orden",
     icono: UserSearch,
     tono: "morado",
@@ -97,6 +107,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/tiki-taka-toe",
+    clave: "jg-tikitaka-v1",
     corto: "El tres en raya del fútbol",
     icono: Grid3x3,
     tono: "verde",
@@ -104,6 +115,7 @@ const JUEGOS = [
   },
   {
     href: "/juegos/once-de-leyenda",
+    clave: "jg-leyendas-v1",
     corto: "Elige tu once histórico",
     icono: Star,
     tono: "oro",
@@ -151,6 +163,7 @@ export default function JuegosPage() {
               <b>{reto.titulo}</b>
               <span>{reto.corto}</span>
             </span>
+            <HechoHoy clave={reto.clave} />
             <ChevronRight aria-hidden />
           </Link>
           <RachaJuegos />
@@ -165,6 +178,7 @@ export default function JuegosPage() {
                       <b>{j.titulo}</b>
                       <span>{j.corto}</span>
                     </span>
+                    {"clave" in j && <HechoHoy clave={j.clave} />}
                     <ChevronRight className="lista__ir" aria-hidden />
                   </Link>
                 </li>

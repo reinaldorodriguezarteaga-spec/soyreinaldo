@@ -3383,3 +3383,10 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .csj ol { margin: 0; padding-left: 1.3em; }
 .csj li + li { margin-top: 6px; }
 .csj p { margin: 0; }
+
+/* Tick de «reto de hoy hecho» en la lista de juegos (18-nov). */
+.jg-hecho { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #fff; }
+.jg-hecho svg { width: 15px; height: 15px; stroke-width: 3; }
+.destacada .jg-hecho { width: 28px; height: 28px; background: #fff; color: var(--ok); }
+.auth__olvido { margin: -6px 0 14px; text-align: right; font-size: 0.84rem; }
+.auth__olvido a { color: var(--accent); }

@@ -38,6 +38,23 @@ function leerDias(): Set<number> {
   return dias;
 }
 
+/** Reto del día `dia` terminado en este navegador para un juego (su clave de
+ * guardado). Marca de «hecho» en la lista de juegos (18-nov, pedido del
+ * dueño): se quita sola al cambiar el día, porque el día nuevo no tiene fin. */
+export function hechoElDia(clave: string, dia: number): boolean {
+  const directo = JUEGOS.find(([c]) => c === clave)?.[1];
+  if (directo === undefined) return false;
+  try {
+    const g = JSON.parse(localStorage.getItem(clave) ?? "null") as Record<string, unknown> | null;
+    const v = ((directo ? g : g?.dias) as Record<string, unknown> | undefined)?.[dia];
+    // Once de leyenda guardaba antes solo los picks: con los 11, terminado.
+    if (Array.isArray(v)) return v.length >= 11;
+    return !!(v && typeof v === "object" && (v as { fin?: number }).fin);
+  } catch {
+    return false;
+  }
+}
+
 /** Apunta un reto del día terminado. */
 export function apuntarDia(dia: number) {
   try {

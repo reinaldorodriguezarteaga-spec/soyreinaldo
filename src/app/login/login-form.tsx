@@ -110,6 +110,11 @@ export default function LoginForm({
             placeholder="Mínimo 6 caracteres"
             disabled={pwPending}
           />
+          <p className="auth__olvido">
+            <Link href={`/recuperar${redirect === "/quiniela" ? "" : `?redirect=${encodeURIComponent(redirect)}`}`}>
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
           <button
             type="submit"
             disabled={pwPending}
