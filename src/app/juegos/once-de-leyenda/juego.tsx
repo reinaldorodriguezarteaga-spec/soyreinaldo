@@ -207,16 +207,28 @@ export default function Juego({ numero }: { numero: number }) {
                     </div>
                   </div>
                   <ul className="ol-repaso">
-                    {ts.slice(0, ronda).map((t, i) => (
-                      <li key={i}>
-                        <b>{HUECOS[i]}</b>
-                        {t.map((x, k) => (
-                          <span key={x.nombre} className={k === picks[i] ? "is-mio" : ""}>
-                            {x.nombre.split(" ").at(-1)} {x.media}
-                          </span>
-                        ))}
-                      </li>
-                    ))}
+                    {ts.slice(0, ronda).map((t, i) => {
+                      // En verde el mejor de la terna (o los mejores, si
+                      // empatan); en rojo tu elección si no era el mejor
+                      // (20-nov, pedido del dueño: no se veía dónde fallaste).
+                      const tope = Math.max(...t.map((x) => x.media));
+                      return (
+                        <li key={i}>
+                          <b>{HUECOS[i]}</b>
+                          {t.map((x, k) => {
+                            const mejor = x.media === tope;
+                            const mio = k === picks[i];
+                            const clase = [mio && "is-mio", mejor && "is-mejor", mio && !mejor && "is-fallo"].filter(Boolean).join(" ");
+                            return (
+                              <span key={x.nombre} className={clase}>
+                                {mio && (mejor ? "✓ " : "✗ ")}
+                                {x.nombre.split(" ").at(-1)} {x.media}
+                              </span>
+                            );
+                          })}
+                        </li>
+                      );
+                    })}
                   </ul>
                   {nivel && (
                     <CierreJuego juego="leyenda" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${res.mejores}/11 ⭐`}
