@@ -41,8 +41,8 @@ export const LEYENDAS: Record<Puesto, Leyenda[]> = {
   ],
   DFC: [
     l("Franz Beckenbauer", "de", 97), l("Franco Baresi", "it", 95), l("Sergio Ramos", "es", 93), l("Alessandro Nesta", "it", 93),
-    l("Fabio Cannavaro", "it", 93), l("Carles Puyol", "es", 92), l("Virgil van Dijk", "nl", 92), l("Fernando Hierro", "es", 91),
-    l("Thiago Silva", "br", 91), l("Gerard Piqué", "es", 90), l("John Terry", "gb-eng", 90), l("Ronald Koeman", "nl", 90),
+    l("Fabio Cannavaro", "it", 93), l("Carles Puyol", "es", 92), l("Virgil van Dijk", "nl", 92), l("Fernando Hierro", "es", 90),
+    l("Thiago Silva", "br", 91), l("Gerard Piqué", "es", 92), l("John Terry", "gb-eng", 90), l("Ronald Koeman", "nl", 90),
     l("Rio Ferdinand", "gb-eng", 90), l("Nemanja Vidić", "rs", 89), l("Raphaël Varane", "fr", 88)
   ],
   LI: [
