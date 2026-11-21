@@ -3393,3 +3393,11 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .destacada .jg-hecho { width: 28px; height: 28px; background: #fff; color: var(--ok); }
 .auth__olvido { margin: -6px 0 14px; text-align: right; font-size: 0.84rem; }
 .auth__olvido a { color: var(--accent); }
+
+/* Tablas de las páginas legales (/cookies). Con scroll propio en móvil. */
+.legal { grid-template-columns: minmax(0, 1fr); }
+.legal__tabla { overflow-x: auto; margin: 0 0 12px; }
+.legal table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 520px; }
+.legal th, .legal td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--text-dim); vertical-align: top; }
+.legal th { color: var(--text); font-weight: 700; }
+.legal code { font-size: 0.85em; color: var(--text); }
