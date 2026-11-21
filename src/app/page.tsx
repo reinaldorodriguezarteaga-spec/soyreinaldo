@@ -183,14 +183,15 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <QuinielaPendientes />
               </Suspense>
+              {/* Últimos análisis publicados, ARRIBA del calendario y sin
+                  Suspense (21-nov-2026): es el contenido propio de la web y
+                  tiene que verse primero y venir en el HTML inicial, no en
+                  un trozo escondido que llega después (auditoría para
+                  AdSense: «la portada parece automática»). Es una consulta
+                  rápida a la base de datos. Antes iba debajo del calendario. */}
+              <HomeAnalysisCard />
               <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
                 <HomeScoreboard />
-              </Suspense>
-              {/* Últimos análisis publicados — debajo del calendario y FUERA
-                  de su caja de scroll (.hmcal-scroll), para que no quede
-                  atrapado dentro. Si no hay nada publicado, no pinta nada. */}
-              <Suspense fallback={null}>
-                <HomeAnalysisCard />
               </Suspense>
             </div>
 
