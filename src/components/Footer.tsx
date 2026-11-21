@@ -36,6 +36,8 @@ export default function Footer({ enApp = false }: { enApp?: boolean }) {
             <Link href="/contacto">Contáctame</Link>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/terminos">Términos</Link>
+            <Link href="/cookies">Cookies</Link>
+            <Link href="/aviso-legal">Aviso legal</Link>
             <Link href="/eliminar-datos">Eliminar mis datos</Link>
             <ReportarFallo tipoInicial="fallo" />
           </nav>

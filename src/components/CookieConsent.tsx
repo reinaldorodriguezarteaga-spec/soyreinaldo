@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "cookie-consent";
+export const STORAGE_KEY_CONSENTIMIENTO = "cookie-consent";
+const STORAGE_KEY = STORAGE_KEY_CONSENTIMIENTO;
 
 type Choice = "granted" | "denied";
 
@@ -11,6 +12,11 @@ declare global {
   interface Window {
     dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
+    __tcfapi?: (
+      cmd: string,
+      version: number,
+      cb: (data: { eventStatus?: string } | null, ok: boolean) => void,
+    ) => void;
   }
 }
 
@@ -47,7 +53,38 @@ export default function CookieConsent() {
     () => null,
   );
   const [recienElegido, setRecienElegido] = useState<Choice | null>(null);
-  const visible = !guardado && !recienElegido;
+  // El aviso certificado de Google (AdSense → Privacidad y mensajes, activado
+  // por el dueño) manda cuando se muestra: entonces este se aparta para que no
+  // salgan dos. Hasta que Google lo enseñe (no lo hace mientras el sitio no
+  // esté aprobado), este sigue siendo el aviso de reserva.
+  const [manejaGoogle, setManejaGoogle] = useState(false);
+  const visible = !guardado && !recienElegido && !manejaGoogle;
+
+  useEffect(() => {
+    let vivo = true;
+    let intentos = 0;
+    // __tcfapi lo define el script de Google al cargar, que va con async:
+    // se espera hasta ~6 s y luego se deja de mirar.
+    const id = window.setInterval(() => {
+      intentos += 1;
+      if (typeof window.__tcfapi === "function") {
+        window.clearInterval(id);
+        window.__tcfapi("addEventListener", 2, (data, ok) => {
+          if (!vivo || !ok || !data) return;
+          // cmpuishown: Google enseña su aviso. tcloaded: ya elegiste en él.
+          if (data.eventStatus === "cmpuishown" || data.eventStatus === "tcloaded") {
+            setManejaGoogle(true);
+          }
+        });
+      } else if (intentos >= 30) {
+        window.clearInterval(id);
+      }
+    }, 200);
+    return () => {
+      vivo = false;
+      window.clearInterval(id);
+    };
+  }, []);
 
   function applyConsent(choice: Choice) {
     gtag("consent", "update", {
@@ -91,8 +128,8 @@ export default function CookieConsent() {
         <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.5, color: "var(--text-dim)" }}>
           Usamos cookies propias y de terceros (anuncios) para mantener la web
           gratis.{" "}
-          <Link href="/privacidad" style={{ color: "var(--accent)" }}>
-            Más info
+          <Link href="/cookies" style={{ color: "var(--accent)" }}>
+            Política de cookies
           </Link>
           .
         </p>
