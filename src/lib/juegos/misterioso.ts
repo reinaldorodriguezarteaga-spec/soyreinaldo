@@ -1,6 +1,6 @@
 import "server-only";
 import { delDia } from "./diario";
-import { FUTBOLISTAS } from "./futbolistas";
+import { FUTBOLISTAS, TODOS } from "./futbolistas";
 
 /**
  * «Futbolista misterioso» (10-nov-2026): adivinar a un jugador de hoy con
@@ -8,5 +8,8 @@ import { FUTBOLISTAS } from "./futbolistas";
  * `futbolistas.ts`; solo los que tienen edad (para la pista de la edad).
  */
 export const JUGADORES_MISTERIOSO = FUTBOLISTAS.filter((j) => j.edad != null);
+
+/** Los que se pueden escribir: toda la plantilla (con edad, para comparar). */
+export const BUSCABLES_MISTERIOSO = TODOS.filter((j) => j.edad != null);
 
 export const misteriosoDelDia = (numero: number) => delDia(JUGADORES_MISTERIOSO, numero).id;

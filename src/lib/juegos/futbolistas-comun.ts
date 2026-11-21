@@ -18,6 +18,9 @@ export type Futbolista = {
   pais: string | null;
   /** Tiene foto de verdad (no la silueta genérica). */
   foto: boolean;
+  /** Puede ser la respuesta (juega de verdad: ≥300 min de liga). Los demás
+   * solo están para poder escribirlos al adivinar (20-nov). */
+  respuesta: boolean;
 };
 
 export const fotoDe = (id: number) => `https://media.api-sports.io/football/players/${id}.png`;

@@ -11,7 +11,10 @@
  *   node scripts/juego-ahorcado.mjs --offline  # solo regenera desde la caché
  *
  * Para que no salgan desconocidos (pedido del dueño, 10-nov-2026), solo
- * entran los que juegan: un mínimo de minutos en liga esta temporada.
+ * son RESPUESTA (`r: true`) los que juegan: un mínimo de minutos en liga
+ * esta temporada. Los demás de la plantilla entran igual, solo para poder
+ * escribirlos al adivinar (20-nov: faltaban Musiala, Dembélé, Goretzka…
+ * por lesión o rotación).
  * Caché en node_modules/.cache/ahorcado (borrarla para refrescar).
  */
 import fs from "node:fs";
@@ -74,6 +77,8 @@ async function api(ruta) {
 }
 
 const jugadores = new Map();
+/** Los que no son respuesta: se añaden al final. */
+const solo = new Map();
 for (const [equipo, liga] of EQUIPOS) {
   let antes = jugadores.size;
   for (let pagina = 1; pagina <= 6; pagina++) {
@@ -81,9 +86,16 @@ for (const [equipo, liga] of EQUIPOS) {
     if (!json) break;
     for (const item of json.response) {
       const s = item.statistics.find((x) => x.team?.id === equipo && x.league?.id === liga);
-      if (!s || (s.games?.minutes ?? 0) < MIN_MINUTOS) continue;
+      if (!s) continue;
       const p = item.player;
-      jugadores.set(p.id, {
+      const r = (s.games?.minutes ?? 0) >= MIN_MINUTOS;
+      // Si ya estaba (dos equipos en la temporada), manda la ficha de respuesta.
+      if (jugadores.get(p.id)?.r && !r) continue;
+      if (!r && jugadores.has(p.id)) continue;
+      // Las respuestas, en el mismo orden de siempre: el reto del día sale de
+      // su posición en la lista, y cambiarla cambiaría los retos ya jugados.
+      if (r) solo.delete(p.id);
+      (r ? jugadores : solo).set(p.id, {
         id: p.id,
         n: p.name,
         f: p.firstname,
@@ -94,12 +106,15 @@ for (const [equipo, liga] of EQUIPOS) {
         pos: s.games?.position ?? null,
         nac: p.birth?.date ?? null,
         dorsal: s.games?.number ?? null,
+        r,
       });
     }
     if (pagina >= (json.paging?.total ?? 1)) break;
   }
   console.log(`· ${equipo}: ${jugadores.size - antes} jugadores`);
 }
+
+for (const [id, j] of solo) if (!jugadores.has(id)) jugadores.set(id, j);
 
 // Bandera de la nacionalidad (para «Futbolista misterioso»): /countries da
 // el código de la CDN; las que se escriben distinto, a mano.
@@ -131,10 +146,17 @@ for (const j of jugadores.values()) {
 const veces = new Map();
 for (const h of huellas.values()) veces.set(h, (veces.get(h) ?? 0) + 1);
 const silueta = [...veces].sort((a, b) => b[1] - a[1])[0];
+// Las respuestas, con la silueta contada solo entre ellas (como antes de
+// añadir el resto de la plantilla): si no, cambiaba qué fotos valen y con
+// ello los retos ya jugados de «Foto oculta».
+const vecesR = new Map();
+for (const j of jugadores.values()) if (j.r) vecesR.set(huellas.get(j.id), (vecesR.get(huellas.get(j.id)) ?? 0) + 1);
+const siluetaR = [...vecesR].sort((a, b) => b[1] - a[1])[0];
 for (const j of jugadores.values()) {
   j.b = codigo.get(j.p) ?? null;
   const h = huellas.get(j.id);
-  j.foto = !!h && h !== "sin-foto" && !(silueta && silueta[1] > 3 && h === silueta[0]);
+  const sil = j.r ? siluetaR : silueta;
+  j.foto = !!h && h !== "sin-foto" && !(sil && sil[1] > 3 && h === sil[0]);
 }
 console.log(`  Fotos reales: ${[...jugadores.values()].filter((j) => j.foto).length}/${jugadores.size} (silueta repetida ${silueta?.[1]} veces)`);
 const sinBandera = [...new Set([...jugadores.values()].filter((j) => !j.b).map((j) => j.p))];
@@ -144,4 +166,4 @@ fs.writeFileSync(
   SALIDA,
   JSON.stringify({ generado: new Date().toISOString().slice(0, 10), temporada: TEMPORADA, jugadores: [...jugadores.values()] }) + "\n",
 );
-console.log(`✓ ${jugadores.size} jugadores, ${llamadas} llamadas`);
+console.log(`✓ ${jugadores.size} jugadores (${[...jugadores.values()].filter((j) => j.r).length} respuesta), ${llamadas} llamadas`);

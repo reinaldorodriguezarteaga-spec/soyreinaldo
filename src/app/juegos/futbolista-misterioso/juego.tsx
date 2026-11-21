@@ -51,7 +51,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
   }
 
   function otro() {
-    const libres = jugadores.filter((j) => j.id !== objetivoId);
+    const libres = jugadores.filter((j) => j.respuesta && j.id !== objetivoId);
     setObjetivoPractica(libres[Math.floor(aleatorio(Date.now())() * libres.length)].id);
     p.reiniciar();
   }
@@ -60,7 +60,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
     if (m === p.modo) return;
     p.irA(m);
     if (m === "practica") {
-      const libres = jugadores.filter((j) => j.id !== objetivoDia);
+      const libres = jugadores.filter((j) => j.respuesta && j.id !== objetivoDia);
       setObjetivoPractica(libres[Math.floor(aleatorio(Date.now())() * libres.length)].id);
     }
   }

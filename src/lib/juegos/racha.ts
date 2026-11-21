@@ -21,6 +21,7 @@ const JUEGOS: [clave: string, directo: boolean][] = [
   ["jg-foto-v1", false],
   ["jg-agrupa-v1", false],
   ["jg-cronologia-v1", false],
+  ["jg-masomenos-v1", false],
 ];
 
 function leerDias(): Set<number> {

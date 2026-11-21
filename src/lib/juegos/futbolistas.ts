@@ -24,6 +24,7 @@ type Jugador = {
   dorsal: number | null;
   b: string | null;
   foto: boolean;
+  r?: boolean;
 };
 
 export const EQUIPOS: Record<number, string> = {
@@ -111,8 +112,14 @@ function futbolista(j: Jugador): Futbolista {
     // El API da el país en inglés («Spain»): en los juegos, en español.
     pais: j.p ? conTildes(j.p) : null,
     foto: j.foto,
+    respuesta: j.r !== false,
   };
 }
 
-/** Todos, ya con nombre, apellido, edad y equipo en español. */
-export const FUTBOLISTAS: Futbolista[] = (datos.jugadores as Jugador[]).map(futbolista);
+/** Toda la plantilla, ya con nombre, apellido, edad y equipo en español: para
+ * escribir al adivinar. */
+export const TODOS: Futbolista[] = (datos.jugadores as Jugador[]).map(futbolista);
+
+/** Los que pueden ser respuesta (los que juegan), en el orden de siempre: el
+ * reto del día sale de su posición en esta lista. */
+export const FUTBOLISTAS: Futbolista[] = TODOS.filter((j) => j.respuesta);

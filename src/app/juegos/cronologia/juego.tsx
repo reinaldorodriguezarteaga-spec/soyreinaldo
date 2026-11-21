@@ -32,18 +32,32 @@ export default function Juego({ numero }: { numero: number }) {
   const orden = p.datos.orden.length === momentos.length ? p.datos.orden : momentos.map((m) => m.id);
   const { intentos, fijos } = p.datos;
   const restante = useCronometro(NIVELES[p.nivel ?? "facil"].segundos, p.inicio, p.fin);
-  const acertado = intentos > 0 && orden.every((id, i) => correcto[i] === id);
+  // Acertado = el último «Comprobar» los dejó todos en su sitio. Antes se
+  // miraba el orden de ahora: tras un intento fallido, colocarlos bien con
+  // las flechas daba la partida por ganada sin comprobar, y sin parar el
+  // reloj (los puntos seguían bajando). Arreglado el 20-nov.
+  const acertado = intentos > 0 && fijos.length === momentos.length;
   const agotado = p.inicio != null && p.fin == null && restante === 0;
   const terminado = acertado || intentos >= MAX_INTENTOS_CRONOLOGIA || p.fin != null || agotado;
   const { terminar } = p;
+  // Partida terminada con el reloj aún en marcha: se para (y se guarda el fin).
+  const sinParar = terminado && p.inicio != null && p.fin == null;
   useEffect(() => {
-    if (agotado) terminar();
-  }, [agotado, terminar]);
+    if (sinParar) terminar();
+  }, [sinParar, terminar]);
+
+  /** Hueco libre más cercano hacia `d` (los fijos se saltan: si no, uno
+   * acertado en medio hacía de pared y la partida no tenía solución). */
+  function destino(i: number, d: -1 | 1): number {
+    let j = i + d;
+    while (j >= 0 && j < orden.length && fijos.includes(orden[j])) j += d;
+    return j >= 0 && j < orden.length ? j : -1;
+  }
 
   function mover(i: number, d: -1 | 1) {
     if (terminado) return;
-    const j = i + d;
-    if (j < 0 || j >= orden.length || fijos.includes(orden[i]) || fijos.includes(orden[j])) return;
+    const j = destino(i, d);
+    if (j < 0 || fijos.includes(orden[i])) return;
     const nuevo = [...orden];
     [nuevo[i], nuevo[j]] = [nuevo[j], nuevo[i]];
     p.cambiarDatos({ orden: nuevo, intentos, fijos });
@@ -106,10 +120,10 @@ export default function Juego({ numero }: { numero: number }) {
                   </span>
                   {!fijo && (
                     <span className="cr-flechas">
-                      <button type="button" aria-label="Subir" onClick={() => mover(i, -1)} disabled={i === 0}>
+                      <button type="button" aria-label="Subir" onClick={() => mover(i, -1)} disabled={destino(i, -1) < 0}>
                         <ArrowUp aria-hidden />
                       </button>
-                      <button type="button" aria-label="Bajar" onClick={() => mover(i, 1)} disabled={i === vista.length - 1}>
+                      <button type="button" aria-label="Bajar" onClick={() => mover(i, 1)} disabled={destino(i, 1) < 0}>
                         <ArrowDown aria-hidden />
                       </button>
                     </span>

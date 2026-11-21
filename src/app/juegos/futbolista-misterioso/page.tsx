@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { numeroDelDia } from "@/lib/juegos/diario";
-import { JUGADORES_MISTERIOSO, misteriosoDelDia } from "@/lib/juegos/misterioso";
+import { BUSCABLES_MISTERIOSO, misteriosoDelDia } from "@/lib/juegos/misterioso";
 import Juego from "./juego";
 import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 
@@ -31,7 +31,7 @@ export default async function MisteriosoPage() {
             Escribe cualquier jugador y te decimos en qué se parece al misterioso: liga, equipo, posición, país, edad y
             dorsal. Verde si coincide, amarillo si está cerca. Tienes ocho intentos.
           </p>
-          <Juego numero={numero} objetivoDia={misteriosoDelDia(numero)} jugadores={JUGADORES_MISTERIOSO} />
+          <Juego numero={numero} objetivoDia={misteriosoDelDia(numero)} jugadores={BUSCABLES_MISTERIOSO} />
           <ComoSeJuega juego="futbolista-misterioso" nombre="Futbolista misterioso" />
         </div>
       </section>
