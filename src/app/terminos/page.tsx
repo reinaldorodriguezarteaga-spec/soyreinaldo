@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { T } from "@/components/EnApp";
+import { CONTACTO_LEGAL, TITULAR } from "@/lib/legal";
 
 export const metadata = {
   title: "Términos del Servicio | Soy Reinaldo",
@@ -7,7 +8,7 @@ export const metadata = {
     "Las condiciones para usar soyreinaldo.com y sus apps: cuentas, juegos y ligas de pronósticos, datos deportivos, servicios de pago y normas de uso.",
 };
 
-const lastUpdated = "5 de noviembre de 2026";
+const lastUpdated = "22 de noviembre de 2026";
 
 /** Términos del Servicio (5-nov-2026): los pide Google Play para la
  * declaración de «operador» (comerciante) y sirven para la web y las apps. */
@@ -31,9 +32,10 @@ export default function TerminosPage() {
               <h2>1. Quién presta el servicio</h2>
               <p>
                 Soy Reinaldo (la web <strong>soyreinaldo.com</strong> y sus apps para iPhone y
-                Android) es un proyecto de <strong>Reinaldo Rodríguez</strong> (en adelante
-                &quot;yo&quot;). Contacto:{" "}
-                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
+                Android) es un proyecto de <strong>{TITULAR.nombre}</strong> (en adelante
+                &quot;yo&quot;), NIF {TITULAR.nif}, con domicilio en {TITULAR.domicilio}.
+                Contacto: <a href={`mailto:${CONTACTO_LEGAL}`}>{CONTACTO_LEGAL}</a>. Más datos en
+                el <Link href="/aviso-legal">aviso legal</Link>.
               </p>
               <p>
                 Al usar la web o las apps aceptas estos términos. Si no estás de acuerdo, no
@@ -118,7 +120,7 @@ export default function TerminosPage() {
               <p>
                 Puedo borrar el contenido que no cumpla estas normas y suspender o cerrar las
                 cuentas que las incumplan. Si ves algo así, avísame con «Reportar un fallo» o en{" "}
-                <a href="mailto:reinaldorodriguezarteaga@gmail.com">reinaldorodriguezarteaga@gmail.com</a>.
+                <a href={`mailto:${CONTACTO_LEGAL}`}>{CONTACTO_LEGAL}</a>.
               </p>
             </section>
 
