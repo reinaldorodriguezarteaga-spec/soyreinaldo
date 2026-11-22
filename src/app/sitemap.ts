@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next";
-import { COMPETITIONS } from "@/lib/sports/competitions";
 import { listarPublicados } from "@/lib/analisis/queries";
 
 const SITE = "https://www.soyreinaldo.com";
@@ -53,12 +52,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/aviso-legal`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  const competiciones: MetadataRoute.Sitemap = COMPETITIONS.map((c) => ({
-    url: `${SITE}/liga/${c.slug}`,
-    lastModified: now,
-    changeFrequency: "daily" as const,
-    priority: 0.9,
-  }));
+  // Las páginas de /liga (clasificaciones, calendario, cuadro, jugadores)
+  // salieron del sitemap y del índice el 22-nov-2026: son datos de la API, los
+  // mismos que en cualquier web de resultados, y AdSense las lee como
+  // «contenido de poco valor». Ver liga/[slug]/layout.tsx.
 
   // Los análisis: son el contenido propio, el que de verdad puede posicionar
   // por sí solo. Van con prioridad alta y su fecha real de publicación.
@@ -96,6 +93,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/juegos/mas-o-menos`, lastModified: now, changeFrequency: "daily" as const, priority: 0.6 },
     { url: `${SITE}/juegos/tiki-taka-toe`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 },
     ...analisis,
-    ...competiciones,
   ];
 }
