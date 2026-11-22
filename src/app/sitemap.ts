@@ -49,6 +49,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/quiniela-liga/reglas`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${SITE}/privacidad`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE}/terminos`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE}/cookies`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE}/aviso-legal`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const competiciones: MetadataRoute.Sitemap = COMPETITIONS.map((c) => ({
