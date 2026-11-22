@@ -634,67 +634,11 @@ export default async function LigaPartidoPage({
         </div>
       </section>
 
-      {standingsRows.length > 0 && (
-        <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
-          <div className="wrap">
-            <StandingsImpact
-              rows={standingsRows}
-              home={{ id: home.id, name: home.name }}
-              away={{ id: away.id, name: away.name }}
-            />
-          </div>
-        </section>
-      )}
-
+      {/* Las pestañas (estadísticas, ficha, cronología…) JUSTO debajo del
+          marcador (22-nov-2026, pedido del dueño: «la gente entra a ver el
+          resultado»). Antes iban debajo del análisis, la crónica, los vídeos y
+          las encuestas. */}
       <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
-        <div className="wrap">
-          {slug === "laliga" && <SeguirBloqueo fixtureId={fixtureId} enJuego={live} />}
-          <Suspense fallback={null}>
-            <MatchAnalisis fixtureId={fixtureId} />
-          </Suspense>
-          {cronica && <MatchCronica datos={cronica} />}
-          <Suspense fallback={null}>
-            <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
-          </Suspense>
-          <div className="reporte-fila">
-            <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`${home.name} – ${away.name} (${competition.name})`} />
-          </div>
-          {played && (
-            <Suspense fallback={null}>
-              <MatchSiguienteGol
-                fixtureId={fixtureId}
-                local={home.name}
-                visitante={away.name}
-                estado={fx.fixture.status.short}
-                transcurrido={fx.fixture.status.elapsed}
-                enJuego={live}
-                terminado={final}
-                goles={golesDe(goals, home.id)}
-              />
-            </Suspense>
-          )}
-          <Suspense fallback={null}>
-            <MatchEncuestas fixtureId={fixtureId} candidatosMvp={candidatosMvp} />
-          </Suspense>
-          {equiposNotas && equiposNotas.some((e) => e.jugadores.length > 0) && (
-            <Suspense fallback={null}>
-              <MatchNotasAficion fixtureId={fixtureId} equipos={equiposNotas} abierto={empezoHaceMenosDe(fx.fixture.date, 7)} />
-            </Suspense>
-          )}
-          {!played && (
-            <Suspense fallback={null}>
-              <MatchPrevia
-                fixtureId={fixtureId}
-                home={{ id: home.id, name: home.name }}
-                away={{ id: away.id, name: away.name }}
-                standings={standingsRows}
-              />
-            </Suspense>
-          )}
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 20, paddingBottom: 0 }}>
         <div className="wrap">
           <MatchTabs
             fixtureId={fixtureId}
@@ -773,6 +717,67 @@ export default async function LigaPartidoPage({
           </MatchTabs>
         </div>
       </section>
+
+      {standingsRows.length > 0 && (
+        <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
+          <div className="wrap">
+            <StandingsImpact
+              rows={standingsRows}
+              home={{ id: home.id, name: home.name }}
+              away={{ id: away.id, name: away.name }}
+            />
+          </div>
+        </section>
+      )}
+
+      <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
+        <div className="wrap">
+          {slug === "laliga" && <SeguirBloqueo fixtureId={fixtureId} enJuego={live} />}
+          <Suspense fallback={null}>
+            <MatchAnalisis fixtureId={fixtureId} />
+          </Suspense>
+          {cronica && <MatchCronica datos={cronica} />}
+          <Suspense fallback={null}>
+            <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
+          </Suspense>
+          <div className="reporte-fila">
+            <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`${home.name} – ${away.name} (${competition.name})`} />
+          </div>
+          {played && (
+            <Suspense fallback={null}>
+              <MatchSiguienteGol
+                fixtureId={fixtureId}
+                local={home.name}
+                visitante={away.name}
+                estado={fx.fixture.status.short}
+                transcurrido={fx.fixture.status.elapsed}
+                enJuego={live}
+                terminado={final}
+                goles={golesDe(goals, home.id)}
+              />
+            </Suspense>
+          )}
+          <Suspense fallback={null}>
+            <MatchEncuestas fixtureId={fixtureId} candidatosMvp={candidatosMvp} />
+          </Suspense>
+          {equiposNotas && equiposNotas.some((e) => e.jugadores.length > 0) && (
+            <Suspense fallback={null}>
+              <MatchNotasAficion fixtureId={fixtureId} equipos={equiposNotas} abierto={empezoHaceMenosDe(fx.fixture.date, 7)} />
+            </Suspense>
+          )}
+          {!played && (
+            <Suspense fallback={null}>
+              <MatchPrevia
+                fixtureId={fixtureId}
+                home={{ id: home.id, name: home.name }}
+                away={{ id: away.id, name: away.name }}
+                standings={standingsRows}
+              />
+            </Suspense>
+          )}
+        </div>
+      </section>
+
 
       {/* Al final a propósito: la quiniela es solo para quien juega, y antes
           empujaba las estadísticas —lo que busca todo el mundo— hacia abajo. */}
