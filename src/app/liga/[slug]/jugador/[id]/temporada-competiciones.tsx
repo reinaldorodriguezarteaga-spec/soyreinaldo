@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { competicionEs, type EstadisticaJugadorApi } from "@/lib/sports/api-football";
+import Eficacia from "./eficacia";
 import { esAmistoso, nombreTemporada, sumar, type FechasEdicion, type Totales } from "@/lib/comparador/datos";
 
 /**
@@ -178,6 +179,7 @@ function DetalleTotales({ t }: { t: Totales }) {
           </div>
         ))}
       </div>
+      <Eficacia d={t} />
     </div>
   );
 }

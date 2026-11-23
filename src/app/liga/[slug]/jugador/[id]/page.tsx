@@ -2,6 +2,7 @@ import { Cross } from "lucide-react";
 import ReportarFallo from "@/components/ReportarFallo";
 import { Suspense } from "react";
 import RendimientoPosicion from "./rendimiento-posicion";
+import Eficacia from "./eficacia";
 import TemporadaCompeticiones from "./temporada-competiciones";
 import { filasPorFechas, sinDuplicados } from "@/lib/comparador/datos";
 import type { Metadata } from "next";
@@ -385,6 +386,17 @@ function SeasonStats({ p }: { p: PlayerSeason }) {
           </div>
         ))}
       </div>
+      <Eficacia
+        d={{
+          minutos: p.minutes ?? 0,
+          goles: p.goals,
+          tiros: p.shotsTotal,
+          tirosPuerta: p.shotsOn,
+          pasesClave: p.passesKey,
+          penMarcados: p.penaltyScored,
+          penFallados: p.penaltyMissed,
+        }}
+      />
     </div>
   );
 }
