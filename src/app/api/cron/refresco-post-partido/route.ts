@@ -29,6 +29,13 @@ export const maxDuration = 120;
  * (`refrescarEquipoTrasPartido`: ~6 llamadas por equipo) y lo apunta en
  * `refrescos_post_partido` para no repetirlo.
  *
+ * SEGUNDA PASADA (23-nov-2026): a ~40 min del pitido API-Football todavía
+ * no ha sumado el partido a las estadísticas de temporada de los jugadores
+ * (Fermín seguía con 11 partidos y 7 goles tras marcar al Villarreal), y lo
+ * guardado vale 48 h. Por eso cada partido se refresca otra vez a partir de
+ * 8 h del inicio (`segunda_at`). Si la primera no llegó a hacerse antes de
+ * esas 8 h, una sola pasada cuenta como las dos.
+ *
  * NO toca el directo: es una ruta aparte, no lee ni escribe marcadores, y
  * sus llamadas van de una en una. Si la cuota aprieta de verdad (modo ahorro
  * o agotada), no hace nada y lo deja para la siguiente vuelta.
@@ -37,6 +44,7 @@ export const maxDuration = 120;
  */
 const MAX_PARTIDOS_POR_VUELTA = 8;
 const DESDE_INICIO_MIN_MS = 150 * 60_000;
+const DESDE_INICIO_SEGUNDA_MS = 8 * 3_600_000;
 const DESDE_INICIO_MAX_MS = 36 * 3_600_000;
 
 export async function GET(request: Request) {
@@ -64,12 +72,32 @@ export async function GET(request: Request) {
   }
   const ids = candidatos.map((x) => x.fixture.fixture.id);
   const { data: hechos } = ids.length
-    ? await db.from("refrescos_post_partido").select("fixture_id").in("fixture_id", ids)
+    ? await db
+        .from("refrescos_post_partido")
+        .select("fixture_id, segunda_at, llamadas")
+        .in("fixture_id", ids)
     : { data: [] };
-  const yaHechos = new Set((hechos ?? []).map((h: { fixture_id: number }) => h.fixture_id));
+  const estado = new Map(
+    (hechos ?? []).map(
+      (h: { fixture_id: number; segunda_at: string | null; llamadas: number }) =>
+        [h.fixture_id, { segunda: h.segunda_at != null, llamadas: h.llamadas }] as const,
+    ),
+  );
+  // Pendiente: sin ninguna pasada, o con solo la primera y ya pasadas 8 h.
+  const tarde = (f: Fixture) => ahora - Date.parse(f.fixture.date) >= DESDE_INICIO_SEGUNDA_MS;
   const pendientes = candidatos
-    .filter((x) => !yaHechos.has(x.fixture.fixture.id))
-    .sort((a, b) => Date.parse(a.fixture.fixture.date) - Date.parse(b.fixture.fixture.date))
+    .filter((x) => {
+      const id = x.fixture.fixture.id;
+      if (!estado.has(id)) return true;
+      return estado.get(id)?.segunda === false && tarde(x.fixture);
+    })
+    // Primero las primeras pasadas (un fin de semana cargado no las retrasa
+    // por culpa de las segundas), y dentro de cada grupo, por fecha.
+    .sort(
+      (a, b) =>
+        Number(estado.has(a.fixture.fixture.id)) - Number(estado.has(b.fixture.fixture.id)) ||
+        Date.parse(a.fixture.fixture.date) - Date.parse(b.fixture.fixture.date),
+    )
     .slice(0, MAX_PARTIDOS_POR_VUELTA);
 
   if (simular) {
@@ -102,11 +130,20 @@ export async function GET(request: Request) {
       (await refrescarEquipoTrasPartido(f.teams.home.id, c)) +
       (await refrescarEquipoTrasPartido(f.teams.away.id, c));
     llamadas += n;
-    await db
-      .from("refrescos_post_partido")
-      .upsert({ fixture_id: f.fixture.id, competition: c.slug, llamadas: n });
+    const previa = estado.get(f.fixture.id);
+    const primera = !previa;
+    await db.from("refrescos_post_partido").upsert({
+      fixture_id: f.fixture.id,
+      competition: c.slug,
+      // La primera pasada apunta sus llamadas; la segunda las suma.
+      llamadas: n + (previa?.llamadas ?? 0),
+      ...(primera ? { hecho_at: new Date().toISOString() } : {}),
+      // Hecha ya pasadas las 8 h, la pasada vale también como segunda.
+      segunda_at: !primera || tarde(f) ? new Date().toISOString() : null,
+    });
     hechosAhora.push(f.fixture.id);
   }
   console.log(`[refresco-post-partido] ${hechosAhora.length} partidos, ${llamadas} llamadas`);
   return NextResponse.json({ ok: true, refrescados: hechosAhora.length, llamadas });
 }
+
