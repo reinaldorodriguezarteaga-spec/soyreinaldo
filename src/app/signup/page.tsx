@@ -1,6 +1,5 @@
 import SignupForm from "./signup-form";
 import { isAppRequest } from "@/lib/is-app";
-import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Crear cuenta | Soy Reinaldo",
@@ -25,7 +24,7 @@ export default async function SignupPage({
         </div>
         <div className="auth__card">
           <h1>Crea tu cuenta</h1>
-          <p className="sub"><T>Únete a la quiniela con la comunidad culé.</T></p>
+          <p className="sub">Juega gratis con la comunidad culé: adivina marcadores, suma puntos y sube en la clasificación.</p>
           <SignupForm redirect={redirect} inApp={inApp} />
         </div>
       </div>

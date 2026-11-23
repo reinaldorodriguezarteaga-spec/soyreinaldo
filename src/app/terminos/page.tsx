@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { T } from "@/components/EnApp";
 import { CONTACTO_LEGAL, TITULAR } from "@/lib/legal";
 
 export const metadata = {
   title: "Términos del Servicio | Soy Reinaldo",
   description:
-    "Las condiciones para usar soyreinaldo.com y sus apps: cuentas, juegos y ligas de pronósticos, datos deportivos, servicios de pago y normas de uso.",
+    "Las condiciones para usar soyreinaldo.com y sus apps: cuentas, juegos gratuitos entre aficionados, datos deportivos, servicios de pago y normas de uso.",
 };
 
-const lastUpdated = "22 de noviembre de 2026";
+const lastUpdated = "23 de noviembre de 2026";
 
 /** Términos del Servicio (5-nov-2026): los pide Google Play para la
  * declaración de «operador» (comerciante) y sirven para la web y las apps. */
@@ -50,7 +49,8 @@ export default function TerminosPage() {
                 <li>Marcadores, calendarios, clasificaciones y fichas de equipos y jugadores.</li>
                 <li>Análisis y contenido propio sobre fútbol.</li>
                 <li>
-                  Juegos y <T>ligas de pronósticos (quinielas)</T> gratuitas entre aficionados.
+                  Juegos gratuitos entre aficionados, como adivinar el marcador de los partidos
+                  y competir por puntos en una clasificación.
                 </li>
                 <li>Herramientas como la pizarra táctica y el comparador.</li>
                 <li>
@@ -84,15 +84,16 @@ export default function TerminosPage() {
             </section>
 
             <section>
-              <h2>4. Juegos y ligas de pronósticos</h2>
+              <h2>4. Juegos y clasificaciones</h2>
               <ul>
                 <li>
                   Son <strong>gratuitos y solo por diversión</strong>. No se apuesta dinero, no
                   hay cuotas ni se paga por participar.
                 </li>
                 <li>
-                  Si alguna vez hay un premio o un sorteo, sus bases se publican aparte y son las
-                  que mandan para ese concurso.
+                  <strong>No hay premios, sorteos ni bote</strong>: nadie pone dinero y no se
+                  reparte nada. Los puntos solo sirven para ordenar la clasificación y no se
+                  pueden canjear por nada.
                 </li>
                 <li>
                   La puntuación sigue las reglas de cada liga, que se explican en la propia liga.
