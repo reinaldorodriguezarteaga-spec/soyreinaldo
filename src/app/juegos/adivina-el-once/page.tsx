@@ -19,7 +19,7 @@ import ComoSeJuega from "@/components/juegos/ComoSeJuega";
 export const metadata: Metadata = {
   title: "Adivina el once del Barça | Juegos · Soy Reinaldo",
   description:
-    "Antes de cada partido del Barça, apuesta el once titular. Un punto por cada acierto, premio por clavar la formación y clasificación de la temporada.",
+    "Antes de cada partido del Barça, adivina el once titular. Un punto por cada acierto, extra por clavar la formación y clasificación de la temporada.",
   alternates: { canonical: "/juegos/adivina-el-once" },
 };
 
@@ -113,8 +113,8 @@ export default async function AdivinaElOncePage() {
             Adivina el once
           </h1>
           <p style={{ color: "var(--text-dim)", margin: "0 0 18px", maxWidth: 680 }}>
-            Antes de cada partido del Barça, apuesta el once titular. Un punto por cada titular que aciertes, otro si
-            clavas la formación y tres más de premio si haces pleno. Se cierra una hora antes, cuando sale la alineación.
+            Antes de cada partido del Barça, adivina el once titular. Un punto por cada titular que aciertes, otro si
+            clavas la formación y tres puntos extra si haces pleno. Se cierra una hora antes, cuando sale la alineación.
           </p>
 
           <div className="ao-cuerpo">

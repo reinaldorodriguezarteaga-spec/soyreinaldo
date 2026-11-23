@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Soy Reinaldo",
     short_name: "SoyReinaldo",
-    description: "Quiniela del Mundial 2026 y comunidad de Fútbol con Reinaldo",
+    description: "Adivina el marcador del Mundial 2026 y comunidad de Fútbol con Reinaldo",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",

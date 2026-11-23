@@ -42,7 +42,7 @@ export default async function TemporadaPage({ params }: P) {
       <section className="section">
         <div className="wrap temporada">
           <div className="panel temporada__hero">
-            <p className="mono logro__titulo"><T>Tu temporada · quiniela 2026-27</T></p>
+            <p className="mono logro__titulo"><T>Tu temporada · Adivina el marcador 2026-27</T></p>
             <h1 className="logro__nombre">{t.nombre}</h1>
             <div className="temporada__cifra">
               <strong>{t.puntos}</strong> puntos
@@ -85,7 +85,7 @@ export default async function TemporadaPage({ params }: P) {
           <div className="logro__acciones">
             <BotonCompartir
               url={url}
-              texto={`Mi temporada en los pronósticos de soyreinaldo.com: ${t.puntos} puntos${t.puesto ? ` y ${t.puesto}º de ${t.jugadores}` : ""}. ¿Me superas?`}
+              texto={`Mi temporada en los marcadores de soyreinaldo.com: ${t.puntos} puntos${t.puesto ? ` y ${t.puesto}º de ${t.jugadores}` : ""}. ¿Me superas?`}
               etiqueta="Compartir mi temporada"
             />
             <Link href="/quiniela-liga/ranking" className="btn">

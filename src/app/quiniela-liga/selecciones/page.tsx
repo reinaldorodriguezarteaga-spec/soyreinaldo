@@ -13,7 +13,7 @@ import { getBaremoDeLiga } from "@/lib/quiniela-liga/baremo";
 import { T } from "@/components/EnApp";
 
 export const metadata = {
-  title: "Selecciones · Quiniela LaLiga 2026-27 | Soy Reinaldo",
+  title: "Selecciones · Adivina el marcador LaLiga 2026-27 | Soy Reinaldo",
 };
 
 /** Liga pública "Quiniela LaLiga 2026-27": el destino por defecto. */
@@ -120,7 +120,7 @@ export default async function QuinielaLigaSeleccionesPage({
             <T>
               {active && !active.isPublic
                 ? `${active.name} · LaLiga 2026-27`
-                : "Quiniela · LaLiga 2026-27"}
+                : "Adivina el marcador · LaLiga 2026-27"}
             </T>
           </p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.2rem)" }}>

@@ -136,7 +136,7 @@ export default function Juego({ numero }: { numero: number }) {
           Once del día #{numero}
         </button>
         <button type="button" role="tab" aria-selected={modo === "practica"} className={modo === "practica" ? "is-on" : ""} onClick={() => irA("practica")}>
-          {modo === "practica" ? "Otro sorteo" : "Práctica"}
+          {modo === "practica" ? "Otro once" : "Práctica"}
         </button>
       </div>
 
@@ -259,7 +259,7 @@ export default function Juego({ numero }: { numero: number }) {
                     </button>
                     <VolverJuegos />
                     <button type="button" className="btn btn--ghost" onClick={() => irA("practica")}>
-                      {modo === "practica" ? "Otro sorteo →" : "Jugar en práctica →"}
+                      {modo === "practica" ? "Otro once →" : "Jugar en práctica →"}
                     </button>
                   </div>
                 </>

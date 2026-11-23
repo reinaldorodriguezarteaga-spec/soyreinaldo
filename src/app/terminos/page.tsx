@@ -87,13 +87,12 @@ export default function TerminosPage() {
               <h2>4. Juegos y clasificaciones</h2>
               <ul>
                 <li>
-                  Son <strong>gratuitos y solo por diversión</strong>. No se apuesta dinero, no
-                  hay cuotas ni se paga por participar.
+                  Son <strong>gratuitos y solo por diversión</strong>: participar no cuesta nada
+                  y se juega solo por puntos.
                 </li>
                 <li>
-                  <strong>No hay premios, sorteos ni bote</strong>: nadie pone dinero y no se
-                  reparte nada. Los puntos solo sirven para ordenar la clasificación y no se
-                  pueden canjear por nada.
+                  Los puntos solo sirven para ordenar la clasificación y no se pueden canjear por
+                  nada.
                 </li>
                 <li>
                   La puntuación sigue las reglas de cada liga, que se explican en la propia liga.
@@ -130,8 +129,8 @@ export default function TerminosPage() {
               <p>
                 Los resultados, estadísticas, alineaciones y fotos de jugadores vienen de
                 proveedores externos de datos deportivos. Pongo cuidado en que sean correctos,
-                pero pueden tener errores o retrasos. Se ofrecen como información y{" "}
-                <strong>no deben usarse para apostar</strong>. Si ves un dato mal, puedes
+                pero pueden tener errores o retrasos. Se ofrecen solo como
+                información. Si ves un dato mal, puedes
                 avisarme con el botón «Reportar un fallo».
               </p>
             </section>

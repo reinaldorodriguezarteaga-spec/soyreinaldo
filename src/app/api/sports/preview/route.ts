@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import {
-  getFixturePredictions,
   getFixtureInjuries,
   getFixtureLineups,
-  getFixtureOdds,
   getFixtureSubs,
   type MatchPrediction,
   type Injury,
@@ -11,7 +9,6 @@ import {
   type MatchOdds,
   type FixtureSubs,
 } from "@/lib/sports/api-football";
-import { isAppRequest } from "@/lib/is-app";
 import { loadEsMap, type FixtureEs } from "@/lib/sports/widget-data";
 
 export const runtime = "nodejs";
@@ -41,7 +38,8 @@ function localizePrediction(
  * ⚠️ Las CUOTAS y la PREDICCIÓN del proveedor (porcentajes y «consejo» tipo
  * «doble oportunidad») se omiten dentro de la app nativa (isAppRequest): Apple
  * rechazó la 1.1 el 4-nov-2026 (norma 2.3.6) por enseñar «predicciones o
- * información relacionada con apuestas». En la web siguen.
+ * información relacionada con apuestas». Desde el 23-nov-2026 tampoco en la
+ * web: el dueño no quiere nada de apuestas en ningún lado.
  */
 export type PreviewData = {
   prediction: MatchPrediction | null;
@@ -57,14 +55,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "bad fixture" }, { status: 400 });
   }
 
-  const inApp = await isAppRequest();
-
   try {
     const [prediction, injuries, lineups, odds, subs, esMap] = await Promise.all([
-      inApp ? Promise.resolve(null) : getFixturePredictions(fixture),
+      Promise.resolve(null),
       getFixtureInjuries(fixture),
       getFixtureLineups(fixture),
-      inApp ? Promise.resolve(null) : getFixtureOdds(fixture),
+      Promise.resolve(null),
       getFixtureSubs(fixture),
       loadEsMap([fixture]),
     ]);

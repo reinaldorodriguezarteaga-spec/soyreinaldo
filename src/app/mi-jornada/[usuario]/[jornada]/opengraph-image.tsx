@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { tarjetaJornada } from "@/lib/quiniela-liga/jornada-datos";
 
-export const alt = "Mi jornada en la quiniela de soyreinaldo.com";
+export const alt = "Mi jornada en Adivina el marcador de soyreinaldo.com";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const revalidate = 600;
@@ -32,7 +32,7 @@ export default async function Image({
         }}
       >
         <div style={{ display: "flex", fontSize: 30, color: "#9aa4d6", letterSpacing: 2 }}>
-          {t ? `${t.liga.toUpperCase()} · JORNADA ${t.jornada}` : "QUINIELA DE SOYREINALDO.COM"}
+          {t ? `${t.liga.toUpperCase()} · JORNADA ${t.jornada}` : "ADIVINA EL MARCADOR DE SOYREINALDO.COM"}
         </div>
         {t ? (
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -42,11 +42,11 @@ export default async function Image({
               <span style={{ fontSize: 48, marginLeft: 18, color: "#c5cbef" }}>puntos</span>
             </div>
             <div style={{ display: "flex", fontSize: 32, color: "#c5cbef", marginTop: 12 }}>
-              {`${t.exactos} exactos · ${t.aciertos} aciertos · ${t.jugados} pronósticos`}
+              {`${t.exactos} exactos · ${t.aciertos} aciertos · ${t.jugados} marcadores`}
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>Pronostica LaLiga y compite</div>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>Adivina LaLiga y compite</div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 34 }}>
           <span style={{ display: "flex" }}>

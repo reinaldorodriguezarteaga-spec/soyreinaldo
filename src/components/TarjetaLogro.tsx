@@ -32,7 +32,7 @@ export default function TarjetaLogro({
           <div className="logro__acciones">
             <BotonCompartir url={url} texto={textoCompartir} etiqueta="Compartir mi logro" />
             <Link href="/quiniela-liga" className="btn btn--accent">
-              <T>Juega la quiniela gratis</T> <span className="arr">→</span>
+              <T>Juega a Adivina el marcador gratis</T> <span className="arr">→</span>
             </Link>
           </div>
         </div>

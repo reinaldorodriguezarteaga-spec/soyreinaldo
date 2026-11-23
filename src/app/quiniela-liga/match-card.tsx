@@ -192,7 +192,7 @@ export default function LqMatchCard({
       {showScoreBlock && match.prediction && (
         <div className="predbar">
           <span>
-            <T>Tu pronóstico:</T>{" "}
+            <T>Tu marcador:</T>{" "}
             <b>
               {match.prediction.home}–{match.prediction.away}
             </b>
@@ -214,7 +214,7 @@ export default function LqMatchCard({
       )}
       {showScoreBlock && !match.prediction && isFinal && (
         <p className="predbar" style={{ justifyContent: "center" }}>
-          <T>No pronosticaste este partido.</T>
+          <T>No pusiste marcador a este partido.</T>
         </p>
       )}
 
@@ -286,9 +286,9 @@ function LineaAnfitrion({ p }: { p: PronosticoAnfitrion }) {
           </b>
         </>
       ) : p.hecho ? (
-        <T>{ANFITRION_NOMBRE} ya ha pronosticado. ¿Le ganas?</T>
+        <T>{ANFITRION_NOMBRE} ya ha puesto su marcador. ¿Le ganas?</T>
       ) : (
-        <T>{ANFITRION_NOMBRE} aún no ha pronosticado</T>
+        <T>{ANFITRION_NOMBRE} aún no ha puesto su marcador</T>
       )}
     </p>
   );

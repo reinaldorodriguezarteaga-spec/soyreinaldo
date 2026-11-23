@@ -50,17 +50,17 @@ describe("previa automática", () => {
     });
     expect(t).toEqual([
       "El último cara a cara, en marzo de 2026, terminó Girona 2–4 Barcelona.",
-      "En la quiniela, el 65% de la comunidad da ganador a Barcelona.",
-      "Reinaldo ya ha dejado su pronóstico: ¿le ganas?",
+      "En la liga, el 65% de la comunidad da ganador a Barcelona.",
+      "Reinaldo ya ha dejado su marcador: ¿le ganas?",
     ]);
   });
 
   it("comunidad: empate favorito o dividida", () => {
     expect(textoPrevia({ ...base, comunidad: { total: 10, local: 3, empate: 5, visitante: 2 } })[0]).toBe(
-      "En la quiniela, el 50% de la comunidad ve empate.",
+      "En la liga, el 50% de la comunidad ve empate.",
     );
     expect(textoPrevia({ ...base, comunidad: { total: 8, local: 4, empate: 0, visitante: 4 } })[0]).toBe(
-      "En la quiniela, la comunidad está dividida (8 pronósticos).",
+      "En la liga, la comunidad está dividida (8 marcadores).",
     );
   });
 });

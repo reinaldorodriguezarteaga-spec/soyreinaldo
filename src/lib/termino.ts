@@ -32,7 +32,8 @@ const REGLAS: [RegExp, Por][] = [
   [/Ver la quiniela/g, "Ver la clasificación"],
   [/\b(a|de|en|desde) la [Qq]uiniela/g, `$1 ${JUEGO}`],
   [/\bLa Quiniela\b/g, JUEGO],
-  [/\b(una|tu|esta|su|Una|Tu|Esta|Su) quiniela/g, "$1 liga"],
+  [/\b(una|tu|esta|su|la|mi|nuestra|Una|Tu|Esta|Su|La|Mi|Nuestra) quiniela/g, "$1 liga"],
+  [/\b(las|tus|mis|Las|Tus|Mis) quinielas/g, "$1 ligas"],
   [/Quiniela privada/g, "Liga privada"],
   [/Quinielas/g, "Ligas"],
   [/quinielas/g, "ligas"],
@@ -65,7 +66,12 @@ export function sinQuiniela(texto: string): string {
   return t;
 }
 
-/** El texto tal cual en la web; sin "quiniela" ni "pronóstico" en la app. */
-export function termino(texto: string, enApp: boolean): string {
-  return enApp ? sinQuiniela(texto) : texto;
+/**
+ * Sin "quiniela" ni "pronóstico", EN TODAS PARTES (web y app) desde el
+ * 23-nov-2026: en la llamada con App Review, Apple dijo que al traducir la
+ * web «quiniela» sale como «pool» (bote de dinero). El dueño pidió que no
+ * salga en ningún lado. `enApp` se mantiene para no tocar a quien lo llama.
+ */
+export function termino(texto: string, _enApp?: boolean): string {
+  return sinQuiniela(texto);
 }

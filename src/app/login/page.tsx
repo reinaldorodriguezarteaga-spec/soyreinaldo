@@ -33,7 +33,7 @@ export default async function LoginPage({
         </div>
         <div className="auth__card">
           <h1>Entra a la comunidad</h1>
-          <p className="sub"><T>Pronostica, compite y debate con el resto de culés.</T></p>
+          <p className="sub"><T>Adivina, compite y debate con el resto de culés.</T></p>
           <LoginForm redirect={redirect} inApp={inApp} conFacebook={conFacebook} />
         </div>
       </div>

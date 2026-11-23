@@ -20,10 +20,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await tarjetaJornada(decodeURIComponent(usuario), Number(jornada));
   const titulo = t
     ? `${t.nombre}: ${t.puntos} puntos en la jornada ${t.jornada}`
-    : "Mi jornada en la quiniela";
+    : "Mi jornada en Adivina el marcador";
   return {
     title: `${titulo} | Soy Reinaldo`,
-    description: "Pronostica los partidos de LaLiga y compite en la quiniela de soyreinaldo.com.",
+    description: "Adivina los partidos de LaLiga y compite en Adivina el marcador de soyreinaldo.com.",
     robots: { index: false, follow: true },
     openGraph: { title: titulo, description: "¿Me ganas? Juega gratis en soyreinaldo.com" },
   };
@@ -58,7 +58,7 @@ export default async function MiJornada({ params }: Props) {
               <span style={{ fontSize: "1.2rem", fontWeight: 500, color: "var(--text-dim)" }}> puntos</span>
             </p>
             <p style={{ margin: "8px 0 0", color: "var(--text-dim)" }}>
-              {t.exactos} exactos · {t.aciertos} aciertos · {t.jugados} pronósticos
+              {t.exactos} exactos · {t.aciertos} aciertos · {t.jugados} marcadores
             </p>
             {t.puestoAhora && (
               <p style={{ margin: "14px 0 0", fontSize: "1.1rem" }}>
@@ -72,11 +72,11 @@ export default async function MiJornada({ params }: Props) {
           </div>
           <Compartir url={url} texto={texto} />
           <p style={{ margin: "28px 0 0", color: "var(--text-dim)" }}>
-            ¿Te animas? Pronostica los partidos de LaLiga y compite gratis.
+            ¿Te animas? Adivina los partidos de LaLiga y compite gratis.
           </p>
           <p style={{ margin: "10px 0 0" }}>
             <Link href="/quiniela-liga" className="btn btn--accent">
-              <T>Jugar a la quiniela</T> <span className="arr">→</span>
+              <T>Jugar a Adivina el marcador</T> <span className="arr">→</span>
             </Link>
           </p>
         </div>
@@ -96,13 +96,13 @@ function SinParticipar({ jornada }: { jornada: number }) {
           <div className="panel" style={{ padding: "28px 24px", margin: "14px 0 22px" }}>
             <h1 style={{ margin: 0, fontSize: "1.5rem" }}>No has participado en la jornada {jornada}</h1>
             <p style={{ margin: "12px 0 0", color: "var(--text-dim)", lineHeight: 1.6 }}>
-              Para tener tu tarjeta y compartirla, haz tus pronósticos de la próxima jornada.
+              Para tener tu tarjeta y compartirla, haz tus marcadores de la próxima jornada.
               En cuanto termine, podrás presumir de puntos.
             </p>
           </div>
           <p style={{ margin: 0 }}>
             <Link href="/quiniela-liga" className="btn btn--accent">
-              Hacer mis pronósticos <span className="arr">→</span>
+              Hacer mis marcadores <span className="arr">→</span>
             </Link>
           </p>
         </div>

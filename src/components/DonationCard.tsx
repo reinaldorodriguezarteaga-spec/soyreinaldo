@@ -64,7 +64,7 @@ export default function DonationCard() {
       </div>
 
       <p className="mt-3 text-sm leading-relaxed text-[var(--text-dim)]">
-        <T>Tu donación ayuda a mantener viva la web, las quinielas y el contenido.</T>
+        <T>Tu donación ayuda a mantener viva la web, las ligas y el contenido.</T>
         Sin obligaciones, lo que tú quieras.
       </p>
 

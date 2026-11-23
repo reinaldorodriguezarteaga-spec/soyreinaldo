@@ -6,7 +6,7 @@ import { T } from "@/components/EnApp";
 export const metadata = {
   title: "Unirme a la liga | Soy Reinaldo",
   description:
-    "Acepta la invitación para unirte a una quiniela privada de soyreinaldo.com.",
+    "Acepta la invitación para unirte a una liga privada de soyreinaldo.com.",
 };
 
 type LeaguePreview = {
@@ -140,7 +140,7 @@ export default async function JoinByCodePage({
                 className="mono"
                 style={{ color: "var(--text-dim)" }}
               >
-                <T>← Ir a la quiniela</T>
+                <T>← Ir a Adivina el marcador</T>
               </Link>
             </p>
           </div>
@@ -165,7 +165,7 @@ function NotFound({ code, hubHref }: { code: string; hubHref: string }) {
           className="mono"
           style={{ background: "transparent", border: 0, color: "var(--accent)", cursor: "pointer" }}
         >
-          <T>Volver a la quiniela →</T>
+          <T>Volver a Adivina el marcador →</T>
         </button>
       </form>
     </article>
@@ -220,7 +220,7 @@ function ConfirmJoin({ code }: { code: string }) {
         className="mono"
         style={{ textAlign: "center", color: "var(--text-dim)" }}
       >
-        <T>Podrás salirte cuando quieras desde la quiniela.</T>
+        <T>Podrás salirte cuando quieras desde Adivina el marcador.</T>
       </p>
     </form>
   );

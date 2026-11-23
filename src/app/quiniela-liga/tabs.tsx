@@ -10,7 +10,7 @@ import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 // "Duelos" (18-oct, pedido del dueño): acceso directo a la vista de duelos
 // de la clasificación (`?vista=duelos`), con su propia pestaña.
 const TABS: { href: string; label: string; vista?: string }[] = [
-  { href: "/quiniela-liga/partidos", label: "Pronósticos" },
+  { href: "/quiniela-liga/partidos", label: "Marcadores" },
   { href: "/quiniela-liga/ranking", label: "Clasificación" },
   { href: "/quiniela-liga/chat", label: "💬 Chat" },
   { href: "/quiniela-liga/selecciones", label: "Selecciones" },
@@ -62,9 +62,9 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
         className="chip-pill chip-pill--accent"
         style={{ marginBottom: 12, fontWeight: 600 }}
       >
-        <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las quinielas</T>
+        <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las ligas</T>
       </Link>
-      <nav aria-label="Secciones de los pronósticos" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+      <nav aria-label="Secciones de los marcadores" className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         <ScrollHintTabs maxWidth={720}>
           {TABS.map((t) => {
             const enRuta = pathname === t.href || pathname.startsWith(`${t.href}/`);

@@ -127,7 +127,7 @@ export default async function Home() {
             {/* La quiniela, a mano desde arriba (16-oct, pedido del dueño): su
                 bloque grande queda muy abajo en la portada. */}
             <Link href="/quiniela-liga" className="hero__quiniela">
-              <span aria-hidden><Trophy className="ico-txt" aria-hidden /></span> <T>Juega la quiniela gratis</T>{" "}
+              <span aria-hidden><Trophy className="ico-txt" aria-hidden /></span> <T>Juega a Adivina el marcador gratis</T>{" "}
               <span className="arr">→</span>
             </Link>
 
@@ -226,7 +226,7 @@ export default async function Home() {
                   Invítame a un café.
                 </h2>
                 <p className="home-cafe__p">
-                  Tu donación ayuda a mantener viva la web, las quinielas y el
+                  Tu donación ayuda a mantener viva la web, las ligas y el
                   contenido. Sin obligaciones — lo que tú quieras.
                 </p>
                 <DonationBlock />
@@ -365,7 +365,7 @@ async function HomePromoQuiniela() {
         className="feat__title"
         style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.6rem)", marginTop: 4 }}
       >
-        <T>La Quiniela de LaLiga.</T>
+        <T>Adivina el marcador de LaLiga.</T>
       </h2>
       <p
         style={{
@@ -375,7 +375,7 @@ async function HomePromoQuiniela() {
           lineHeight: 1.5,
         }}
       >
-        <T>Pronostica cada jornada, marcador exacto</T>{" "}
+        <T>Adivina cada jornada, marcador exacto</T>{" "}
         <b style={{ color: "var(--text)" }}>{baremo.exacto} pts</b>, y
         compite en la clasificación pública. Sin código: entras de un
         toque y a jugar.

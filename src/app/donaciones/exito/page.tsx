@@ -61,7 +61,7 @@ export default async function DonacionExitoPage({
                 Volver al inicio
               </Link>
               <Link href="/quiniela-liga" className="btn btn--ghost justify-center">
-                <T>Ir a la quiniela</T>
+                <T>Ir a Adivina el marcador</T>
               </Link>
             </div>
           </div>

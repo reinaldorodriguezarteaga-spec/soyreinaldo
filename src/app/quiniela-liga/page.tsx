@@ -10,9 +10,9 @@ import { COMPETICION_CHAMPIONS, TEMPORADA_CHAMPIONS } from "@/lib/quiniela-liga/
 
 export const metadata = {
   alternates: { canonical: "/quiniela-liga" },
-  title: "Elige tu quiniela | Soy Reinaldo",
+  title: "Elige tu liga | Soy Reinaldo",
   description:
-    "Entra a la quiniela general de LaLiga o a la quiniela privada de tu comunidad.",
+    "Entra a la liga general de LaLiga o a la liga privada de tu comunidad.",
 };
 
 /** Id (estable) de la liga pública general. El CÓDIGO y el NOMBRE se leen
@@ -107,14 +107,14 @@ export default async function QuinielaLigaIndex({
     <main className="page">
       <section className="phero" style={{ paddingBottom: 12 }}>
         <div className="wrap">
-          <p className="eyebrow"><T>Quiniela · LaLiga 2026-27</T></p>
+          <p className="eyebrow"><T>Adivina el marcador · LaLiga 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)", marginTop: 12 }}>
-            <T>Elige tu quiniela</T>
+            <T>Elige tu liga</T>
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
             <T>
-              Pronosticas una sola vez: tus marcadores puntúan en todas las
-              quinielas en las que estés, cada una con sus normas.
+              Adivinas una sola vez: tus marcadores puntúan en todas las
+              ligas en las que estés, cada una con sus normas.
             </T>
           </p>
         </div>
@@ -128,14 +128,14 @@ export default async function QuinielaLigaIndex({
 
           <div className="panel qcard-champions" style={{ padding: 24 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>🏆 <T>Quiniela de la Champions</T></h2>
+              <h2 style={{ margin: 0, fontSize: "1.3rem" }}>🏆 <T>Adivina el marcador de la Champions</T></h2>
               <span className="mono" style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--text-dim)" }}>
                 2026-27 · OTRA COMPETICIÓN
               </span>
             </div>
             <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
               <T>
-                Pronostica la Champions jornada a jornada, de la fase liga a la final, con su propia clasificación:
+                Adivina la Champions jornada a jornada, de la fase liga a la final, con su propia clasificación:
                 aquí no suman los puntos de LaLiga.
               </T>
               {idxChampions >= 0
@@ -146,7 +146,7 @@ export default async function QuinielaLigaIndex({
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href="/quiniela-champions" className="btn btn--accent">
-                <T>Pronosticar</T> <span className="arr">→</span>
+                <T>Jugar</T> <span className="arr">→</span>
               </Link>
               <Link href="/quiniela-champions?vista=clasificacion" className="btn">
                 Clasificación
@@ -193,7 +193,7 @@ export default async function QuinielaLigaIndex({
                 )}
               </div>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                <T>{p.description ?? "Quiniela privada de su comunidad."}</T>
+                <T>{p.description ?? "Liga privada de su comunidad."}</T>
                 {p.member_count > 0 &&
                   ` · ${p.member_count} ${p.member_count === 1 ? "jugador" : "jugadores"}`}
               </p>
@@ -213,7 +213,7 @@ export default async function QuinielaLigaIndex({
             <div className="panel" style={{ padding: 24 }}>
               <h2 style={{ margin: 0, fontSize: "1.3rem" }}>Entra para jugar</h2>
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
-                <T>Con tu cuenta guardas pronósticos y apareces en la clasificación.</T>
+                <T>Con tu cuenta guardas marcadores y apareces en la clasificación.</T>
               </p>
               <Link href="/login?redirect=/quiniela-liga" className="btn btn--accent">
                 Iniciar sesión <span className="arr">→</span>
@@ -223,7 +223,7 @@ export default async function QuinielaLigaIndex({
 
           <div id="codigo" className="panel" style={{ padding: 24, scrollMarginTop: 90 }}>
             <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
-              <T>¿Te han invitado a una quiniela privada?</T>
+              <T>¿Te han invitado a una liga privada?</T>
             </h2>
             <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
               Escribe el código que te han pasado y entras a la de tu comunidad.
@@ -292,7 +292,7 @@ function LeagueCard({
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <Link href={base} className="btn btn--accent">
-          <T>Pronosticar</T> <span className="arr">→</span>
+          <T>Jugar</T> <span className="arr">→</span>
         </Link>
         <Link href={ranking} className="btn">
           Clasificación

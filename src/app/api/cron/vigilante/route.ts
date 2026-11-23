@@ -52,7 +52,7 @@ async function revisarCuota(): Promise<string | null> {
     const errs = json.errors;
     if (errs && typeof errs === "object" && !Array.isArray(errs) && "requests" in errs) {
       return (
-        "La cuota diaria de API-Football está AGOTADA: marcadores, quiniela y fichas no " +
+        "La cuota diaria de API-Football está AGOTADA: marcadores, Adivina el marcador y fichas no " +
         "pueden refrescarse hasta las 00:00 UTC. Casi siempre es un robot recorriendo fichas: " +
         "busca las líneas [ficha] en los logs de Vercel."
       );

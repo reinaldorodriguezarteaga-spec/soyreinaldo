@@ -31,7 +31,7 @@ describe("recordatorio de la quiniela", () => {
       urlPronosticar: "https://x/quiniela-liga/partidos",
       urlBaja: "https://x/baja-recordatorios?token=t",
     });
-    expect(subject).toContain("Te falta 1 pronóstico");
+    expect(subject).toContain("Te falta 1 marcador");
     expect(html).not.toContain("<script>");
     expect(html).toContain("A &amp; B");
     expect(html).toContain("baja-recordatorios?token=t");

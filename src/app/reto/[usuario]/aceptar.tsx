@@ -20,9 +20,9 @@ export default function AceptarInvitacion({
   if (estado?.ok) {
     return (
       <div className="logro__acciones">
-        <p className="logro__detalle"><CircleCheck className="ico-txt" aria-hidden /> Reto aceptado. ¡Haz tus pronósticos de la jornada {jornada}!</p>
+        <p className="logro__detalle"><CircleCheck className="ico-txt" aria-hidden /> Reto aceptado. ¡Haz tus marcadores de la jornada {jornada}!</p>
         <Link href="/quiniela-liga/partidos" className="btn btn--accent">
-          Pronosticar <span className="arr">→</span>
+          Jugar <span className="arr">→</span>
         </Link>
       </div>
     );

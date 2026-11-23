@@ -49,7 +49,7 @@ export default function PrivacidadPage() {
                   servicios.
                 </li>
                 <li>
-                  <strong>Lo que haces en la web</strong>: <T>tus pronósticos de la quiniela</T>,
+                  <strong>Lo que haces en la web</strong>: <T>tus marcadores de Adivina el marcador</T>,
                   tus partidas de los juegos, tus equipos favoritos y los comentarios que
                   publicas.
                 </li>
@@ -80,7 +80,7 @@ export default function PrivacidadPage() {
               <ul>
                 <li>
                   <strong>Darte el servicio</strong> (tu cuenta,{" "}
-                  <T>la quiniela</T>, los juegos, los comentarios, las asesorías que contratas):
+                  <T>la liga</T>, los juegos, los comentarios, las asesorías que contratas):
                   porque es necesario para cumplir lo que acordamos al registrarte (art. 6.1.b
                   del RGPD).
                 </li>

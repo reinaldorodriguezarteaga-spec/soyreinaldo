@@ -49,7 +49,7 @@ const archivo = Archivo({
 export const metadata: Metadata = {
   title: "Soy Reinaldo — Fútbol con Reinaldo",
   description:
-    "Fútbol en directo con Reinaldo Rodríguez (@SoyReinaldoR): marcadores, calendario y clasificaciones de LaLiga, Champions, Premier, Serie A y Ligue 1, más quiniela gratis y análisis propios.",
+    "Fútbol en directo con Reinaldo Rodríguez (@SoyReinaldoR): marcadores, calendario y clasificaciones de LaLiga, Champions, Premier, Serie A y Ligue 1, más Adivina el marcador gratis y análisis propios.",
   // La web vive en www — el ápice redirige. Con el ápice aquí, cada canónica
   // y cada URL de OpenGraph apuntaba a una dirección que rebota.
   metadataBase: new URL("https://www.soyreinaldo.com"),

@@ -34,9 +34,9 @@ describe("boletín semanal", () => {
       analisis: [],
       quiniela: { ...base.quiniela!, miPuesto: null },
     });
-    expect(subject).toBe("⚽ Esta semana en Soy Reinaldo: partidazos y quiniela");
+    expect(subject).toBe("⚽ Esta semana en Soy Reinaldo: partidazos y Adivina el marcador");
     expect(html).toContain("¿Aún no juegas?");
-    expect(html).toContain("Jugar a la quiniela");
+    expect(html).toContain("Jugar a Adivina el marcador");
   });
 
   it("sin nada que contar, no se envía", () => {

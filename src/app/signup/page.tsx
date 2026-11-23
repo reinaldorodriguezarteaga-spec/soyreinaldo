@@ -3,7 +3,7 @@ import { isAppRequest } from "@/lib/is-app";
 
 export const metadata = {
   title: "Crear cuenta | Soy Reinaldo",
-  description: "Crea tu cuenta para jugar la quiniela y seguir el fútbol con la comunidad culé.",
+  description: "Crea tu cuenta para jugar la liga y seguir el fútbol con la comunidad culé.",
 };
 
 export default async function SignupPage({

@@ -62,7 +62,7 @@ export function emailBoletin(d: DatosBoletin): { subject: string; html: string }
     ? `⚽ ${suyo.proximo.local} – ${suyo.proximo.visitante} y tu semana en Soy Reinaldo`
     : d.analisis[0]
       ? `⚽ Esta semana en Soy Reinaldo: ${d.analisis[0].titulo}`
-      : "⚽ Esta semana en Soy Reinaldo: partidazos y quiniela";
+      : "⚽ Esta semana en Soy Reinaldo: partidazos y Adivina el marcador";
 
   const bloque = (titulo: string, cuerpo: string) =>
     `<h3 style="margin:22px 0 8px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#9aa4d6">${titulo}</h3>${cuerpo}`;
@@ -114,7 +114,7 @@ export function emailBoletin(d: DatosBoletin): { subject: string; html: string }
   const q = d.quiniela;
   const quiniela = q
     ? bloque(
-        "🏆 La quiniela",
+        "🏆 La liga",
         `<p style="margin:0 0 8px;color:#c5cbef">La jornada ${q.jornada} empieza el ${esc(cuando(q.primerPartido))}. Cada partido se cierra 30 minutos antes de empezar.</p>` +
           (q.top3.length
             ? `<p style="margin:0 0 8px;color:#c5cbef">Arriba: ${q.top3
@@ -124,7 +124,7 @@ export function emailBoletin(d: DatosBoletin): { subject: string; html: string }
           (q.miPuesto
             ? `<p style="margin:0 0 8px">Tú vas <strong>${q.miPuesto.puesto}º de ${q.miPuesto.de}</strong> con ${q.miPuesto.puntos} puntos.</p>`
             : `<p style="margin:0 0 8px">¿Aún no juegas? Es gratis y se juega con tu gente.</p>`) +
-          `<a href="${d.urlQuiniela}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:11px 16px;border-radius:10px;font-weight:600;margin-top:4px">${q.miPuesto ? "Hacer mis pronósticos" : "Jugar a la quiniela"}</a>`,
+          `<a href="${d.urlQuiniela}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:11px 16px;border-radius:10px;font-weight:600;margin-top:4px">${q.miPuesto ? "Hacer mis marcadores" : "Jugar a Adivina el marcador"}</a>`,
       )
     : "";
 

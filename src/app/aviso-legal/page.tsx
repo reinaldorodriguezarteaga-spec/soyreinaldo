@@ -51,7 +51,7 @@ export default function AvisoLegalPage() {
                 </li>
                 <li>
                   <strong>Actividad:</strong> creación de contenido sobre fútbol (análisis,
-                  datos de competiciones, juegos y pronósticos), asesorías individuales de pago
+                  datos de competiciones, juegos y marcadores), asesorías individuales de pago
                   y publicidad.
                 </li>
               </ul>
@@ -61,7 +61,7 @@ export default function AvisoLegalPage() {
               <h2>2. Condiciones de uso</h2>
               <p>
                 Usar esta web te convierte en usuario y supone aceptar este aviso legal. Las
-                condiciones de las cuentas, los juegos, los pronósticos y los servicios de pago
+                condiciones de las cuentas, los juegos, los marcadores y los servicios de pago
                 están en los <Link href="/terminos">Términos del Servicio</Link>; cómo trato tus
                 datos, en la <Link href="/privacidad">Política de Privacidad</Link>, y qué cookies
                 uso, en la <Link href="/cookies">Política de Cookies</Link>.

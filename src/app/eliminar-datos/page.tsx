@@ -58,7 +58,7 @@ export default function EliminarDatosPage() {
               <ul>
                 <li>Tu cuenta de usuario y credenciales.</li>
                 <li>Tu nombre y email.</li>
-                <li><T>Tus predicciones de la quiniela.</T></li>
+                <li><T>Tus marcadores de Adivina el marcador.</T></li>
                 <li>Cualquier dato vinculado a tu perfil.</li>
               </ul>
             </section>
