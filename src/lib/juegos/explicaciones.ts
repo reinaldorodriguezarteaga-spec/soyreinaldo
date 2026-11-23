@@ -58,7 +58,7 @@ export const EXPLICACIONES: Record<string, Explicacion> = {
       "Tienes nueve intentos para rellenar las nueve casillas. Un jugador no vale para dos casillas.",
       "El tablero cambia cada día; en práctica sale uno nuevo cuando quieras.",
     ],
-    puntos: `15 puntos por casilla, 40 de premio si completas el tablero y uno más por segundo que sobre si lo completas. ${NIVELES}`,
+    puntos: `15 puntos por casilla, 40 extra si completas el tablero y uno más por segundo que sobre si lo completas. ${NIVELES}`,
     datos:
       "Salen de las mismas carreras escritas a mano que «Adivina el jugador»: cerca de un centenar de futbolistas y casi doscientos clubes comprobados.",
     consejo: "Empieza por la casilla más difícil: las fáciles se quedan con muchas opciones para el final.",
@@ -90,7 +90,7 @@ export const EXPLICACIONES: Record<string, Explicacion> = {
       "Vale el apellido o el nombre por el que se le conoce. No hace falta escribir tildes.",
     ],
     puntos:
-      "10 puntos por nombre, 40 de premio si sacas los diez y uno más por segundo que sobre si los sacas todos. Hay más tiempo que en los otros juegos: 3:00 en Fácil, 2:15 en Medio (×1,5) y 1:30 en Difícil (×2).",
+      "10 puntos por nombre, 40 extra si sacas los diez y uno más por segundo que sobre si los sacas todos. Hay más tiempo que en los otros juegos: 3:00 en Fácil, 2:15 en Medio (×1,5) y 1:30 en Difícil (×2).",
     datos:
       "Temporadas de los grandes de LaLiga, la Premier y la Champions. Las cifras son de liga más Champions, comprobadas una a una: si los goles de la lista no cuadran con los del equipo, esa lista no entra. Las asistencias solo existen desde 2015.",
     consejo: "Empieza por los minutos: el portero titular y los centrales casi siempre están.",
@@ -172,7 +172,7 @@ export const EXPLICACIONES: Record<string, Explicacion> = {
       "Cuando se publica el once real, se comparan los dos y se suman los puntos.",
     ],
     puntos:
-      "Un punto por cada titular que aciertes, otro si clavas la formación y tres más de premio si haces pleno. Los puntos de toda la temporada forman una clasificación.",
+      "Un punto por cada titular que aciertes, otro si clavas la formación y tres puntos extra si haces pleno. Los puntos de toda la temporada forman una clasificación.",
     datos:
       "La plantilla es la del Barça de esta temporada y el once real es la alineación oficial que se publica antes de cada partido.",
   },

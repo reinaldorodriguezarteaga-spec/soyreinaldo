@@ -19,7 +19,7 @@ export default function DeleteAccount() {
   return (
     <form action={formAction} style={{ display: "grid", gap: 12 }}>
       <p className="sub" style={{ marginTop: 0 }}>
-        Esto borra tu cuenta y todos tus datos (pronósticos, picks y pertenencia
+        Esto borra tu cuenta y todos tus datos (marcadores, picks y pertenencia
         a ligas) de forma <strong>permanente</strong>. No se puede deshacer. Tus
         donaciones quedan registradas de forma anónima por motivos contables.
       </p>

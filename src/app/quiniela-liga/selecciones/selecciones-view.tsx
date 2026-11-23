@@ -56,7 +56,7 @@ export default function SeleccionesView({
   /** Normas de la liga ACTIVA — cada quiniela puntúa con las suyas. */
   baremo: Baremo;
 }) {
-  if (members.length === 0) return <EmptyPanel><T>Aún no hay nadie en la quiniela.</T></EmptyPanel>;
+  if (members.length === 0) return <EmptyPanel><T>Aún no hay nadie en Adivina el marcador.</T></EmptyPanel>;
   if (matches.length === 0) {
     return (
       <EmptyPanel>
@@ -164,7 +164,7 @@ function MatchBlock({
       <div style={{ borderTop: "1px solid var(--line)" }}>
         {predictedCount === 0 ? (
           <p className="hint" style={{ padding: 16, margin: 0, textAlign: "center" }}>
-            Nadie de la liga pronosticó este partido.
+            Nadie de la liga jugó este partido.
           </p>
         ) : (
           <ul

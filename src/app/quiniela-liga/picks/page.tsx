@@ -5,7 +5,7 @@ import MidseasonPicksForm from "./midseason-picks-form";
 import { T } from "@/components/EnApp";
 
 export const metadata = {
-  title: "Selecciones especiales · Quiniela LaLiga 2026-27 | Soy Reinaldo",
+  title: "Selecciones especiales · Adivina el marcador LaLiga 2026-27 | Soy Reinaldo",
 };
 
 type TeamMini = { id: number; name: string } | null;
@@ -76,7 +76,7 @@ export default async function QuinielaLigaPicksPage() {
     <main className="page">
       <section className="phero" style={{ paddingTop: 8, paddingBottom: 20 }}>
         <div className="wrap">
-          <p className="eyebrow"><T>Quiniela · LaLiga 2026-27</T></p>
+          <p className="eyebrow"><T>Adivina el marcador · LaLiga 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5vw,3.4rem)" }}>
             Selecciones especiales
           </h1>

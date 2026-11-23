@@ -117,7 +117,7 @@ export default async function DuelosVista({
                   <span>¿Tu amigo aún no juega? Mándale tu enlace de reto:</span>
                   <BotonCompartir
                     url={enlaceReto}
-                    texto={`⚔️ Te reto en la jornada ${proxima} de los pronósticos de soyreinaldo.com. ¿Aceptas?`}
+                    texto={`⚔️ Te reto en la jornada ${proxima} de los marcadores de soyreinaldo.com. ¿Aceptas?`}
                     etiqueta="Retar a un amigo"
                   />
                 </div>

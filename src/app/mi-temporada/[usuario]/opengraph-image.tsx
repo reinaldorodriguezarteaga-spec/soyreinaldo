@@ -39,7 +39,7 @@ export default async function Image({ params }: { params: Promise<{ usuario: str
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>Pronostica y compite</div>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800 }}>Adivina y compite</div>
         )}
         <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 30, color: "#3b82f6", fontWeight: 700 }}>soyreinaldo.com</div>
       </div>

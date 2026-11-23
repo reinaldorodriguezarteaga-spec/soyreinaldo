@@ -16,9 +16,9 @@ import { T } from "@/components/EnApp";
 // La descripción no cita puntos a propósito: el baremo lo fija cada liga en
 // la BD y aquí se quedaría desfasado (pasó con el 3/1 tras subir a 5/2).
 export const metadata = {
-  title: "Pronósticos · Quiniela LaLiga 2026-27 | Soy Reinaldo",
+  title: "Marcadores · Adivina el marcador LaLiga 2026-27 | Soy Reinaldo",
   description:
-    "Pronostica los resultados de LaLiga 2026-27 jornada a jornada y compite en la clasificación pública. Gratis.",
+    "Adivina los resultados de LaLiga 2026-27 jornada a jornada y compite en la clasificación pública. Gratis.",
 };
 
 const COMPETITION = "laliga";
@@ -207,7 +207,7 @@ export default async function QuinielaLigaPartidosPage({
             <div>
               <p className="eyebrow">
                 {anyLive && <span className="livepulse" style={{ marginRight: 8 }} />}
-                <T>Quiniela</T> · {compName} 2026-27
+                <T>Adivina el marcador</T> · {compName} 2026-27
               </p>
               <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)" }}>
                 Jornada {jornada}
@@ -217,7 +217,7 @@ export default async function QuinielaLigaPartidosPage({
               <span className="display" style={{ fontSize: "1.6rem", color: "var(--accent)" }}>
                 {totalPredictions ?? 0}
               </span>
-              <span> pronósticos</span>
+              <span> marcadores</span>
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default async function QuinielaLigaPartidosPage({
             <div style={{ marginTop: 12 }}>
               <OfertaAvisos
                 clave="pronosticos"
-                texto="Te recordamos los partidos que te falten por pronosticar y te avisamos si te retan a un duelo."
+                texto="Te recordamos los partidos que te falten por jugar y te avisamos si te retan a un duelo."
               />
             </div>
           </div>

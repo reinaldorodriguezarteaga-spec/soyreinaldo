@@ -10,9 +10,9 @@ import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfi
 import { COMPETICION_CHAMPIONS, JORNADAS_CHAMPIONS, TEMPORADA_CHAMPIONS } from "@/lib/quiniela-liga/champions";
 
 export const metadata: Metadata = {
-  title: "Quiniela de la Champions 2026-27 | Soy Reinaldo",
+  title: "Adivina el marcador de la Champions 2026-27 | Soy Reinaldo",
   description:
-    "Pronostica los partidos de la Champions League jornada a jornada, de la fase liga a la final, y compite en la clasificación. Gratis.",
+    "Adivina los partidos de la Champions League jornada a jornada, de la fase liga a la final, y compite en la clasificación. Gratis.",
   alternates: { canonical: "/quiniela-champions" },
 };
 
@@ -81,9 +81,9 @@ export default async function QuinielaChampionsPage({
             className="chip-pill chip-pill--accent"
             style={{ marginBottom: 12, fontWeight: 600 }}
           >
-            <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las quinielas</T>
+            <ArrowLeft className="ico-txt" aria-hidden /> <T>Todas las ligas</T>
           </Link>
-          <p className="eyebrow"><T>Quiniela · Champions League 2026-27</T></p>
+          <p className="eyebrow"><T>Adivina el marcador · Champions League 2026-27</T></p>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)" }}>
             {enRanking ? "Clasificación" : etiqueta}
           </h1>
@@ -122,7 +122,7 @@ export default async function QuinielaChampionsPage({
                 {!user && (
                   <>
                     {" "}
-                    <Link href="/login?redirect=/quiniela-champions">Entra</Link> <T>para pronosticar.</T>
+                    <Link href="/login?redirect=/quiniela-champions">Entra</Link> <T>para jugar.</T>
                   </>
                 )}
               </p>
@@ -234,7 +234,7 @@ async function Ranking({ yo, exacto, acierto }: { yo: string | null; exacto: num
   if (filas.length === 0) {
     return (
       <div className="panel" style={{ padding: 32, textAlign: "center", borderStyle: "dashed", color: "var(--text-dim)" }}>
-        La clasificación arranca con el primer partido terminado. ¡Pronostica la próxima jornada!
+        La clasificación arranca con el primer partido terminado. ¡Adivina la próxima jornada!
       </div>
     );
   }

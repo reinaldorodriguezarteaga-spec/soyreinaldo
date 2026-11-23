@@ -14,7 +14,7 @@ export async function generateMetadata({ params, searchParams }: P): Promise<Met
   const inv = await cargarInvitacion(decodeURIComponent((await params).usuario), (await searchParams).liga);
   if (!inv) return { title: "Reto | Soy Reinaldo", robots: { index: false } };
   const title = `⚔️ ${inv.retador} te reta${inv.jornada ? ` en la jornada ${inv.jornada}` : ""}`;
-  return { title: `${title} | Soy Reinaldo`, description: "Pronostica y gana quien más puntos saque.", robots: { index: false }, openGraph: { title } };
+  return { title: `${title} | Soy Reinaldo`, description: "Adivina y gana quien más puntos saque.", robots: { index: false }, openGraph: { title } };
 }
 
 /**
@@ -42,7 +42,7 @@ export default async function RetoPage({ params, searchParams }: P) {
             <p className="mono logro__titulo">{inv.jornada ? `Duelo · jornada ${inv.jornada}` : "Duelo"}</p>
             <h1 className="logro__nombre">{inv.retador} te reta</h1>
             <p className="logro__detalle">
-              <T>{`Gana quien más puntos saque en la jornada pronosticando los partidos. Liga: ${inv.liga}.`}</T>
+              <T>{`Gana quien más puntos saque en la jornada adivinando los partidos. Liga: ${inv.liga}.`}</T>
             </p>
           </div>
           {!inv.jornada ? (

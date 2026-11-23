@@ -47,7 +47,7 @@ export async function generateMetadata({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  return { title: `${decodeURIComponent(code).toUpperCase()} · Quiniela | Soy Reinaldo` };
+  return { title: `${decodeURIComponent(code).toUpperCase()} · Adivina el marcador | Soy Reinaldo` };
 }
 
 /**
@@ -163,13 +163,13 @@ export default async function LeaguePanelPage({
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
-            <T>← Mis quinielas</T>
+            <T>← Mis ligas</T>
           </Link>
           <h1 className="phero__title" style={{ fontSize: "clamp(2rem,5.5vw,3.4rem)", marginTop: 12 }}>
             <T>{league.name}</T>
           </h1>
           <p className="phero__lede" style={{ marginTop: 8 }}>
-            <T>{league.description ?? "Quiniela privada de LaLiga 2026-27."}</T>
+            <T>{league.description ?? "Liga privada de LaLiga 2026-27."}</T>
           </p>
           <p style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href={rankingHref} className="btn btn--accent">
@@ -183,7 +183,7 @@ export default async function LeaguePanelPage({
               }
               className="btn"
             >
-              <T>Pronosticar</T>
+              <T>Jugar</T>
             </Link>
           </p>
           {guardado === "1" && (
@@ -206,7 +206,7 @@ export default async function LeaguePanelPage({
             <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Normas</h2>
             <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
               <T>
-                Solo de esta quiniela: tus pronósticos son los mismos en todas,
+                Solo de esta liga: tus marcadores son los mismos en todas,
                 pero aquí puntúan con este baremo.
               </T>
             </p>
@@ -222,7 +222,7 @@ export default async function LeaguePanelPage({
                   🔥 más goleador {league.lq_points_attack}
                 </li>
               ) : (
-                <li><T>Los picks especiales no puntúan en esta quiniela</T></li>
+                <li><T>Los picks especiales no puntúan en esta liga</T></li>
               )}
             </ul>
             {isLeagueAdmin && (
@@ -314,7 +314,7 @@ export default async function LeaguePanelPage({
                     <>
                       <T>
                         Esta liga es la general: cualquiera puede entrar desde la
-                        página de quinielas. El enlace directo es este.
+                        página de ligas. El enlace directo es este.
                       </T>
                     </>
                   ) : (
@@ -323,8 +323,8 @@ export default async function LeaguePanelPage({
                       <strong style={{ fontFamily: "var(--font-mono-stack)" }}>{league.code}</strong>{" "}
                       <T>
                         {league.anunciada
-                          ? "en la página de quinielas, donde se anuncia con candado a quien no es miembro."
-                          : "en la página de quinielas. La liga no aparece listada en ningún sitio."}
+                          ? "en la página de ligas, donde se anuncia con candado a quien no es miembro."
+                          : "en la página de ligas. La liga no aparece listada en ningún sitio."}
                       </T>
                     </>
                   )}
@@ -335,7 +335,7 @@ export default async function LeaguePanelPage({
               {esAdminSitio && !league.is_public && (
                 <div className="panel" style={{ padding: 24 }}>
                   <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>
-                    <T>En la página de quinielas</T>
+                    <T>En la página de ligas</T>
                   </h2>
                   <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
                     {league.anunciada ? (
@@ -369,7 +369,7 @@ export default async function LeaguePanelPage({
               <div className="panel" style={{ padding: 24 }}>
                 <h2 style={{ margin: "0 0 4px", fontSize: "1.2rem" }}>Ajustar puntos</h2>
                 <p style={{ color: "var(--text-dim)", margin: "0 0 16px", fontSize: "0.9rem" }}>
-                  Suma o resta puntos a mano (premios, penalizaciones). Solo
+                  Suma o resta puntos a mano (bonificaciones, penalizaciones). Solo
                   afecta a esta liga.
                 </p>
                 <AdjustmentForm

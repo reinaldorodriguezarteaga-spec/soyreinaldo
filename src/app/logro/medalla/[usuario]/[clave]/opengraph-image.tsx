@@ -12,6 +12,6 @@ export default async function Image({ params }: { params: Promise<{ usuario: str
   return imagenLogro(
     l
       ? { emoji: l.medalla.emoji, titulo: l.medalla.nombre, nombre: l.nombre, detalle: l.medalla.descripcion }
-      : { emoji: "⚽", titulo: "Pronósticos", nombre: "soyreinaldo.com", detalle: "Pronostica y compite gratis" },
+      : { emoji: "⚽", titulo: "Marcadores", nombre: "soyreinaldo.com", detalle: "Adivina y compite gratis" },
   );
 }

@@ -69,9 +69,9 @@ export default async function MatchQuiniela({
           </strong>
         </>
       ) : anf.hecho ? (
-        <T>{ANFITRION_NOMBRE} ya ha pronosticado este partido. ¿Le ganas?</T>
+        <T>{ANFITRION_NOMBRE} ya ha puesto su marcador. ¿Le ganas?</T>
       ) : (
-        <T>{ANFITRION_NOMBRE} aún no lo ha pronosticado.</T>
+        <T>{ANFITRION_NOMBRE} aún no ha puesto su marcador.</T>
       )}
     </p>
   ) : null;
@@ -92,11 +92,11 @@ export default async function MatchQuiniela({
     return (
       <Caja>
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          <T>Este partido entra en la quiniela de la Champions. Pronostica el marcador y sube en la clasificación.</T>
+          <T>Este partido entra en Adivina el marcador de la Champions: pon tu marcador y sube en la clasificación.</T>
         </p>
         {bloqueComunidad}
         <Link href="/quiniela-champions" className="btn btn--accent">
-          <T>Quiniela de la Champions</T> <span className="arr">→</span>
+          <T>Adivina el marcador de la Champions</T> <span className="arr">→</span>
         </Link>
       </Caja>
     );
@@ -107,13 +107,13 @@ export default async function MatchQuiniela({
       <Caja>
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
           <T>
-            Este partido entra en la quiniela. Pronostica el marcador y compite
+            Este partido entra en Adivina el marcador: pon tu marcador y compite
             con tu gente en una clasificación propia.
           </T>
         </p>
         {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
-          <T>Ver la quiniela</T> <span className="arr">→</span>
+          <T>Ver la clasificación</T> <span className="arr">→</span>
         </Link>
       </Caja>
     );
@@ -135,11 +135,11 @@ export default async function MatchQuiniela({
     return (
       <Caja>
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          <T>Este partido entra en la quiniela y aún no estás en ninguna.</T>
+          <T>Este partido entra en Adivina el marcador y aún no estás en ninguna.</T>
         </p>
         {bloqueComunidad}
         <Link href="/quiniela-liga" className="btn btn--accent">
-          <T>Entrar a la quiniela</T> <span className="arr">→</span>
+          <T>Entrar a Adivina el marcador</T> <span className="arr">→</span>
         </Link>
       </Caja>
     );
@@ -196,7 +196,7 @@ export default async function MatchQuiniela({
     <Caja titulo={liga && !liga.isPublic ? liga.name : undefined}>
       {mio ? (
         <p style={{ margin: "0 0 14px" }}>
-          <T>Tu pronóstico:</T>{" "}
+          <T>Tu marcador:</T>{" "}
           <strong style={{ fontSize: "1.15rem" }}>
             {mio.score_home}–{mio.score_away}
           </strong>
@@ -215,7 +215,7 @@ export default async function MatchQuiniela({
         </p>
       ) : (
         <p style={{ margin: "0 0 14px", color: "var(--text-dim)" }}>
-          <T>{played ? "No pronosticaste este partido." : "Aún no has pronosticado este partido."}</T>
+          <T>{played ? "No pusiste marcador a este partido." : "Aún no has puesto marcador a este partido."}</T>
         </p>
       )}
 
@@ -225,7 +225,7 @@ export default async function MatchQuiniela({
             <thead>
               <tr>
                 <th>Jugador</th>
-                <th style={{ textAlign: "right" }}><T>Pronóstico</T></th>
+                <th style={{ textAlign: "right" }}><T>Marcador</T></th>
                 {hayResultado && <th className="pts">Pts</th>}
               </tr>
             </thead>
@@ -247,7 +247,7 @@ export default async function MatchQuiniela({
       {bloqueComunidad}
 
       <Link href={enlaceQuiniela} className="btn">
-        <T>{played ? "Ver la quiniela" : "Pronosticar"}</T> <span className="arr">→</span>
+        <T>{played ? "Ver la clasificación" : "Jugar"}</T> <span className="arr">→</span>
       </Link>
     </Caja>
   );
@@ -290,7 +290,7 @@ function BloqueComunidad({
           textTransform: "uppercase",
         }}
       >
-        <T>Lo que pronostica la comunidad · </T>{c.total} <T>pronósticos</T>
+        <T>El marcador de la comunidad · </T>{c.total} <T>marcadores</T>
       </p>
       {filas.map((f) => (
         <div key={f.etiqueta} style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
@@ -335,7 +335,7 @@ function Caja({
   return (
     <div style={{ marginTop: 28 }}>
       <div className="shead">
-        <h2>🏆 <T>Quiniela</T></h2>
+        <h2>🏆 <T>Adivina el marcador</T></h2>
         {titulo && <span className="sh-note"><T>{titulo}</T></span>}
       </div>
       <div className="panel" style={{ padding: "18px 20px" }}>{children}</div>

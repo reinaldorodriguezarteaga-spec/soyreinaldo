@@ -80,8 +80,8 @@ export function emailRecordatorio(opts: {
   const n = opts.partidos.length;
   const subject =
     n === 1
-      ? `⚽ Te falta 1 pronóstico: ${opts.partidos[0].local} - ${opts.partidos[0].visitante}`
-      : `⚽ Te faltan ${n} pronósticos de la quiniela`;
+      ? `⚽ Te falta 1 marcador: ${opts.partidos[0].local} - ${opts.partidos[0].visitante}`
+      : `⚽ Te faltan ${n} marcadores de Adivina el marcador`;
   const filas = opts.partidos
     .map(
       (m) =>
@@ -91,10 +91,10 @@ export function emailRecordatorio(opts: {
     .join("");
   const html = `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:28px;border-radius:16px;max-width:460px;margin:auto">
   <h2 style="margin:0 0 8px;font-size:20px">Hola, ${esc(opts.nombre)}</h2>
-  <p style="margin:0 0 14px;color:#c5cbef">Entre hoy y mañana se juegan partidos de la quiniela que aún no has pronosticado. Cada uno se cierra a su hora de inicio:</p>
+  <p style="margin:0 0 14px;color:#c5cbef">Entre hoy y mañana se juegan partidos de Adivina el marcador que aún no has puesto marcador a. Cada uno se cierra a su hora de inicio:</p>
   <table style="border-collapse:collapse;margin:0 0 18px">${filas}</table>
-  <a href="${opts.urlPronosticar}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">Hacer mis pronósticos</a>
-  <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a la quiniela de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más recordatorios</a>.</p>
+  <a href="${opts.urlPronosticar}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">Hacer mis marcadores</a>
+  <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a Adivina el marcador de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más recordatorios</a>.</p>
 </div>`;
   return { subject, html };
 }
@@ -126,13 +126,13 @@ export function emailResumenJornada(opts: {
   const html = `<div style="font-family:system-ui,-apple-system,sans-serif;background:#0a1030;color:#e8ecff;padding:28px;border-radius:16px;max-width:460px;margin:auto">
   <h2 style="margin:0 0 8px;font-size:20px">Jornada ${opts.jornada}, ${esc(opts.nombre)}</h2>
   <p style="margin:0 0 6px;font-size:28px;font-weight:800">${opts.puntos} puntos</p>
-  <p style="margin:0 0 14px;color:#c5cbef">${opts.exactos} ${opts.exactos === 1 ? "resultado exacto" : "resultados exactos"} · ${opts.aciertos} ${opts.aciertos === 1 ? "acierto" : "aciertos"} · ${opts.jugados} ${opts.jugados === 1 ? "pronóstico" : "pronósticos"}</p>
+  <p style="margin:0 0 14px;color:#c5cbef">${opts.exactos} ${opts.exactos === 1 ? "resultado exacto" : "resultados exactos"} · ${opts.aciertos} ${opts.aciertos === 1 ? "acierto" : "aciertos"} · ${opts.jugados} ${opts.jugados === 1 ? "marcador" : "marcadores"}</p>
   ${puestoHtml}
   <p style="margin:18px 0 0">
     <a href="${opts.urlTarjeta}" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;margin:0 8px 8px 0">Compartir mi jornada</a>
     <a href="${opts.urlClasificacion}" style="display:inline-block;color:#9aa4d6;padding:12px 4px">Ver la clasificación</a>
   </p>
-  <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a la quiniela de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más correos</a>.</p>
+  <p style="margin:22px 0 0;color:#7c84b8;font-size:12px">Recibes esto porque juegas a Adivina el marcador de soyreinaldo.com. <a href="${opts.urlBaja}" style="color:#9aa4d6">No quiero más correos</a>.</p>
 </div>`;
   return { subject, html };
 }

@@ -22,7 +22,7 @@ const SIN_JUGAR = new Set(["PST", "ABD", "CANC"]);
 const PUBLIC_LEAGUE_ID = "9f992fa0-5f45-4204-87a7-b4c5feda6ae1";
 
 export const metadata = {
-  title: "Clasificación · Quiniela LaLiga 2026-27 | Soy Reinaldo",
+  title: "Clasificación · Adivina el marcador LaLiga 2026-27 | Soy Reinaldo",
 };
 
 type FilaJornada = {
@@ -181,7 +181,7 @@ export default async function QuinielaLigaRankingPage({
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
-            <T>← Pronósticos</T>
+            <T>← Marcadores</T>
           </Link>
           <h1 className="phero__title" style={{ fontSize: "clamp(2.2rem,6vw,4rem)", marginTop: 12 }}>
             Clasificación
@@ -305,7 +305,7 @@ export default async function QuinielaLigaRankingPage({
           ) : enVistaJornada ? (
             filasJornada.length === 0 ? (
               <div className="panel" style={{ padding: 24, textAlign: "center", color: "var(--text-dim)" }}>
-                <T>Nadie de esta liga pronosticó los partidos ya jugados de la jornada </T>{jornadaVista}.
+                <T>Nadie de esta liga puso marcador a los partidos ya jugados de la jornada </T>{jornadaVista}.
               </div>
             ) : (
               <div className="panel" style={{ overflowX: "auto" }}>
@@ -351,13 +351,13 @@ export default async function QuinielaLigaRankingPage({
                 color: "var(--text-dim)",
               }}
             >
-              <T>Todavía no hay nadie en la clasificación. Haz tu primer pronóstico y aparecerás aquí.</T>
+              <T>Todavía no hay nadie en la clasificación. Haz tu primer marcador y aparecerás aquí.</T>
               <div style={{ marginTop: 16 }}>
                 <Link
                   href={leagueHref("/quiniela-liga/partidos", active)}
                   className="btn btn--accent"
                 >
-                  <T>Ir a pronosticar</T> <span className="arr">→</span>
+                  <T>Ir a jugar</T> <span className="arr">→</span>
                 </Link>
               </div>
             </div>

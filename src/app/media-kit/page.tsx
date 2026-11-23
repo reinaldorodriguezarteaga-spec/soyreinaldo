@@ -172,7 +172,7 @@ const marketing = [
   },
   {
     title: "Giveaways patrocinados",
-    desc: "Sorteos con productos de la marca para potenciar alcance.",
+    desc: "Acciones con productos de la marca para potenciar alcance.",
   },
   {
     title: "Co-branding en retos",

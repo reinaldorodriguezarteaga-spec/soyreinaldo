@@ -27,7 +27,7 @@ export default async function LogroMedallaPage({ params }: P) {
       nombre={nombre}
       detalle={`${m.descripcion}${m.veces > 1 ? ` · ×${m.veces}` : ""}`}
       url={`https://www.soyreinaldo.com/logro/medalla/${encodeURIComponent(usuario)}/${clave}`}
-      textoCompartir={`${m.emoji} He conseguido la medalla «${m.nombre}» en los pronósticos de soyreinaldo.com. ¿Te atreves?`}
+      textoCompartir={`${m.emoji} He conseguido la medalla «${m.nombre}» en los marcadores de soyreinaldo.com. ¿Te atreves?`}
     />
   );
 }

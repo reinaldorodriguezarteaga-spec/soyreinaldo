@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useEnApp } from "@/components/EnApp";
 
 /**
  * Barra de pestañas de abajo en el móvil y la app (31-oct, pedido del dueño,
@@ -39,9 +38,8 @@ const PESTANAS = [
   },
   {
     href: "/quiniela-liga",
-    label: "Quiniela",
-    // En la app el juego es «Adivina el marcador» (termino.ts); no cabe entero.
-    labelApp: "Adivina",
+    // El juego es «Adivina el marcador» (termino.ts); no cabe entero.
+    label: "Adivina",
     activa: (p: string) => p.startsWith("/quiniela") || p.startsWith("/mi-jornada") || p.startsWith("/mi-temporada"),
     icono: (
       <>
@@ -107,11 +105,10 @@ function useEncogerAlBajar(pathname: string) {
 
 export default function BarraInferior() {
   const pathname = usePathname() ?? "/";
-  const enApp = useEnApp();
   useEncogerAlBajar(pathname);
   const enlace = (t: (typeof PESTANAS)[number], clase?: string) => {
     const activa = t.activa(pathname);
-    const label = enApp && "labelApp" in t ? t.labelApp : t.label;
+    const label = t.label;
     return (
       <Link
         key={t.href}

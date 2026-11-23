@@ -72,17 +72,17 @@ export default function SiguienteGol({
               </>
             ) : abiertoMio ? (
               <>
-                Tu pronóstico: <b>{nombre[abiertoMio.eleccion]}</b> (minuto {abiertoMio.minuto}). Cuando haya gol, podrás
+                Tu marcador: <b>{nombre[abiertoMio.eleccion]}</b> (minuto {abiertoMio.minuto}). Cuando haya gol, podrás
                 volver a jugar.{" "}
               </>
             ) : null}
-            Cuenta el primer gol que llegue al menos {MARGEN} minutos después de pronosticar; hasta el {MINUTO_CIERRE}&apos;.
+            Cuenta el primer gol que llegue al menos {MARGEN} minutos después de jugar; hasta el {MINUTO_CIERRE}&apos;.
           </p>
         </>
       )}
       {!abierto && abiertoMio && (
         <p className="sg__nota">
-          Tu pronóstico: <b>{nombre[abiertoMio.eleccion]}</b> (minuto {abiertoMio.minuto}), pendiente del siguiente gol.
+          Tu marcador: <b>{nombre[abiertoMio.eleccion]}</b> (minuto {abiertoMio.minuto}), pendiente del siguiente gol.
         </p>
       )}
       {resueltos.length > 0 && (

@@ -92,17 +92,17 @@ export function textoPrevia(d: DatosPrevia): string[] {
     const max = Math.max(c.local, c.empate, c.visitante);
     const empatados = [c.local, c.empate, c.visitante].filter((x) => x === max).length > 1;
     if (empatados) {
-      frases.push(`En la quiniela, la comunidad está dividida (${plural(c.total, "pronóstico", "pronósticos")}).`);
+      frases.push(`En la liga, la comunidad está dividida (${plural(c.total, "marcador", "marcadores")}).`);
     } else if (max === c.empate) {
-      frases.push(`En la quiniela, el ${pct(c.empate)}% de la comunidad ve empate.`);
+      frases.push(`En la liga, el ${pct(c.empate)}% de la comunidad ve empate.`);
     } else {
       const fav = max === c.local ? d.local : d.visitante;
-      frases.push(`En la quiniela, el ${pct(max)}% de la comunidad da ganador a ${fav}.`);
+      frases.push(`En la liga, el ${pct(max)}% de la comunidad da ganador a ${fav}.`);
     }
   }
 
   if (d.anfitrionHecho === true) {
-    frases.push(`${d.anfitrionNombre} ya ha dejado su pronóstico: ¿le ganas?`);
+    frases.push(`${d.anfitrionNombre} ya ha dejado su marcador: ¿le ganas?`);
   }
   return frases;
 }

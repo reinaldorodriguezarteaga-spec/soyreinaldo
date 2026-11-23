@@ -12,7 +12,7 @@ import { T } from "@/components/EnApp";
 
 export const metadata = {
   title: "Perfil | Soy Reinaldo",
-  description: "Gestiona tu perfil de la quiniela.",
+  description: "Gestiona tu perfil de Adivina el marcador.",
 };
 
 export default async function PerfilPage() {
@@ -137,7 +137,7 @@ export default async function PerfilPage() {
               <h2>Recordatorios por email</h2>
               <p className="sub">
                 <T>
-                  Te avisamos cada noche si tienes partidos sin pronosticar para
+                  Te avisamos cada noche si tienes partidos sin jugar para
                   el día siguiente, y los domingos un resumen de toda la semana.
                 </T>
               </p>
@@ -147,7 +147,7 @@ export default async function PerfilPage() {
                   <span>
                     <T>
                       {profile?.wants_reminders
-                        ? "Recibes los emails de la quiniela."
+                        ? "Recibes los emails de Adivina el marcador."
                         : "No recibes recordatorios. Puedes activarlos cuando quieras."}
                     </T>
                   </span>

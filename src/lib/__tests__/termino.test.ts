@@ -32,8 +32,14 @@ describe("«Adivina el marcador» en la app", () => {
     expect(sinQuiniela("Juegos y ligas de pronósticos (quinielas) gratuitas")).toBe("Juegos y ligas de Adivina el marcador gratuitas");
   });
 
-  it("la web no cambia", () => {
-    expect(termino("Elige tu quiniela", false)).toBe("Elige tu quiniela");
-    expect(termino("Pronósticos", false)).toBe("Pronósticos");
+  it("la web también cambia (23-nov-2026)", () => {
+    expect(termino("Elige tu quiniela", false)).toBe("Elige tu liga");
+    expect(termino("Pronósticos", false)).toBe("Marcadores");
+  });
+  it("descripciones de ligas de la base de datos (23-nov-2026)", () => {
+    expect(termino("La quiniela de LaLiga 2026-27 de CarBarça", true)).toBe(
+      "La liga de LaLiga 2026-27 de CarBarça",
+    );
+    expect(termino("Únete a la quiniela", true)).toBe("Únete a Adivina el marcador");
   });
 });

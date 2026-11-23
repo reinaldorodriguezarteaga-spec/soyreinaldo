@@ -65,7 +65,7 @@ export default async function SobreReinaldoPage() {
           <p>
             soyreinaldo.com es la casa de esa comunidad: marcadores en directo de las grandes ligas, mis{" "}
             <Link href="/analisis">análisis</Link> ({analisis ?? 0} publicados), la previa y la crónica de
-            cada partido, la liga de pronósticos para jugar con tus amigos y mis vídeos de cada jornada.
+            cada partido, la liga de marcadores para jugar con tus amigos y mis vídeos de cada jornada.
           </p>
           <h2>Dónde encontrarme</h2>
           <ul>

@@ -21,12 +21,11 @@ export function useTermino(): (texto: string) => string {
 }
 
 /**
- * `<T>Elige tu quiniela</T>`: el texto tal cual en la web y sin "quiniela"
- * en la app. Vale en Server y Client Components; solo toca los trozos de
+ * `<T>Elige tu quiniela</T>`: sin "quiniela" ni "pronóstico", en la web y en
+ * la app. Vale en Server y Client Components; solo toca los trozos de
  * texto directos (no entra en elementos anidados: envuélvelos aparte).
  */
 export function T({ children }: { children: React.ReactNode }) {
-  const enApp = useContext(EnAppContext);
-  if (!enApp) return <>{children}</>;
+  // Desde el 23-nov-2026 también en la web (ver lib/termino.ts).
   return <>{Children.map(children, (c) => (typeof c === "string" ? termino(c, true) : c))}</>;
 }

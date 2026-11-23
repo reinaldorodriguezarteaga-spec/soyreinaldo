@@ -71,10 +71,10 @@ export default async function QuinielaPendientes() {
       <span aria-hidden style={{ fontSize: "1.4rem" }}>⚽</span>
       <span style={{ flex: 1 }}>
         <strong>
-          <T>{faltan === 1 ? "Te falta 1 pronóstico" : `Te faltan ${faltan} pronósticos`}</T>
+          <T>{faltan === 1 ? "Te falta 1 marcador" : `Te faltan ${faltan} marcadores`}</T>
         </strong>
         <span style={{ display: "block", color: "var(--text-dim)", fontSize: "0.88rem" }}>
-          <T>Partidos de la quiniela en los próximos dos días. Cada uno se cierra al empezar.</T>
+          <T>Partidos de Adivina el marcador en los próximos dos días. Cada uno se cierra al empezar.</T>
         </span>
       </span>
       <span className="arr" style={{ color: "var(--accent)" }}>→</span>

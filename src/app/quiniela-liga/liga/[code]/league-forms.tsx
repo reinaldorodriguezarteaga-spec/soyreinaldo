@@ -213,7 +213,7 @@ export function AdjustmentForm({
         <input
           className="field"
           name="reason"
-          placeholder="Premio del mes, penalización…"
+          placeholder="Bonificación del mes, penalización…"
           disabled={pending}
         />
       </label>
@@ -262,7 +262,7 @@ export function SalirLiga({ leagueId }: { leagueId: string }) {
     <form
       action={salirDeLiga}
       onSubmit={(e) => {
-        if (!window.confirm("¿Salir de esta liga? Dejarás de aparecer en su clasificación. Tus pronósticos siguen contando en las demás.")) {
+        if (!window.confirm("¿Salir de esta liga? Dejarás de aparecer en su clasificación. Tus marcadores siguen contando en las demás.")) {
           e.preventDefault();
         }
       }}

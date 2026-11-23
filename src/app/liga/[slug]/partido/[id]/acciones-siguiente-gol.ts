@@ -17,7 +17,7 @@ export async function pronosticarSiguienteGol(
   fixtureId: number,
   eleccion: Eleccion,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!ELECCIONES.includes(eleccion)) return { ok: false, error: "Pronóstico no válido." };
+  if (!ELECCIONES.includes(eleccion)) return { ok: false, error: "Marcador no válido." };
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,7 +29,7 @@ export async function pronosticarSiguienteGol(
   const minuto = minutoDePronostico(fx.fixture.status.short, fx.fixture.status.elapsed);
   if (minuto == null) return { ok: false, error: "Solo se puede jugar con el partido en juego." };
   if (fx.fixture.status.short !== "HT" && minuto >= MINUTO_CIERRE) {
-    return { ok: false, error: `Desde el minuto ${MINUTO_CIERRE} ya no se puede pronosticar.` };
+    return { ok: false, error: `Desde el minuto ${MINUTO_CIERRE} ya no se puede jugar.` };
   }
 
   const goles = golesDe(
@@ -48,13 +48,13 @@ export async function pronosticarSiguienteGol(
     .eq("user_id", user.id)
     .returns<{ minuto: number }[]>();
   if ((previos ?? []).some((p) => resolver(p.minuto, goles, false) == null)) {
-    return { ok: false, error: "Ya tienes un pronóstico abierto: espera al siguiente gol." };
+    return { ok: false, error: "Ya tienes un marcador abierto: espera al siguiente gol." };
   }
 
   const db = clienteServicio();
   if (!db) return { ok: false, error: "No se pudo guardar." };
   const { error } = await db.from("siguiente_gol").insert({ fixture_id: fixtureId, user_id: user.id, minuto, eleccion });
-  if (error) return { ok: false, error: error.code === "23505" ? "Ya pronosticaste en este minuto." : "No se pudo guardar." };
+  if (error) return { ok: false, error: error.code === "23505" ? "Ya jugaste en este minuto." : "No se pudo guardar." };
   revalidatePath("/liga/[slug]/partido/[id]", "page");
   return { ok: true };
 }

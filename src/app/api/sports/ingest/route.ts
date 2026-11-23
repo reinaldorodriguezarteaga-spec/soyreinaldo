@@ -220,7 +220,7 @@ export async function GET(request: Request) {
                     }
                   : {
                       title: `🏁 Final: ${nLocal} ${fx.goals.home ?? 0}–${fx.goals.away ?? 0} ${nVisitante}`,
-                      body: "Mira el resumen, las notas y cómo va la quiniela",
+                      body: "Mira el resumen, las notas y cómo va la liga",
                       url: `/liga/laliga/partido/${fx.fixture.id}`,
                       tag: `final-${fx.fixture.id}`,
                     };

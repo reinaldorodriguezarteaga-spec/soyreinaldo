@@ -407,7 +407,7 @@ const ESCENARIOS: Generador[] = [
       titulo: "Contrato publicitario",
       texto: "Una marca te ofrece un contrato millonario… con eventos cada semana.",
       opciones: [
-        { texto: "Firmar: el dinero no sobra nunca", efecto: { media: [-1, 0], texto: "Más dinero, menos descanso." } },
+        { texto: "Firmar: un buen contrato no sobra nunca", efecto: { media: [-1, 0], texto: "Mejor contrato, menos descanso." } },
         { texto: "Rechazarlo y centrarte en el fútbol", efecto: { media: [0, 1], texto: "Solo piensas en el balón." } },
       ],
     }),
