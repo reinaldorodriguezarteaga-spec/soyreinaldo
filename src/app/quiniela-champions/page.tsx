@@ -192,6 +192,7 @@ async function Partidos({
       away: m.away!,
       prediction: p,
       locked: !userId || new Date(m.kickoff_at).getTime() - LOCK_LEAD_MS <= now,
+      sinSesion: userId ? undefined : `/quiniela-champions?j=${jornada}`,
       live: { scoreHome: m.score_home, scoreAway: m.score_away, finished: m.finished, status: m.status, minute: m.live_minute },
       points: m.finished && conMarcador && p ? puntosPronostico(p, { home: m.score_home!, away: m.score_away! }, { exacto, acierto }) : null,
       anfitrion: anfitrion.get(m.id) ?? null,
