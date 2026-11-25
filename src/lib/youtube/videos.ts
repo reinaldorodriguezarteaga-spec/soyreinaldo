@@ -72,3 +72,43 @@ export function videosDelPartido(
     })
     .slice(0, max);
 }
+
+/** Vídeo del canal con su formato: `short` true/false, o null si YouTube no
+ * dejó saberlo (desde un servidor puede contestar con el aviso de cookies). */
+export type VideoCanal = Video & { short: boolean | null };
+
+/** /shorts/ID contesta 200 si es un short y redirige a /watch si es un vídeo
+ * normal. Cualquier otra cosa (aviso de cookies, error) = no se sabe. */
+async function esShort(id: string): Promise<boolean | null> {
+  try {
+    const r = await fetch(`https://www.youtube.com/shorts/${id}`, {
+      method: "HEAD",
+      redirect: "manual",
+      cache: "no-store",
+      headers: { Cookie: "SOCS=CAI", "Accept-Language": "es-ES" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (r.status === 200) return true;
+    if (r.status >= 300 && r.status < 400) {
+      return (r.headers.get("location") ?? "").includes("/watch") ? false : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Los últimos vídeos del canal con su formato, para «Lo último de Reinaldo»
+ * en la portada (25-nov-2026). Mismo feed RSS que la ficha del partido (sin
+ * API ni cuota) y una comprobación por vídeo, todo con caché de 1 h.
+ */
+export const getUltimosVideos = unstable_cache(
+  async (): Promise<VideoCanal[]> => {
+    const videos = (await getVideosCanal()).slice(0, 10);
+    const formatos = await Promise.all(videos.map((v) => esShort(v.id)));
+    return videos.map((v, i) => ({ ...v, short: formatos[i] }));
+  },
+  ["ultimos-videos-canal"],
+  { revalidate: 3600 },
+);

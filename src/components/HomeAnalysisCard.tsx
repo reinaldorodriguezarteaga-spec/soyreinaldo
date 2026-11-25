@@ -15,8 +15,9 @@ function fechaCorta(iso: string): string {
  * la portada donde verlo). Últimos artículos publicados; si no hay ninguno,
  * no se pinta nada. Reutiliza el estilo de fila de NewsCard (.newsitem).
  */
-export default async function HomeAnalysisCard() {
-  const articulos = await listarPublicados(3);
+export default async function HomeAnalysisCard({ saltar = 0 }: { saltar?: number } = {}) {
+  // `saltar`: el más reciente ya sale arriba, en «Lo último de Reinaldo».
+  const articulos = (await listarPublicados(3 + saltar)).slice(saltar);
   if (articulos.length === 0) return null;
 
   return (
