@@ -9,6 +9,7 @@ import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import { otroAhorcado } from "./acciones";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Ahorcado»: el nombre de un futbolista en huecos y la liga en la que juega.
@@ -333,9 +334,7 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
                   </div>
                 ))}
               </div>
-              <button type="button" className="btn btn--ghost jg-rindo" onClick={rendirse} disabled={!jugando}>
-                Me rindo
-              </button>
+              <BotonRendirse onRendirse={rendirse} disabled={!jugando} />
               </>
             )}
 

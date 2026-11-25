@@ -17,6 +17,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Adivina el equipo»: un once histórico con solo las banderas. El reto del
@@ -329,9 +330,7 @@ export default function Juego({ numero }: { numero: number }) {
                 ))}
                 {filtradas.length === 0 && <li className="jg-opciones__vacio">Ningún equipo con ese nombre</li>}
               </ul>
-              <button type="button" className="btn btn--ghost jg-rindo" onClick={rendirse}>
-                Me rindo
-              </button>
+              <BotonRendirse onRendirse={rendirse} />
             </div>
           )}
 

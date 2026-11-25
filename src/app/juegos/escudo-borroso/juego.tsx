@@ -13,6 +13,7 @@ import AccionesFinal from "@/components/juegos/AccionesFinal";
 import Buscador from "@/components/juegos/Buscador";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Escudo borroso» (10-nov-2026): el escudo de un equipo de las cinco grandes
@@ -121,9 +122,7 @@ export default function Juego({ numero }: { numero: number }) {
               <>
                 <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿De qué equipo es?" placeholder="Escribe un equipo…" />
                 {/* Rendirse (25-nov, pedido del dueño): se acaba la partida y se ve la respuesta. */}
-                <button type="button" className="btn btn--ghost jg-rindo" onClick={terminar}>
-                  Me rindo
-                </button>
+                <BotonRendirse onRendirse={terminar} />
               </>
             )}
 

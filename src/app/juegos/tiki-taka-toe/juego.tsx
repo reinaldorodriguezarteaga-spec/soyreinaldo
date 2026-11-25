@@ -13,6 +13,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * Tiki-taka-toe: eliges casilla, escribes un jugador que haya pasado por el
@@ -396,9 +397,7 @@ export default function Juego({ numero }: { numero: number }) {
             )}
             {aviso && <p className="jg-aviso">{aviso}</p>}
             {!terminado && nivel && (
-              <button type="button" className="btn btn--ghost jg-rindo" onClick={rendirse}>
-                Me rindo
-              </button>
+              <BotonRendirse onRendirse={rendirse} />
             )}
 
             {terminado && nivel && (

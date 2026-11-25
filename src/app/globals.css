@@ -3465,3 +3465,4 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 
 /* «Me rindo» en los juegos de adivinar (25-nov-2026). */
 .jg-rindo { justify-self: start; align-self: flex-start; }
+.btn.jg-rindo.is-armado { border-color: #ff8a8a; color: #ff8a8a; background: color-mix(in oklch, #ff8a8a 12%, transparent); }
