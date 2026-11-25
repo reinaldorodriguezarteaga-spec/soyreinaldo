@@ -1,5 +1,6 @@
 import { cache, Suspense } from "react";
 import ReportarFallo from "@/components/ReportarFallo";
+import MasDeSoyReinaldo from "@/components/MasDeSoyReinaldo";
 import TeamAnalisis from "./team-analisis";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -201,6 +202,9 @@ export default async function LigaEquipoPage({
           <Suspense fallback={<TeamFixturesList fixtures={allFixtures} slug={competition.slug} />}>
             <TeamDetails competition={competition} teamId={teamId} allFixtures={allFixtures}
               liveFixtures={liveFixtures} squadPromise={squadPromise} standingsPromise={standingsPromise} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MasDeSoyReinaldo />
           </Suspense>
           <div className="reporte-fila">
             <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`Ficha de ${team?.name ?? "equipo"} (${competition.name})`} />
