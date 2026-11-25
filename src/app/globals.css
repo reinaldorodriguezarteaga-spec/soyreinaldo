@@ -3427,7 +3427,13 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .homeopina__cab { display: flex; align-items: center; gap: 10px; }
 .homeopina__titulo { margin: 0; font-family: var(--font-display-stack); font-weight: 900; text-transform: uppercase; font-size: 1.35rem; line-height: 1; }
 .homeopina__partido { display: block; margin-top: 3px; color: var(--text-dim); font-size: 0.7rem; text-decoration: none; }
-.homeopina__lista .encuesta { background: transparent; }
+.homeopina__lista { display: block; }
+/* Compacta en la portada (25-nov): sin segundo marco y opciones en dos columnas. */
+.homeopina__lista .encuesta { background: transparent; border: 0; padding: 0; gap: 8px; }
+.homeopina__lista .encuesta__pregunta { font-size: 0.92rem; }
+.homeopina__lista .encuesta__opciones { grid-template-columns: 1fr 1fr; gap: 6px; }
+.homeopina__lista .encuesta__op { padding: 8px 10px; font-size: 0.84rem; min-width: 0; }
+.homeopina__lista .encuesta__texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* «Reto del día» con racha en la portada (25-nov-2026) */
 .retodia { padding: 16px; display: grid; gap: 12px; }

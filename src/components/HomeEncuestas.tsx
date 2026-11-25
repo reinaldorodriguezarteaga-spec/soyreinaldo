@@ -18,7 +18,6 @@ import { equiposEnEspanol } from "@/lib/sports/nombres";
  */
 const BARCA = 529;
 const VENTANA_MS = 7 * 24 * 3_600_000;
-const MAX = 2;
 
 /** En juego, o terminados en la última semana (como la encuesta del MVP). */
 function partidosConEncuesta(recent: Fixture[], upcoming: Fixture[]): Fixture[] {
@@ -42,14 +41,17 @@ export default async function HomeEncuestas() {
 
   const { encuestas, conSesion, esAdmin } = await cargarEncuestas(partidos.map((f) => f.fixture.id));
   const porPartido = new Map(partidos.map((f, i) => [f.fixture.id, i]));
-  // Primero las del partido más reciente; dentro de cada uno, las abiertas.
+  // UNA sola encuesta, del partido más reciente (y, dentro de él, la abierta).
+  // Antes salían dos y la segunda era de OTRO partido bajo la cabecera del
+  // primero: dos «¿Quién fue el mejor del partido?» seguidos (25-nov, el dueño
+  // «no la entiendo»). Las demás siguen en la ficha del partido.
   const elegidas = encuestas
     .sort(
       (a, b) =>
         (porPartido.get(a.fixture_id) ?? 9) - (porPartido.get(b.fixture_id) ?? 9) ||
         Number(a.cerrada) - Number(b.cerrada),
     )
-    .slice(0, MAX);
+    .slice(0, 1);
   if (elegidas.length === 0) return null;
 
   const partido = partidos[porPartido.get(elegidas[0].fixture_id) ?? 0];
