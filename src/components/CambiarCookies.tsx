@@ -1,6 +1,7 @@
 "use client";
 
 import { STORAGE_KEY_CONSENTIMIENTO } from "@/components/CookieConsent";
+import { admobNativo } from "@/lib/anuncios-app";
 
 type GoogleFC = { callbackQueue?: unknown[]; showRevocationMessage?: () => void };
 
@@ -12,6 +13,13 @@ type GoogleFC = { callbackQueue?: unknown[]; showRevocationMessage?: () => void 
  */
 export default function CambiarCookies() {
   function abrir() {
+    // Dentro de la app (1.3+), las preferencias son las del aviso de Google
+    // de AdMob, no las de la web.
+    const admob = admobNativo();
+    if (admob) {
+      void admob.showPrivacyOptionsForm().catch(() => {});
+      return;
+    }
     // Si elegiste en NUESTRO aviso, se reabre el nuestro. El script de Google
     // está cargado aunque su aviso no se muestre (no lo enseña mientras el
     // sitio no esté aprobado), así que su presencia no basta para usarlo.

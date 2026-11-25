@@ -3229,7 +3229,9 @@ select.field { appearance: none; }
     --tabbar-cap: 62px;
     /* Hueco bajo la cápsula: la zona segura del iPhone si la hay y, como
        mínimo, 22 px (dentro de la app la zona segura puede venir a 0). */
-    --tabbar-hueco: max(calc(env(safe-area-inset-bottom, 0px) + 8px), 22px);
+    /* --banner-alto: lo que mide el banner de AdMob dentro de la app (lo
+       pone AnunciosApp, 25-nov-2026); la barra y las pastillas suben eso. */
+    --tabbar-hueco: calc(max(calc(env(safe-area-inset-bottom, 0px) + 8px), 22px) + var(--banner-alto, 0px));
     --tabbar-alto: calc(var(--tabbar-cap) + var(--tabbar-hueco) + 8px);
   }
   /* Al bajar, la barra encoge a solo iconos; al subir, vuelve (2-nov, «como

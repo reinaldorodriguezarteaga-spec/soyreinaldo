@@ -8,6 +8,7 @@ import Gestures from "@/components/Gestures";
 import CookieConsent from "@/components/CookieConsent";
 import InstallBanner from "@/components/InstallBanner";
 import PuenteAvisosApp from "@/components/PuenteAvisosApp";
+import AnunciosApp from "@/components/AnunciosApp";
 import PuenteWidget from "@/components/PuenteWidget";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -192,6 +193,8 @@ export default async function RootLayout({
         {/* App 1.1: abrir el partido al tocar un aviso y refrescar el token. */}
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
         {inApp && <PuenteWidget conSesion={!!user} />}
+        {/* App 1.3: anuncios de AdMob (sin el plugin, no hace nada). */}
+        {inApp && <AnunciosApp />}
         {pedirFavoritos && (
           <SelectorFavoritos
             ligas={COMPETITIONS.map((c) => ({

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { savePrediction } from "./actions";
 import type { FormaEquipo } from "@/lib/quiniela-liga/forma";
@@ -34,6 +35,10 @@ export type LqMatchCardData = {
   prediction: { home: number; away: number } | null;
   /** kickoff a <30 min → la RLS bloquea la escritura. */
   locked: boolean;
+  /** Sin sesión: bloqueado por no haber entrado, no por la hora. Es la
+   * ruta a la que volver tras iniciar sesión (antes salía «Cerrado · falta
+   * <30min» en partidos a días vista y parecía que se había cerrado todo). */
+  sinSesion?: string;
   live: {
     scoreHome: number | null;
     scoreAway: number | null;
@@ -222,7 +227,12 @@ export default function LqMatchCard({
       {match.anfitrion && <LineaAnfitrion p={match.anfitrion} />}
 
       <footer className="gamecard__foot">
-        {match.locked && !showScoreBlock && <span>🔒 Cerrado · falta &lt;30min</span>}
+        {match.sinSesion && !showScoreBlock && (
+          <Link href={`/login?redirect=${encodeURIComponent(match.sinSesion)}`} style={{ color: "var(--accent)" }}>
+            Inicia sesión para jugar
+          </Link>
+        )}
+        {match.locked && !match.sinSesion && !showScoreBlock && <span>🔒 Cerrado · falta &lt;30min</span>}
         {!match.locked && status === "saving" && <span>Guardando…</span>}
         {!match.locked && status === "saved" && (
           <span style={{ color: "var(--accent)" }}>✓ Guardado</span>
