@@ -3009,6 +3009,7 @@ select.field { appearance: none; }
 /* Caras en los juegos (22-oct) */
 .tt-cara { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .tt-cara img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.tt-iniciales { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em; }
 .jg-final__bandera { background: #e2e8f0; }
 /* Comparador de jugadores (22-oct) */
 .cmp { display: flex; flex-direction: column; gap: 16px; }
@@ -3461,3 +3462,7 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .masr__tit { display: block; font-size: 0.9rem; font-weight: 600; line-height: 1.3; }
 .masr__sub { display: block; margin-top: 2px; font-size: 0.76rem; color: var(--text-dim); line-height: 1.35; }
 .masr__flecha { flex: none; color: var(--text-dim); }
+
+/* «Me rindo» en los juegos de adivinar (25-nov-2026). */
+.jg-rindo { justify-self: start; align-self: flex-start; }
+.btn.jg-rindo.is-armado { border-color: #ff8a8a; color: #ff8a8a; background: color-mix(in oklch, #ff8a8a 12%, transparent); }

@@ -98,10 +98,19 @@ const IDS: Record<string, number> = {
 
 export const fotoJugador = (apiId: number) => `https://media.api-sports.io/football/players/${apiId}.png`;
 
+/** Con id del API pero sin foto: el CDN sirve una silueta gris «NO PHOTO
+ * YET» (la misma imagen, revisado el 25-nov-2026 con los 87 ids de aquí). */
+const SIN_FOTO = new Set(["cannavaro", "riquelme"]);
+
+/** Id de API-Football de un jugador de las carreras ("messi" → 154). */
+export function apiIdDe(id: string): number | null {
+  return IDS[id] ?? null;
+}
+
 /** Foto de un jugador de las carreras por su id interno ("messi"). */
 export function caraDe(id: string): string | null {
   const n = IDS[id];
-  return n ? fotoJugador(n) : null;
+  return n && !SIN_FOTO.has(id) ? fotoJugador(n) : null;
 }
 
 const porNombre = new Map(JUGADORES.map((j) => [j.nombre, j.id]));

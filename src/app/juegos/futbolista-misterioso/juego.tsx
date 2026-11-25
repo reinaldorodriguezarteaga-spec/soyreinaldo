@@ -12,6 +12,7 @@ import AccionesFinal from "@/components/juegos/AccionesFinal";
 import Buscador from "@/components/juegos/Buscador";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Futbolista misterioso»: se elige un jugador cualquiera y cada casilla dice
@@ -98,7 +99,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
               {/* eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API */}
               <img src={fotoDe(misterioso.id)} alt="" width={56} height={56} className="ah-foto" />
               <div>
-                <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                 <p className="jg-final__eq">{misterioso.nombre}</p>
                 <p className="jg-final__ctx">
                   {/* eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API */}
@@ -114,7 +115,11 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                   <b>Pista</b> Juega en {misterioso.liga.nombre}.
                 </li>
               </ul>
-              <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+              <>
+                <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+                {/* Rendirse (25-nov, pedido del dueño): se acaba la partida y se ve la respuesta. */}
+                <BotonRendirse onRendirse={terminar} />
+              </>
             </>
           )}
 

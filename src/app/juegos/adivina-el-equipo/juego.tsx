@@ -17,6 +17,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Adivina el equipo»: un once histórico con solo las banderas. El reto del
@@ -110,6 +111,13 @@ export default function Juego({ numero }: { numero: number }) {
     const g: Guardado = { dias: { ...guardado.dias, [numero]: { ...previo, ...parcial } } };
     setGuardado(g);
     guardar(g);
+  }
+
+  // «Me rindo» (25-nov, pedido del dueño): se cierra la partida y se ve la respuesta.
+  function rendirse() {
+    const ahora = Date.now();
+    setFin(ahora);
+    apuntar({ fin: ahora });
   }
 
   // Se acabó el tiempo: la partida se cierra.
@@ -286,12 +294,12 @@ export default function Juego({ numero }: { numero: number }) {
               {/* eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API */}
               <img src={escudo(reto.equipoId)} alt="" width={56} height={56} />
               <div>
-                <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                 <p className="jg-final__eq">
                   {reto.equipo} {reto.temporada}
                 </p>
                 <p className="jg-final__ctx">{reto.contexto}</p>
-                {!acertado && agotado && <p className="jg-final__ctx"><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</p>}
+                {!acertado && inicio != null && restante === 0 && <p className="jg-final__ctx"><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</p>}
               </div>
             </div>
           ) : (
@@ -322,6 +330,7 @@ export default function Juego({ numero }: { numero: number }) {
                 ))}
                 {filtradas.length === 0 && <li className="jg-opciones__vacio">Ningún equipo con ese nombre</li>}
               </ul>
+              <BotonRendirse onRendirse={rendirse} />
             </div>
           )}
 

@@ -11,6 +11,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Adivina el jugador»: la carrera club a club y cinco intentos. Mismo
@@ -103,6 +104,13 @@ export default function Juego({ numero }: { numero: number }) {
     const g: Guardado = { dias: { ...guardado.dias, [numero]: { ...previo, ...parcial } } };
     setGuardado(g);
     guardar(g);
+  }
+
+  // «Me rindo» (25-nov, pedido del dueño): se cierra la partida y se ve la respuesta.
+  function rendirse() {
+    const ahora = Date.now();
+    setFin(ahora);
+    apuntar({ fin: ahora });
   }
 
   // Se acabó el tiempo: la partida se cierra una sola vez.
@@ -223,7 +231,7 @@ export default function Juego({ numero }: { numero: number }) {
                 {/* eslint-disable-next-line @next/next/no-img-element -- bandera de la CDN de la API */}
                 <img src={caraDe(reto.id) ?? bandera(reto.pais)} alt="" width={56} height={56} className="jg-final__bandera" />
                 <div>
-                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                   <p className="jg-final__eq">{reto.nombre}</p>
                   {!acertado && inicio != null && restante === 0 && <p className="jg-final__ctx"><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</p>}
                 </div>
@@ -256,6 +264,7 @@ export default function Juego({ numero }: { numero: number }) {
                     {filtrados.length === 0 && <li className="jg-opciones__vacio">No está en nuestra lista</li>}
                   </ul>
                 )}
+                <BotonRendirse onRendirse={rendirse} />
               </div>
             )}
 

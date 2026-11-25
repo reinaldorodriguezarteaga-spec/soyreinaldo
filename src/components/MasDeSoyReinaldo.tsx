@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, Newspaper, Trophy } from "lucide-react";
+import { CalendarDays, ChevronRight, Flame, Newspaper, Trophy } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { clientePublico } from "@/lib/supabase/publico";
@@ -30,7 +30,9 @@ const ultimoAnalisis = unstable_cache(
  * «Más en Soy Reinaldo», al pie de las fichas de jugador, equipo y partido
  * (25-nov-2026). Las fichas son lo que más visita la gente que llega de
  * Google, y casi nadie pasaba de ahí a la portada: este bloque lleva al
- * calendario de hoy, al juego y al último análisis. Sin llamadas a
+ * calendario de hoy, a Adivina el marcador, al reto del día de los juegos
+ * (25-nov: solo 14 visitantes de habla hispana en /juegos en dos semanas) y
+ * al último análisis. Sin llamadas a
  * API-Football.
  */
 export default async function MasDeSoyReinaldo() {
@@ -47,6 +49,14 @@ export default async function MasDeSoyReinaldo() {
       Icono: Trophy,
       titulo: "Adivina el marcador",
       sub: "Gratis: suma puntos y compite con otros aficionados",
+    },
+    {
+      // El juego del día rota y las fichas pueden servirse desde caché: el
+      // enlace va a /juegos, que lo calcula en el navegador (tarjeta de arriba).
+      href: "/juegos",
+      Icono: Flame,
+      titulo: "El reto del día",
+      sub: "Un juego de fútbol nuevo cada día: haz racha",
     },
     ...(analisis
       ? [

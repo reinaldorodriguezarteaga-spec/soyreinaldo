@@ -11,6 +11,7 @@ import AccionesFinal from "@/components/juegos/AccionesFinal";
 import Buscador from "@/components/juegos/Buscador";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import { usePartidaDiaria } from "@/components/juegos/usePartidaDiaria";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * «Foto oculta»: la foto tapada por una cuadrícula de 3×3. Se empieza con un
@@ -135,7 +136,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                 {/* eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API */}
                 <img src={escudoDe(objetivo.equipo.id)} alt="" width={56} height={56} />
                 <div>
-                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                   <p className="jg-final__eq">{objetivo.nombre}</p>
                   <p className="jg-final__ctx">
                     {objetivo.equipo.nombre}
@@ -144,7 +145,11 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                 </div>
               </div>
             ) : (
-              <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+              <>
+                <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+                {/* Rendirse (25-nov, pedido del dueño): se acaba la partida y se ve la respuesta. */}
+                <BotonRendirse onRendirse={terminar} />
+              </>
             )}
 
             {fallos > 0 && (

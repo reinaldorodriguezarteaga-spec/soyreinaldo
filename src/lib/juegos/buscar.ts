@@ -3,7 +3,7 @@ import { clientePublico } from "@/lib/supabase/publico";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { buscarPerfilesApi } from "@/lib/sports/api-football";
 import { JUGADORES } from "./carreras";
-import { caraDe } from "./caras";
+import { apiIdDe, caraDe } from "./caras";
 import { normalizar } from "./diario";
 
 /**
@@ -19,7 +19,6 @@ import { normalizar } from "./diario";
  */
 export type Sugerencia = { id: number; nombre: string; foto: string | null; equipo: number | null };
 
-const idDeFoto = (foto: string | null) => Number(foto?.match(/players\/(\d+)\.png/)?.[1]);
 
 /** Para comparar: sin tildes y con la b y la v iguales («vommel» → Van Bommel). */
 const plano = (s: string) => normalizar(s).replace(/v/g, "b");
@@ -82,9 +81,10 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
 
   const curados: Sugerencia[] = JUGADORES.filter((j) => planas.every((p) => plano(j.nombre).includes(p)))
     .map((j): Sugerencia | null => {
-      const foto = caraDe(j.id);
-      const id = idDeFoto(foto);
-      return Number.isInteger(id) ? { id, nombre: j.nombre, foto, equipo: null } : null;
+      // El id sale de la tabla de caras, no de la foto: hay leyendas con id
+      // pero sin foto (Cannavaro, Riquelme).
+      const id = apiIdDe(j.id);
+      return id != null ? { id, nombre: j.nombre, foto: caraDe(j.id), equipo: null } : null;
     })
     .filter((x): x is Sugerencia => !!x);
 
@@ -191,5 +191,33 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
   };
   const puntuados = todos.map((x) => ({ x, p: puntos(x) }));
   puntuados.sort((a, b) => b.p - a.p);
-  return puntuados.slice(0, limite).map(({ x }) => x);
+  return sinSiluetas(puntuados.slice(0, limite).map(({ x }) => x));
+}
+
+/** El CDN de API-Football sirve, para los que no tienen foto, una silueta
+ * gris: la de «NO PHOTO YET» (8.624 bytes: Cannavaro, Riquelme) o una sin
+ * texto en un círculo (5.192 bytes). Comprobado el 25-nov-2026: el etag
+ * cambia, el tamaño no. */
+const BYTES_SILUETA = new Set([8624, 5192]);
+
+/** ¿Es la silueta? Basta con la cabecera (HEAD) y se recuerda 30 días por
+ * foto: las fotos no cambian a menudo. El try/catch va DENTRO de la caché. */
+const esSilueta = unstable_cache(
+  async (url: string): Promise<boolean> => {
+    try {
+      const r = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2500) });
+      return BYTES_SILUETA.has(Number(r.headers.get("content-length")));
+    } catch {
+      return false;
+    }
+  },
+  ["juegos-foto-silueta-v2"],
+  { revalidate: 30 * 24 * 3600 },
+);
+
+/** Quita la foto a los que solo tienen la silueta: en el juego salen sus
+ * iniciales en vez de una imagen gris en inglés (25-nov, pedido del dueño). */
+async function sinSiluetas(lista: Sugerencia[]): Promise<Sugerencia[]> {
+  const siluetas = await Promise.all(lista.map((x) => (x.foto ? esSilueta(x.foto) : Promise.resolve(false))));
+  return lista.map((x, i) => (siluetas[i] ? { ...x, foto: null } : x));
 }

@@ -3,8 +3,8 @@ import { Timer } from "lucide-react";
 
 import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { JUGADORES, clubId, clubNombre } from "@/lib/juegos/carreras";
-import { MAX_INTENTOS_TT, jugaronEnAmbos, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
+import { JUGADORES, clubId, clubNombre, type Jugador } from "@/lib/juegos/carreras";
+import { MAX_INTENTOS_TT, jugaronEnAmbos, mismoNombre, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
 import { validarCasilla } from "./acciones";
 import { useBuscarJugadores } from "@/lib/juegos/use-buscar";
 import type { Sugerencia } from "@/lib/juegos/buscar";
@@ -13,6 +13,7 @@ import ElegirNivel from "@/components/juegos/ElegirNivel";
 import CierreJuego from "@/components/juegos/CierreJuego";
 import { useCronometro } from "@/components/juegos/useCronometro";
 import VolverJuegos from "@/components/juegos/VolverJuegos";
+import BotonRendirse from "@/components/juegos/BotonRendirse";
 
 /**
  * Tiki-taka-toe: eliges casilla, escribes un jugador que haya pasado por el
@@ -37,6 +38,14 @@ type Guardado = { dias: Record<number, Partida> };
 const sinSuscripcion = () => () => {};
 const escudo = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 const VACIA: Partida = { celdas: {}, intentos: 0 };
+/** «Fabio Cannavaro» → «FC»; «Kaká» → «K». */
+const iniciales = (nombre: string) =>
+  nombre
+    .split(/\s+/)
+    .filter((p) => p && !p.endsWith("."))
+    .map((p) => p[0].toUpperCase())
+    .slice(0, 2)
+    .join("") || nombre.slice(0, 1).toUpperCase();
 
 function leer(): Guardado {
   try {
@@ -105,6 +114,49 @@ export default function Juego({ numero }: { numero: number }) {
     return { nombre: j?.nombre ?? "—", foto: j ? caraDe(j.id) : null };
   };
 
+  // Al terminar, cada casilla vacía enseña una respuesta posible. Tienen que
+  // ser jugadores que NO estén ya en el tablero y distintos entre sí (25-nov:
+  // salían Ibrahimović y Ramos repetidos). Lo puesto por el jugador va con el
+  // id del buscador (el de la API), no con el de la lista curada: por eso se
+  // compara también por nombre.
+  const soluciones = useMemo(() => {
+    const res = new Map<number, Jugador>();
+    if (!terminado) return res;
+    const puestos = Object.values(partida.celdas).map((v) => ficha(v).nombre);
+    const yaEsta = (j: Jugador) => usados.has(j.id) || puestos.some((n) => mismoNombre(n, j.nombre));
+    const vacias = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      .filter((i) => !partida.celdas[i])
+      .map((i) => ({ i, cand: jugaronEnAmbos(filaDe(i), columnaDe(i)).filter((j) => !yaEsta(j)) }))
+      .sort((a, b) => a.cand.length - b.cand.length);
+    const cogidos = new Set<string>();
+    const probar = (k: number): boolean => {
+      if (k === vacias.length) return true;
+      for (const j of vacias[k].cand) {
+        if (cogidos.has(j.id)) continue;
+        cogidos.add(j.id);
+        res.set(vacias[k].i, j);
+        if (probar(k + 1)) return true;
+        cogidos.delete(j.id);
+        res.delete(vacias[k].i);
+      }
+      return false;
+    };
+    if (!probar(0)) {
+      // Sin reparto perfecto: al menos, que no se repitan los que sí caben.
+      res.clear();
+      cogidos.clear();
+      for (const { i, cand } of vacias) {
+        const j = cand.find((x) => !cogidos.has(x.id));
+        if (j) {
+          cogidos.add(j.id);
+          res.set(i, j);
+        }
+      }
+    }
+    return res;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depende del tablero y de la partida
+  }, [terminado, partida, tablero]);
+
   function apuntar(parcial: Partial<Partida>) {
     const p = { ...partida, ...parcial };
     setPartida(p);
@@ -113,6 +165,13 @@ export default function Juego({ numero }: { numero: number }) {
       setGuardado(g);
       guardar(g);
     }
+  }
+
+  // «Me rindo» (25-nov, pedido del dueño): se cierra la partida y se ve la respuesta.
+  function rendirse() {
+    const ahora = Date.now();
+    setFin(ahora);
+    apuntar({ fin: ahora });
   }
 
   // Se acabó el tiempo: la partida se cierra una sola vez.
@@ -215,7 +274,7 @@ export default function Juego({ numero }: { numero: number }) {
           <div className="tt">
             <div className="tt-esquina">
               <b>{MAX_INTENTOS_TT - partida.intentos}</b>
-              <span>intentos</span>
+              <span>{MAX_INTENTOS_TT - partida.intentos === 1 ? "intento" : "intentos"}</span>
             </div>
             {tablero.columnas.map((c) => (
               <div key={c} className="tt-cab">
@@ -234,7 +293,7 @@ export default function Juego({ numero }: { numero: number }) {
                 {[0, 1, 2].map((c) => {
                   const i = f * 3 + c;
                   const puesto = partida.celdas[i];
-                  const solucion = terminado && !puesto ? jugaronEnAmbos(filaDe(i), columnaDe(i)).find((j) => !usados.has(j.id)) : null;
+                  const solucion = !puesto ? soluciones.get(i) : null;
                   return (
                     <button
                       key={c}
@@ -249,9 +308,14 @@ export default function Juego({ numero }: { numero: number }) {
                     >
                       {puesto ? (
                         <span className="tt-cara">
-                          {ficha(puesto).foto && (
+                          {ficha(puesto).foto ? (
                             // eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API
                             <img src={ficha(puesto).foto!} alt="" width={40} height={40} />
+                          ) : (
+                            // Sin foto en la API: sus iniciales, no la silueta gris en inglés.
+                            <span className="tt-iniciales" aria-hidden>
+                              {iniciales(ficha(puesto).nombre)}
+                            </span>
                           )}
                           {ficha(puesto).nombre}
                         </span>
@@ -277,7 +341,7 @@ export default function Juego({ numero }: { numero: number }) {
             {terminado ? (
               <div className={`jg-final ${aciertos === 9 ? "is-ok" : "is-mal"}`}>
                 <div>
-                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : "Se acabaron los intentos"}</p>
+                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : partida.intentos >= MAX_INTENTOS_TT ? "Se acabaron los intentos" : "Te rendiste"}</p>
                   <p className="jg-final__eq">{aciertos}/9</p>
                   {aciertos < 9 && <p className="jg-final__ctx">En cursiva, un jugador que valía en cada casilla vacía.</p>}
                 </div>
@@ -332,6 +396,9 @@ export default function Juego({ numero }: { numero: number }) {
               </div>
             )}
             {aviso && <p className="jg-aviso">{aviso}</p>}
+            {!terminado && nivel && (
+              <BotonRendirse onRendirse={rendirse} />
+            )}
 
             {terminado && nivel && (
               <CierreJuego juego="tikitaka" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${aciertos}/9`}

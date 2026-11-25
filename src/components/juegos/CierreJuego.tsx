@@ -72,7 +72,7 @@ export default function CierreJuego({
     <div className="jc">
       <div className="jc__puntos">
         <b>{puntos}</b>
-        <span>puntos · {NIVELES[nivel].nombre}</span>
+        <span>{puntos === 1 ? "punto" : "puntos"} · {NIVELES[nivel].nombre}</span>
       </div>
       {racha > 0 && (
         <p className="jc__racha">

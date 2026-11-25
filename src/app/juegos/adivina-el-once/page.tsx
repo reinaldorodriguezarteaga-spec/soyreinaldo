@@ -181,7 +181,7 @@ export default async function AdivinaElOncePage() {
                   <Partido f={anterior} />
                   {miAnterior.puntos != null ? (
                     <p className="ao-res">
-                      <b>{miAnterior.puntos} puntos</b> · {miAnterior.aciertos}/11 titulares
+                      <b>{miAnterior.puntos} {miAnterior.puntos === 1 ? "punto" : "puntos"}</b> · {miAnterior.aciertos}/11 titulares
                       {miAnterior.formacion_ok ? " · formación clavada" : ""}
                     </p>
                   ) : (
