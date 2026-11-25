@@ -3,7 +3,7 @@ import { clientePublico } from "@/lib/supabase/publico";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 import { buscarPerfilesApi } from "@/lib/sports/api-football";
 import { JUGADORES } from "./carreras";
-import { caraDe } from "./caras";
+import { apiIdDe, caraDe } from "./caras";
 import { normalizar } from "./diario";
 
 /**
@@ -19,7 +19,6 @@ import { normalizar } from "./diario";
  */
 export type Sugerencia = { id: number; nombre: string; foto: string | null; equipo: number | null };
 
-const idDeFoto = (foto: string | null) => Number(foto?.match(/players\/(\d+)\.png/)?.[1]);
 
 /** Para comparar: sin tildes y con la b y la v iguales («vommel» → Van Bommel). */
 const plano = (s: string) => normalizar(s).replace(/v/g, "b");
@@ -82,9 +81,10 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
 
   const curados: Sugerencia[] = JUGADORES.filter((j) => planas.every((p) => plano(j.nombre).includes(p)))
     .map((j): Sugerencia | null => {
-      const foto = caraDe(j.id);
-      const id = idDeFoto(foto);
-      return Number.isInteger(id) ? { id, nombre: j.nombre, foto, equipo: null } : null;
+      // El id sale de la tabla de caras, no de la foto: hay leyendas con id
+      // pero sin foto (Cannavaro, Riquelme).
+      const id = apiIdDe(j.id);
+      return id != null ? { id, nombre: j.nombre, foto: caraDe(j.id), equipo: null } : null;
     })
     .filter((x): x is Sugerencia => !!x);
 

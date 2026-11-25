@@ -224,7 +224,7 @@ export function GET(req: Request) {
           {avance && resultado ? <div style={{ display: "flex", fontSize: 54 }}>{resultado}</div> : null}
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
             <div style={{ display: "flex", fontSize: 110, fontWeight: 900, color: "#ff9d00", lineHeight: 1 }}>{puntos}</div>
-            <div style={{ display: "flex", fontSize: 36, color: TENUE }}>puntos</div>
+            <div style={{ display: "flex", fontSize: 36, color: TENUE }}>{puntos === 1 ? "punto" : "puntos"}</div>
           </div>
           <div
             style={{

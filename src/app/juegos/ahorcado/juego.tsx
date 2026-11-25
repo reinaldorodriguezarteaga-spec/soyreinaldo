@@ -135,6 +135,13 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
     [modo, numero],
   );
 
+  // «Me rindo» (25-nov, pedido del dueño): se cierra la partida y se ve la respuesta.
+  function rendirse() {
+    const ahora = Date.now();
+    setFin(ahora);
+    apuntar({ fin: ahora });
+  }
+
   // Se acabó el tiempo: la partida se cierra.
   useEffect(() => {
     if (!agotado) return;
@@ -293,7 +300,7 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
                 {/* eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API */}
                 <img src={foto(partida.id)} alt="" width={56} height={56} className="ah-foto" />
                 <div>
-                  <p className="jg-final__tit">{acertado ? (fallos === 0 ? "¡Sin un fallo!" : `¡Acertado con ${fallos} ${fallos === 1 ? "fallo" : "fallos"}!`) : ahorcado ? "¡Ahorcado!" : "Se acabó el tiempo"}</p>
+                  <p className="jg-final__tit">{acertado ? (fallos === 0 ? "¡Sin un fallo!" : `¡Acertado con ${fallos} ${fallos === 1 ? "fallo" : "fallos"}!`) : ahorcado ? "¡Ahorcado!" : restante === 0 ? "Se acabó el tiempo" : "La respuesta era"}</p>
                   <p className="jg-final__eq">{partida.nombre}</p>
                   <p className="jg-final__ctx">
                     {/* eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API */}
@@ -303,6 +310,7 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
                 </div>
               </div>
             ) : (
+              <>
               <div className="ah-teclado" role="group" aria-label="Teclado">
                 {TECLADO.map((fila) => (
                   <div key={fila} className="ah-teclado__fila">
@@ -325,6 +333,10 @@ export default function Juego({ numero, delDia }: { numero: number; delDia: Part
                   </div>
                 ))}
               </div>
+              <button type="button" className="btn btn--ghost jg-rindo" onClick={rendirse} disabled={!jugando}>
+                Me rindo
+              </button>
+              </>
             )}
 
             {terminado && nivel && (

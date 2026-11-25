@@ -3009,6 +3009,7 @@ select.field { appearance: none; }
 /* Caras en los juegos (22-oct) */
 .tt-cara { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .tt-cara img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.tt-iniciales { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.02em; }
 .jg-final__bandera { background: #e2e8f0; }
 /* Comparador de jugadores (22-oct) */
 .cmp { display: flex; flex-direction: column; gap: 16px; }

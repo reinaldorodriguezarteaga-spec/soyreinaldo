@@ -170,7 +170,7 @@ export default function Juego({ numero }: { numero: number }) {
 
           {!terminado && (
             <>
-              <div className="ag-vidas" aria-label={`${MAX_ERRORES_AGRUPA - errores} errores que quedan`}>
+              <div className="ag-vidas" aria-label={`${MAX_ERRORES_AGRUPA - errores} ${MAX_ERRORES_AGRUPA - errores === 1 ? "error" : "errores"} que quedan`}>
                 Errores que quedan:{" "}
                 {Array.from({ length: MAX_ERRORES_AGRUPA }, (_, i) => (
                   <span key={i} className={`ag-vida${i < MAX_ERRORES_AGRUPA - errores ? "" : " is-gastada"}`} />

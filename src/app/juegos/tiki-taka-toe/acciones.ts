@@ -3,7 +3,7 @@
 import { permitido } from "@/lib/comparador/cargar";
 import { getEquiposJugador } from "@/lib/sports/api-football";
 import { CLUBES, JUGADORES, type ClubClave } from "@/lib/juegos/carreras";
-import { caraDe } from "@/lib/juegos/caras";
+import { apiIdDe } from "@/lib/juegos/caras";
 import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 
 /**
@@ -15,7 +15,7 @@ import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
  */
 /** Ids de club de la carrera curada de un jugador (si está en la lista). */
 function clubesCurados(apiId: number): number[] {
-  const j = JUGADORES.find((x) => caraDe(x.id)?.endsWith(`/${apiId}.png`));
+  const j = JUGADORES.find((x) => apiIdDe(x.id) === apiId);
   return j ? j.carrera.map((c) => CLUBES[c][0]) : [];
 }
 

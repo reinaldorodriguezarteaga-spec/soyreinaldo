@@ -37,6 +37,14 @@ type Guardado = { dias: Record<number, Partida> };
 const sinSuscripcion = () => () => {};
 const escudo = (id: number) => `https://media.api-sports.io/football/teams/${id}.png`;
 const VACIA: Partida = { celdas: {}, intentos: 0 };
+/** «Fabio Cannavaro» → «FC»; «Kaká» → «K». */
+const iniciales = (nombre: string) =>
+  nombre
+    .split(/\s+/)
+    .filter((p) => p && !p.endsWith("."))
+    .map((p) => p[0].toUpperCase())
+    .slice(0, 2)
+    .join("") || nombre.slice(0, 1).toUpperCase();
 
 function leer(): Guardado {
   try {
@@ -156,6 +164,13 @@ export default function Juego({ numero }: { numero: number }) {
       setGuardado(g);
       guardar(g);
     }
+  }
+
+  // «Me rindo» (25-nov, pedido del dueño): se cierra la partida y se ve la respuesta.
+  function rendirse() {
+    const ahora = Date.now();
+    setFin(ahora);
+    apuntar({ fin: ahora });
   }
 
   // Se acabó el tiempo: la partida se cierra una sola vez.
@@ -292,9 +307,14 @@ export default function Juego({ numero }: { numero: number }) {
                     >
                       {puesto ? (
                         <span className="tt-cara">
-                          {ficha(puesto).foto && (
+                          {ficha(puesto).foto ? (
                             // eslint-disable-next-line @next/next/no-img-element -- foto de la CDN de la API
                             <img src={ficha(puesto).foto!} alt="" width={40} height={40} />
+                          ) : (
+                            // Sin foto en la API: sus iniciales, no la silueta gris en inglés.
+                            <span className="tt-iniciales" aria-hidden>
+                              {iniciales(ficha(puesto).nombre)}
+                            </span>
                           )}
                           {ficha(puesto).nombre}
                         </span>
@@ -320,7 +340,7 @@ export default function Juego({ numero }: { numero: number }) {
             {terminado ? (
               <div className={`jg-final ${aciertos === 9 ? "is-ok" : "is-mal"}`}>
                 <div>
-                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : "Se acabaron los intentos"}</p>
+                  <p className="jg-final__tit">{aciertos === 9 ? "¡Tablero completo!" : restante === 0 && inicio != null ? <><Timer className="ico-txt" aria-hidden /> Se acabó el tiempo.</> : partida.intentos >= MAX_INTENTOS_TT ? "Se acabaron los intentos" : "Te rendiste"}</p>
                   <p className="jg-final__eq">{aciertos}/9</p>
                   {aciertos < 9 && <p className="jg-final__ctx">En cursiva, un jugador que valía en cada casilla vacía.</p>}
                 </div>
@@ -375,6 +395,11 @@ export default function Juego({ numero }: { numero: number }) {
               </div>
             )}
             {aviso && <p className="jg-aviso">{aviso}</p>}
+            {!terminado && nivel && (
+              <button type="button" className="btn btn--ghost jg-rindo" onClick={rendirse}>
+                Me rindo
+              </button>
+            )}
 
             {terminado && nivel && (
               <CierreJuego juego="tikitaka" dia={modo === "dia" ? numero : null} nivel={nivel} puntos={puntos} resultado={`${aciertos}/9`}
