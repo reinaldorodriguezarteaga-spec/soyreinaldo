@@ -191,5 +191,33 @@ export async function buscarJugadores(q: string, limite = 12): Promise<Sugerenci
   };
   const puntuados = todos.map((x) => ({ x, p: puntos(x) }));
   puntuados.sort((a, b) => b.p - a.p);
-  return puntuados.slice(0, limite).map(({ x }) => x);
+  return sinSiluetas(puntuados.slice(0, limite).map(({ x }) => x));
+}
+
+/** El CDN de API-Football sirve, para los que no tienen foto, una silueta
+ * gris: la de «NO PHOTO YET» (8.624 bytes: Cannavaro, Riquelme) o una sin
+ * texto en un círculo (5.192 bytes). Comprobado el 25-nov-2026: el etag
+ * cambia, el tamaño no. */
+const BYTES_SILUETA = new Set([8624, 5192]);
+
+/** ¿Es la silueta? Basta con la cabecera (HEAD) y se recuerda 30 días por
+ * foto: las fotos no cambian a menudo. El try/catch va DENTRO de la caché. */
+const esSilueta = unstable_cache(
+  async (url: string): Promise<boolean> => {
+    try {
+      const r = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2500) });
+      return BYTES_SILUETA.has(Number(r.headers.get("content-length")));
+    } catch {
+      return false;
+    }
+  },
+  ["juegos-foto-silueta-v2"],
+  { revalidate: 30 * 24 * 3600 },
+);
+
+/** Quita la foto a los que solo tienen la silueta: en el juego salen sus
+ * iniciales en vez de una imagen gris en inglés (25-nov, pedido del dueño). */
+async function sinSiluetas(lista: Sugerencia[]): Promise<Sugerencia[]> {
+  const siluetas = await Promise.all(lista.map((x) => (x.foto ? esSilueta(x.foto) : Promise.resolve(false))));
+  return lista.map((x, i) => (siluetas[i] ? { ...x, foto: null } : x));
 }
