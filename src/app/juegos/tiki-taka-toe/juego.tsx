@@ -3,8 +3,8 @@ import { Timer } from "lucide-react";
 
 import { caraDe } from "@/lib/juegos/caras";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { JUGADORES, clubId, clubNombre } from "@/lib/juegos/carreras";
-import { MAX_INTENTOS_TT, jugaronEnAmbos, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
+import { JUGADORES, clubId, clubNombre, type Jugador } from "@/lib/juegos/carreras";
+import { MAX_INTENTOS_TT, jugaronEnAmbos, mismoNombre, tableroDelDia, type Tablero } from "@/lib/juegos/tikitaka";
 import { validarCasilla } from "./acciones";
 import { useBuscarJugadores } from "@/lib/juegos/use-buscar";
 import type { Sugerencia } from "@/lib/juegos/buscar";
@@ -104,6 +104,49 @@ export default function Juego({ numero }: { numero: number }) {
     const j = JUGADORES.find((x) => x.id === v);
     return { nombre: j?.nombre ?? "—", foto: j ? caraDe(j.id) : null };
   };
+
+  // Al terminar, cada casilla vacía enseña una respuesta posible. Tienen que
+  // ser jugadores que NO estén ya en el tablero y distintos entre sí (25-nov:
+  // salían Ibrahimović y Ramos repetidos). Lo puesto por el jugador va con el
+  // id del buscador (el de la API), no con el de la lista curada: por eso se
+  // compara también por nombre.
+  const soluciones = useMemo(() => {
+    const res = new Map<number, Jugador>();
+    if (!terminado) return res;
+    const puestos = Object.values(partida.celdas).map((v) => ficha(v).nombre);
+    const yaEsta = (j: Jugador) => usados.has(j.id) || puestos.some((n) => mismoNombre(n, j.nombre));
+    const vacias = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      .filter((i) => !partida.celdas[i])
+      .map((i) => ({ i, cand: jugaronEnAmbos(filaDe(i), columnaDe(i)).filter((j) => !yaEsta(j)) }))
+      .sort((a, b) => a.cand.length - b.cand.length);
+    const cogidos = new Set<string>();
+    const probar = (k: number): boolean => {
+      if (k === vacias.length) return true;
+      for (const j of vacias[k].cand) {
+        if (cogidos.has(j.id)) continue;
+        cogidos.add(j.id);
+        res.set(vacias[k].i, j);
+        if (probar(k + 1)) return true;
+        cogidos.delete(j.id);
+        res.delete(vacias[k].i);
+      }
+      return false;
+    };
+    if (!probar(0)) {
+      // Sin reparto perfecto: al menos, que no se repitan los que sí caben.
+      res.clear();
+      cogidos.clear();
+      for (const { i, cand } of vacias) {
+        const j = cand.find((x) => !cogidos.has(x.id));
+        if (j) {
+          cogidos.add(j.id);
+          res.set(i, j);
+        }
+      }
+    }
+    return res;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depende del tablero y de la partida
+  }, [terminado, partida, tablero]);
 
   function apuntar(parcial: Partial<Partida>) {
     const p = { ...partida, ...parcial };
@@ -215,7 +258,7 @@ export default function Juego({ numero }: { numero: number }) {
           <div className="tt">
             <div className="tt-esquina">
               <b>{MAX_INTENTOS_TT - partida.intentos}</b>
-              <span>intentos</span>
+              <span>{MAX_INTENTOS_TT - partida.intentos === 1 ? "intento" : "intentos"}</span>
             </div>
             {tablero.columnas.map((c) => (
               <div key={c} className="tt-cab">
@@ -234,7 +277,7 @@ export default function Juego({ numero }: { numero: number }) {
                 {[0, 1, 2].map((c) => {
                   const i = f * 3 + c;
                   const puesto = partida.celdas[i];
-                  const solucion = terminado && !puesto ? jugaronEnAmbos(filaDe(i), columnaDe(i)).find((j) => !usados.has(j.id)) : null;
+                  const solucion = !puesto ? soluciones.get(i) : null;
                   return (
                     <button
                       key={c}

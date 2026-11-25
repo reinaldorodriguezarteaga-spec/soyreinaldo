@@ -1,5 +1,5 @@
 import { CLUBES, JUGADORES, type ClubClave, type Jugador } from "./carreras";
-import { aleatorio } from "./diario";
+import { aleatorio, normalizar } from "./diario";
 
 /**
  * Tiki-taka-toe (21-oct): tablero 3×3 con un club en cada fila y en cada
@@ -29,6 +29,20 @@ const CANDIDATOS = ([...porClub.entries()] as [ClubClave, Set<string>][])
 
 export const jugaronEnAmbos = (a: ClubClave, b: ClubClave): Jugador[] =>
   JUGADORES.filter((j) => j.carrera.includes(a) && j.carrera.includes(b));
+
+/** ¿Es el mismo futbolista? Los del buscador traen el nombre de la API
+ * («Z. Ibrahimović», «J. Koundé») y la lista curada el conocido: vale el nombre
+ * entero o el mismo apellido con la misma inicial. */
+export function mismoNombre(a: string, b: string): boolean {
+  const partes = (s: string) => normalizar(s).replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+  const x = partes(a);
+  const y = partes(b);
+  if (x.length === 0 || y.length === 0) return false;
+  if (x.join(" ") === y.join(" ")) return true;
+  // Un solo nombre («Pedri», «Kaká»): tiene que coincidir entero.
+  if (x.length === 1 || y.length === 1) return false;
+  return x.at(-1) === y.at(-1) && x[0][0] === y[0][0];
+}
 
 /** ¿Este jugador vale para la casilla? */
 export const valeEn = (j: Jugador, fila: ClubClave, columna: ClubClave) =>
