@@ -1,5 +1,6 @@
 import { Cross } from "lucide-react";
 import ReportarFallo from "@/components/ReportarFallo";
+import MasDeSoyReinaldo from "@/components/MasDeSoyReinaldo";
 import { Suspense } from "react";
 import RendimientoPosicion from "./rendimiento-posicion";
 import Eficacia from "./eficacia";
@@ -245,6 +246,9 @@ export default async function LigaJugadorPage({
             <RendimientoPosicion jugador={pid} temporada={temporada} />
           </Suspense>
           <PlayerExtras extras={extras} />
+          <Suspense fallback={null}>
+            <MasDeSoyReinaldo />
+          </Suspense>
           <div className="reporte-fila">
             <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`Ficha de ${p?.name ?? "jugador"} (${competition.name})`} />
           </div>

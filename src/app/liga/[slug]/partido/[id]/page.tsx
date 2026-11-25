@@ -1,6 +1,7 @@
 import { porPartido } from "@/lib/analisis/queries";
 import { Presentation } from "lucide-react";
 import ReportarFallo from "@/components/ReportarFallo";
+import MasDeSoyReinaldo from "@/components/MasDeSoyReinaldo";
 import SeguirBloqueo from "./seguir-bloqueo";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -739,6 +740,9 @@ export default async function LigaPartidoPage({
           {cronica && <MatchCronica datos={cronica} />}
           <Suspense fallback={null}>
             <MatchVideos local={home.name} visitante={away.name} inicio={fx.fixture.date} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MasDeSoyReinaldo />
           </Suspense>
           <div className="reporte-fila">
             <ReportarFallo variante="boton" texto="¿Algún dato mal? Avísanos" contexto={`${home.name} – ${away.name} (${competition.name})`} />
