@@ -3,10 +3,12 @@ import { Flame } from "lucide-react";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import BotonCompartir from "@/components/BotonCompartir";
 import CompartirImagen from "@/components/CompartirImagen";
 import { guardarResultado } from "@/app/juegos/acciones";
 import { NIVELES, NOMBRE_JUEGO, type JuegoRanking, type Nivel } from "@/lib/juegos/niveles";
 import { apuntarDia, rachaLocal } from "@/lib/juegos/racha";
+import { rutaDelJuego } from "@/lib/juegos/reto-del-dia";
 
 /**
  * Final de partida común a los juegos: puntos, apunte en el ranking (solo el
@@ -22,6 +24,7 @@ export default function CierreJuego({
   puntos,
   resultado,
   extra,
+  sinCompartirTexto = false,
 }: {
   juego: JuegoRanking;
   /** Número del reto del día; null en práctica (no cuenta para el ranking). */
@@ -32,6 +35,8 @@ export default function CierreJuego({
   resultado: string;
   /** Datos del avance de la imagen (casillas del tiki-taka, once de leyenda). */
   extra?: Record<string, string>;
+  /** El juego ya tiene su botón de compartir texto (AccionesFinal). */
+  sinCompartirTexto?: boolean;
 }) {
   const [estado, setEstado] = useState<"guardando" | "nuevo" | "ya" | "sesion" | "nada" | "error">(dia ? "guardando" : "nada");
   const [racha, setRacha] = useState(0);
@@ -54,7 +59,14 @@ export default function CierreJuego({
   }, [juego, dia, nivel, puntos]);
 
   const q = new URLSearchParams({ j: juego, n: nivel, p: String(puntos), r: resultado.slice(0, 40), ...(dia ? { d: String(dia) } : {}), ...(extra ?? {}) });
-  const texto = `${NOMBRE_JUEGO[juego]}${dia ? ` #${dia}` : ""}: ${puntos} puntos en ${NIVELES[nivel].nombre.toLowerCase()} 🎮`;
+  // Para pegar en WhatsApp o en X, estilo Wordle (25-nov): el resultado con
+  // sus cuadritos, la racha si ya hay y el enlace al juego (lo añade
+  // CompartirImagen detrás).
+  const url = `https://www.soyreinaldo.com${rutaDelJuego(juego)}`;
+  const texto = [
+    `${NOMBRE_JUEGO[juego]}${dia ? ` #${dia}` : ""}: ${resultado} · ${puntos} pts`,
+    ...(racha > 1 ? [`🔥 ${racha} días de racha`] : []),
+  ].join("\n");
 
   return (
     <div className="jc">
@@ -93,13 +105,16 @@ export default function CierreJuego({
         {estado === "nada" && "En práctica no se suman puntos al ranking."}
         {estado === "error" && "No se pudo apuntar en el ranking."}
       </p>
-      <CompartirImagen
-        soloBoton
-        imagen={`/juegos/imagen?${q}`}
-        nombreArchivo={`${juego}-soyreinaldo.png`}
-        url="https://www.soyreinaldo.com/juegos"
-        texto={texto}
-      />
+      <div className="jc__compartir">
+        {!sinCompartirTexto && <BotonCompartir url={url} texto={texto} etiqueta="Compartir resultado" />}
+        <CompartirImagen
+          soloBoton
+          imagen={`/juegos/imagen?${q}`}
+          nombreArchivo={`${juego}-soyreinaldo.png`}
+          url={url}
+          texto={texto}
+        />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import RetosPendientes from "@/components/RetosPendientes";
 import HomeAnalysisCard from "@/components/HomeAnalysisCard";
 import HomeReinaldo from "@/components/HomeReinaldo";
 import HomeEncuestas from "@/components/HomeEncuestas";
+import RetoDelDia from "@/components/juegos/RetoDelDia";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
 import RailStandings from "@/components/RailStandings";
@@ -199,6 +200,9 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <HomeEncuestas />
               </Suspense>
+              {/* El reto del día y tu racha (25-nov): la razón para volver
+                  cada día. Se pinta en el navegador (día de Madrid). */}
+              <RetoDelDia enPortada />
               <HomeAnalysisCard saltar={1} />
               <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
                 <HomeScoreboard />

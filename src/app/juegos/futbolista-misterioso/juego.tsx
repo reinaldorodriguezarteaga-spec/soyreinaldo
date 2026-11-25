@@ -163,7 +163,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
           )}
 
           {terminado && p.nivel && (
-            <CierreJuego
+            <CierreJuego sinCompartirTexto
               juego="misterioso"
               dia={p.modo === "dia" ? numero : null}
               nivel={p.nivel}

@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ChevronRight,
   ClipboardList,
-  Flame,
   Flag,
   Grid3x3,
   ListOrdered,
@@ -23,6 +22,7 @@ import RachaJuegos from "@/components/juegos/RachaJuegos";
 import SegmentosJuegos from "@/components/juegos/SegmentosJuegos";
 import ArribaAlEntrar from "@/components/juegos/ArribaAlEntrar";
 import HechoHoy from "@/components/juegos/HechoHoy";
+import RetoDelDia from "@/components/juegos/RetoDelDia";
 
 export const metadata: Metadata = {
   title: "Juegos de fútbol | Soy Reinaldo",
@@ -146,7 +146,6 @@ const JUEGOS = [
 ] as const;
 
 export default function JuegosPage() {
-  const reto = JUEGOS[0];
   return (
     <main className="page">
       <ArribaAlEntrar />
@@ -157,16 +156,7 @@ export default function JuegosPage() {
             <p className="ios__sub">Retos para jugar cada día y picar a tus amigos.</p>
           </header>
           <SegmentosJuegos actual="/juegos" />
-          <Link href={reto.href} className="destacada">
-            <Icono icono={Flame} />
-            <span className="destacada__txt">
-              <small>Reto del día</small>
-              <b>{reto.titulo}</b>
-              <span>{reto.corto}</span>
-            </span>
-            <HechoHoy clave={reto.clave} />
-            <ChevronRight aria-hidden />
-          </Link>
+          <RetoDelDia />
           <RachaJuegos />
           <section className="lista-grupo">
             <h2 className="lista-grupo__h">Todos los juegos</h2>

@@ -200,7 +200,7 @@ export default function Juego({ numero }: { numero: number }) {
             </div>
           )}
           {terminado && p.nivel && (
-            <CierreJuego juego="agrupa" dia={p.modo === "dia" ? numero : null} nivel={p.nivel} puntos={puntos} resultado={`${resueltos.length}/4 · ${errores} err.`} />
+            <CierreJuego sinCompartirTexto juego="agrupa" dia={p.modo === "dia" ? numero : null} nivel={p.nivel} puntos={puntos} resultado={`${resueltos.length}/4 · ${errores} err.`} />
           )}
           {terminado && <AccionesFinal texto={texto} practica={p.modo === "practica"} onOtra={otro} onPractica={() => irA("practica")} otraTexto="Otro panel" />}
           {p.modo === "dia" && terminado && <p className="pz-ayuda">Mañana, otro panel.</p>}
