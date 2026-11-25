@@ -194,7 +194,9 @@ export default async function RootLayout({
         {inApp && <PuenteAvisosApp conSesion={!!user} />}
         {inApp && <PuenteWidget conSesion={!!user} />}
         {/* App 1.3: anuncios de AdMob (sin el plugin, no hace nada). */}
-        {inApp && <AnunciosApp />}
+        {/* Sin anuncios para el admin (25-nov, pedido del dueño): además, tocar
+            los propios anuncios va contra las normas de AdMob. */}
+        {inApp && !isAdmin && <AnunciosApp />}
         {pedirFavoritos && (
           <SelectorFavoritos
             ligas={COMPETITIONS.map((c) => ({

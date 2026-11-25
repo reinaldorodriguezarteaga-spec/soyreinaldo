@@ -1,50 +1,29 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
-import {
-  BLOQUES,
-  EN_PRUEBAS,
-  admitePantallaCompleta,
-  admobNativo,
-  plataformaAnuncios,
-  type PluginAdMob,
-} from "@/lib/anuncios-app";
+import { useEffect } from "react";
+import { BLOQUES, EN_PRUEBAS, admobNativo, plataformaAnuncios } from "@/lib/anuncios-app";
 
 /**
  * Anuncios de AdMob dentro de la app (25-nov-2026, plan de monetización del
  * 17-oct). Solo hace algo si la app trae el plugin de AdMob (1.3 en
- * adelante); en la web y en las apps viejas no pinta nada.
+ * adelante); en la web y en las apps viejas no pinta nada. El admin no los
+ * ve (lo decide `layout.tsx`).
  *
  * - Al abrir: aviso de consentimiento de Google (RGPD, solo en el EEE/UK/CH)
  *   y, en iPhone, el aviso de Apple de seguimiento (ATT). Sin permiso se ven
  *   anuncios igual, menos personalizados.
- * - Banner fijo abajo del todo. La barra de pestañas sube lo que mide el
- *   banner (--banner-alto, ver globals.css).
- * - Pantalla completa de vez en cuando al cambiar de página: no antes de
- *   2 min de uso, cada 6 cambios de página como mucho y con 4 min entre uno
- *   y otro. Nunca mientras se juega (ver `admitePantallaCompleta`).
+ * - Solo un banner fijo abajo del todo. La barra de pestañas sube lo que mide
+ *   el banner (--banner-alto, ver globals.css).
+ * - Sin anuncios a pantalla completa: el dueño los quitó el mismo día por
+ *   invasivos («la gente se saldrá»). El bloque sigue creado en AdMob, sin uso.
  */
-
-const ESPERA_INICIAL_MS = 2 * 60 * 1000;
-const ENTRE_PANTALLAS_MS = 4 * 60 * 1000;
-const CADA_N_PAGINAS = 6;
-
 export default function AnunciosApp() {
-  const ruta = usePathname();
-  const listo = useRef<PluginAdMob | null>(null);
-  const preparada = useRef(false);
-  const paginas = useRef(0);
-  const inicio = useRef(0);
-  const ultima = useRef(0);
-
   useEffect(() => {
     const admob = admobNativo();
     if (!admob) return;
     let vivo = true;
+    let mostrado = false;
     let escucha: { remove: () => Promise<void> } | null = null;
-    const bloques = BLOQUES[plataformaAnuncios()];
-    inicio.current = Date.now();
 
     (async () => {
       try {
@@ -64,15 +43,15 @@ export default function AnunciosApp() {
           document.documentElement.style.setProperty("--banner-alto", `${alto}px`);
         });
         await admob.showBanner({
-          adId: bloques.banner,
+          adId: BLOQUES[plataformaAnuncios()].banner,
           adSize: "ADAPTIVE_BANNER",
           position: "BOTTOM_CENTER",
           margin: 0,
           isTesting: EN_PRUEBAS,
         });
-        listo.current = admob;
-        await admob.prepareInterstitial({ adId: bloques.pantallaCompleta, isTesting: EN_PRUEBAS });
-        preparada.current = true;
+        mostrado = true;
+        // Si se desmontó mientras cargaba (p. ej. entró el admin), fuera.
+        if (!vivo) void admob.hideBanner().catch(() => {});
       } catch {
         // Sin anuncios (sin conexión, sin relleno, cuenta aún sin aprobar…):
         // la app sigue igual.
@@ -82,39 +61,12 @@ export default function AnunciosApp() {
     return () => {
       vivo = false;
       void escucha?.remove();
+      if (mostrado) {
+        void admob.hideBanner().catch(() => {});
+        document.documentElement.style.setProperty("--banner-alto", "0px");
+      }
     };
   }, []);
-
-  // Pantalla completa de vez en cuando al cambiar de página.
-  useEffect(() => {
-    const admob = listo.current;
-    if (!admob) return;
-    paginas.current += 1;
-    const ahora = Date.now();
-    if (
-      !preparada.current ||
-      paginas.current % CADA_N_PAGINAS !== 0 ||
-      ahora - inicio.current < ESPERA_INICIAL_MS ||
-      ahora - ultima.current < ENTRE_PANTALLAS_MS ||
-      !admitePantallaCompleta(ruta)
-    ) {
-      return;
-    }
-    preparada.current = false;
-    ultima.current = ahora;
-    const bloque = BLOQUES[plataformaAnuncios()].pantallaCompleta;
-    admob
-      .showInterstitial()
-      .catch(() => {})
-      .finally(() => {
-        admob
-          .prepareInterstitial({ adId: bloque, isTesting: EN_PRUEBAS })
-          .then(() => {
-            preparada.current = true;
-          })
-          .catch(() => {});
-      });
-  }, [ruta]);
 
   return null;
 }
