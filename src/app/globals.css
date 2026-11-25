@@ -3428,3 +3428,19 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .homeopina__titulo { margin: 0; font-family: var(--font-display-stack); font-weight: 900; text-transform: uppercase; font-size: 1.35rem; line-height: 1; }
 .homeopina__partido { display: block; margin-top: 3px; color: var(--text-dim); font-size: 0.7rem; text-decoration: none; }
 .homeopina__lista .encuesta { background: transparent; }
+
+/* «Reto del día» con racha en la portada (25-nov-2026) */
+.retodia { padding: 16px; display: grid; gap: 12px; }
+.retodia__cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.retodia__eyebrow { margin: 0; color: var(--accent); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.retodia__racha { margin: 0; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: color-mix(in oklch, #ff8a3d 16%, transparent); color: #ffb37a; font-size: 0.85rem; }
+.retodia__juego { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.retodia__txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.retodia__txt b { font-size: 1.1rem; }
+.retodia__txt span { color: var(--text-dim); font-size: 0.86rem; }
+.retodia__btn { flex: none; }
+.retodia__pie { margin: 0; color: var(--text-dim); font-size: 0.82rem; line-height: 1.45; }
+.retodia__pie strong { color: var(--text); }
+.retodia__pie a { color: var(--accent); white-space: nowrap; }
+.destacada--cargando { min-height: 92px; opacity: 0.6; }
+.jc__compartir { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -144,7 +144,7 @@ export default function Juego({ numero }: { numero: number }) {
             )}
 
             {terminado && p.nivel && (
-              <CierreJuego
+              <CierreJuego sinCompartirTexto
                 juego="escudo"
                 dia={p.modo === "dia" ? numero : null}
                 nivel={p.nivel}
