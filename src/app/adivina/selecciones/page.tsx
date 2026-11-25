@@ -44,7 +44,7 @@ export default async function QuinielaLigaSeleccionesPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/quiniela-liga/selecciones");
+  if (!user) redirect("/login?redirect=/adivina/selecciones");
 
   // Solo se ven los pronósticos de la gente de TU liga (además, la RLS de
   // lq_predictions no deja leerlos hasta que el partido ha empezado).
@@ -134,7 +134,7 @@ export default async function QuinielaLigaSeleccionesPage({
           <LeagueSwitcher
             leagues={leagues}
             active={active}
-            basePath="/quiniela-liga/selecciones"
+            basePath="/adivina/selecciones"
           />
           <SeleccionesView
             matches={seleccionMatches}

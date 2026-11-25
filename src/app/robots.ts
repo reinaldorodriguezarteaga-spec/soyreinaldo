@@ -37,7 +37,7 @@ export default function robots(): MetadataRoute.Robots {
         "/jugador/",
         "/api/",
         "/admin/",
-        "/quiniela-liga/liga/",
+        "/adivina/liga/",
         "/unirse/",
         "/perfil",
         "/completar-perfil",

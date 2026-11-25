@@ -9,7 +9,7 @@ import { T } from "@/components/EnApp";
 import { COMPETICION_CHAMPIONS, TEMPORADA_CHAMPIONS } from "@/lib/quiniela-liga/champions";
 
 export const metadata = {
-  alternates: { canonical: "/quiniela-liga" },
+  alternates: { canonical: "/adivina" },
   title: "Elige tu liga | Soy Reinaldo",
   description:
     "Entra a la liga general de LaLiga o a la liga privada de tu comunidad.",
@@ -85,7 +85,7 @@ export default async function QuinielaLigaIndex({
   // las pestañas de dentro llevan «Todas las quinielas» → `?todas=1`.
   if (leagues.length === 1 && idxChampions < 0 && todas !== "1") {
     const [l] = leagues;
-    redirect(l.isPublic ? "/quiniela-liga/partidos" : `/quiniela-liga/partidos?liga=${encodeURIComponent(l.id)}`);
+    redirect(l.isPublic ? "/adivina/partidos" : `/adivina/partidos?liga=${encodeURIComponent(l.id)}`);
   }
 
   // Posición y puntos de cada liga (son pocas; una consulta por liga).
@@ -145,10 +145,10 @@ export default async function QuinielaLigaIndex({
                   : ""}
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link href="/quiniela-champions" className="btn btn--accent">
+              <Link href="/adivina-champions" className="btn btn--accent">
                 <T>Jugar</T> <span className="arr">→</span>
               </Link>
-              <Link href="/quiniela-champions?vista=clasificacion" className="btn">
+              <Link href="/adivina-champions?vista=clasificacion" className="btn">
                 Clasificación
               </Link>
             </div>
@@ -215,7 +215,7 @@ export default async function QuinielaLigaIndex({
               <p style={{ color: "var(--text-dim)", margin: "8px 0 16px" }}>
                 <T>Con tu cuenta guardas marcadores y apareces en la clasificación.</T>
               </p>
-              <Link href="/login?redirect=/quiniela-liga" className="btn btn--accent">
+              <Link href="/login?redirect=/adivina" className="btn btn--accent">
                 Iniciar sesión <span className="arr">→</span>
               </Link>
             </div>
@@ -245,11 +245,11 @@ function LeagueCard({
 }) {
   // Por id, no por código: el código es la llave de entrada (ver leagueHref).
   const base = league.isPublic
-    ? "/quiniela-liga/partidos"
-    : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.id)}`;
+    ? "/adivina/partidos"
+    : `/adivina/partidos?liga=${encodeURIComponent(league.id)}`;
   const ranking = league.isPublic
-    ? "/quiniela-liga/ranking"
-    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.id)}`;
+    ? "/adivina/ranking"
+    : `/adivina/ranking?liga=${encodeURIComponent(league.id)}`;
 
   return (
     <div className="panel" style={{ padding: 24 }}>
@@ -298,7 +298,7 @@ function LeagueCard({
           Clasificación
         </Link>
         {(!league.isPublic || league.role === "admin") && (
-          <Link href={`/quiniela-liga/liga/${encodeURIComponent(league.id)}`} className="btn">
+          <Link href={`/adivina/liga/${encodeURIComponent(league.id)}`} className="btn">
             {league.role === "admin" ? "Gestionar" : "La liga"}
           </Link>
         )}

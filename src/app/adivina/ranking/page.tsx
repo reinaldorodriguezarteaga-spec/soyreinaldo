@@ -170,14 +170,14 @@ export default async function QuinielaLigaRankingPage({
     };
   }
 
-  const baseRanking = leagueHref("/quiniela-liga/ranking", active);
+  const baseRanking = leagueHref("/adivina/ranking", active);
 
   return (
     <main className="page">
       <section className="phero" style={{ paddingBottom: 20 }}>
         <div className="wrap">
           <Link
-            href={leagueHref("/quiniela-liga/partidos", active)}
+            href={leagueHref("/adivina/partidos", active)}
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
@@ -253,7 +253,7 @@ export default async function QuinielaLigaRankingPage({
           {active && (!active.isPublic || active.role === "admin") && (
             <p style={{ marginTop: 12 }}>
               <Link
-                href={`/quiniela-liga/liga/${encodeURIComponent(active.id)}`}
+                href={`/adivina/liga/${encodeURIComponent(active.id)}`}
                 className="btn"
               >
                 {active.role === "admin" ? "Gestionar liga" : "Ver liga"}{" "}
@@ -269,7 +269,7 @@ export default async function QuinielaLigaRankingPage({
           <LeagueSwitcher
             leagues={leagues}
             active={active}
-            basePath="/quiniela-liga/ranking"
+            basePath="/adivina/ranking"
           />
           {ultimaConPartidos != null && rows.length > 0 && (
             <nav className="segmentos segmentos--scroll" aria-label="Vista de la clasificación" style={{ margin: "0 0 14px" }}>
@@ -354,7 +354,7 @@ export default async function QuinielaLigaRankingPage({
               <T>Todavía no hay nadie en la clasificación. Haz tu primer marcador y aparecerás aquí.</T>
               <div style={{ marginTop: 16 }}>
                 <Link
-                  href={leagueHref("/quiniela-liga/partidos", active)}
+                  href={leagueHref("/adivina/partidos", active)}
                   className="btn btn--accent"
                 >
                   <T>Ir a jugar</T> <span className="arr">→</span>

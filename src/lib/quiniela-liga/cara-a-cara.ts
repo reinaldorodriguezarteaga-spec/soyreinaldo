@@ -1,7 +1,7 @@
 import "server-only";
 import { getHeadToHead, isFinal } from "@/lib/sports/api-football";
 import { conTildes } from "@/lib/sports/nombres";
-import type { CaraACara } from "@/app/quiniela-liga/match-card";
+import type { CaraACara } from "@/app/adivina/match-card";
 
 /**
  * El último enfrentamiento terminado entre dos equipos, con su marcador.

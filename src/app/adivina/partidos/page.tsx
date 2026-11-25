@@ -82,7 +82,7 @@ export default async function QuinielaLigaPartidosPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/quiniela-liga/partidos");
+  if (!user) redirect("/login?redirect=/adivina/partidos");
 
   const parsed = Number(j);
   const jornada =
@@ -285,7 +285,7 @@ function JornadaTabs({ active }: { active: number }) {
         {Array.from({ length: TOTAL_JORNADAS }, (_, i) => i + 1).map((n) => (
           <li key={n}>
             <Link
-              href={`/quiniela-liga/partidos?j=${n}`}
+              href={`/adivina/partidos?j=${n}`}
               className={`chip-pill${n === active ? " on" : ""}`}
             >
               J{n}

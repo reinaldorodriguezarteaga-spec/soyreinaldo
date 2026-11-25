@@ -57,7 +57,7 @@ export async function reenviarConfirmacion(
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
-    options: { emailRedirectTo: `${origin}/auth/callback?redirect=%2Fquiniela-liga` },
+    options: { emailRedirectTo: `${origin}/auth/callback?redirect=%2Fadivina` },
   });
   if (error) {
     const r = error.message.toLowerCase();

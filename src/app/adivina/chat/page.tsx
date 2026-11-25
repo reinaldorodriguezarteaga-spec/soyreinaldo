@@ -28,7 +28,7 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
         <section className="section">
           <div className="wrap" style={{ maxWidth: 720 }}>
             <p className="panel" style={{ padding: 18 }}>
-              <Link href="/login?redirect=/quiniela-liga/chat">Entra</Link> para hablar con la gente de tu liga.
+              <Link href="/login?redirect=/adivina/chat">Entra</Link> para hablar con la gente de tu liga.
             </p>
           </div>
         </section>
@@ -44,7 +44,7 @@ export default async function ChatQuinielaPage({ searchParams }: { searchParams:
         <section className="section">
           <div className="wrap" style={{ maxWidth: 720 }}>
             <p className="panel" style={{ padding: 18 }}>
-              Aún no estás en ninguna liga. <Link href="/quiniela-liga">Únete a una</Link> y aquí tendrás su chat.
+              Aún no estás en ninguna liga. <Link href="/adivina">Únete a una</Link> y aquí tendrás su chat.
             </p>
           </div>
         </section>

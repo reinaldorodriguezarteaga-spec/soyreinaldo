@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * Envuelve una barra de pestañas con scroll horizontal (`.tabs.tabs--scroll`)
  * y añade un degradado + flecha "›" a la derecha cuando quedan pestañas
  * fuera de pantalla — sin esto, nada le dice a la gente que hay que
- * deslizar (reportado en `/quiniela-liga`: "Reglas" quedaba cortada sin
+ * deslizar (reportado en `/adivina`: "Reglas" quedaba cortada sin
  * ninguna pista). Mismo patrón que ya usaba `/liga/[slug]` (`liga-tabs.tsx`),
  * ahora reutilizable.
  */

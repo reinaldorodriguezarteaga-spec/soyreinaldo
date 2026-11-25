@@ -58,12 +58,12 @@ export default async function JoinByCodePage({
   // Cada quiniela tiene su hub; sin preview asumimos la de clubes, que es la
   // que está en marcha.
   const isClubs = preview ? preview.kind === "clubs" : true;
-  const hubHref = isClubs ? "/quiniela-liga" : "/quiniela";
+  const hubHref = isClubs ? "/adivina" : "/quiniela";
   const rankingHref = preview
     ? isClubs
       ? preview.is_public
-        ? "/quiniela-liga/ranking"
-        : `/quiniela-liga/ranking?liga=${encodeURIComponent(preview.id)}`
+        ? "/adivina/ranking"
+        : `/adivina/ranking?liga=${encodeURIComponent(preview.id)}`
       : `/quiniela/ranking/${preview.id}`
     : hubHref;
 

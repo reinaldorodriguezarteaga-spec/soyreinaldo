@@ -75,7 +75,7 @@ export default async function MiJornada({ params }: Props) {
             ¿Te animas? Adivina los partidos de LaLiga y compite gratis.
           </p>
           <p style={{ margin: "10px 0 0" }}>
-            <Link href="/quiniela-liga" className="btn btn--accent">
+            <Link href="/adivina" className="btn btn--accent">
               <T>Jugar a Adivina el marcador</T> <span className="arr">→</span>
             </Link>
           </p>
@@ -101,7 +101,7 @@ function SinParticipar({ jornada }: { jornada: number }) {
             </p>
           </div>
           <p style={{ margin: 0 }}>
-            <Link href="/quiniela-liga" className="btn btn--accent">
+            <Link href="/adivina" className="btn btn--accent">
               Hacer mis marcadores <span className="arr">→</span>
             </Link>
           </p>

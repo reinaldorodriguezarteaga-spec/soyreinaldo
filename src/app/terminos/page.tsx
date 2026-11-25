@@ -7,7 +7,7 @@ export const metadata = {
     "Las condiciones para usar soyreinaldo.com y sus apps: cuentas, juegos gratuitos entre aficionados, datos deportivos, servicios de pago y normas de uso.",
 };
 
-const lastUpdated = "23 de noviembre de 2026";
+const lastUpdated = "25 de noviembre de 2026";
 
 /** Términos del Servicio (5-nov-2026): los pide Google Play para la
  * declaración de «operador» (comerciante) y sirven para la web y las apps. */
@@ -169,8 +169,11 @@ export default function TerminosPage() {
             <section>
               <h2>9. Publicidad</h2>
               <p>
-                La web puede mostrar anuncios de terceros (por ejemplo, Google AdSense). Los
-                anuncios no son recomendaciones mías.
+                La web puede mostrar anuncios de terceros (Google AdSense) y, desde la versión
+                1.3, las apps también (Google AdMob). Los anuncios no son recomendaciones mías.
+                Cómo se usan tus datos para mostrarlos, y cómo dar o quitar tu permiso, está en
+                la <Link href="/privacidad">Política de Privacidad</Link> y en la{" "}
+                <Link href="/cookies">Política de Cookies</Link>.
               </p>
             </section>
 

@@ -86,7 +86,7 @@ export async function enviarMensaje(leagueId: string, textoBruto: string, mencio
   if (mencionados.length) {
     // La pública es la liga por defecto: su enlace no lleva ?liga=.
     const { data: liga } = await db.from("leagues").select("is_public").eq("id", leagueId).maybeSingle<{ is_public: boolean }>();
-    const url = liga?.is_public ? "/quiniela-liga/chat" : `/quiniela-liga/chat?liga=${encodeURIComponent(leagueId)}`;
+    const url = liga?.is_public ? "/adivina/chat" : `/adivina/chat?liga=${encodeURIComponent(leagueId)}`;
     after(() =>
       Promise.all(
         mencionados.map((id) =>

@@ -46,11 +46,11 @@ describe("elegir liga desde la URL", () => {
 
 describe("enlaces de liga", () => {
   it("no ensucia la URL en la liga pública", () => {
-    expect(leagueHref("/quiniela-liga/ranking", publica)).toBe("/quiniela-liga/ranking");
+    expect(leagueHref("/adivina/ranking", publica)).toBe("/adivina/ranking");
   });
 
   it("lleva el ID de la privada, nunca el código", () => {
-    const href = leagueHref("/quiniela-liga/ranking", privada);
+    const href = leagueHref("/adivina/ranking", privada);
     expect(href).toContain(privada.id);
     // El código es la llave para entrar: no debe pasearse por la barra de
     // direcciones de cada miembro.
@@ -58,6 +58,6 @@ describe("enlaces de liga", () => {
   });
 
   it("sin liga devuelve la ruta tal cual", () => {
-    expect(leagueHref("/quiniela-liga/ranking", null)).toBe("/quiniela-liga/ranking");
+    expect(leagueHref("/adivina/ranking", null)).toBe("/adivina/ranking");
   });
 });
