@@ -30,8 +30,6 @@ export type PluginAdMob = {
   showBanner(o: Record<string, unknown>): Promise<void>;
   hideBanner(): Promise<void>;
   resumeBanner(): Promise<void>;
-  prepareInterstitial(o: Record<string, unknown>): Promise<unknown>;
-  showInterstitial(): Promise<void>;
   addListener(evento: string, cb: (info: { width?: number; height?: number }) => void): Promise<Escucha>;
 };
 
@@ -60,29 +58,14 @@ export function plataformaAnuncios(): "android" | "ios" {
 export const BLOQUES = {
   ios: {
     banner: "ca-app-pub-9017229444251239/3659780966",
-    pantallaCompleta: "ca-app-pub-9017229444251239/3316486837",
+    // Sin uso desde el 25-nov (fuera la pantalla completa): /3316486837.
   },
   android: {
     banner: "ca-app-pub-9017229444251239/9228249523",
-    pantallaCompleta: "ca-app-pub-9017229444251239/1401730391",
+    // Sin uso desde el 25-nov (fuera la pantalla completa): /1401730391.
   },
 } as const;
 
 /** Anuncios de prueba de Google (para probar sin tocar los reales):
  * NEXT_PUBLIC_ADMOB_PRUEBA=1. */
 export const EN_PRUEBAS = process.env.NEXT_PUBLIC_ADMOB_PRUEBA === "1";
-
-/** Rutas donde no sale el anuncio a pantalla completa: mientras se juega o
- * se entra, no se interrumpe. */
-const SIN_PANTALLA_COMPLETA = [
-  "/adivina",
-  "/adivina-champions",
-  "/juegos/",
-  "/login",
-  "/signup",
-  "/pizarra",
-];
-
-export function admitePantallaCompleta(ruta: string): boolean {
-  return !SIN_PANTALLA_COMPLETA.some((p) => ruta.startsWith(p));
-}
