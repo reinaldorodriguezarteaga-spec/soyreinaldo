@@ -64,8 +64,14 @@ export default function HomeCalendarView({
   // modo remonta las tarjetas vía `key`, así se pueden seguir abriendo o
   // cerrando días sueltos después.
   const [modo, setModo] = useState<"auto" | "todo" | "nada">("auto");
+  // Si hoy no se juega nada, se abre el primer día que tenga partidos (25-nov):
+  // la portada lleva el calendario arriba y nadie debe llegar a una lista
+  // de días cerrados.
+  const primerDia = restDays.some((d) => d.label === "Hoy") ? null : restDays[0]?.dateKey;
   const abierto = (day: CalendarDay) =>
-    modo === "todo" || (modo === "auto" && (day.label === "Hoy" || day.dateKey === "favoritos"));
+    modo === "todo" ||
+    (modo === "auto" &&
+      (day.label === "Hoy" || day.dateKey === "favoritos" || day.dateKey === primerDia));
   const [verMas, setVerMas] = useState(false);
   const primeros = restDays.slice(0, DIAS_MOVIL);
   const resto = restDays.slice(DIAS_MOVIL);

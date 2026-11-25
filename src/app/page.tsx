@@ -186,14 +186,17 @@ export default async function Home() {
               <Suspense fallback={null}>
                 <QuinielaPendientes />
               </Suspense>
-              {/* Últimos análisis publicados, ARRIBA del calendario y sin
-                  Suspense (21-nov-2026): es el contenido propio de la web y
-                  tiene que verse primero y venir en el HTML inicial, no en
-                  un trozo escondido que llega después (auditoría para
-                  AdSense: «la portada parece automática»). Es una consulta
-                  rápida a la base de datos. Antes iba debajo del calendario. */}
-              {/* Su opinión y la de la afición, antes que los datos (25-nov):
-                  marcadores tiene cualquier web; esto, solo esta. */}
+              {/* El calendario, arriba otra vez (25-nov, pedido del dueño):
+                  «mucha gente entra a ver qué se juega». Lo de encima solo
+                  sale con sesión (tu equipo, tus retos y partidos por
+                  adivinar), así que a quien llega de nuevas le sale lo
+                  primero. Los análisis y la opinión van justo debajo. */}
+              <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
+                <HomeScoreboard />
+              </Suspense>
+              {/* Su opinión, la de la afición y los análisis: lo propio de la
+                  web, que no tiene cualquier marcador (auditoría de AdSense
+                  del 21-nov: «la portada parece automática»). */}
               <Suspense fallback={<SkeletonCard />}>
                 <HomeReinaldo />
               </Suspense>
@@ -204,9 +207,6 @@ export default async function Home() {
                   cada día. Se pinta en el navegador (día de Madrid). */}
               <RetoDelDia enPortada />
               <HomeAnalysisCard saltar={1} />
-              <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
-                <HomeScoreboard />
-              </Suspense>
             </div>
 
             <aside className="home3col__side home3col__right">
