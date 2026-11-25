@@ -7,7 +7,7 @@ describe("chat de la quiniela", () => {
     expect(filtrarTexto("  ¡Vaya golazo!  ")).toBe("¡Vaya golazo!");
     expect(filtrarTexto("eres un subnormal")).toBe("eres un s********");
     expect(filtrarTexto("mira https://estafa.xyz/premio")).toBe("mira [enlace quitado]");
-    expect(filtrarTexto("mi quiniela https://www.soyreinaldo.com/quiniela-liga")).toContain("soyreinaldo.com");
+    expect(filtrarTexto("mi quiniela https://www.soyreinaldo.com/adivina")).toContain("soyreinaldo.com");
     // Las palabrotas de fútbol de siempre se dejan.
     expect(filtrarTexto("qué penalti más tonto, joder")).toBe("qué penalti más tonto, joder");
   });

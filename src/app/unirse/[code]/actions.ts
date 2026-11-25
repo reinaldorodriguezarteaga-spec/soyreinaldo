@@ -14,7 +14,7 @@ async function clearPendingInviteCookie() {
 
 export async function acceptInvite(formData: FormData) {
   const code = (formData.get("code") as string | null)?.trim();
-  if (!code) redirect("/quiniela-liga");
+  if (!code) redirect("/adivina");
 
   const supabase = await createClient();
   const {
@@ -47,11 +47,11 @@ export async function acceptInvite(formData: FormData) {
   await clearPendingInviteCookie();
 
   if (preview?.kind === "clubs") {
-    revalidatePath("/quiniela-liga");
+    revalidatePath("/adivina");
     redirect(
       preview.is_public
-        ? "/quiniela-liga/ranking?bienvenida=1"
-        : `/quiniela-liga/ranking?liga=${encodeURIComponent(leagueId ?? code!)}&bienvenida=1`,
+        ? "/adivina/ranking?bienvenida=1"
+        : `/adivina/ranking?liga=${encodeURIComponent(leagueId ?? code!)}&bienvenida=1`,
     );
   }
 
@@ -62,7 +62,7 @@ export async function acceptInvite(formData: FormData) {
 }
 
 export async function dismissInvite(formData: FormData) {
-  const target = (formData.get("target") as string | null) ?? "/quiniela-liga";
+  const target = (formData.get("target") as string | null) ?? "/adivina";
   await clearPendingInviteCookie();
   revalidatePath("/quiniela");
   redirect(target);

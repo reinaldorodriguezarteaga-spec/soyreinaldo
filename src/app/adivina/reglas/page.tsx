@@ -4,7 +4,7 @@ import { getMyClubLeagues, pickLeague } from "@/lib/quiniela-liga/leagues";
 import { T } from "@/components/EnApp";
 
 export const metadata = {
-  alternates: { canonical: "/quiniela-liga/reglas" },
+  alternates: { canonical: "/adivina/reglas" },
   title: "Reglas · Adivina el marcador LaLiga 2026-27 | Soy Reinaldo",
   description:
     "Cómo se puntúa Adivina el marcador de LaLiga: marcadores, picks especiales y fechas límite.",

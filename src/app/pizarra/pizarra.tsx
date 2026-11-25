@@ -1,4 +1,5 @@
 "use client";
+import { CESPED, CESPED_FRANJA, FRANJAS } from "@/lib/pizarra/cesped";
 import {
   Hand,
   ArrowRight,
@@ -1604,10 +1605,21 @@ function dibujarEscena(g: CanvasRenderingContext2D, W: number, H: number, e: Esc
 
   const aLienzo = (p: Punto) =>
     apaisado ? { x: cx + p.x * cw, y: cy + p.y * ch } : { x: cx + p.y * cw, y: cy + (1 - p.x) * ch };
-  g.fillStyle = "#10271c";
+  g.fillStyle = CESPED;
   g.beginPath();
   g.roundRect(cx, cy, cw, ch, 24);
   g.fill();
+  // Franjas de corte, a lo largo del campo (como en la pizarra).
+  g.save();
+  g.clip();
+  g.fillStyle = CESPED_FRANJA;
+  for (let i = 1; i < FRANJAS; i += 2) {
+    if (apaisado) g.fillRect(cx + (i * cw) / FRANJAS, cy, cw / FRANJAS, ch);
+    else g.fillRect(cx, cy + (i * ch) / FRANJAS, cw, ch / FRANJAS);
+  }
+  g.restore();
+  g.beginPath();
+  g.roundRect(cx, cy, cw, ch, 24);
   g.strokeStyle = "rgba(255,255,255,0.75)";
   g.lineWidth = 3;
   g.stroke();

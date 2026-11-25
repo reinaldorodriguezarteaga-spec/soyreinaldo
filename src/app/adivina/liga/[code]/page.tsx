@@ -77,7 +77,7 @@ export default async function LeaguePanelPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?redirect=/quiniela-liga/liga/${encodeURIComponent(ref)}`);
+  if (!user) redirect(`/login?redirect=/adivina/liga/${encodeURIComponent(ref)}`);
 
   const query = supabase
     .from("leagues")
@@ -151,15 +151,15 @@ export default async function LeaguePanelPage({
     : { data: [] as AdjRow[] };
 
   const rankingHref = league.is_public
-    ? "/quiniela-liga/ranking"
-    : `/quiniela-liga/ranking?liga=${encodeURIComponent(league.id)}`;
+    ? "/adivina/ranking"
+    : `/adivina/ranking?liga=${encodeURIComponent(league.id)}`;
 
   return (
     <main className="page">
       <section className="phero" style={{ paddingBottom: 16 }}>
         <div className="wrap">
           <Link
-            href="/quiniela-liga?todas=1"
+            href="/adivina?todas=1"
             className="eyebrow"
             style={{ display: "inline-block", color: "var(--accent)" }}
           >
@@ -178,8 +178,8 @@ export default async function LeaguePanelPage({
             <Link
               href={
                 league.is_public
-                  ? "/quiniela-liga/partidos"
-                  : `/quiniela-liga/partidos?liga=${encodeURIComponent(league.id)}`
+                  ? "/adivina/partidos"
+                  : `/adivina/partidos?liga=${encodeURIComponent(league.id)}`
               }
               className="btn"
             >

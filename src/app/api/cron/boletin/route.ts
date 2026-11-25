@@ -207,7 +207,7 @@ export async function GET(request: Request) {
         ...quinielaBase,
         miPuesto: idx >= 0 ? { puesto: idx + 1, de: filas.length, puntos: filas[idx].total_points } : null,
       },
-      urlQuiniela: `${site}/quiniela-liga/partidos`,
+      urlQuiniela: `${site}/adivina/partidos`,
       urlWeb: site,
       urlBaja: `${site}/baja-recordatorios?token=${p.unsubscribe_token}`,
     };

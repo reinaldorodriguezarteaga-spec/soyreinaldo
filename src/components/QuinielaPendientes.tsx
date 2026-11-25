@@ -56,7 +56,7 @@ export default async function QuinielaPendientes() {
 
   return (
     <Link
-      href="/quiniela-liga/partidos"
+      href="/adivina/partidos"
       className="panel"
       style={{
         display: "flex",

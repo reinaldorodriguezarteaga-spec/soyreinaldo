@@ -34,7 +34,12 @@ export default function PuenteAvisosApp({ conSesion }: { conSesion: boolean }) {
   useEffect(() => {
     const plugin = pushNativo();
     if (!plugin) return;
-    const escuchas: Promise<{ remove: () => Promise<void> }>[] = [];
+    // Según cómo llegue el plugin (window.Capacitor.Plugins), addListener
+    // devuelve una promesa o el manejador ya resuelto. Antes se trataba
+    // siempre como promesa: «e.then is not a function» al limpiar, y la
+    // escucha se quedaba viva (un aviso podía abrir el partido dos veces
+    // tras cambiar la sesión). Promise.resolve vale para los dos casos.
+    const escuchas: unknown[] = [];
 
     escuchas.push(
       plugin.addListener("pushNotificationActionPerformed", (a) => {
@@ -56,7 +61,11 @@ export default function PuenteAvisosApp({ conSesion }: { conSesion: boolean }) {
       .catch(() => {});
 
     return () => {
-      for (const e of escuchas) void e.then((x) => x.remove()).catch(() => {});
+      for (const e of escuchas) {
+        void Promise.resolve(e as { remove?: () => Promise<void> } | Promise<{ remove?: () => Promise<void> }>)
+          .then((x) => x?.remove?.())
+          .catch(() => {});
+      }
     };
   }, [conSesion, router]);
 

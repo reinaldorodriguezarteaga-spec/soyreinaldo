@@ -35,7 +35,7 @@ export async function retar(leagueId: string, rivalId: string): Promise<Resultad
   const { data: id, error } = await supabase.rpc("lq_retar", { p_league_id: leagueId, p_rival: rivalId });
   // Aviso al retado (push + email) después de responder: no hace esperar.
   if (!error && typeof id === "string") after(() => Promise.all([avisarRetoNuevo(id), anunciarReto(id)]));
-  revalidatePath("/quiniela-liga", "layout");
+  revalidatePath("/adivina", "layout");
   return traducir(error);
 }
 
@@ -43,14 +43,14 @@ export async function responderDuelo(id: string, aceptar: boolean): Promise<Resu
   const supabase = await createClient();
   const { error } = await supabase.rpc("lq_responder_duelo", { p_id: id, p_aceptar: aceptar });
   if (!error && aceptar) after(() => Promise.all([avisarRetoAceptado(id), anunciarReto(id, true)]));
-  revalidatePath("/quiniela-liga", "layout");
+  revalidatePath("/adivina", "layout");
   return traducir(error);
 }
 
 export async function retirarDuelo(id: string): Promise<ResultadoDuelo> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("lq_retirar_duelo", { p_id: id });
-  revalidatePath("/quiniela-liga", "layout");
+  revalidatePath("/adivina", "layout");
   return traducir(error);
 }
 
@@ -62,6 +62,6 @@ export async function aceptarInvitacion(leagueId: string, retadorId: string): Pr
     p_retador: retadorId,
   });
   if (!error && typeof id === "string") after(() => Promise.all([avisarRetoAceptado(id), anunciarReto(id, true)]));
-  revalidatePath("/quiniela-liga", "layout");
+  revalidatePath("/adivina", "layout");
   return traducir(error);
 }

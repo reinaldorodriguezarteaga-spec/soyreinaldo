@@ -149,7 +149,7 @@ export async function GET(request: Request) {
         puestoAntes: datos.esUltima ? r.puestoAntes : r.puestoAhora,
         totalJugadores: r.totalJugadores,
         urlTarjeta,
-        urlClasificacion: `${site}/quiniela-liga/ranking`,
+        urlClasificacion: `${site}/adivina/ranking`,
         urlBaja: `${site}/baja-recordatorios?token=${p.unsubscribe_token}`,
       });
       const { error } = await resend.emails.send({

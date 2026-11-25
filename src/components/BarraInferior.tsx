@@ -37,7 +37,7 @@ const PESTANAS = [
     ),
   },
   {
-    href: "/quiniela-liga",
+    href: "/adivina",
     // El juego es «Adivina el marcador» (termino.ts); no cabe entero.
     label: "Adivina",
     activa: (p: string) => p.startsWith("/quiniela") || p.startsWith("/mi-jornada") || p.startsWith("/mi-temporada"),

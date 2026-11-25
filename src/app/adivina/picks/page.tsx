@@ -16,7 +16,7 @@ export default async function QuinielaLigaPicksPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/quiniela-liga/picks");
+  if (!user) redirect("/login?redirect=/adivina/picks");
 
   // Los 20 equipos de LaLiga salen de la jornada 1 (todos juegan).
   const { data: mdRows } = await supabase

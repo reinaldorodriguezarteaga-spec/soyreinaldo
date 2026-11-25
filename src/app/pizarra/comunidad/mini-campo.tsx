@@ -1,5 +1,6 @@
 import { huecos, type Lado } from "@/lib/pizarra/formaciones";
 import type { Estado } from "@/lib/pizarra/estado";
+import { CESPED } from "@/lib/pizarra/cesped";
 
 /** Miniatura de una pizarra para la galería: campo horizontal en SVG con
  * zonas, flechas y un punto por jugador (sin fotos: ligera y sin imágenes). */
@@ -11,8 +12,8 @@ export default function MiniCampo({ estado }: { estado: Estado }) {
   const pos = (lado: Lado, i: number) => estado.movidos[`${lado}:${i}`] ?? huecos(estado.formacion[lado], lado)[i];
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="pzc-mini" role="img" aria-label="Vista previa de la pizarra">
-      <rect x={0} y={0} width={W} height={H} rx={5} fill="#10271c" />
-      <g stroke="rgba(255,255,255,0.22)" strokeWidth={0.6} fill="none">
+      <rect x={0} y={0} width={W} height={H} rx={5} fill={CESPED} />
+      <g stroke="rgba(255,255,255,0.45)" strokeWidth={0.6} fill="none">
         <line x1={W / 2} y1={0} x2={W / 2} y2={H} />
         <circle cx={W / 2} cy={H / 2} r={9} />
         <rect x={0} y={H * 0.22} width={W * 0.1} height={H * 0.56} />

@@ -133,12 +133,12 @@ export async function GET(request: Request) {
     const faltan = pendientes.get(perfil.id);
     if (!faltan) continue;
     const nombre = perfil.display_name || perfil.username || "crack";
-    const urlPronosticar = `${site}/quiniela-liga/partidos`;
+    const urlPronosticar = `${site}/adivina/partidos`;
 
     try {
       pushes += await notificarUsuario(perfil.id, {
         ...avisoRecordatorio(faltan, ahora),
-        url: "/quiniela-liga/partidos",
+        url: "/adivina/partidos",
         tag: `recordatorio-${ahora.toISOString().slice(0, 10)}`,
       });
     } catch {

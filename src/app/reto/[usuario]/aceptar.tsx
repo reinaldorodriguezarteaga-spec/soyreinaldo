@@ -3,7 +3,7 @@ import { CircleCheck, Swords } from "lucide-react";
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { aceptarInvitacion } from "@/app/quiniela-liga/duelos-actions";
+import { aceptarInvitacion } from "@/app/adivina/duelos-actions";
 
 export default function AceptarInvitacion({
   ligaId,
@@ -21,7 +21,7 @@ export default function AceptarInvitacion({
     return (
       <div className="logro__acciones">
         <p className="logro__detalle"><CircleCheck className="ico-txt" aria-hidden /> Reto aceptado. ¡Haz tus marcadores de la jornada {jornada}!</p>
-        <Link href="/quiniela-liga/partidos" className="btn btn--accent">
+        <Link href="/adivina/partidos" className="btn btn--accent">
           Jugar <span className="arr">→</span>
         </Link>
       </div>

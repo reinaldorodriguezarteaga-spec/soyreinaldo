@@ -126,7 +126,7 @@ export default async function Home() {
             </div>
             {/* La quiniela, a mano desde arriba (16-oct, pedido del dueño): su
                 bloque grande queda muy abajo en la portada. */}
-            <Link href="/quiniela-liga" className="hero__quiniela">
+            <Link href="/adivina" className="hero__quiniela">
               <span aria-hidden><Trophy className="ico-txt" aria-hidden /></span> <T>Juega a Adivina el marcador gratis</T>{" "}
               <span className="arr">→</span>
             </Link>
@@ -359,7 +359,7 @@ export default async function Home() {
 async function HomePromoQuiniela() {
   const baremo = await getBaremoPublico();
   return (
-    <Link href="/quiniela-liga" className="panel promopanel">
+    <Link href="/adivina" className="panel promopanel">
       <p className="eyebrow"><Trophy className="ico-txt" aria-hidden /> Nuevo · Gratis</p>
       <h2
         className="feat__title"

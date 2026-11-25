@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { T } from "@/components/EnApp";
 import { createClient } from "@/lib/supabase/server";
-import LqMatchCard, { type LqMatchCardData } from "../quiniela-liga/match-card";
+import LqMatchCard, { type LqMatchCardData } from "../adivina/match-card";
 import { getBaremoPublico } from "@/lib/quiniela-liga/baremo";
 import { puntosPronostico } from "@/lib/quiniela-liga/scoring";
 import { ANFITRION_ID, type PronosticoAnfitrion } from "@/lib/quiniela-liga/anfitrion";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Adivina el marcador de la Champions 2026-27 | Soy Reinaldo",
   description:
     "Adivina los partidos de la Champions League jornada a jornada, de la fase liga a la final, y compite en la clasificación. Gratis.",
-  alternates: { canonical: "/quiniela-champions" },
+  alternates: { canonical: "/adivina-champions" },
 };
 
 /**
@@ -77,7 +77,7 @@ export default async function QuinielaChampionsPage({
         <div className="wrap">
           {/* Misma píldora de vuelta que en la quiniela de LaLiga (tabs.tsx). */}
           <Link
-            href="/quiniela-liga?todas=1"
+            href="/adivina?todas=1"
             className="chip-pill chip-pill--accent"
             style={{ marginBottom: 12, fontWeight: 600 }}
           >
@@ -88,10 +88,10 @@ export default async function QuinielaChampionsPage({
             {enRanking ? "Clasificación" : etiqueta}
           </h1>
           <nav className="qc-vistas" aria-label="Secciones">
-            <Link href="/quiniela-champions" className={`chip-pill${enRanking ? "" : " on"}`}>
+            <Link href="/adivina-champions" className={`chip-pill${enRanking ? "" : " on"}`}>
               Partidos
             </Link>
-            <Link href="/quiniela-champions?vista=clasificacion" className={`chip-pill${enRanking ? " on" : ""}`}>
+            <Link href="/adivina-champions?vista=clasificacion" className={`chip-pill${enRanking ? " on" : ""}`}>
               Clasificación
             </Link>
           </nav>
@@ -108,7 +108,7 @@ export default async function QuinielaChampionsPage({
                 <ul className="flex min-w-max gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {JORNADAS_CHAMPIONS.filter((x) => conPartidos.has(x.n)).map((x) => (
                     <li key={x.n}>
-                      <Link href={`/quiniela-champions?j=${x.n}`} className={`chip-pill${x.n === jornada ? " on" : ""}`}>
+                      <Link href={`/adivina-champions?j=${x.n}`} className={`chip-pill${x.n === jornada ? " on" : ""}`}>
                         {x.corto}
                       </Link>
                     </li>
@@ -122,7 +122,7 @@ export default async function QuinielaChampionsPage({
                 {!user && (
                   <>
                     {" "}
-                    <Link href="/login?redirect=/quiniela-champions">Entra</Link> <T>para jugar.</T>
+                    <Link href="/login?redirect=/adivina-champions">Entra</Link> <T>para jugar.</T>
                   </>
                 )}
               </p>
@@ -192,7 +192,7 @@ async function Partidos({
       away: m.away!,
       prediction: p,
       locked: !userId || new Date(m.kickoff_at).getTime() - LOCK_LEAD_MS <= now,
-      sinSesion: userId ? undefined : `/quiniela-champions?j=${jornada}`,
+      sinSesion: userId ? undefined : `/adivina-champions?j=${jornada}`,
       live: { scoreHome: m.score_home, scoreAway: m.score_away, finished: m.finished, status: m.status, minute: m.live_minute },
       points: m.finished && conMarcador && p ? puntosPronostico(p, { home: m.score_home!, away: m.score_away! }, { exacto, acierto }) : null,
       anfitrion: anfitrion.get(m.id) ?? null,

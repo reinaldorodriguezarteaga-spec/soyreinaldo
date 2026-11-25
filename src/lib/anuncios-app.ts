@@ -75,8 +75,8 @@ export const EN_PRUEBAS = process.env.NEXT_PUBLIC_ADMOB_PRUEBA === "1";
 /** Rutas donde no sale el anuncio a pantalla completa: mientras se juega o
  * se entra, no se interrumpe. */
 const SIN_PANTALLA_COMPLETA = [
-  "/quiniela-liga",
-  "/quiniela-champions",
+  "/adivina",
+  "/adivina-champions",
   "/juegos/",
   "/login",
   "/signup",

@@ -28,7 +28,7 @@ describe("recordatorio de la quiniela", () => {
     const { subject, html } = emailRecordatorio({
       nombre: "<script>",
       partidos: [p(1, "A & B")],
-      urlPronosticar: "https://x/quiniela-liga/partidos",
+      urlPronosticar: "https://x/adivina/partidos",
       urlBaja: "https://x/baja-recordatorios?token=t",
     });
     expect(subject).toContain("Te falta 1 marcador");
@@ -47,7 +47,7 @@ describe("recordatorio de la quiniela", () => {
       jugados: 10,
       totalJugadores: 33,
       urlTarjeta: "https://x/mi-jornada/rei/8",
-      urlClasificacion: "https://x/quiniela-liga/ranking",
+      urlClasificacion: "https://x/adivina/ranking",
       urlBaja: "https://x/baja?token=t",
     };
     const sube = emailResumenJornada({ ...base, puntos: 16, puestoAhora: 5, puestoAntes: 8 });

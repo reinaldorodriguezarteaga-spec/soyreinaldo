@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/quiniela"];
+// "/adivina" (antes /quiniela-liga y /quiniela-champions, renombradas el
+// 25-nov-2026) cubre también "/adivina-champions". "/quiniela" se queda por
+// los enlaces viejos, que next.config redirige.
+const PROTECTED_PREFIXES = ["/quiniela", "/adivina"];
 
 // Excepciones bajo prefijos protegidos: páginas que NO requieren login (la
 // gente debe poder leerlas antes de registrarse). El ranking de la quiniela
@@ -15,14 +18,14 @@ const PUBLIC_EXCEPTIONS = [
   // visitante nuevo se estrellaba contra un muro (y Google lo veía como una
   // redirección, sin indexarlo). La página ya trata al anónimo —le enseña la
   // liga pública y su propio botón de registro— y la BD también (migración
-  // 048). Solo faltaba esta excepción: "/quiniela-liga" empieza por
-  // "/quiniela", así que caía en el prefijo protegido sin quererlo.
-  "/quiniela-liga",
-  "/quiniela-liga/ranking",
-  "/quiniela-liga/reglas",
+  // 048). Solo faltaba esta excepción: la entrada caía en el prefijo
+  // protegido sin quererlo.
+  "/adivina",
+  "/adivina/ranking",
+  "/adivina/reglas",
   // La de la Champions (21-oct) trata al anónimo ella sola: ve partidos y
   // clasificación, y pronosticar le pide entrar.
-  "/quiniela-champions",
+  "/adivina-champions",
 ];
 
 const PENDING_INVITE_COOKIE = "pending_invite";

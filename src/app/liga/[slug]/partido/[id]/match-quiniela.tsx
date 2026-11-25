@@ -95,7 +95,7 @@ export default async function MatchQuiniela({
           <T>Este partido entra en Adivina el marcador de la Champions: pon tu marcador y sube en la clasificación.</T>
         </p>
         {bloqueComunidad}
-        <Link href="/quiniela-champions" className="btn btn--accent">
+        <Link href="/adivina-champions" className="btn btn--accent">
           <T>Adivina el marcador de la Champions</T> <span className="arr">→</span>
         </Link>
       </Caja>
@@ -112,7 +112,7 @@ export default async function MatchQuiniela({
           </T>
         </p>
         {bloqueComunidad}
-        <Link href="/quiniela-liga" className="btn btn--accent">
+        <Link href="/adivina" className="btn btn--accent">
           <T>Ver la clasificación</T> <span className="arr">→</span>
         </Link>
       </Caja>
@@ -138,7 +138,7 @@ export default async function MatchQuiniela({
           <T>Este partido entra en Adivina el marcador y aún no estás en ninguna.</T>
         </p>
         {bloqueComunidad}
-        <Link href="/quiniela-liga" className="btn btn--accent">
+        <Link href="/adivina" className="btn btn--accent">
           <T>Entrar a Adivina el marcador</T> <span className="arr">→</span>
         </Link>
       </Caja>
@@ -146,8 +146,8 @@ export default async function MatchQuiniela({
   }
 
   const enlaceQuiniela = liga && !liga.isPublic
-    ? `/quiniela-liga/partidos?liga=${encodeURIComponent(liga.id)}`
-    : "/quiniela-liga/partidos";
+    ? `/adivina/partidos?liga=${encodeURIComponent(liga.id)}`
+    : "/adivina/partidos";
 
   // Nombres de quienes han pronosticado (solo salen los visibles por RLS).
   const ids = preds.map((p) => p.user_id);

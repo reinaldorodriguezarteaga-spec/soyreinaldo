@@ -88,7 +88,7 @@ export default async function TemporadaPage({ params }: P) {
               texto={`Mi temporada en los marcadores de soyreinaldo.com: ${t.puntos} puntos${t.puesto ? ` y ${t.puesto}º de ${t.jugadores}` : ""}. ¿Me superas?`}
               etiqueta="Compartir mi temporada"
             />
-            <Link href="/quiniela-liga/ranking" className="btn">
+            <Link href="/adivina/ranking" className="btn">
               Ver la clasificación <span className="arr">→</span>
             </Link>
           </div>

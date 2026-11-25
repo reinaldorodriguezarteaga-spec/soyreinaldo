@@ -61,10 +61,10 @@ export async function updateLeagueMeta(
     return { status: "error", message: readableError(error.message) };
   }
 
-  revalidatePath(`/quiniela-liga/liga/${leagueId}`);
-  revalidatePath("/quiniela-liga/ranking");
+  revalidatePath(`/adivina/liga/${leagueId}`);
+  revalidatePath("/adivina/ranking");
   // La ruta va por id, así que cambiar el código no la mueve.
-  redirect(`/quiniela-liga/liga/${encodeURIComponent(leagueId)}?guardado=1`);
+  redirect(`/adivina/liga/${encodeURIComponent(leagueId)}?guardado=1`);
 }
 
 /** Expulsar a un miembro. La RLS impide echar a otro admin. */
@@ -81,8 +81,8 @@ export async function kickMember(formData: FormData) {
     .eq("league_id", leagueId)
     .eq("user_id", userId);
 
-  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
-  revalidatePath("/quiniela-liga/ranking");
+  if (ref) revalidatePath(`/adivina/liga/${ref}`);
+  revalidatePath("/adivina/ranking");
 }
 
 /**
@@ -99,7 +99,7 @@ export async function salirDeLiga(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/quiniela-liga");
+  if (!user) redirect("/login?redirect=/adivina");
 
   const { error } = await supabase
     .from("league_members")
@@ -107,12 +107,12 @@ export async function salirDeLiga(formData: FormData) {
     .eq("league_id", leagueId)
     .eq("user_id", user.id);
   if (error) {
-    redirect(`/quiniela-liga/liga/${encodeURIComponent(leagueId)}?error=${encodeURIComponent(readableError(error.message))}`);
+    redirect(`/adivina/liga/${encodeURIComponent(leagueId)}?error=${encodeURIComponent(readableError(error.message))}`);
   }
 
-  revalidatePath("/quiniela-liga");
-  revalidatePath("/quiniela-liga/ranking");
-  redirect("/quiniela-liga?todas=1");
+  revalidatePath("/adivina");
+  revalidatePath("/adivina/ranking");
+  redirect("/adivina?todas=1");
 }
 
 export async function addAdjustment(
@@ -149,8 +149,8 @@ export async function addAdjustment(
 
   if (error) return { status: "error", message: readableError(error.message) };
 
-  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
-  revalidatePath("/quiniela-liga/ranking");
+  if (ref) revalidatePath(`/adivina/liga/${ref}`);
+  revalidatePath("/adivina/ranking");
   return {
     status: "success",
     message: `Ajuste de ${delta > 0 ? "+" : ""}${delta} aplicado.`,
@@ -165,8 +165,8 @@ export async function deleteAdjustment(formData: FormData) {
   const supabase = await createClient();
   await supabase.from("point_adjustments").delete().eq("id", id);
 
-  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
-  revalidatePath("/quiniela-liga/ranking");
+  if (ref) revalidatePath(`/adivina/liga/${ref}`);
+  revalidatePath("/adivina/ranking");
 }
 
 /** Baremo de la liga (migración 037). Solo su admin — o el admin global. */
@@ -207,12 +207,12 @@ export async function updateLeagueRules(
 
   if (error) return { status: "error", message: readableError(error.message) };
 
-  if (ref) revalidatePath(`/quiniela-liga/liga/${ref}`);
-  revalidatePath("/quiniela-liga/ranking");
+  if (ref) revalidatePath(`/adivina/liga/${ref}`);
+  revalidatePath("/adivina/ranking");
   return { status: "success", message: "Normas actualizadas." };
 }
 
-/** Anunciar (o no) la liga en el selector de /quiniela-liga, con su tarjeta de
+/** Anunciar (o no) la liga en el selector de /adivina, con su tarjeta de
  * candado para quien aún no es miembro. Solo el admin del sitio: lo comprueba
  * `liga_set_anunciada` (migración 102). */
 export async function setAnunciada(formData: FormData) {
@@ -223,6 +223,6 @@ export async function setAnunciada(formData: FormData) {
   const supabase = await createClient();
   await supabase.rpc("liga_set_anunciada", { p_league_id: leagueId, p_anunciada: anunciada });
 
-  revalidatePath(`/quiniela-liga/liga/${leagueId}`);
-  revalidatePath("/quiniela-liga");
+  revalidatePath(`/adivina/liga/${leagueId}`);
+  revalidatePath("/adivina");
 }

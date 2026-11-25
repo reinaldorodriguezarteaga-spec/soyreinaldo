@@ -10,13 +10,13 @@ import type { ClubLeague } from "@/lib/quiniela-liga/league-utils";
 // "Duelos" (18-oct, pedido del dueño): acceso directo a la vista de duelos
 // de la clasificación (`?vista=duelos`), con su propia pestaña.
 const TABS: { href: string; label: string; vista?: string }[] = [
-  { href: "/quiniela-liga/partidos", label: "Marcadores" },
-  { href: "/quiniela-liga/ranking", label: "Clasificación" },
-  { href: "/quiniela-liga/chat", label: "💬 Chat" },
-  { href: "/quiniela-liga/selecciones", label: "Selecciones" },
-  { href: "/quiniela-liga/ranking", label: "⚔️ Duelos", vista: "duelos" },
-  { href: "/quiniela-liga/picks", label: "Especiales" },
-  { href: "/quiniela-liga/reglas", label: "Reglas" },
+  { href: "/adivina/partidos", label: "Marcadores" },
+  { href: "/adivina/ranking", label: "Clasificación" },
+  { href: "/adivina/chat", label: "💬 Chat" },
+  { href: "/adivina/selecciones", label: "Selecciones" },
+  { href: "/adivina/ranking", label: "⚔️ Duelos", vista: "duelos" },
+  { href: "/adivina/picks", label: "Especiales" },
+  { href: "/adivina/reglas", label: "Reglas" },
 ];
 
 /**
@@ -29,7 +29,7 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
   const params = useSearchParams();
 
   // En la portada se elige quiniela; las pestañas aún no vienen a cuento.
-  if (pathname === "/quiniela-liga") return null;
+  if (pathname === "/adivina") return null;
 
   const wanted = params.get("liga")?.toLowerCase();
   // Mismo criterio que `pickLeague`, repetido aquí porque aquel módulo es de
@@ -58,7 +58,7 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
       {/* Con una sola quiniela la portada salta directo aquí (2-nov): este es
           el camino de vuelta para ver las demás o unirse a otra. */}
       <Link
-        href="/quiniela-liga?todas=1"
+        href="/adivina?todas=1"
         className="chip-pill chip-pill--accent"
         style={{ marginBottom: 12, fontWeight: 600 }}
       >
@@ -78,8 +78,8 @@ export default function QuinielaLigaTabs({ leagues }: { leagues: ClubLeague[] })
           })}
           {active?.role === "admin" && (
             <Link
-              href={`/quiniela-liga/liga/${encodeURIComponent(active.id)}`}
-              className={pathname.startsWith("/quiniela-liga/liga/") ? "on" : ""}
+              href={`/adivina/liga/${encodeURIComponent(active.id)}`}
+              className={pathname.startsWith("/adivina/liga/") ? "on" : ""}
             >
               Gestión
             </Link>

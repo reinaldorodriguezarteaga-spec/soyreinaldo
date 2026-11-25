@@ -13,8 +13,16 @@ const nextConfig: NextConfig = {
       // Mundial ya no se ofrece. Redirigimos (307, por si se reactivara) en
       // vez de borrar el código —WORLD_CUP_2026 sigue siendo el valor por
       // defecto de varias funciones compartidas—.
-      { source: "/quiniela", destination: "/quiniela-liga", permanent: false },
-      { source: "/quiniela/:path*", destination: "/quiniela-liga", permanent: false },
+      { source: "/quiniela", destination: "/adivina", permanent: false },
+      { source: "/quiniela/:path*", destination: "/adivina", permanent: false },
+
+      // 25-nov-2026: fuera «quiniela» de las direcciones (Apple, norma 2.3.6).
+      // Los enlaces viejos (avisos, correos, Google, invitaciones) siguen
+      // funcionando. El panel /admin/quiniela-liga no cambia.
+      { source: "/quiniela-liga", destination: "/adivina", permanent: true },
+      { source: "/quiniela-liga/:path*", destination: "/adivina/:path*", permanent: true },
+      { source: "/quiniela-champions", destination: "/adivina-champions", permanent: true },
+      { source: "/quiniela-champions/:path*", destination: "/adivina-champions/:path*", permanent: true },
       { source: "/mundial", destination: "/", permanent: false },
       { source: "/mundial/:path*", destination: "/", permanent: false },
     ];

@@ -78,7 +78,7 @@ export async function avisarRetoNuevo(dueloId: string): Promise<void> {
     if (!c) return;
     const { db, d, retador, rival } = c;
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.soyreinaldo.com";
-    const ruta = `/quiniela-liga/ranking?vista=duelos&liga=${encodeURIComponent(d.league_id)}`;
+    const ruta = `/adivina/ranking?vista=duelos&liga=${encodeURIComponent(d.league_id)}`;
     const quien = nombreDe(retador);
 
     await notificarUsuario(d.rival, {
@@ -130,7 +130,7 @@ export async function avisarRetoAceptado(dueloId: string): Promise<void> {
     await notificarUsuario(c.d.retador, {
       title: "⚔️ Reto aceptado",
       body: `${nombreDe(c.rival)} acepta el duelo de la jornada ${c.d.matchday}. ¡A por él!`,
-      url: `/quiniela-liga/ranking?vista=duelos&liga=${encodeURIComponent(c.d.league_id)}`,
+      url: `/adivina/ranking?vista=duelos&liga=${encodeURIComponent(c.d.league_id)}`,
       tag: `reto-${c.d.id}`,
     });
   } catch {

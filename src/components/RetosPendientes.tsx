@@ -45,7 +45,7 @@ export default async function RetosPendientes() {
 
   return (
     <Link
-      href={`/quiniela-liga/ranking?vista=duelos&liga=${encodeURIComponent(retos[0].league_id)}`}
+      href={`/adivina/ranking?vista=duelos&liga=${encodeURIComponent(retos[0].league_id)}`}
       className="panel"
       style={{
         display: "flex",

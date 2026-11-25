@@ -26,7 +26,7 @@ const PRODUCTOS = [
 const NAV_LINKS = [
   { href: "/analisis", label: "Análisis" },
   { href: "/juegos", label: "Juegos" },
-  { href: "/quiniela-liga", label: "Adivina el marcador" },
+  { href: "/adivina", label: "Adivina el marcador" },
 ];
 
 /** Las tres pizarras (22-oct, pedido del dueño: no se distinguían). Van

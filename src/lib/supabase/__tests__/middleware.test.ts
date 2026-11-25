@@ -55,7 +55,7 @@ describe("updateSession con Supabase caído (getUser colgado)", () => {
 
   it("las excepciones públicas de /quiniela también", async () => {
     getUserMock.mockImplementation(cuelgue);
-    const res = await conTimeoutVencido("/quiniela-liga");
+    const res = await conTimeoutVencido("/adivina");
     expect(res.status).toBe(200);
   });
 

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { decodificar } from "@/lib/pizarra/estado";
+import { CESPED } from "@/lib/pizarra/cesped";
 import { equiposVistaPrevia } from "@/lib/pizarra/equipos-vista-previa";
 import { fichasVistaPrevia } from "@/lib/pizarra/vista-previa";
 import { getTeamSquad } from "@/lib/sports/api-football";
@@ -38,20 +39,20 @@ export async function GET(request: Request) {
         </div>
         {valido && <div style={{ display: "flex", fontSize: 23, color: "#f5c542", marginTop: 6 }}>{`${estado.formacion.local} · ${estado.formacion.visitante}`}</div>}
       </div>
-      <div style={{ display: "flex", position: "relative", width: ANCHO, height: ALTO, background: "#10271c", borderRadius: 12 }}>
+      <div style={{ display: "flex", position: "relative", width: ANCHO, height: ALTO, background: CESPED, borderRadius: 12 }}>
         <svg width={ANCHO} height={ALTO} viewBox={`0 0 ${ANCHO} ${ALTO}`} style={{ position: "absolute", left: 0, top: 0 }}>
           {valido && estado.zonas.map((z, i) => <rect key={`zona-${i}`} x={x(Math.min(z.a.x, z.b.x))} y={y(Math.min(z.a.y, z.b.y))} width={Math.abs(z.b.x - z.a.x) * largo} height={Math.abs(z.b.y - z.a.y) * ancho} fill={z.color} opacity="0.28" />)}
-          <rect x={MARGEN} y={MARGEN} width={largo} height={ancho} fill="none" stroke="#8da99a" strokeWidth="2" />
-          <line x1={ANCHO / 2} y1={MARGEN} x2={ANCHO / 2} y2={ALTO - MARGEN} stroke="#8da99a" strokeWidth="2" />
-          <circle cx={ANCHO / 2} cy={ALTO / 2} r="49" fill="none" stroke="#8da99a" strokeWidth="2" />
-          <circle cx={ANCHO / 2} cy={ALTO / 2} r="3" fill="#8da99a" />
-          {[false, true].map((derecha) => <rect key={String(derecha)} x={derecha ? ANCHO - MARGEN - 130 : MARGEN} y={ALTO / 2 - 106} width="130" height="212" fill="none" stroke="#8da99a" strokeWidth="2" />)}
-          {[false, true].map((derecha) => <rect key={`area-${derecha}`} x={derecha ? ANCHO - MARGEN - 45 : MARGEN} y={ALTO / 2 - 53} width="45" height="106" fill="none" stroke="#8da99a" strokeWidth="2" />)}
+          <rect x={MARGEN} y={MARGEN} width={largo} height={ancho} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" />
+          <line x1={ANCHO / 2} y1={MARGEN} x2={ANCHO / 2} y2={ALTO - MARGEN} stroke="rgba(255,255,255,0.8)" strokeWidth="2" />
+          <circle cx={ANCHO / 2} cy={ALTO / 2} r="49" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" />
+          <circle cx={ANCHO / 2} cy={ALTO / 2} r="3" fill="rgba(255,255,255,0.8)" />
+          {[false, true].map((derecha) => <rect key={String(derecha)} x={derecha ? ANCHO - MARGEN - 130 : MARGEN} y={ALTO / 2 - 106} width="130" height="212" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" />)}
+          {[false, true].map((derecha) => <rect key={`area-${derecha}`} x={derecha ? ANCHO - MARGEN - 45 : MARGEN} y={ALTO / 2 - 53} width="45" height="106" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" />)}
           {valido && estado.flechas.map((f, i) => <line key={`flecha-${i}`} x1={x(f.a.x)} y1={y(f.a.y)} x2={x(f.b.x)} y2={y(f.b.y)} stroke={f.tipo === "pase" ? "#ffffff" : "#f5c542"} strokeWidth="4" strokeLinecap="round" />)}
         </svg>
         {fichas.map((f) => <div key={`${f.lado}:${f.indice}`} style={{ display: "flex", position: "absolute", left: x(f.x) - 48, top: y(f.y) - 18, width: 96, flexDirection: "column", alignItems: "center" }}>
           <div style={{ display: "flex", width: 36, height: 36, borderRadius: 36, background: f.color, border: "2px solid #e8ecff", color: f.color === "#111827" || f.color === "#a50044" || f.color === "#8b5cf6" ? "#ffffff" : "#0a1030", alignItems: "center", justifyContent: "center", fontSize: 21, fontWeight: 800 }}>{f.dorsal ?? ""}</div>
-          {f.apellido && f.apellido.length <= 14 && <div style={{ display: "flex", fontSize: 14, marginTop: 2, padding: "1px 4px", borderRadius: 3, background: "#10271c", color: "#ffffff" }}>{f.apellido}</div>}
+          {f.apellido && f.apellido.length <= 14 && <div style={{ display: "flex", fontSize: 14, marginTop: 2, padding: "1px 4px", borderRadius: 3, background: "rgba(10,16,48,0.82)", color: "#ffffff" }}>{f.apellido}</div>}
         </div>)}
         {valido && estado.balon && <div style={{ display: "flex", position: "absolute", left: x(estado.balon.x) - 9, top: y(estado.balon.y) - 9, width: 18, height: 18, borderRadius: 18, background: "#ffffff", border: "5px solid #111827" }} />}
       </div>
