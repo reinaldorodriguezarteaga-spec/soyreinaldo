@@ -7,6 +7,7 @@ import { clienteServicio } from "@/lib/quiniela-liga/jornada-datos";
 export type Opcion = { id: string; texto: string };
 export type Encuesta = {
   id: string;
+  fixture_id: number;
   tipo: "mvp" | "libre";
   pregunta: string;
   opciones: Opcion[];
@@ -16,7 +17,9 @@ export type Encuesta = {
   miVoto: string | null;
 };
 
-export async function cargarEncuestas(fixtureId: number): Promise<{
+/** Las encuestas de uno o varios partidos (la portada junta las de los
+ * últimos del Barça), las más nuevas primero. */
+export async function cargarEncuestas(fixtures: number | number[]): Promise<{
   encuestas: Encuesta[];
   conSesion: boolean;
   esAdmin: boolean;
@@ -25,14 +28,16 @@ export async function cargarEncuestas(fixtureId: number): Promise<{
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [{ data: filas }, { data: recuento }, { data: mios }, { data: perfil }] = await Promise.all([
+  const ids = Array.isArray(fixtures) ? fixtures : [fixtures];
+  if (ids.length === 0) return { encuestas: [], conSesion: !!user, esAdmin: false };
+  const [{ data: filas }, recuentos, { data: mios }, { data: perfil }] = await Promise.all([
     supabase
       .from("encuestas")
-      .select("id, tipo, pregunta, opciones, cerrada")
-      .eq("fixture_id", fixtureId)
+      .select("id, fixture_id, tipo, pregunta, opciones, cerrada")
+      .in("fixture_id", ids)
       .order("created_at", { ascending: false })
-      .returns<{ id: string; tipo: "mvp" | "libre"; pregunta: string; opciones: Opcion[]; cerrada: boolean }[]>(),
-    supabase.rpc("resultados_encuestas", { p_fixture: fixtureId }),
+      .returns<{ id: string; fixture_id: number; tipo: "mvp" | "libre"; pregunta: string; opciones: Opcion[]; cerrada: boolean }[]>(),
+    Promise.all(ids.map((f) => supabase.rpc("resultados_encuestas", { p_fixture: f }))),
     user
       ? supabase.from("encuesta_votos").select("encuesta_id, opcion").eq("user_id", user.id)
       : Promise.resolve({ data: [] as { encuesta_id: string; opcion: string }[] }),
@@ -40,7 +45,8 @@ export async function cargarEncuestas(fixtureId: number): Promise<{
       ? supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle<{ is_admin: boolean | null }>()
       : Promise.resolve({ data: null }),
   ]);
-  const cuenta = (recuento ?? []) as { encuesta_id: string; opcion: string; votos: number }[];
+  const recuento = recuentos.flatMap((r) => r.data ?? []);
+  const cuenta = recuento as { encuesta_id: string; opcion: string; votos: number }[];
   const voto = new Map(((mios ?? []) as { encuesta_id: string; opcion: string }[]).map((v) => [v.encuesta_id, v.opcion]));
   const encuestas = (filas ?? []).map((e) => {
     const votos: Record<string, number> = {};

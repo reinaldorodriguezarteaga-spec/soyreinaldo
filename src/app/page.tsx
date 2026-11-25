@@ -11,6 +11,8 @@ import BienvenidaPasos from "@/components/BienvenidaPasos";
 import MiEquipoCard from "@/components/MiEquipoCard";
 import RetosPendientes from "@/components/RetosPendientes";
 import HomeAnalysisCard from "@/components/HomeAnalysisCard";
+import HomeReinaldo from "@/components/HomeReinaldo";
+import HomeEncuestas from "@/components/HomeEncuestas";
 import NewsCard from "@/components/NewsCard";
 import TransfersCard from "@/components/TransfersCard";
 import RailStandings from "@/components/RailStandings";
@@ -189,7 +191,15 @@ export default async function Home() {
                   un trozo escondido que llega después (auditoría para
                   AdSense: «la portada parece automática»). Es una consulta
                   rápida a la base de datos. Antes iba debajo del calendario. */}
-              <HomeAnalysisCard />
+              {/* Su opinión y la de la afición, antes que los datos (25-nov):
+                  marcadores tiene cualquier web; esto, solo esta. */}
+              <Suspense fallback={<SkeletonCard />}>
+                <HomeReinaldo />
+              </Suspense>
+              <Suspense fallback={null}>
+                <HomeEncuestas />
+              </Suspense>
+              <HomeAnalysisCard saltar={1} />
               <Suspense fallback={<SkeletonLista filas={6} etiqueta="Cargando partidos…" />}>
                 <HomeScoreboard />
               </Suspense>
