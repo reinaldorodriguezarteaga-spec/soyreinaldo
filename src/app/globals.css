@@ -2470,8 +2470,8 @@ select.field { appearance: none; }
 .pz-jug__nom { white-space: nowrap; }
 .pz-jug__pos { font-size: 0.6rem; color: var(--text-dim); margin-left: auto; }
 .pz-vacio { color: var(--text-dim); font-size: 0.84rem; margin: 4px; }
-.pz-campo { position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 10 / 14; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, #10271c 0%, #0c1f17 50%, #10271c 100%); border: 1px solid var(--line); touch-action: none; user-select: none; -webkit-user-select: none; }
-.pz-campo--h { aspect-ratio: 16 / 10; max-width: none; }
+.pz-campo { position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 10 / 14; border-radius: 16px; overflow: hidden; background: repeating-linear-gradient(180deg, #2e7d3e 0 10%, #287036 10% 20%); /* césped: lib/pizarra/cesped.ts */ border: 1px solid var(--line); touch-action: none; user-select: none; -webkit-user-select: none; }
+.pz-campo--h { aspect-ratio: 16 / 10; max-width: none; background: repeating-linear-gradient(90deg, #2e7d3e 0 10%, #287036 10% 20%); }
 /* Barra de tamaño de las fichas, debajo del campo (3-nov). */
 .pz-tam { display: flex; align-items: center; gap: 10px; max-width: 520px; margin: 10px auto 0; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
 .pz-tam input { flex: 1; min-width: 0; accent-color: var(--accent); height: 28px; }
