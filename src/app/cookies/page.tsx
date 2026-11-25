@@ -9,7 +9,7 @@ export const metadata = {
     "Qué cookies usa soyreinaldo.com (sesión, seguridad y publicidad de Google AdSense), para qué sirven y cómo cambiar tu elección.",
 };
 
-const lastUpdated = "21 de noviembre de 2026";
+const lastUpdated = "25 de noviembre de 2026";
 
 const ext = { target: "_blank", rel: "noopener noreferrer" } as const;
 
@@ -180,8 +180,12 @@ export default function CookiesPage() {
             <section>
               <h2>7. Dentro de las apps</h2>
               <p>
-                Las apps de iPhone y Android no muestran anuncios ni usan cookies de publicidad:
-                solo las necesarias para la sesión.
+                Las apps de iPhone y Android no usan cookies de publicidad: solo las necesarias
+                para la sesión. Desde la versión 1.3 muestran anuncios de{" "}
+                <strong>Google AdMob</strong>, que usa el identificador de publicidad de tu
+                móvil. Al abrir la app te pregunta si das tu permiso (y, en el iPhone, también
+                lo pregunta Apple). Sin permiso ves anuncios igual, pero no personalizados.
+                Puedes cambiar tu elección dentro de la app con el botón de arriba.
               </p>
             </section>
 

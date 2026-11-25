@@ -9,7 +9,7 @@ export const metadata = {
     "Cómo trato tus datos personales en soyreinaldo.com y sus apps: qué recojo, para qué, con qué base legal, quién más los trata y tus derechos.",
 };
 
-const lastUpdated = "21 de noviembre de 2026";
+const lastUpdated = "25 de noviembre de 2026";
 
 const ext = { target: "_blank", rel: "noopener noreferrer" } as const;
 
@@ -69,7 +69,8 @@ export default function PrivacidadPage() {
                 </li>
                 <li>
                   <strong>Publicidad</strong>: si aceptas las cookies de publicidad, Google
-                  recoge datos de tu navegación para mostrarte anuncios (ver el punto 5 y la{" "}
+                  recoge datos de tu navegación para mostrarte anuncios; en las apps, Google
+                  AdMob usa el identificador de publicidad del móvil (ver el punto 5 y la{" "}
                   <Link href="/cookies">Política de Cookies</Link>).
                 </li>
               </ul>
@@ -168,7 +169,7 @@ export default function PrivacidadPage() {
             </section>
 
             <section>
-              <h2>5. Publicidad de Google AdSense</h2>
+              <h2>5. Publicidad de Google (AdSense y AdMob)</h2>
               <p>
                 La web muestra anuncios de <strong>Google AdSense</strong>. Google, como
                 responsable independiente, y sus socios publicitarios pueden usar cookies e
@@ -186,7 +187,16 @@ export default function PrivacidadPage() {
                 <a href="https://policies.google.com/privacy" {...ext}>
                   política de privacidad
                 </a>
-                . Las apps de iPhone y Android no muestran anuncios.
+                .
+              </p>
+              <p>
+                Desde la versión 1.3, las apps de iPhone y Android muestran anuncios de{" "}
+                <strong>Google AdMob</strong>. Google puede usar el identificador de publicidad
+                de tu móvil para mostrarlos, medirlos y, solo si das tu permiso al abrir la app
+                (y, en el iPhone, en el aviso de seguimiento de Apple), personalizarlos. Puedes
+                cambiar tu elección desde la{" "}
+                <Link href="/cookies">Política de Cookies</Link> dentro de la app o en los
+                ajustes de privacidad de tu móvil.
               </p>
             </section>
 
