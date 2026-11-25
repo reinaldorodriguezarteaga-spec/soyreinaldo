@@ -3461,3 +3461,6 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 .masr__tit { display: block; font-size: 0.9rem; font-weight: 600; line-height: 1.3; }
 .masr__sub { display: block; margin-top: 2px; font-size: 0.76rem; color: var(--text-dim); line-height: 1.35; }
 .masr__flecha { flex: none; color: var(--text-dim); }
+
+/* «Me rindo» en los juegos de adivinar (25-nov-2026). */
+.jg-rindo { justify-self: start; align-self: flex-start; }

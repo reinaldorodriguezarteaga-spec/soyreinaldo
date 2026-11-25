@@ -112,13 +112,19 @@ export default function Juego({ numero }: { numero: number }) {
             {terminado ? (
               <div className={`jg-final ${acertado ? "is-ok" : "is-mal"}`}>
                 <div>
-                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                   <p className="jg-final__eq">{objetivo.nombre}</p>
                   <p className="jg-final__ctx">{LIGAS_JUEGO[objetivo.liga]}</p>
                 </div>
               </div>
             ) : (
-              <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿De qué equipo es?" placeholder="Escribe un equipo…" />
+              <>
+                <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿De qué equipo es?" placeholder="Escribe un equipo…" />
+                {/* Rendirse (25-nov, pedido del dueño): se acaba la partida y se ve la respuesta. */}
+                <button type="button" className="btn btn--ghost jg-rindo" onClick={terminar}>
+                  Me rindo
+                </button>
+              </>
             )}
 
             {fallos > 0 && (

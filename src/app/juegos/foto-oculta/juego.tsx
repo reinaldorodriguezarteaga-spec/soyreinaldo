@@ -135,7 +135,7 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                 {/* eslint-disable-next-line @next/next/no-img-element -- escudo de la CDN de la API */}
                 <img src={escudoDe(objetivo.equipo.id)} alt="" width={56} height={56} />
                 <div>
-                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : "¡Casi!"}</p>
+                  <p className="jg-final__tit">{acertado ? `¡Acertaste en ${intentos.length}!` : intentos.length > 0 ? "¡Casi!" : "La respuesta era"}</p>
                   <p className="jg-final__eq">{objetivo.nombre}</p>
                   <p className="jg-final__ctx">
                     {objetivo.equipo.nombre}
@@ -144,7 +144,13 @@ export default function Juego({ numero, objetivoDia, jugadores }: { numero: numb
                 </div>
               </div>
             ) : (
-              <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+              <>
+                <Buscador opciones={opciones} usados={intentos} onElegir={intentar} etiqueta="¿Quién es?" placeholder="Escribe un jugador…" />
+                {/* Rendirse (25-nov, pedido del dueño): se acaba la partida y se ve la respuesta. */}
+                <button type="button" className="btn btn--ghost jg-rindo" onClick={terminar}>
+                  Me rindo
+                </button>
+              </>
             )}
 
             {fallos > 0 && (
