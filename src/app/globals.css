@@ -3466,3 +3466,16 @@ a.lista__fila:hover { background: color-mix(in oklch, var(--accent) 8%, transpar
 /* «Me rindo» en los juegos de adivinar (25-nov-2026). */
 .jg-rindo { justify-self: start; align-self: flex-start; }
 .btn.jg-rindo.is-armado { border-color: #ff8a8a; color: #ff8a8a; background: color-mix(in oklch, #ff8a8a 12%, transparent); }
+
+/* «Más partidos de la jornada» en la ficha de partido (26-nov-2026). */
+.otrosp { overflow: hidden; margin-top: 16px; }
+.otrosp__fila { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); text-decoration: none; color: inherit; transition: background 0.15s ease; }
+.otrosp__fila:hover, .otrosp__fila:active { background: var(--surface-2); }
+.otrosp__eq { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 0.9rem; font-weight: 600; }
+.otrosp__eq--local { justify-content: flex-end; text-align: right; }
+.otrosp__eq img { flex: none; width: 20px; height: 20px; object-fit: contain; }
+.otrosp__nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.otrosp__centro { min-width: 72px; text-align: center; font-family: var(--font-mono-stack); font-size: 0.78rem; color: var(--text-dim); text-transform: capitalize; }
+.otrosp__centro.is-final { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.otrosp__centro.is-vivo { color: var(--accent); font-weight: 700; text-transform: none; }
+.otrosp__todo { display: block; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 0.82rem; font-weight: 600; color: var(--accent); text-decoration: none; }
