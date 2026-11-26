@@ -54,6 +54,12 @@ export const metadata: Metadata = {
   // La web vive en www — el ápice redirige. Con el ápice aquí, cada canónica
   // y cada URL de OpenGraph apuntaba a una dirección que rebota.
   metadataBase: new URL("https://www.soyreinaldo.com"),
+  // Canónica por defecto (27-nov-2026): la propia ruta, sin parámetros. Search
+  // Console avisó de «Duplicada: el usuario no ha indicado ninguna versión
+  // canónica»: perfiles, retos, /estadios, /terminos… no la llevaban, y las
+  // variantes con ?parámetros contaban como duplicadas. «./» se resuelve con
+  // la ruta de cada página; las que fijan la suya la sobrescriben.
+  alternates: { canonical: "./" },
   applicationName: "Soy Reinaldo",
   appleWebApp: {
     capable: true,

@@ -37,6 +37,7 @@ import { COMPETITIONS_BY_SLUG, type Competition } from "@/lib/sports/competition
 import { filasDirecto } from "@/lib/sports/directo";
 import JsonLd, { absolute } from "@/lib/seo/json-ld";
 import StandingsImpact from "./standings-impact";
+import OtrosPartidos from "./otros-partidos";
 import MatchQuiniela from "./match-quiniela";
 import MatchVideos from "./match-videos";
 import MatchEncuestas from "./match-encuestas";
@@ -730,6 +731,17 @@ export default async function LigaPartidoPage({
           </div>
         </section>
       )}
+
+      <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
+        <div className="wrap">
+          <Suspense fallback={null}>
+            <OtrosPartidos
+              competition={competition}
+              actual={{ id: fixtureId, round: fx.league.round ?? null, date: fx.fixture.date }}
+            />
+          </Suspense>
+        </div>
+      </section>
 
       <section className="section" style={{ paddingTop: 4, paddingBottom: 0 }}>
         <div className="wrap">
