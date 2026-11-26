@@ -149,6 +149,21 @@ describe("completarClasificacion", () => {
     expect(e.get(2)!.points).toBe(1);
   });
 
+  it("también suma la fase liga de la Champions («League Stage»), no las previas", () => {
+    const tabla = [base(1, 1, 3, 2, 0, "W"), base(2, 3, 1, 1, 1, "D"), base(3, 4, 1, 1, 1, "D"), base(4, 2, 0, 0, 2, "L")];
+    const uefa = (f: Fixture, round: string): Fixture => ({ ...f, league: { id: 2, name: "UEFA Champions League", logo: "", round } });
+    const r = completarClasificacion(tabla, [
+      ...jornada1,
+      uefa(terminado(5, "2026-11-25T20:00:00Z", 4, 1, 2, 0), "League Stage - 5"),
+      // Una previa entre los mismos equipos no cuenta para la tabla.
+      uefa(terminado(6, "2026-08-01T20:00:00Z", 3, 2, 5, 0), "3rd Qualifying Round"),
+    ]);
+    const e = new Map(r.map((x) => [x.team.id, x]));
+    expect(e.get(4)!.all.played).toBe(2);
+    expect(e.get(4)!.points).toBe(4);
+    expect(e.get(3)!.all.played).toBe(1);
+  });
+
   it("si cuadra, deja la tabla oficial tal cual", () => {
     const tabla = [base(1, 1, 3, 2, 0, "W"), base(2, 3, 1, 1, 1, "D"), base(3, 4, 1, 1, 1, "D"), base(4, 2, 0, 0, 2, "L")];
     expect(completarClasificacion(tabla, jornada1)).toBe(tabla);

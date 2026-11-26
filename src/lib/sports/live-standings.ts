@@ -174,7 +174,11 @@ export function completarClasificacion(rows: StandingRow[], fixtures: Fixture[])
         ids.has(f.teams.away.id) &&
         f.goals.home != null &&
         f.goals.away != null &&
-        /regular season/i.test(f.league.round ?? ""),
+        // Liga regular, o la fase liga de las competiciones UEFA («League
+        // Stage - 5»): sin esta, la tabla de la Champions se quedaba con los
+        // partidos de la noche sin sumar hasta que el API se ponía al día
+        // (25-nov-2026, aviso del dueño). Eliminatorias y previas, fuera.
+        /regular season|league stage/i.test(f.league.round ?? ""),
     )
     .sort((a, b) => Date.parse(a.fixture.date) - Date.parse(b.fixture.date));
 
